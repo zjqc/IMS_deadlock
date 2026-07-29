@@ -6,10 +6,10 @@
 
 状态：拟证明。
 
-从 `IMS-RAS` 的闭包归一化 LTS 构造有界 Petri 网 `N=(P,T,F,W,M0)`，使：
+从 `IMS-RAS` 的闭包归一化 LTS 构造有界 Petri 网 `N=(P_P,T_P,Arc_P,W_P,M0)`，使：
 
 - 每个稳定 IMS 状态 `s` 有标识 `phi(s)`；
-- 每个可观察事件 `e` 对应一个或一组 Petri transition；
+- 每个可观察事件 `e` 对应一个或一组 Petri transition `t in T_P`；
 - 在可投影子类中，`s ->e t` 当且仅当 `phi(s) -> phi(t)`；
 - 若存在不可逆投影，只主张 trace inclusion 或 sound abstraction，不主张双模拟。
 
@@ -55,7 +55,7 @@ S3PR/siphon 控制可作为基线的条件包括：
 
 ## 5. 超出经典 S3PR 的 IMS 语义
 
-状态：反例。
+状态：反例候选/待实例化。
 
 以下语义通常超出直接 S3PR：
 

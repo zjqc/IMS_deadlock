@@ -32,6 +32,43 @@ https://doi.org/10.1109/TASE.2014.2369858
 Authorized use: EFA/BDD framework and Theorem IV.1 on Algorithm 2 correctness.
 It is an implementation benchmark, not the structural IMS contribution.
 
+Lawley, M. A., & Reveliotis, S. A. (2001). Deadlock avoidance for sequential
+resource allocation systems: Hard and easy cases. *International Journal of
+Flexible Manufacturing Systems, 13*(4), 385-404.
+https://doi.org/10.1023/A:1012203214611
+
+Authorized use: SU-RAS safety complexity and the boundary between safety and
+deadlock detection. The author PDF gives Theorem 1 on PDF p10 (SU-SAFE is
+NP-complete), Proposition 2 on PDF p15 (intractable subclasses contain
+deadlock-free unsafe states), and the capacitated-knot plus RC1/SR1/SR2/CB1
+conditions on PDF pp18-24. None of these results transfers NP-completeness
+directly to IMS-RAS.
+
+Nazeem, A., & Reveliotis, S. A. (2011). A practical approach for maximally
+permissive liveness-enforcing supervision of complex resource allocation
+systems. *IEEE Transactions on Automation Science and Engineering, 8*(4),
+766-779. https://doi.org/10.1109/TASE.2011.2159112
+
+Authorized use: finite D/C-RAS LES benchmark. The author PDF gives
+Proposition 1 and Definition 1 on PDF p5 for safe/unsafe state monotonicity and
+maximal-safe/minimal-unsafe states; Section III gives the boundary-unsafe-state
+implementation. IMS use requires a prior finite-state semantic encoding and a
+proof that the paper's componentwise order applies.
+
+Chen, Y. F., Li, Z. W., Khalgui, M., & Mosbahi, O. (2011). Design of a
+maximally permissive liveness-enforcing Petri net supervisor for flexible
+manufacturing systems. *IEEE Transactions on Automation Science and
+Engineering, 8*(2), 374-393.
+https://doi.org/10.1109/TASE.2010.2060332
+
+Authorized use: bounded FMS Petri-net benchmark only. The author technical
+report gives Assumptions 1-2 and Theorem 6 on report p19: under those
+P-semiflow assumptions, the proposed method yields a maximally permissive
+liveness-enforcing supervisor if such a supervisor exists. The 2012 correction
+to Section V-B, https://doi.org/10.1109/TASE.2012.2183739, is part of the
+audit trail. This does not establish maximum permissiveness for IMS-RAS before
+the finite-state and Petri-net semantic bridges are proved.
+
 Palmer, G. I., Harper, P. R., & Knight, V. A. (2018). Modelling deadlock in
 open restricted queueing networks. *European Journal of Operational Research,
 266*(2), 609-621. https://doi.org/10.1016/j.ejor.2017.10.039
@@ -78,6 +115,16 @@ probability layer. Recorded locators: Section 3.1, Eq. 3.1, Eq. 3.3, Appendix D.
 This source supports the change-of-measure and conditioned-generator formulas,
 but the IMS absorbing-boundary adaptation remains separate.
 
+Cerou, F., & Guyader, A. (2007). Adaptive multilevel splitting for rare event
+analysis. *Stochastic Analysis and Applications, 25*(2), 417-443.
+https://doi.org/10.1080/07362990601139628
+
+Authorized use: rare-event estimator benchmark under the paper's assumptions.
+Journal p422 (PDF p7) states Hypothesis H and Theorem 1 on almost-sure
+consistency; journal p425 (PDF p10) gives Theorem 2 on asymptotic normality and
+variance. The one-dimensional strongly Markov, continuity, and score
+assumptions must be re-established before using the result for IMS deadlock.
+
 ## Verified Context Sources
 
 Li, Z. W., & Zhou, M. C. (2004). Elementary siphons of Petri nets and their
@@ -87,27 +134,6 @@ https://doi.org/10.1109/TSMCA.2003.820576
 The author PDF supports Sections 3, 4, 5, and 7 as context for elementary
 siphon definitions, controllability discussion, algorithms, and FMS examples.
 No theorem claim is migrated until exact theorem locators are extracted.
-
-Lawley, M. A., & Reveliotis, S. A. (2001). Deadlock avoidance for sequential
-resource allocation systems: Hard and easy cases.
-https://doi.org/10.1023/A:1012203214611
-
-Context only in this library. Broad Sections 3-5 were identified, but no exact
-theorem/page locator is recorded, so it cannot support theorem claims here.
-
-Nazeem, A., & Reveliotis, S. A. (2011). A practical approach for maximally
-permissive liveness-enforcing supervision of complex resource allocation
-systems. https://doi.org/10.1109/TASE.2011.2159112
-
-Context only in this library. The author `CASE-2010.pdf` abstract and broad
-Sections II-III were identified, but no exact theorem/page locator is recorded.
-
-Ramadge, P. J., & Wonham, W. M. (1987). Supervisory control of a class of
-discrete event processes. https://doi.org/10.1137/0325013
-
-This remains the DES conceptual baseline, but this G1 library has not recorded
-a theorem locator. It should be upgraded only after extracting the exact result
-used for the IMS supervisor benchmark.
 
 Liu et al. Siphon survey. https://doi.org/10.1016/j.ins.2015.08.037
 
@@ -120,12 +146,6 @@ Use only as provenance-limited inspiration for the `C4` three-resource
 machine/AGV deadlock example. It is distinct from the journal paper
 `Deadlock prevention and deadlock avoidance in flexible manufacturing systems
 using Petri net models`, https://doi.org/10.1109/70.63257.
-
-Cerou, F., & Guyader, A. (2007). Adaptive multilevel splitting for rare event
-analysis. https://doi.org/10.1080/07362990601139628
-
-Use as rare-event estimation context. No IMS theorem migration is currently
-recorded.
 
 ## Candidate Sources
 

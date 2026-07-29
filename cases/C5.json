@@ -1,0 +1,68 @@
+{
+  "schema_version": "ims-deadlock/case/v1",
+  "case_id": "C5",
+  "title": "M-D bidirectional rebuild",
+  "status": "DISCOVERY",
+  "model": {
+    "id": "C5-md-bidirectional-rebuild",
+    "resources": [
+      {"id": "M", "capacity": 1, "kind": "machine"},
+      {"id": "D", "capacity": 1, "kind": "buffer"},
+      {"id": "G", "capacity": 1, "kind": "agv"}
+    ],
+    "jobs": ["pA", "pB"]
+  },
+  "initial_state": {
+    "id": "c5-bidir-rebuild",
+    "holds": [
+      {"job_id": "pA", "resource_id": "M", "units": 1},
+      {"job_id": "pB", "resource_id": "G", "units": 1}
+    ],
+    "requests": {
+      "pA": [[{"resource_id": "D", "units": 1}, {"resource_id": "G", "units": 1}]],
+      "pB": [[{"resource_id": "M", "units": 1}]]
+    },
+    "completed_jobs": [],
+    "stable": true,
+    "complete": false,
+    "event_calendar_empty": true,
+    "stage_by_job": {"pA": "blocked_complete", "pB": "blocked_unload"},
+    "mode_by_job": {"pA": "blocked_complete", "pB": "blocked_unload"}
+  },
+  "transitions": [
+    {
+      "name": "pA-M-to-D-needs-carrier",
+      "kind": "unload",
+      "job_id": "pA",
+      "source_mode": "blocked_complete",
+      "target_mode": "completed",
+      "controllable": false,
+      "zero_time": false,
+      "requires": [[
+        {"resource_id": "D", "units": 1},
+        {"resource_id": "G", "units": 1}
+      ]],
+      "release": [{"resource_id": "M", "units": 1}],
+      "next_requests": [],
+      "mark_complete": true
+    },
+    {
+      "name": "pB-D-to-M-reverse-route",
+      "kind": "unload",
+      "job_id": "pB",
+      "source_mode": "blocked_unload",
+      "target_mode": "completed",
+      "controllable": false,
+      "zero_time": false,
+      "requires": [[{"resource_id": "M", "units": 1}]],
+      "release": [{"resource_id": "G", "units": 1}],
+      "next_requests": [],
+      "mark_complete": true
+    }
+  ],
+  "notes": [
+    "Independent reconstruction from manufacturing-island semantic facts.",
+    "Bidirectional M-D and D-M route family keeps the closed blocking witness.",
+    "Paired DAG repair is encoded separately as C5_DAG."
+  ]
+}

@@ -19,6 +19,21 @@ Before running confirmation evaluation:
 6. record all exclusion rules;
 7. mark the freeze entry in `CONFIRMATION_PREREGISTRATION.md`.
 
+Required freeze hash fields:
+
+- `case_manifest_sha256`;
+- `case_json_sha256_by_id`;
+- `theory_manifest_sha256`;
+- `prediction_sheet_sha256`;
+- `experiment_script_manifest_sha256`;
+- `baseline_manifest_sha256`;
+- `runtime_lock_sha256`;
+- `random_stream_manifest_sha256`;
+- `metric_schema_sha256`.
+
+Every field must be nonempty. A field may be `N/A` only with a freeze-time
+reason recorded before confirmation results are inspected.
+
 ## After Freeze
 
 The project may not:
@@ -48,4 +63,3 @@ Stop extending cases and return to theory if:
   reconstructed;
 - exact enumeration contradicts a theorem and the contradiction is not a code
   bug.
-

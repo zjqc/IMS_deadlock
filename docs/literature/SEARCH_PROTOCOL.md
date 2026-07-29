@@ -31,6 +31,9 @@ authorize theorem claims from abstracts, metadata, or secondary summaries.
 
 ## Forward/Backward Tracking Rule
 
+The concrete 2026-07-29 bounded OpenAlex trace is recorded in
+`CITATION_TRACE_LOG.md`.
+
 For each seed source, record:
 
 - backward references that introduce a new model class, theorem type, proof
@@ -38,10 +41,9 @@ For each seed source, record:
 - forward citations that introduce the same;
 - the reason for stopping.
 
-The search may be declared saturated only after two consecutive tracking rounds
-produce no new model category, theorem category, or critical counterexample.
-Current status: **not saturated**. The present G1 library is a verified seed
-library plus candidate frontier, not a completed systematic review.
+The search may declare taxonomy saturation only after two consecutive bounded
+tracking rounds produce no new in-scope model category, theorem category, or
+critical counterexample. Current status: **scope-bounded taxonomy saturation reached in two consecutive bounded rounds (R2/R3), but full-text theorem verification gate remains open**. This is not a completed systematic review and does not claim exhaustive citation saturation.
 
 ## Theorem-use Rule
 

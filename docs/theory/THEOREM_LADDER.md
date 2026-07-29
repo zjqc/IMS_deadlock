@@ -44,17 +44,17 @@ P1 项目内已证明（严格受限子类）。枚举只检查小模型事件�
 
 对每个小模型，枚举所有 `S_st`，检查所有事件后继均满足容量守恒，且 Petri 子类中 `phi` 后继集合与 LTS 后继集合一致。
 
-## T2 死锁证书定理
+## T2 容量介导死锁证书定理
 
-状态：项目内已证明（严格受限子类）；一般 IMS/软预约仍拟证明。
+状态：capacity-mediated deadlock 已证明（严格受限子类）；一般操作死锁/软预约/非资源 guard 仍拟证明或边界。
 
 ### Statement
 
-在 `IMS-RAS^CW` 闭包归一化稳定状态上，排除 policy stall 与 calendar-empty terminal block 后，IMS 全局操作死锁当且仅当存在覆盖所有未完成活动的多容量封闭阻塞核。对单实例、一持一求、无替代路线的受限子类，可推出 terminal SCC/简单有向环局部判据；只有覆盖所有未完成工件时才推出全局死锁。
+在 `IMS-RAS^CW` 闭包归一化稳定状态上，capacity-mediated global operational deadlock 当且仅当存在覆盖所有未完成活动的多容量封闭阻塞核。该死锁子域要求 `Alt_s(j)` 只含非容量 guard/时钟/同步已经满足的 capacity-ready 替代，且每个被覆盖未完成非终端阻塞工件有非空 `Alt_s(j)`；每个当前 enabled timed/transport completion 必须作为空需求替代进入 `Alt_s(j)`，因此不能出现在容量介导死锁中。对单实例、一持一求、无替代路线的受限子类，可推出 terminal SCC/简单有向环局部判据；只有对应 SCC 核覆盖所有未完成工件时才推出容量介导全局操作死锁。
 
 ### Assumptions
 
-- 证书包含持有量、需求量、残余容量、预约 token、可选后继和不可自主释放条件。
+- 证书包含持有量、需求量、残余容量、预约 token、capacity-ready 可选后继、witness 集合 `W_K` 和 holder 解释集合 `H_K`。
 - 所有未完成工件的可继续后继都被证书覆盖。
 - 不允许把 Palmer 队列网络 `knot` 直接替换成一般 IMS 证明。
 
@@ -68,12 +68,13 @@ P1 项目内已证明（严格受限子类）。枚举只检查小模型事件�
 ### Failure modes
 
 - 资源图有环但残余容量足够。
+- 永久非资源 guard 或外部同步永不满足造成停滞，但没有 capacity-ready alternative；这是 P2 外边界，不得用封闭容量核解释。
 - WCC 无汇快捷等价在 Palmer 2/3 服务器反例中失败。
 - 局部封闭核未覆盖所有未完成工件，只能推出局部死锁。
 
 ### Evidence status
 
-P2/P2a/P2b 项目内已证明（严格受限子类）+ 反例边界。Palmer knot 是有限队列网络基线；无汇 WCC 快捷只在单节点、两节点每节点不超过 2 服务器、或全有限单服务器条件下使用。
+P2/P2a/P2b 对 capacity-mediated 子域项目内已证明 + 反例边界。Palmer knot 是有限队列网络基线；无汇 WCC 快捷只在单节点、两节点每节点不超过 2 服务器、或全有限单服务器条件下使用。
 
 ### Case mapping
 
@@ -124,11 +125,25 @@ P2/P2a/P2b 项目内已证明（严格受限子类）+ 反例边界。Palmer kno
 
 ## T4 结构充分条件与阈值族
 
-状态：项目内已证明（严格受限子类）；双向制造岛阈值族仍拟证明。
+状态：chain-decomposable strict-precedence 子类、`BIX0` 双向启动饱和
+阈值和表示敏感复杂性下界已证明；一般多容量/聚合预约、含
+transfer/drain 的制造岛阈值和一般紧凑 IMS 的精确复杂性类别仍拟证明。
 
 ### Statement
 
-若所有必须获取且不可抢占保持的机器、缓冲、AGV 和预约 token 存在全局严格获取偏序，并且每条路线按该偏序请求资源，则在 A8 与 T2 证书定理适用条件下，不存在覆盖所有未完成 non-terminal activities 的封闭阻塞核，因此不存在 IMS operational deadlock。对双向制造岛交换族，容量、AGV、WIP 和双向路线负载阈值作为待推导命题族。
+若所有必须获取且不可抢占保持的机器、缓冲、AGV 和预约 token 存在全局严格获取偏序，并且每个覆盖封闭阻塞核都能把容量缺口分解为 chain-decomposable holder-dependency chain，则在 A8 与窄化 T2 证书定理适用条件下，不存在覆盖所有未完成 non-terminal activities 的封闭阻塞核，因此不存在 capacity-mediated IMS operational deadlock。
+
+对无成功 transfer 前缀的双向启动饱和族 `BIX0`，P3c 给出精确存在性
+阈值：deadlock reachable iff `n_A>=c_M` 且 `n_B>=c_G`。该式只说明
+存在合法死锁前缀，不说明死锁必然发生；`c_D` 只因候选前缀保持 D 为空
+而暂时消失。含 persistent-D、drain、替代路线或时序的更一般族仍开放。
+
+复杂性边界：无 buffer/AGV/reservation/BAS、有限无环路线、原子单单位
+acquire-release 的 `IMS-SU^A` 子类，其 `IMS-SU-SAFE` 由 SU-SAFE
+identity reduction 得到 NP-complete。对显式给出的闭包归一化 LTS，P5
+fixed point 可在 `O(|X|(|X|+|->|))` 时间内精确计算；对紧凑一般 IMS，
+supervisor 初始可行性至少 NP-hard，完整状态策略可能具有指数输出大小。
+未证明一般问题为 PSPACE/EXPTIME-complete。
 
 ### Assumptions
 
@@ -136,24 +151,33 @@ P2/P2a/P2b 项目内已证明（严格受限子类）+ 反例边界。Palmer kno
 - 工件不得持有高序资源再请求低序资源。
 - BAS 阻塞持有也服从同一偏序。
 - 释放规则不制造隐式逆序请求。
-- 该结论只排除可由 T2 覆盖证书刻画的 operational deadlock，不自动保证 standard nonblocking、livelock-free 或 almost-sure completion。
+- 证书必须是 chain-decomposable；池化硬预约、共享库存或聚合容量缺口若无法归责到具体 holder chain，则不属于 T4 已证范围。
+- 该结论只排除可由窄化 T2 覆盖证书刻画的 capacity-mediated operational deadlock，不自动保证 general operational-deadlock-free、standard nonblocking、livelock-free 或 almost-sure completion。
 
 ### Proof obligations
 
-- 反证：若存在覆盖所有未完成 non-terminal activities 的封闭核，则沿等待证据导出严格上升资源依赖；封闭性要求依赖回到核内，但有限严格偏序中不可能形成这样的闭合依赖。
+- 反证：若存在覆盖所有未完成 non-terminal activities 的 chain-decomposable 封闭核，则由证书到资源链选择引理沿等待证据导出无限严格上升资源依赖；有限严格偏序中不可能存在这种链。
 - 处理多资源需求：至少一个阻塞需求必须导出违反偏序的等待链。
-- 调用 T2：无 covering closed blocking kernel 推出无 operational deadlock；不得跳过 T2 的覆盖与证书条件。
-- 双向岛族需推导或证伪容量/WIP/AGV 阈值，不得预置公式。
+- 调用窄化 T2：无 covering closed blocking kernel 推出无 capacity-mediated operational deadlock；不得跳过 T2 的覆盖、capacity-ready 和证书条件。
+- `BIX0` 之外、含 transfer/drain/替代路线/时序的双向岛族仍需推导或
+  证伪容量/WIP/AGV 分段阈值，不得预置公式。
 
 ### Failure modes
 
 - 只有机器投影为 DAG，但 AGV 或缓冲预约存在逆序。
 - 拓扑 DAG 不含容量持有顺序，不能推出 deadlock-free。
+- 聚合容量或硬预约缺口不能分解到具体 holder-dependency chain 时，不能推出 deadlock-free。
+- 永久非资源 guard、外部同步缺失或 policy/calendar 边界不由容量偏序排除。
 - 满足偏序条件仍可能存在 livelock、policy-induced stall、calendar-empty terminal block 或 nonblocking 失败。
 
 ### Evidence status
 
-P3 全局获取严格偏序无操作死锁已项目内证明（严格受限子类）+ 计算验证。双向制造岛容量/WIP/AGV 阈值仍是 conjecture family。
+P3 chain-decomposable strict-precedence 子类无 capacity-mediated 操作
+死锁已项目内证明；P3c 闭合 `BIX0` 的 WIP/机器/AGV 启动饱和阈值；
+P6 给出 `IMS-SU^A` NP-complete、显式 LTS 多项式 fixed point 和紧凑
+输入至少 NP-hard 的边界。一般操作死锁、永久非资源 guard、多容量/
+聚合预约、一般紧凑 IMS 的精确复杂性分类和含 transfer/drain 的一般
+制造岛容量/WIP/AGV 阈值仍是 conjecture family 或边界。
 
 ### Case mapping
 
@@ -161,11 +185,12 @@ P3 全局获取严格偏序无操作死锁已项目内证明（严格受限子�
 
 ### Enumeration assertion
 
-穷举小参数网格，检查偏序条件满足时无封闭核；对双向岛族记录第一个可达死锁参数点和最小证书。
+穷举小参数网格，先检查偏序条件与封闭核 chain-decomposable 条件；在二者同时满足时断言无覆盖封闭核。对双向岛族记录第一个可达死锁参数点、最小证书以及是否属于 P3 外聚合边界。
 
 ## T5 概率桥接定理
 
-状态：项目内已证明（严格受限有限 CTMC）；文献来源仍待全文补强。
+状态：项目内已证明（严格受限有限 CTMC）；条件跳过程/Doob-style
+全文锚点已固定，竞争吸收 IMS 适配仍以本项目证明为准。
 
 ### Statement
 
@@ -176,14 +201,14 @@ P3 全局获取严格偏序无操作死锁已项目内证明（严格受限子�
 - CTMC 有限且非爆炸。
 - 所有非指数时间已 PH 展开；否则不使用 CTMC 方程。
 - `D` 与 `F` 为吸收类；A12/A_abs 成立，或已做 closed-class 分解并把方程限制到 `S_T`。
-- 对 Doob-`h`，只在 `h_i > 0` 的状态上定义。
+- 对 Doob-`h`，只在 `H={i:h_i>0}` 加成功吸收边界 `D` 上定义；跳入 `F` 的条件化率为 0。
 
 ### Proof obligations
 
 - 从 LTS 和速率构造生成元 `Q`。
 - 证明吸收概率方程与边界条件一致。
 - 证明敏感性方程来自线性系统微分。
-- 证明 Doob-`h` 条件化生成元行和为零且条件路径解释成立。
+- 证明 Doob-`h` 在 `H union D` 上的条件化生成元行和为零、`D` 吸收、`F` 条件化率为 0，且条件路径解释成立。
 
 ### Failure modes
 
@@ -193,7 +218,7 @@ P3 全局获取严格偏序无操作死锁已项目内证明（严格受限子�
 
 ### Evidence status
 
-P4 标准有限 CTMC 方程项目内已证明；吸收 CTMC 条件化主来源已补入 `Corstanje and van der Meulen 2025` 的公开全文基线。Metzner et al. 2009 仍只作为 ergodic Markov jump TPT/discrete committor 背景，不能直接支撑 absorbing IMS theorem；Narahari 仅按当前可核验摘要边界用于制造系统吸收 Markov 迁移线索。
+P4 标准有限 CTMC 方程项目内已证明；吸收 CTMC 条件化主来源仍需继续做全文出处加固。Metzner et al. 2009 仍只作为 ergodic Markov jump TPT/discrete committor 背景，不能直接支撑 absorbing IMS theorem；Narahari 仅按当前可核验摘要边界用于制造系统吸收 Markov 迁移线索。
 
 ### Case mapping
 
@@ -233,7 +258,7 @@ P4 标准有限 CTMC 方程项目内已证明；吸收 CTMC 条件化主来源�
 
 ### Evidence status
 
-P5 有限全观测 state-based supervisor 基准已项目内证明，并以 `Ramadge and Wonham 1987` 的 Theorem 7.1 / Proposition 7.1 作为语言学精确基线。结构干预 hitting set、风险预算递归可行性和 Pareto 边界仍拟证明 + 计算验证。
+P5 有限全观测 state-based supervisor 基准已项目内证明；若 `x0 notin Y*`，必须报告 initial-state infeasible。Ramadge-Wonham 语言学精确基线仍作为文献基线。结构干预 hitting set、风险预算递归可行性和 Pareto 边界仍拟证明 + 计算验证。
 
 ### Case mapping
 

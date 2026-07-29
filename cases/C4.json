@@ -1,0 +1,66 @@
+{
+  "schema_version": "ims-deadlock/case/v1",
+  "case_id": "C4",
+  "title": "AGV required for deadlock",
+  "status": "DISCOVERY",
+  "model": {
+    "id": "C4-agv-required",
+    "resources": [
+      {"id": "m1", "capacity": 1, "kind": "machine"},
+      {"id": "buf", "capacity": 1, "kind": "buffer"},
+      {"id": "agv", "capacity": 1, "kind": "agv"}
+    ],
+    "jobs": ["pA", "pB"]
+  },
+  "initial_state": {
+    "id": "c4-agv-block",
+    "holds": [
+      {"job_id": "pA", "resource_id": "m1", "units": 1},
+      {"job_id": "pB", "resource_id": "agv", "units": 1}
+    ],
+    "requests": {
+      "pA": [[{"resource_id": "agv", "units": 1}, {"resource_id": "buf", "units": 1}]],
+      "pB": [[{"resource_id": "m1", "units": 1}]]
+    },
+    "completed_jobs": [],
+    "stable": true,
+    "complete": false,
+    "event_calendar_empty": true,
+    "stage_by_job": {"pA": "blocked_complete", "pB": "blocked_unload"},
+    "mode_by_job": {"pA": "blocked_complete", "pB": "blocked_unload"}
+  },
+  "transitions": [
+    {
+      "name": "pA-unload-needs-agv-and-buffer",
+      "kind": "unload",
+      "job_id": "pA",
+      "source_mode": "blocked_complete",
+      "target_mode": "completed",
+      "controllable": false,
+      "zero_time": false,
+      "requires": [[
+        {"resource_id": "agv", "units": 1},
+        {"resource_id": "buf", "units": 1}
+      ]],
+      "release": [{"resource_id": "m1", "units": 1}],
+      "next_requests": [],
+      "mark_complete": true
+    },
+    {
+      "name": "pB-unload-needs-machine",
+      "kind": "unload",
+      "job_id": "pB",
+      "source_mode": "blocked_unload",
+      "target_mode": "completed",
+      "controllable": false,
+      "zero_time": false,
+      "requires": [[{"resource_id": "m1", "units": 1}]],
+      "release": [{"resource_id": "agv", "units": 1}],
+      "next_requests": [],
+      "mark_complete": true
+    }
+  ],
+  "notes": [
+    "Transport layer is necessary to expose the blocking kernel."
+  ]
+}

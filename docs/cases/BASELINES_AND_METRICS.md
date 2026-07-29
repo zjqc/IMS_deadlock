@@ -21,13 +21,16 @@
 | mean absorption time | expected time to completion or deadlock; optionally conditional on deadlock | CTMC linear solve |
 | conditioned path mass | probability flux through certificate-bearing states conditioned on deadlock | committor/Doob-h computation |
 | DES confidence interval | independent simulation estimate with fixed random streams | simulation manifest |
-| supervisor cost | throughput, makespan, WIP, or due-date-risk loss relative to uncontrolled feasible baseline | exact supervisor and simulation |
+| supervisor cost | all preregistered and applicable components: throughput loss, makespan loss, WIP change, and due-date-risk change relative to the uncontrolled feasible baseline | exact supervisor and simulation |
 | rare-event efficiency | variance, effective sample size, and wall-clock cost for rare deadlock estimation | rare-event experiment logs |
 
 ## Reporting Rules
 
 - Report negative and failed results.
 - Report cases where a baseline is inapplicable instead of forcing a score.
+- Do not choose one supervisor-cost component after seeing results. After
+  freeze, report every preregistered and applicable component: throughput,
+  makespan, WIP, and due-date risk. Any inapplicable component must have a
+  freeze-time reason.
 - Separate exact finite-state results from DES sampling estimates.
 - Do not compare against old private project numbers.
-

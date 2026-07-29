@@ -1,6 +1,8 @@
 # 控制层：监督、干预与风险预算
 
-本文件定义控制理论目标。所有 IMS 专用控制结论均为拟证明。
+本文件定义控制理论目标。P5 已关闭严格有限、全观测、显式 LTS 上的
+最大许可 nonblocking supervisor 基准；结构干预、风险预算与性能 Pareto
+结论仍为拟证明。
 
 ## 1. 可控与不可控事件
 
@@ -23,22 +25,39 @@
 
 加工完成不可控，且不等同资源释放。
 
-## 2. 最大不变安全集
+## 2. 最大不变安全集与 game predecessor
 
-状态：拟证明。
+状态：P5 项目内已证明（严格有限、全观测、显式 LTS）；风险约束扩展拟证明。
 
-令 `Bad` 包含死锁状态、不可接受准死锁或违反风险预算的状态。候选最大安全集固定点：
+令 `Bad` 包含死锁状态、不可接受准死锁或违反风险预算的状态。对状态 `s`，记：
 
-1. 初始 `X_0 = S_st \ Bad`。
-2. 迭代删除任一状态 `s`，若存在不可控后继 `t notin X_k`。
-3. 迭代删除任一状态 `s`，若没有任何可控选择能使所有后继留在 `X_k` 并保持进展条件。
-4. 固定点 `X_*` 为候选最大不变安全域。
+- `Post_u(s)`：所有 enabled uncontrollable events 及其闭包后的稳定后继；
+- `Post_c(s,a)`：选择可控事件或可控动作 `a` 后的稳定后继集合；
+- `A_c(s)`：supervisor 可启用的可控动作集合；
+- `Marked`：完成状态集合，通常等于 `F`，或论文中显式定义的完成标识集合。
 
-证明义务：证明所有不可控后继闭合，并证明删除规则不多删最大许可行为。
+安全 game predecessor 候选为：
+
+`Pre(Y) = {s notin Bad : Post_u(s) subset Y and (s in Marked or Post_u(s) nonempty or exists a in A_c(s), Post_c(s,a) subset Y)}`。
+
+固定点：
+
+1. `Y_0 = S_st \ Bad`。
+2. `Y_{k+1} = Y_k cap Pre(Y_k)`。
+3. `Y_*` 为候选最大不变安全域。
+
+关键边界：
+
+- 若存在 enabled uncontrollable successors 且全部留在 `Y`，状态不能仅因没有 controllable choice 被删除。
+- 若没有任何不可控后继，则 supervisor 至少需有一个可控动作保持在 `Y`，除非 `s in Marked`。
+- nonblocking 版本还必须在 `Y_*` 内检查 coaccessibility：每个保留状态存在一条 admissible path 到 `Marked`。
+- “进展”不能作为未定义逃生条款；若需要 fairness 或 livelock 排除，必须另列假设。
+
+证明义务：证明所有不可控后继闭合、marked/coaccessible 条件成立，并证明删除规则不多删最大许可行为。
 
 ## 3. 最大许可 Nonblocking Supervisor
 
-状态：文献基线 + 拟证明。
+状态：Ramadge-Wonham 文献基线 + P5 项目内已证明（严格受限显式 LTS）。
 
 在有限 LTS 中，标准 nonblocking supervisor 应保留所有仍可到 marked completion 的安全行为，并禁用必要的可控事件。IMS 迁移时必须：
 
@@ -100,6 +119,6 @@
 - 被禁用事件列表；
 - 每个禁用事件对应的死锁核或 nonblocking 失败证据；
 - 不可控闭合检查；
-- remaining enabled progress 检查；
+- marked/coaccessibility 检查；
 - 干预前后 core 集合变化；
 - 若产生新 core，写入 `COUNTEREXAMPLE_LEDGER.md`。

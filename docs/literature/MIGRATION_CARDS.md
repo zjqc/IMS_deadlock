@@ -39,22 +39,22 @@ Other cards are explicitly marked as context or pending.
 
 ## M4. Lawley-Reveliotis Safety Boundary
 
-- Evidence type: `FULLTEXT-CONTEXT`; theorem use blocked until exact locators are extracted.
-- 原定理: pending extraction from Lawley and Reveliotis (2001). Current notes only identify broad Sections 3-5.
-- 原假设: sequential resource allocation systems with formal safety states.
+- Evidence type: `FULLTEXT-THEOREM`, adapted boundary.
+- 原定理: Lawley and Reveliotis (2001), PDF p10 Theorem 1, prove SU-SAFE NP-complete; PDF p15 Proposition 2 states that an SU-RAS class with intractable SU-SAFE contains deadlock-free unsafe states. PDF pp18-24 give the capacitated-knot definition and RC1/SR1/SR2/CB1 easy-class conditions.
+- 原假设: SU-RAS with sequential single-resource acquisition, release of the previously held resource upon the next allocation, and the paper's reachability/safety semantics.
 - IMS映射: define IMS safety as existence of a completion continuation from the zero-time-closed state under admissible controls.
 - 缺失假设: output-buffer space, AGV occupancy, and reservations must be reduced to RAS claims/releases before applying SU-RAS reasoning.
-- 适配命题/反例: treat as safety-boundary context only; no IMS theorem may cite it until `SOURCE_VERIFICATION.md` upgrades L08.
+- 适配命题/反例: use the source to prevent conflating deadlock detection with safety/nonblocking and to motivate a separate complexity proof. Do not transfer NP-completeness to IMS without a polynomial reduction into the declared IMS subclass.
 - 对应案例: `C1`, `C2`, frozen exhaustive family.
 
 ## M5. Nazeem-Reveliotis LES Benchmark
 
-- Evidence type: `FULLTEXT-CONTEXT`; theorem use blocked until exact locators are extracted.
-- 原定理: pending extraction from Nazeem and Reveliotis (2011). Current notes identify only the abstract and broad Sections II-III.
-- 原假设: finite RAS and liveness-enforcing supervisor framework.
+- Evidence type: `FULLTEXT-THEOREM`, benchmark.
+- 原定理: Nazeem and Reveliotis (2011), PDF p5 Proposition 1, give componentwise monotonicity of safe and unsafe D/C-RAS states; Definition 1 defines maximal safe and minimal unsafe states. Section III implements the maximally permissive LES through boundary reachable unsafe states.
+- 原假设: finite D/C-RAS state space, the paper's componentwise state order, and an exact safe/unsafe partition.
 - IMS映射: after finite IMS transition-system construction, compute small-model exact supervisors for comparison.
 - 缺失假设: IMS closure and AGV/reservation semantics must be encoded before RAS LES machinery applies.
-- 适配命题/反例: exact LES remains a conceptual validation baseline; no theorem claim may cite L09 until upgraded.
+- 适配命题/反例: exact LES is a validation baseline after IMS closure and transport/reservation semantics are encoded. Proposition 1 cannot be assumed for the IMS state representation until its componentwise order is proved compatible.
 - 对应案例: `C0`-`C5`, frozen confirmation set.
 
 ## M6. Fei BDD/EFA Correctness Benchmark
@@ -109,12 +109,12 @@ Other cards are explicitly marked as context or pending.
 
 ## M11. Rare-event Splitting
 
-- Evidence type: `FULLTEXT-CONTEXT`; heuristic/backlog.
-- 原定理: no migrated theorem recorded from Cerou and Guyader (2007).
-- 原假设: rare-event simulation setting.
+- Evidence type: `FULLTEXT-THEOREM`, adapted with strict assumptions.
+- 原定理: Cerou and Guyader (2007), journal p422 (PDF p7) Theorem 1, prove almost-sure consistency under Hypothesis H; journal p425 (PDF p10) Theorem 2 gives asymptotic normality and its variance.
+- 原假设: the paper's one-dimensional strongly Markov process, attractive target, continuous trajectories, continuous hitting-score distribution, fixed survival proportion, and Hypothesis H.
 - IMS映射: future estimator for low-probability deadlock events.
-- 缺失假设: IMS-specific estimator, unbiasedness/variance assumptions, and source theorem locator.
-- 适配命题/反例: keep out of first theorem ladder until probability layer is proven.
+- 缺失假设: an IMS reaction coordinate/score that meets the theorem's hypotheses, treatment of a discrete finite-state CTMC, and a preregistered estimator/variance protocol.
+- 适配命题/反例: the theorems justify AMS as a future baseline only after an IMS-specific assumption bridge; they do not yet establish unbiasedness, finite-sample coverage, or efficiency for IMS deadlock.
 - 对应案例: later rare-event experiments.
 
 ## M12. Conditioned CT Jump Process
@@ -126,3 +126,13 @@ Other cards are explicitly marked as context or pending.
 - 缺失假设: absorbing IMS boundary adaptation and non-explosive finite-state reduction must be proved separately.
 - 适配命题/反例: the generator formula supports the probability layer; it does not by itself prove an IMS deadlock theorem.
 - 对应案例: `C5` probability layer and future rare-event experiments.
+
+## M13. Chen-Li-Khalgui-Mosbahi Petri-Net Supervisor
+
+- Evidence type: `FULLTEXT-THEOREM`, benchmark with a published-correction caveat.
+- 原定理: Chen et al. (2011), author technical report p19 Theorem 6, state that under Assumptions 1-2 the proposed deadlock-prevention method leads to a maximally permissive liveness-enforcing supervisor if such a supervisor exists.
+- 原假设: bounded FMS Petri-net reachability model; the stated idle/resource-place minimal P-semiflows; monitor/P-invariant representation; existence of a maximally permissive supervisor expressible in the method's class.
+- IMS映射: compare the exact finite IMS supervisor with a Petri-net monitor construction only after the P1 reachability-net representation and the required structural P-semiflows have been established.
+- 缺失假设: the generic P1 reachability net is not automatically an FMS-oriented net with the paper's P-semiflows; BAS, AGV, reservations, and zero-time closure do not automatically preserve that structure.
+- 适配命题/反例: use Theorem 6 as a restricted implementation benchmark, never as proof that every IMS maximum-permissive supervisor has a compact monitor representation. Consult the 2012 Section V-B correction before reproducing the affected construction text.
+- 对应案例: future Petri-encodable restricted confirmation models; not the unrestricted `C4`/`C5` forms.

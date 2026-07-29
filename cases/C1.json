@@ -1,0 +1,69 @@
+{
+  "schema_version": "ims-deadlock/case/v1",
+  "case_id": "C1",
+  "title": "Cycle but insufficient WIP",
+  "status": "DISCOVERY",
+  "model": {
+    "id": "C1-cycle-but-insufficient-wip",
+    "resources": [
+      {"id": "r1", "capacity": 1, "kind": "machine"},
+      {"id": "r2", "capacity": 2, "kind": "machine"}
+    ],
+    "jobs": ["j1", "j2"]
+  },
+  "initial_state": {
+    "id": "c1-cycle-not-deadlocked",
+    "holds": [
+      {"job_id": "j1", "resource_id": "r1", "units": 1},
+      {"job_id": "j2", "resource_id": "r2", "units": 1}
+    ],
+    "requests": {
+      "j1": [[{"resource_id": "r2", "units": 1}]],
+      "j2": [[{"resource_id": "r1", "units": 1}]]
+    },
+    "completed_jobs": [],
+    "stable": true,
+    "complete": false,
+    "event_calendar_empty": false,
+    "stage_by_job": {"j1": "blocked_complete", "j2": "blocked_complete"},
+    "mode_by_job": {"j1": "blocked_complete", "j2": "blocked_complete"}
+  },
+  "transitions": [
+    {
+      "name": "finish-j1-via-free-r2",
+      "kind": "service_complete",
+      "job_id": "j1",
+      "source_mode": "blocked_complete",
+      "target_mode": "completed",
+      "controllable": false,
+      "zero_time": false,
+      "requires": [[{"resource_id": "r2", "units": 1}]],
+      "release": [{"resource_id": "r1", "units": 1}],
+      "next_requests": [],
+      "mark_complete": true
+    },
+    {
+      "name": "finish-j2-after-r1-free",
+      "kind": "service_complete",
+      "job_id": "j2",
+      "source_mode": "blocked_complete",
+      "target_mode": "completed",
+      "controllable": false,
+      "zero_time": false,
+      "requires": [[{"resource_id": "r1", "units": 1}]],
+      "release": [{"resource_id": "r2", "units": 1}],
+      "next_requests": [],
+      "mark_complete": true
+    }
+  ],
+  "ctmc": {
+    "transient_states": ["s0"],
+    "completion_rates": [["s0", "done", 1.0]],
+    "deadlock_rates": [],
+    "transient_rates": []
+  },
+  "ctmc_provenance": "fixture_unverified",
+  "notes": [
+    "Cycle screen false-positive witness."
+  ]
+}

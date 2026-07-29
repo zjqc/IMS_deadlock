@@ -22,17 +22,19 @@ The independent C5 family is defined by mechanism, not by old file identity:
 
 | Pair | Route family | Expected role |
 | --- | --- | --- |
-| `C5b-bidirectional` | contains both `D -> M` and `M -> D` transitions | exposes closed blocking kernel under finite buffers and transport occupancy. |
-| `C5b-dag-repair` | removes one direction to enforce a common partial order | tests the acyclic-order sufficient condition and the old "delete backflow route" baseline. |
+| `C5` | contains both `D -> M` and `M -> D` transitions | exposes closed blocking kernel under finite buffers and transport occupancy. |
+| `C5_DAG` | removes the `D -> M` reverse route to enforce a common partial order | tests the acyclic-order sufficient condition and the old "delete backflow route" baseline. |
 
 ## Required Evidence for Acceptance
 
 - model JSON with capacities, WIP, route family, transport resources, and
   timing labels;
-- exact finite-state enumeration output;
-- shortest reachable deadlock prefix;
+- exact bounded finite-state enumeration output;
+- shortest reachable deadlock prefix, which is zero length for the currently
+  encoded initial blocked witness;
 - minimality check for the blocking kernel;
-- CTMC deadlock probability and mean absorption time for the finite generator;
+- CTMC deadlock probability and mean absorption time for the finite generator,
+  only after rates are independently encoded;
 - independent DES simulation confidence interval;
 - comparison against simple-cycle, knot, Banker, siphon where applicable,
   exact supervisor, and delete-backflow baselines.
@@ -44,3 +46,6 @@ real AGV dispatch and therefore cannot prove the AGV blocked-unload mechanism.
 It remains in the ledger only as a boundary witness for machine-side
 blocked-complete behavior.
 
+The current executable `C5_DAG` is a structural repair witness, not a
+confirmation case. It removes the reverse route, starts with the carrier free,
+and exposes a finite completion path without fabricating CTMC rates.

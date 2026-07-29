@@ -18,6 +18,7 @@
 | `C3-multi-instance-counterexample` | `DISCOVERY` | Separates simple cycles and weakly connected no-sink shortcuts from multi-capacity knot certificates. | multi-capacity state-dependent knot or explicit non-deadlock witness. |
 | `C4-agv-required` | `DISCOVERY` | Machine projection is live/nondeadlocked, but adding AGV/reservation resources creates deadlock. | kernel contains AGV edge; projection-only certificate fails. |
 | `C5-md-bidirectional-rebuild` | `DISCOVERY` | Independently reconstructs the M-D bidirectional manufacturing-island mechanism and pairs it with a backflow-deleted DAG variant. | blocked-complete/blocked-unload plus reservation-aware kernel. |
+| `C5-md-dag-repair` | `DISCOVERY` | Removes the `D -> M` reverse route from the C5 pair and leaves an enabled forward release/progress path. | no closed blocking kernel; marked completion reachable in bounded LTS. |
 
 ## Provisional Witnesses
 
@@ -26,9 +27,13 @@
 only as a machine-waiting boundary counterexample. It is not the final medium
 case and must not be described as an original `C5` from the old project.
 
-The next C5 design target is `C5b-md-agv-hard-reservation`, with a genuine
-AGV `blocked_unload` state and a paired hard-reservation versus weak-reservation
-comparison.
+The executable C5 pair now consists of `C5` and `C5_DAG`. `C5` is still a
+discovery witness for bidirectional blocking, and `C5_DAG` is the paired
+backflow-deleted repair. Neither case is a frozen confirmation fixture.
+
+Deadlocked `C0` and `C5` may have only one reachable stable initial state in the
+current structural batch. In those cases the shortest deadlock reachability
+prefix is the zero-length initial-state witness.
 
 ## Frozen Confirmation Cases
 
@@ -41,4 +46,3 @@ No confirmation case is frozen yet. Freezing requires:
 5. repository commit hash;
 6. manifest hash of every case JSON file;
 7. a signed entry in `FREEZE_PROTOCOL.md`.
-

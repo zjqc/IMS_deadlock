@@ -1,0 +1,58 @@
+{
+  "schema_version": "ims-deadlock/case/v1",
+  "case_id": "C2",
+  "title": "Global resource-order DAG",
+  "status": "DISCOVERY",
+  "model": {
+    "id": "C2-global-order-dag",
+    "resources": [
+      {"id": "m1", "capacity": 1, "kind": "machine"},
+      {"id": "m2", "capacity": 1, "kind": "machine"}
+    ],
+    "jobs": ["j1", "j2"]
+  },
+  "initial_state": {
+    "id": "c2-order-dag",
+    "holds": [
+      {"job_id": "j1", "resource_id": "m1", "units": 1}
+    ],
+    "requests": {
+      "j1": [[{"resource_id": "m2", "units": 1}]]
+    },
+    "completed_jobs": [],
+    "stable": true,
+    "complete": false,
+    "event_calendar_empty": false,
+    "stage_by_job": {"j1": "blocked_complete", "j2": "waiting_input"},
+    "mode_by_job": {"j1": "blocked_complete", "j2": "waiting_input"}
+  },
+  "transitions": [
+    {
+      "name": "finish-j1-following-order",
+      "kind": "service_complete",
+      "job_id": "j1",
+      "source_mode": "blocked_complete",
+      "target_mode": "completed",
+      "controllable": false,
+      "zero_time": false,
+      "requires": [[{"resource_id": "m2", "units": 1}]],
+      "release": [{"resource_id": "m1", "units": 1}],
+      "next_requests": [],
+      "mark_complete": true
+    },
+    {
+      "name": "finish-j2-empty-route",
+      "kind": "service_complete",
+      "job_id": "j2",
+      "source_mode": "waiting_input",
+      "target_mode": "completed",
+      "controllable": false,
+      "zero_time": false,
+      "next_requests": [],
+      "mark_complete": true
+    }
+  ],
+  "notes": [
+    "Acyclic order witness."
+  ]
+}

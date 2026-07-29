@@ -33,18 +33,21 @@ post-hoc theory edits.
 
 - Claim to reject: if the machine-only projection is deadlock-free, the IMS is
   deadlock-free.
-- Evidence: AGV blocking examples and the planned `C4` construction show
-  transport resources can close the blocking kernel.
+- Candidate attack / pending concrete model: `C4` is intended to test whether
+  transport resources can close the blocking kernel even when the machine-only
+  projection is deadlock-free. The concrete IMS model, reachable prefix, and
+  certificate are still pending.
 - Consequence: IMS formal state must include transport occupancy and
   reservations from the start.
 
-## F05. G1 Saturation Not Yet Achieved
+## F05. Taxonomy Saturation Is Bounded, Full-text Gate Still Open
 
-- Claim to reject: the current literature search has completed two saturated
-  citation rounds.
-- Evidence: several DOI-verified entries remain metadata-only, and committor,
-  rare-event, and AGV theorem sources are not yet full-text located.
-- Consequence: G1 can support seed theory construction, not final paper claims.
+- Claim to reject: bounded OpenAlex taxonomy saturation means the systematic
+  literature review and full-text theorem verification are complete.
+- Evidence: `CITATION_TRACE_LOG.md` records scope-bounded taxonomy saturation in
+  R2/R3, while several DOI-verified entries remain metadata/context only.
+- Consequence: G1 can support G2 formalization, but final theorem claims still
+  require exact full-text locators.
 
 ## F06. Viswanadham 1990 Conference and Journal Records Were Mixed
 

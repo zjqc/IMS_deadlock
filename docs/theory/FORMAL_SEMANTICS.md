@@ -33,9 +33,17 @@
 - `blocked_s(j)`：工件是否处于 blocked-after-service 或 blocked-unload 等阻塞形态。
 - `choice_s(j)`：可选后继集合或已绑定的下一资源/运输/预约选择。
 
-容量守恒为：
+容量守恒分两种 ontology，模型必须二选一并在 `IMSModel` 中显式标注。
 
-`sum_j hold_s(j,r) <= cap(r)` 且 `sum_j res_s(j,r) <= cap_V(r)`。
+第一种是 future-claim ontology：硬预约是对同一物理容量的未来 claim。此时每个资源 `r` 必须满足：
+
+`sum_j hold_s(j,r) + sum_j hard_res_s(j,r) <= cap(r)`。
+
+第二种是 token-resource ontology：预约 token 被建成独立资源 `v in V`，通过映射 `target(v)=r` 关联到物理资源。此时必须分别满足：
+
+`sum_j hold_s(j,r) <= cap(r)` 且 `sum_j res_s(j,v) <= cap(v)`，
+
+并额外证明 token 兑现不会使 `occ_s(r)` 超过 `cap(r)`。
 
 物理资源与预约 token 不能合并记账。软预约允许策略层过度承诺时，必须单独标识 `overbook_s(r)`，不得把软预约视为物理可用容量。
 
@@ -80,13 +88,13 @@ AGV 相关资源分三层：
 
 `Cl(s) = {t in S_st : s leadsto_Z* t and no z in Z is enabled at t}`。
 
-只有满足以下额外条件时，才能写成确定函数 `kappa(s)`：
+只有满足以下额外条件时，才能作为具名语义变体写成确定函数 `kappa(s)`：
 
 - 闭包终止；
 - 闭包合流；或
 - 规定固定优先级、固定 tie-break、固定排序，且该规则本身进入模型语义。
 
-状态：拟证明。所有主定理必须在闭包归一化稳定状态 `S_st` 上陈述。若闭包不合流，则状态转换系统从一个触发后状态通向多个稳定后继，控制和概率层必须保留分支。
+状态：定义。所有主定理必须在闭包归一化稳定状态 `S_st` 上陈述。若闭包不合流，则状态转换系统从一个触发后状态通向多个稳定后继，控制和概率层必须保留分支。
 
 ## 6. 有限状态转换系统
 
@@ -96,8 +104,9 @@ AGV 相关资源分三层：
 
 - 状态空间 `S` 由有限 `J`、有限路线、有限容量和有限预约 token 导出。
 - 稳定状态 `S_st` 由闭包定义。
-- 对 `s,t in S_st`，若存在非零时间事件 `e` 和中间状态 `u`，使 `fire(s,e)=u` 且 `t in Cl(u)`，则定义 `s ->e t`。
-- 若 `Cl(u)` 为多值，则 `s ->e t` 对每个稳定后继 `t` 都存在。
+- 对 `s,s' in S_st`，若存在非零时间事件 `e` 和中间状态 `u`，使 `fire(s,e)=u` 且 `s' in Cl(u)`，则定义 `s ->e s'`。
+- 若 `Cl(u)` 为多值，则 `s ->e s'` 对每个稳定后继 `s'` 都存在。
+- 闭包归一化 LTS 记为 `mathcal T=(S_st,s0,A,->,F,D)`。
 
 证明义务：
 

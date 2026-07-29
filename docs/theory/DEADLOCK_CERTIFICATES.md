@@ -1,5 +1,9 @@
 # Deadlock Certificates
 
+Canonical detailed definitions: `DEFINITIONS.md` and `THEOREM_LADDER.md`. This
+file is the compact certificate object contract and uses the same set-valued
+closure and multi-capacity semantics as `FORMAL_SEMANTICS.md`.
+
 ## State-dependent Wait Graph
 
 For a stable state `s`, build a directed evidence graph:
@@ -16,16 +20,44 @@ and the semantic rule that created it.
 
 ## Closed Blocking Kernel
 
-A set of jobs and resources `K` is a closed blocking kernel in state `s` when:
+A set of jobs and resources `K` is a closed blocking kernel in stable state `s`
+when the following independently checkable conditions hold:
 
-1. every job in `K` is blocked by at least one resource in `K`;
-2. every requested capacity unit in `K` is fully held or hard-reserved by jobs in
-   `K`;
-3. no zero-time release from outside `K` can satisfy a request in `K`;
-4. all outgoing progress dependencies from jobs in `K` remain inside `K`.
+1. every job in `K` is unfinished and blocked from all admissible local progress
+   successors;
+2. for every job in `K` and every legal alternative successor, at least one
+   required capacity unit or reservation redemption is unavailable;
+3. each unavailable unit is explained by residual capacity after subtracting
+   actual holders and hard reservations under the model's declared reservation
+   ontology;
+4. the holders or reservers that explain the shortage are in `K` and cannot
+   release the relevant unit without first taking an admissible progress
+   successor already blocked by this same kernel;
+5. no zero-time release, unload, cancellation, or closure event from outside `K`
+   can satisfy any blocked request in `K`;
+6. all outgoing progress dependencies from jobs in `K` are blocked by resources
+   or token claims in `K`.
 
-Minimality is inclusion-minimality among kernels satisfying these four
+Minimality is inclusion-minimality among kernels satisfying these six
 conditions.
+
+For a global operational deadlock certificate, the kernel must additionally
+cover all unfinished non-terminal activities, or equivalently prove global no
+admissible successor after closure. It must also include explicit evidence for
+at least one unfinished waiting or blocked activity. A kernel that covers only a
+proper subset of unfinished activities certifies local deadlock or
+quasi-deadlock, not global operational deadlock.
+
+Two terminal cases are not automatically deadlock certificates:
+
+- `calendar-empty terminal block`: stable and incomplete with no scheduled
+  timed event, but without holder/request/release evidence for a waiting or
+  blocked unfinished activity;
+- `policy-induced stall`: no successor exists only because the supervisor or
+  experiment policy disabled admissible controllable events.
+
+Both must be recorded separately in verification output and cannot be promoted
+to operational deadlock by the phrase "no successor" alone.
 
 ## Knot Relation
 
@@ -51,12 +83,22 @@ A `DeadlockCertificate` must include:
 
 ## Theorem Obligation
 
-The deadlock-certificate theorem is:
+The candidate deadlock-certificate theorem is:
 
 > After zero-time closure, an IMS operational deadlock exists exactly when the
-> state-dependent wait graph contains a closed blocking kernel satisfying the
-> capacity and closure clauses.
+> stable incomplete state contains a closed blocking kernel satisfying the
+> independent capacity, holder/request, alternative-successor, and release
+> clauses, and that kernel covers all unfinished non-terminal activities or
+> otherwise proves global no admissible successor, with explicit evidence for
+> at least one unfinished waiting or blocked activity. Calendar-empty terminal
+> blocks and policy-induced stalls are excluded unless they satisfy the same
+> holder/request/release evidence clauses.
 
 The proof must show both directions and list model subclasses where the theorem
 is intentionally weakened.
 
+Forward obligation: from stable incomplete no-admissible-successor semantics,
+construct the kernel and prove every shortage has holder/request/release
+evidence. Reverse obligation: from a covering kernel, prove no admissible
+successor exists without using the word "deadlock" inside the kernel definition
+itself.

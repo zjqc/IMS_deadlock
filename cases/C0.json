@@ -1,0 +1,41 @@
+{
+  "schema_version": "ims-deadlock/case/v1",
+  "case_id": "C0",
+  "title": "Two-resource minimal deadlock",
+  "status": "DISCOVERY",
+  "model": {
+    "id": "C0-two-resource-minimal",
+    "resources": [
+      {"id": "r1", "capacity": 1, "kind": "machine"},
+      {"id": "r2", "capacity": 1, "kind": "machine"}
+    ],
+    "jobs": ["j1", "j2"]
+  },
+  "initial_state": {
+    "id": "c0-deadlocked",
+    "holds": [
+      {"job_id": "j1", "resource_id": "r1", "units": 1},
+      {"job_id": "j2", "resource_id": "r2", "units": 1}
+    ],
+    "requests": {
+      "j1": [[{"resource_id": "r2", "units": 1}]],
+      "j2": [[{"resource_id": "r1", "units": 1}]]
+    },
+    "completed_jobs": [],
+    "stable": true,
+    "complete": false,
+    "event_calendar_empty": true,
+    "stage_by_job": {"j1": "blocked_complete", "j2": "blocked_complete"},
+    "mode_by_job": {"j1": "blocked_complete", "j2": "blocked_complete"}
+  },
+  "ctmc": {
+    "transient_states": ["s0"],
+    "deadlock_rates": [["s0", "dead", 1.0]],
+    "completion_rates": [],
+    "transient_rates": []
+  },
+  "ctmc_provenance": "fixture_unverified",
+  "notes": [
+    "C0 discovery witness for the minimal two-resource blocking kernel."
+  ]
+}

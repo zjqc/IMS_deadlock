@@ -25,7 +25,14 @@ human subjects and no IRB component.
 ## Case Discipline
 
 Discovery cases `C0`-`C5` may change definitions and assumptions, but every
-change must enter `docs/literature/FAILURE_LEDGER.md` or the later case ledger.
+change must use the canonical ledger for its failure type:
+
+- `docs/theory/COUNTEREXAMPLE_LEDGER.md` is canonical for failed definitions,
+  theorem statements, proof obligations, proof attempts, and counterexamples.
+- `docs/cases/CASE_CHANGE_LEDGER.md` is canonical for case-design changes,
+  parameter changes, metric changes, and discovery-to-freeze decisions.
+- `docs/literature/FAILURE_LEDGER.md` is canonical only for source
+  verification, search, citation, DOI, and provenance failures.
 
 Frozen confirmation cases cannot be changed after preregistration. Metrics,
 baselines, and parameter ranges are fixed before evaluation.

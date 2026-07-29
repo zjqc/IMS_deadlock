@@ -1,0 +1,33 @@
+{
+  "schema_version": "ims-deadlock/case/v1",
+  "case_id": "C3",
+  "title": "Multi-instance counterexample",
+  "status": "DISCOVERY",
+  "model": {
+    "id": "C3-multi-instance-counterexample",
+    "resources": [
+      {"id": "r1", "capacity": 2, "kind": "buffer"},
+      {"id": "r2", "capacity": 2, "kind": "buffer"}
+    ],
+    "jobs": ["j1", "j2"]
+  },
+  "initial_state": {
+    "id": "c3-counterexample",
+    "holds": [
+      {"job_id": "j1", "resource_id": "r1", "units": 1}
+    ],
+    "requests": {
+      "j1": [[{"resource_id": "r2", "units": 1}]],
+      "j2": [[{"resource_id": "r1", "units": 1}]]
+    },
+    "completed_jobs": [],
+    "stable": true,
+    "complete": false,
+    "event_calendar_empty": true,
+    "stage_by_job": {"j1": "blocked_complete", "j2": "blocked_complete"},
+    "mode_by_job": {"j1": "blocked_complete", "j2": "blocked_complete"}
+  },
+  "notes": [
+    "Multi-capacity screening counterexample."
+  ]
+}
