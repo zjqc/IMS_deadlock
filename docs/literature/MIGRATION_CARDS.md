@@ -39,22 +39,22 @@ Other cards are explicitly marked as context or pending.
 
 ## M4. Lawley-Reveliotis Safety Boundary
 
-- Evidence type: `FULLTEXT-THEOREM`, adapted.
-- 原定理: Lawley and Reveliotis (2001), Sections 3-5, establish SU-RAS safety NP-completeness, hard/easy boundary, and polynomial subclass discussion.
+- Evidence type: `FULLTEXT-CONTEXT`; theorem use blocked until exact locators are extracted.
+- 原定理: pending extraction from Lawley and Reveliotis (2001). Current notes only identify broad Sections 3-5.
 - 原假设: sequential resource allocation systems with formal safety states.
 - IMS映射: define IMS safety as existence of a completion continuation from the zero-time-closed state under admissible controls.
 - 缺失假设: output-buffer space, AGV occupancy, and reservations must be reduced to RAS claims/releases before applying SU-RAS reasoning.
-- 适配命题/反例: restricted IMS subclasses may inherit safety-sequence logic; general IMS should inherit hardness warnings, not a simple polynomial test.
+- 适配命题/反例: treat as safety-boundary context only; no IMS theorem may cite it until `SOURCE_VERIFICATION.md` upgrades L08.
 - 对应案例: `C1`, `C2`, frozen exhaustive family.
 
 ## M5. Nazeem-Reveliotis LES Benchmark
 
-- Evidence type: `FULLTEXT-THEOREM`, benchmark.
-- 原定理: Nazeem and Reveliotis (2011), Abstract and Sections II-III, support an offline/online two-stage approach for deploying maximally permissive LES in complex RAS.
+- Evidence type: `FULLTEXT-CONTEXT`; theorem use blocked until exact locators are extracted.
+- 原定理: pending extraction from Nazeem and Reveliotis (2011). Current notes identify only the abstract and broad Sections II-III.
 - 原假设: finite RAS and liveness-enforcing supervisor framework.
 - IMS映射: after finite IMS transition-system construction, compute small-model exact supervisors for comparison.
 - 缺失假设: IMS closure and AGV/reservation semantics must be encoded before RAS LES machinery applies.
-- 适配命题/反例: exact LES is a validation oracle and baseline, not the IMS paper's structural contribution.
+- 适配命题/反例: exact LES remains a conceptual validation baseline; no theorem claim may cite L09 until upgraded.
 - 对应案例: `C0`-`C5`, frozen confirmation set.
 
 ## M6. Fei BDD/EFA Correctness Benchmark
@@ -83,18 +83,18 @@ Other cards are explicitly marked as context or pending.
 - 原定理: Metzner, Schutte, and Vanden-Eijnden (2009) develop TPT for ergodic Markov jump processes and give discrete committor equations in the appendix.
 - 原假设: ergodic CTMC on discrete state space; A-B reactive paths.
 - IMS映射: use committor equations as a template for deadlock-vs-completion risk after constructing an IMS-CTMC and handling absorbing boundaries.
-- 缺失假设: absorbing IMS deadlock classes are not the same as ergodic A-B reactive-path conditioning.
+- 缺失假设: absorbing IMS deadlock classes are not the same as ergodic A-B reactive-path conditioning; source locator is Appendix subsection "Discrete Committor Equations", pp. 1216-1217.
 - 适配命题/反例: write a separate absorbing-chain boundary-value theorem before using TPT path currents; do not claim TPT itself proves IMS deadlock risk.
 - 对应案例: `C5` probability layer.
 
 ## M9. Ramadge-Wonham DES Benchmark
 
-- Evidence type: `FULLTEXT-CONTEXT` in this library; pending theorem locator.
-- 原定理: pending extraction from Ramadge and Wonham (1987).
+- Evidence type: `FULLTEXT-THEOREM`.
+- 原定理: Ramadge and Wonham (1987), Theorem 7.1 and Proposition 7.1.
 - 原假设: finite DES language, controllable/uncontrollable event partition.
 - IMS映射: dispatch, release, transport choice, and reservation become controllable events; processing completion is uncontrollable.
-- 缺失假设: exact theorem locator and nonblocking specification must be recorded before theorem use.
-- 适配命题/反例: treat as conceptual baseline until upgraded.
+- 缺失假设: IMS must first be encoded as a finite-state transition system with a fixed controllable/uncontrollable partition.
+- 适配命题/反例: use as the exact finite-state baseline for maximum permissiveness and nonblocking comparisons; do not infer structural deadlock certificates from language controllability.
 - 对应案例: all small supervisor benchmarks.
 
 ## M10. Narahari Absorbing Markov Layer
@@ -116,3 +116,13 @@ Other cards are explicitly marked as context or pending.
 - 缺失假设: IMS-specific estimator, unbiasedness/variance assumptions, and source theorem locator.
 - 适配命题/反例: keep out of first theorem ladder until probability layer is proven.
 - 对应案例: later rare-event experiments.
+
+## M12. Conditioned CT Jump Process
+
+- Evidence type: `FULLTEXT-THEOREM`.
+- 原定理: Corstanje and van der Meulen (2025), Section 3.1, Eq. 3.1, Eq. 3.3, Appendix D.
+- 原假设: finite continuous-time jump process with conditioned observations or terminal hitting constraints.
+- IMS映射: after finite IMS-CTMC construction, use the same change-of-measure idea to condition on deadlock vs completion absorbing events.
+- 缺失假设: absorbing IMS boundary adaptation and non-explosive finite-state reduction must be proved separately.
+- 适配命题/反例: the generator formula supports the probability layer; it does not by itself prove an IMS deadlock theorem.
+- 对应案例: `C5` probability layer and future rare-event experiments.

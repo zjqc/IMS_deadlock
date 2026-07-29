@@ -4,11 +4,11 @@
 
 ## T1 语义等价定理
 
-状态：拟证明。
+状态：项目内已证明（严格受限子类）；structured Petri/S3PR 桥仍拟证明。
 
 ### Statement
 
-给定满足有限性、容量守恒、BAS 明确释放点和闭包良定义的 `IMS-RAS`，其操作语义可构造为有限状态转换系统；在附加 Petri 可投影条件下，可构造有界 Petri 网，使闭包归一化稳定状态与可达标识之间存在事件对应和候选双模拟或 trace equivalence。
+给定 `IMS-RAS^CW`，其闭包归一化可达稳定语义可构造为有限 LTS；进一步可用每个可达稳定状态一个 place、每条 LTS 边一个 transition 的 reachability net 得到 1-safe 有界 Petri 网，并与 LTS 可达状态双射、step correspondence 成立。该结论不是 S3PR 结构创新；附加 Petri 可投影条件下的资源结构桥仍为拟证明。
 
 ### Assumptions
 
@@ -34,7 +34,7 @@
 
 ### Evidence status
 
-定义 + 拟证明。枚举只检查小模型事件守恒与状态映射。
+P1 项目内已证明（严格受限子类）。枚举只检查小模型事件守恒与状态映射。Structured Petri/S3PR 映射仍拟证明。
 
 ### Case mapping
 
@@ -46,11 +46,11 @@
 
 ## T2 死锁证书定理
 
-状态：拟证明。
+状态：项目内已证明（严格受限子类）；一般 IMS/软预约仍拟证明。
 
 ### Statement
 
-在闭包归一化稳定状态上，IMS 全局操作死锁当且仅当存在覆盖所有未完成活动的多容量封闭阻塞核。对单实例、一持一求、无替代路线的受限子类，可推出简单有向环判据。
+在 `IMS-RAS^CW` 闭包归一化稳定状态上，排除 policy stall 与 calendar-empty terminal block 后，IMS 全局操作死锁当且仅当存在覆盖所有未完成活动的多容量封闭阻塞核。对单实例、一持一求、无替代路线的受限子类，可推出 terminal SCC/简单有向环局部判据；只有覆盖所有未完成工件时才推出全局死锁。
 
 ### Assumptions
 
@@ -73,7 +73,7 @@
 
 ### Evidence status
 
-文献基线 + 拟证明 + 反例。Palmer knot 是有限队列网络基线；无汇 WCC 快捷只在单节点、两节点每节点不超过 2 服务器、或全有限单服务器条件下使用。
+P2/P2a/P2b 项目内已证明（严格受限子类）+ 反例边界。Palmer knot 是有限队列网络基线；无汇 WCC 快捷只在单节点、两节点每节点不超过 2 服务器、或全有限单服务器条件下使用。
 
 ### Case mapping
 
@@ -124,11 +124,11 @@
 
 ## T4 结构充分条件与阈值族
 
-状态：拟证明。
+状态：项目内已证明（严格受限子类）；双向制造岛阈值族仍拟证明。
 
 ### Statement
 
-若所有必须获取且不可抢占保持的机器、缓冲、AGV 和预约 token 存在全局严格获取偏序，并且每条路线按该偏序请求资源，则不存在 circular-wait 型操作死锁。对双向制造岛交换族，容量、AGV、WIP 和双向路线负载阈值作为待推导命题族。
+若所有必须获取且不可抢占保持的机器、缓冲、AGV 和预约 token 存在全局严格获取偏序，并且每条路线按该偏序请求资源，则在 A8 与 T2 证书定理适用条件下，不存在覆盖所有未完成 non-terminal activities 的封闭阻塞核，因此不存在 IMS operational deadlock。对双向制造岛交换族，容量、AGV、WIP 和双向路线负载阈值作为待推导命题族。
 
 ### Assumptions
 
@@ -136,23 +136,24 @@
 - 工件不得持有高序资源再请求低序资源。
 - BAS 阻塞持有也服从同一偏序。
 - 释放规则不制造隐式逆序请求。
-- 该结论只保证 circular-wait deadlock 排除，不自动保证所有状态 nonblocking。
+- 该结论只排除可由 T2 覆盖证书刻画的 operational deadlock，不自动保证 standard nonblocking、livelock-free 或 almost-sure completion。
 
 ### Proof obligations
 
-- 反证：若存在封闭核，则沿每条等待边导出严格上升资源序列；有限偏序中不可能闭合。
+- 反证：若存在覆盖所有未完成 non-terminal activities 的封闭核，则沿等待证据导出严格上升资源依赖；封闭性要求依赖回到核内，但有限严格偏序中不可能形成这样的闭合依赖。
 - 处理多资源需求：至少一个阻塞需求必须导出违反偏序的等待链。
+- 调用 T2：无 covering closed blocking kernel 推出无 operational deadlock；不得跳过 T2 的覆盖与证书条件。
 - 双向岛族需推导或证伪容量/WIP/AGV 阈值，不得预置公式。
 
 ### Failure modes
 
 - 只有机器投影为 DAG，但 AGV 或缓冲预约存在逆序。
 - 拓扑 DAG 不含容量持有顺序，不能推出 deadlock-free。
-- 满足无 circular-wait 仍可能存在 livelock 或策略性 blocking。
+- 满足偏序条件仍可能存在 livelock、policy-induced stall、calendar-empty terminal block 或 nonblocking 失败。
 
 ### Evidence status
 
-拟证明 + 计算验证。双向制造岛是 conjecture family。
+P3 全局获取严格偏序无操作死锁已项目内证明（严格受限子类）+ 计算验证。双向制造岛容量/WIP/AGV 阈值仍是 conjecture family。
 
 ### Case mapping
 
@@ -164,7 +165,7 @@
 
 ## T5 概率桥接定理
 
-状态：拟证明。
+状态：项目内已证明（严格受限有限 CTMC）；文献来源仍待全文补强。
 
 ### Statement
 
@@ -174,7 +175,7 @@
 
 - CTMC 有限且非爆炸。
 - 所有非指数时间已 PH 展开；否则不使用 CTMC 方程。
-- `D` 与 `F` 为吸收类，暂态集合 `T` 有良定义。
+- `D` 与 `F` 为吸收类；A12/A_abs 成立，或已做 closed-class 分解并把方程限制到 `S_T`。
 - 对 Doob-`h`，只在 `h_i > 0` 的状态上定义。
 
 ### Proof obligations
@@ -192,7 +193,7 @@
 
 ### Evidence status
 
-文献基线 + 拟证明。Markov jump TPT 与 committor 基线引用 Metzner et al. 2009；Narahari 仅按当前可核验摘要边界用于制造系统吸收 Markov 基线。
+P4 标准有限 CTMC 方程项目内已证明；吸收 CTMC 条件化主来源已补入 `Corstanje and van der Meulen 2025` 的公开全文基线。Metzner et al. 2009 仍只作为 ergodic Markov jump TPT/discrete committor 背景，不能直接支撑 absorbing IMS theorem；Narahari 仅按当前可核验摘要边界用于制造系统吸收 Markov 迁移线索。
 
 ### Case mapping
 
@@ -204,7 +205,7 @@
 
 ## T6 控制与干预定理
 
-状态：拟证明。
+状态：精确 supervisor 基准已项目内证明（严格有限全观测状态域）；结构干预与概率控制仍拟证明。
 
 ### Statement
 
@@ -232,7 +233,7 @@
 
 ### Evidence status
 
-文献基线 + 拟证明 + 计算验证。
+P5 有限全观测 state-based supervisor 基准已项目内证明，并以 `Ramadge and Wonham 1987` 的 Theorem 7.1 / Proposition 7.1 作为语言学精确基线。结构干预 hitting set、风险预算递归可行性和 Pareto 边界仍拟证明 + 计算验证。
 
 ### Case mapping
 
