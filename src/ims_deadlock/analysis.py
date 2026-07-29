@@ -29,6 +29,7 @@ from ims_deadlock.model import (
     Resource,
     ResourceDemand,
 )
+from ims_deadlock.petri import certificate_with_wait_snapshot_bridge
 
 ANALYSIS_SCHEMA_VERSION = "ims-deadlock/analysis/v1"
 
@@ -290,10 +291,24 @@ def analyze_case(spec: CaseSpec, *, max_states: int = 128) -> dict[str, Any]:
         spec.model, spec.initial_state, spec.transitions, max_states=max_states
     )
     certificate_record = _shortest_certificate_record(lts, spec.model, spec.transitions)
-    certificate = certificate_record[1] if certificate_record else None
+    certificate = (
+        certificate_with_wait_snapshot_bridge(
+            spec.model,
+            certificate_record[0].state,
+            certificate_record[1],
+        )
+        if certificate_record
+        else None
+    )
     supervisor = _supervisor_payload(lts)
     screen_state = lts.states[0].state if lts.states else spec.initial_state
     finite_lts_terminal_scc = _terminal_scc_screen(lts)
+    bridge_status = (
+        certificate.bridge_status
+        if certificate
+        else "not_applicable_no_reachable_closed_blocking_kernel"
+    )
+    corresponding_siphon = certificate.corresponding_siphon if certificate else None
     certificate_payload: dict[str, object] = {
         "available": certificate is not None,
         "certificate": certificate.to_json_dict() if certificate else None,
@@ -322,6 +337,11 @@ def analyze_case(spec: CaseSpec, *, max_states: int = 128) -> dict[str, Any]:
         "finite_lts_terminal_scc_screen": finite_lts_terminal_scc,
         "terminal_scc_screen": finite_lts_terminal_scc,
         "certificate": certificate_payload,
+        "petri_bridge": {
+            "status": bridge_status,
+            "available": corresponding_siphon is not None,
+            "corresponding_siphon": corresponding_siphon,
+        },
         "banker_snapshot": _banker_snapshot(spec.model, spec.initial_state),
         "supervisor": supervisor,
         "baselines": {
@@ -338,7 +358,7 @@ def analyze_case(spec: CaseSpec, *, max_states: int = 128) -> dict[str, Any]:
             "first_completion": _first_completion_witness(lts),
         },
         "unavailable": {
-            "siphon": "unavailable_without_petri_subclass",
+            "siphon": None if corresponding_siphon is not None else bridge_status,
             "ctmc_rates": "not_fabricated_by_structural_analysis",
         },
     }

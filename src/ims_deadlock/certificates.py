@@ -40,8 +40,14 @@ def find_deadlock_certificate(
         return None
     if not unfinished.issubset(state.blocked_jobs(model)):
         return None
+    transitions = tuple(transitions)
     return _certificate_for_jobs(
-        model, state, unfinished, "global", reachable_prefix=reachable_prefix
+        model,
+        state,
+        unfinished,
+        "global",
+        transitions,
+        reachable_prefix=reachable_prefix,
     )
 
 
@@ -58,10 +64,9 @@ def find_local_blocking_certificate(
         return None
     if not validate_model_state(model, state).valid:
         return None
-    if any(_transition_enabled(model, state, transition) for transition in transitions):
-        return None
 
     jobs = sorted(state.blocked_jobs(model))
+    transitions = tuple(transitions)
     for size in range(1, len(jobs) + 1):
         for subset_tuple in combinations(jobs, size):
             certificate = _certificate_for_jobs(
@@ -69,6 +74,7 @@ def find_local_blocking_certificate(
                 state,
                 frozenset(subset_tuple),
                 "local",
+                transitions,
                 reachable_prefix=reachable_prefix,
             )
             if certificate is not None:
@@ -81,9 +87,12 @@ def _certificate_for_jobs(
     state: IMSState,
     jobs: frozenset[str],
     scope: CertificateScope,
+    transitions: tuple[TransitionSpec, ...],
     *,
     reachable_prefix: tuple[str, ...] | None,
 ) -> DeadlockCertificate | None:
+    if _has_enabled_transition_for_jobs(model, state, jobs, transitions):
+        return None
     resources = _minimal_witness_resources(model, state, jobs)
     if resources is None:
         return None
@@ -187,6 +196,18 @@ def _has_proper_closed_kernel(
             if _covers_every_alternative(model, state, jobs, subset_resources):
                 return True
     return False
+
+
+def _has_enabled_transition_for_jobs(
+    model: IMSModel,
+    state: IMSState,
+    jobs: frozenset[str],
+    transitions: tuple[TransitionSpec, ...],
+) -> bool:
+    return any(
+        transition.job_id in jobs and _transition_enabled(model, state, transition)
+        for transition in transitions
+    )
 
 
 def _certificate(

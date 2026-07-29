@@ -26,9 +26,20 @@ def test_verify_case_cli_returns_versioned_certificate_json() -> None:
     certificate = cast("dict[str, Any]", certificate_payload["certificate"])
     assert certificate["kernel_jobs"] == ["j1", "j2"]
     lts = cast("dict[str, Any]", payload["lts"])
+    petri_bridge = cast("dict[str, Any]", payload["petri_bridge"])
     unavailable = cast("dict[str, Any]", payload["unavailable"])
     assert lts["initial_state_id"] == "s0"
-    assert unavailable["siphon"] == "unavailable_without_petri_subclass"
+    assert petri_bridge["status"] == "exact_ims_sip1_wait_snapshot_duality"
+    assert petri_bridge["available"] is True
+    assert petri_bridge["corresponding_siphon"] == {
+        "type": "state_induced_wait_snapshot",
+        "places": ["free:r1", "free:r2"],
+        "empty": True,
+        "minimal": True,
+        "core_jobs": ["j1", "j2"],
+        "core_resources": ["r1", "r2"],
+    }
+    assert unavailable["siphon"] is None
 
 
 def test_verify_case_cli_honors_max_states() -> None:

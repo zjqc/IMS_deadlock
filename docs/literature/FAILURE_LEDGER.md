@@ -62,10 +62,48 @@ post-hoc theory edits.
 
 ## F07. Context Sources Were Over-promoted
 
-- Claim to reject: Ramadge-Wonham 1987 and Narahari et al. 1990 can support
-  theorem statements in this library without recorded theorem/equation
-  locators.
-- Evidence: current records contain publication/abstract access but no stable
-  theorem/equation locator.
-- Consequence: Ramadge-Wonham is `FULLTEXT-CONTEXT` here, Narahari et al. is
-  `ABSTRACT`, and both must be upgraded before theorem use.
+- Claim to reject: a bibliographically correct or abstract-accessible source
+  can support equations before exact locators are recorded.
+- Evidence: Ramadge-Wonham was initially held back until Theorem 7.1 and
+  Proposition 7.1 were located. Narahari et al. was initially abstract-only,
+  then upgraded on 2026-07-30 only after Sections 3, 3.1, 3.2, and 4 were
+  inspected and `F=(I-T)^-1` / `G=FC` were located.
+- Consequence: both are now theorem/equation anchors only for the exact scopes
+  recorded in `SOURCE_VERIFICATION.md`; the earlier evidence restriction was
+  correct and remains the rule for B05.
+
+## F08. Tool Combination Is Not a Novelty Claim
+
+- Claim to reject: combining Petri nets, a finite-state supervisor, an
+  absorbing Markov model, and simulation is itself a top-journal contribution.
+- Evidence: the verified literature already contains siphon-based liveness
+  control, exact/maximally permissive finite-state or Petri supervisors,
+  absorbing-chain deadlock metrics, AGV/transport deadlock models, and
+  reachability/online avoidance.
+- Consequence: the paper's novelty must be carried by proved interfaces and
+  boundaries: an operational capacity-auditable certificate, the exact
+  `IMS-SIP^1` state-induced diagnostic dual, a genuinely reachable
+  manufacturing-island threshold family, and the probability/control layers
+  built on the same absorbing certificate semantics. Every interface must
+  retain its counterexample outside the declared subclass.
+
+## F09. Fresh Reachability Literature Reopens the Saturation Stop Rule
+
+- Claim to reject: the two bounded no-new-category rounds completed on
+  2026-07-29 permanently close the novelty search.
+- Evidence: the 2026 freshness audit found `L31`, whose official abstract
+  claims critical resource-limit-pair equations that detect reachable partial
+  deadlocks without a reachability tree. `L29` also supplies a current
+  MR2G/PDDP partial-deadlock characterization and iterative liveness-enforcing
+  control baseline, while `L30` directly addresses finite-capacity S3PR
+  minimum-resource configuration.
+- Consequence: Rounds 2-3 remain an auditable historical search result, but
+  the stop counter resets. `L29-L31` must seed new bounded forward/backward
+  rounds, and `L30-L31` require full-text assumption and proof extraction
+  before any broad priority claim.
+- Claim repair: the current contribution is only a candidate IMS-specific
+  interface package. Its defensible unit is the joint operational semantics,
+  capacity-auditable certificate/refusal boundary, restricted diagnostic
+  dual, and shared probability/supervision interface—not generic reachable
+  deadlock detection, generic graph equations, or generic capacity
+  configuration.

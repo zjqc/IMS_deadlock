@@ -37,36 +37,54 @@
 
 ## T3 虹吸桥
 
-状态：拟证明。
+状态：P2c 对 reachable stable `IMS-SIP^1` wait-snapshot diagnostic net
+已证明并实现；一般 `IMS-RAS^CW` 到经典 S3PR/plant Petri 网的双向虹吸桥
+仍不主张。
 
-- `PO-T3-1` 给出 IMS 子类到 Petri place/transition 的构造。
-- `PO-T3-2` 证明最小 closed core 映射到最小或包含最小致死 siphon。
-- `PO-T3-3` 证明致死 siphon 反向映射到可审计阻塞核的条件。
-- `PO-T3-4` 给出一般情形失败的最小反例。
-- `PO-T3-5` 标记 S3PR 可用条件与超出条件。
+- `[closed in P2c] PO-T3-1` 给出 `IMS-SIP^1` 状态诱导
+  wait-snapshot net：`free:r` place、`t_j: free:q(j)->free:h(j)`。
+- `[closed in P2c] PO-T3-2` 证明 inclusion-minimal local closed core
+  映射到 inclusion-minimal empty siphon。
+- `[closed in P2c] PO-T3-3` 证明 inclusion-minimal empty siphon 在
+  `IMS-SIP^1` 条件下反向恢复可审计 local blocking core。
+- `[closed in P2c] PO-T3-4` 给出一般情形失败边界：C4/C5 conjunctive
+  request、OR 替代、多容量 residual、control-only/approval-only siphon、
+  soft reservation 和隐藏 release。
+- `[closed in P2c] PO-T3-5` 标记 P1 reachability net、P2c
+  wait-snapshot diagnostic net 与经典 S3PR plant net 的对象差异。
+- `PO-T3-6` 若后续要使用经典 S3PR monitor theorem，仍需独立构造
+  plant-level S3PR 子类映射；不得由 P2c 自动推出。
 
 计算验证：
 
-- 对 Petri 子类枚举 siphon，与 core 做包含/最小性检查。
-- 对 AGV/预约投影反例检查 false negative。
+- 对 `IMS-SIP^1` 子类枚举 siphon，与 core 做包含/最小性检查。
+- 对缺少 reachability witness、非极小证书、C4/C5 conjunctive request、
+  OR 替代和多容量状态断言 bridge 非适用且不生成 `corresponding_siphon`。
+- 对 AGV/硬预约 token 仅在普通单位资源语义下允许进入 wait-snapshot net；
+  soft reservation 保持非适用。
 
 ## T4 结构充分条件与阈值
 
 状态：P3 chain-decomposable strict-precedence 子类排除 capacity-mediated
-deadlock 已证明；P3c 的 `BIX0` 启动饱和族有精确可达阈值；一般操作
-死锁、多容量/聚合预约和含 transfer/drain 的双向制造岛阈值仍拟证明。
+deadlock 已证明；P3c 的 `BIX0` 是候选态前置命题；P3d 的
+`BIX1-SAT` 启动/完成饱和族有精确可达阈值。一般操作死锁、
+多容量/聚合预约和含 persistent-D 的制造岛阈值仍拟证明。
 
 - `[closed in P3] PO-T4-1` 定义获取偏序覆盖所有关键资源。
 - `[closed in P3] PO-T4-2` 定义 chain-decomposable certificate 并证明证书到资源链选择引理。
 - `[closed in P3] PO-T4-3` 用有限严格偏序反证 circular wait 不存在。
 - `[closed in P3] PO-T4-4` 明确该命题不推出标准 nonblocking 或几乎必然完成。
 - `[closed in P3] PO-T4-4a` 明确该命题不排除永久非资源 guard 或外部同步缺失导致的一般操作死锁边界。
-- `[closed in P3c] PO-T4-5` 定义无成功 transfer 前缀的双向启动饱和
-  参数族 `BIX0`。
-- `[closed in P3c] PO-T4-6` 证明 `BIX0` 死锁可达 iff
-  `n_A>=c_M` 且 `n_B>=c_G`，并给出 persistent-D 一般化的最小边界反例。
-- `PO-T4-6a` 为含成功 transfer、D drain、替代路线与时序的更一般
-  制造岛族寻找分段阈值或最小反例。
+- `[closed in P3c] PO-T4-5` 定义无成功 transfer 的双向启动饱和
+  候选态 `BIX0`。
+- `[closed in P3c] PO-T4-6` 证明 `BIX0` 候选态 closed-kernel iff
+  `n_A>=c_M` 且 `n_B>=c_G`；不再把它作为可达性定理。
+- `[closed in P3d] PO-T4-6a` 定义 `BIX1-SAT` 的显式 start/completion
+  事件链、reservation token `V` 和空初态 BFS 观察器。
+- `[closed in P3d] PO-T4-6b` 证明 `BIX1-SAT` 可达 deadlock iff
+  `n_A>=c_M` 且 `n_B>=c_G`；若 BFS 截断，不计入 match 或证据。
+- `PO-T4-6c` 为 persistent-D、替代路线与强制时序的更一般制造岛族
+  寻找分段阈值或最小反例。
 - `[closed in P6] PO-T4-7` 用 SU-RAS identity reduction 证明无
   buffer/AGV/reservation/BAS 的无环单单位 IMS 子类安全性为 NP-complete；
   对一般紧凑 IMS 只声称至少 NP-hard，不猜测更强完备类。
@@ -75,8 +93,10 @@ deadlock 已证明；P3c 的 `BIX0` 启动饱和族有精确可达阈值；一�
 
 - 对同时满足偏序与 chain-decomposable 条件的 C2 网格断言无 capacity-mediated 覆盖封闭核；非 chain-decomposable 聚合核和非资源 guard 阻塞登记为 P3 外边界。
 - 对 C5 双向/删回流成对模型记录首个死锁参数。
-- 对 `BIX0` 小网格逐点核验 P3c；不得把无 drain 的 D-full terminal
-  block 计入 P2 capacity-mediated 命中。
+- 对 `BIX0` 小网格逐点核验 P3c 候选态阈值。
+- 对 `BIX1-SAT` 小网格逐点核验 P3d 可达阈值；`c_D,c_V` 不变性只因
+  witness prefix 没有成功 transfer。不得把 CE-BIXD1/persistent-D
+  计为 P3d theorem mismatch。
 
 ## T5 概率层
 

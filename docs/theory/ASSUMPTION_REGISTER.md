@@ -86,7 +86,7 @@ IMS 子类的资源、阶段、预约、BAS 阻塞和闭包选择可表达为有
 
 状态：项目内已证明（严格受限子类）/一般情形拟证明。
 
-存在严格偏序覆盖机器、缓冲、AGV 与预约 token；所有持有后请求均严格上升，BAS 阻塞也不产生逆序请求。P3 已证版本还要求每个覆盖封闭阻塞核是 chain-decomposable，且只排除 capacity-mediated deadlock；不能分解到具体 holder-dependency chain 的聚合容量缺口、永久非资源 guard 和外部同步缺失不在已证范围内。
+存在严格偏序覆盖机器、缓冲、AGV 与预约 token；所有持有后请求均严格上升，BAS 阻塞也不产生逆序请求。P3 已证版本还要求每个覆盖封闭阻塞核是 chain-decomposable：对每个被选中的 holder，都必须存在该 holder 自己的 blocked capacity-ready 替代和下一条 witness。P3 只排除 capacity-mediated deadlock；不能分解到具体 holder-dependency chain 的聚合容量缺口、永久非资源 guard 和外部同步缺失不在已证范围内。
 
 用途：T4。
 
@@ -159,14 +159,52 @@ NP-hard 下界。
 
 ## A14 `BIX0` 启动饱和前缀
 
-状态：项目内已证明（严格受限子类）。
+状态：项目内已证明（候选态前置命题）。
 
-双向阈值 P3c 只考虑从空资源出发、候选死锁前没有成功 A/B transfer 的
-合法启动饱和前缀。A holder 请求 `{D,G}`，B holder 请求 `M`，没有自主
-释放、替代路线、额外 guard 或 policy/calendar 停止，且
-`c_M,c_G,c_D>=1`。
+BIX0 只构造无成功 A/B transfer 的候选饱和状态。A holder 请求
+`{D,G}`，B holder 请求 `M`，没有自主释放、替代路线、额外 guard 或
+policy/calendar 停止，且 `c_M,c_G,c_D>=1`。
 
-用途：P3c 精确可达阈值。
+用途：P3c 候选态 closed-kernel 阈值；不再作为可达性定理。
 
 失败后果：一旦允许 persistent-D、drain、替代路线或强制事件优先级，
 `c_D` 和释放语义重新进入阈值；P3c 公式不能外推。
+
+## A15 `BIX1-SAT` 可达启动/完成饱和族
+
+状态：项目内已证明并有小网格程序观测。
+
+BIX1-SAT 从空持有状态出发，A 初始请求 `M`，B 初始请求 `G`。
+A 链显式包含 `start`、uncontrollable `service_complete`、controllable
+`transfer(G,D,V; release M)`、uncontrollable `drain`；B 链显式包含
+`start`、uncontrollable `transport_complete`、controllable
+`unload(M; release G)`、uncontrollable `complete`。`V` 是硬预约 token；
+`event_calendar_empty=True` 仅表示无外部日历，完成事件仍在 transition
+registry 中。所有转移为显式非零时 `TransitionSpec`。
+
+用途：P3d 可达 capacity-mediated global deadlock 阈值
+`n_A>=c_M and n_B>=c_G`。
+
+失败后果：persistent-D、无 drain 外部堵塞、替代路线、强制调度优先级或
+成功 transfer 后的 D/V 积累属于 `outside_bix1_sat` 边界，不能登记为
+P3d theorem mismatch。
+
+## A16 `IMS-SIP^1` 状态诱导诊断桥
+
+状态：项目内已证明并有小模型枚举审计。
+
+给定 reachable stable 状态及 inclusion-minimal local closed blocking
+core，`IMS-SIP^1` 要求核资源单位容量且 residual 为 0；每个核工件恰持有
+一个单位核资源并恰有一个单资源单位请求；没有 OR、AND、soft
+reservation、外部 guard、隐藏 release 或非合流闭包释放路径。Petri
+对象只能是以 `free:r` 为 place、以“先获得请求资源才释放持有资源”为
+transition 的 state-induced wait-snapshot diagnostic net。
+
+用途：P2c 中 inclusion-minimal local core 与 inclusion-minimal empty
+siphon 的受限双向对应；`certificate.bridge_status` 的精确/拒绝分类。
+
+失败后果：该桥必须返回
+`not_applicable_ims_sip1_assumptions_failed:<reason>`。P1 的
+one-place-per-state reachability net、经典 plant/S3PR、control-only 或
+approval-only place、C4/C5 conjunctive request、OR 替代和多容量 residual
+均不能由 P2c 自动获得双向等价。

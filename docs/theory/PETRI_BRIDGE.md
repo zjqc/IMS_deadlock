@@ -1,97 +1,119 @@
-# Petri 网与 S3PR 桥接
+# Petri wait-snapshot bridge
 
-本文件限定 Petri 网桥的可用范围，避免把经典 S3PR/siphon 结果无条件套到 IMS-RAS。
+状态：`IMS-SIP^1` 受限子类已形成项目内定理和枚举实现；一般
+`IMS-RAS^CW` 到经典 S3PR 的双向虹吸等价仍不主张。
 
-## 1. 构造目标
+本文区分两个 Petri 对象：
 
-状态：拟证明。
+- P1 的 reachability net：每个可达稳定 IMS 状态一个 place，每条 LTS 边
+  一个 transition。它只证明有限 LTS 可表示性，不是结构 Petri 网，也不
+  产生 S3PR 虹吸结论。
+- P2c 的 wait-snapshot diagnostic net：固定在一个已给定的稳定证书态，
+  只表示核内工件“释放当前资源之前必须先获得下一资源”的局部等待快照。
 
-从 `IMS-RAS` 的闭包归一化 LTS 构造有界 Petri 网 `N=(P_P,T_P,Arc_P,W_P,M0)`，使：
+## 1. `IMS-SIP^1` 适用条件
 
-- 每个稳定 IMS 状态 `s` 有标识 `phi(s)`；
-- 每个可观察事件 `e` 对应一个或一组 Petri transition `t in T_P`；
-- 在可投影子类中，`s ->e t` 当且仅当 `phi(s) -> phi(t)`；
-- 若存在不可逆投影，只主张 trace inclusion 或 sound abstraction，不主张双模拟。
+给定稳定状态 `s` 和 inclusion-minimal local closed blocking core
+`K=(J_K,R_K,W_K,H_K)`，`IMS-SIP^1` 要求：
 
-## 2. Place 设计
+- `s` 已经完成零时间闭包归一化；可达性由调用者用最短前缀或案例 witness
+  单独记录。实现要求 `certificate.shortest_reachable_prefix is not None`；
+  空 tuple 可表示初始态可达，`None` 表示未提供可达性证据。
+- `K` 必须是 inclusion-minimal。非极小证书可以包含一个 siphon，但不能用于
+  P2c 的极小双向对应。
+- 每个 `r in R_K` 都是单位容量资源或硬预约 token，且在 `s` 中 residual
+  availability 为 0。
+- 每个 `j in J_K` 恰持有一个核内资源 `h(j)`，持有量为 1。
+- 每个 `j in J_K` 恰有一个当前 request alternative，且该 alternative
+  恰请求一个单位核内资源 `q(j)`。
+- 不存在 OR 替代、AND/conjunctive 请求、soft reservation、外部 guard、
+  隐藏 release 或非合流闭包产生的额外释放路径。
+- AGV 与硬预约 token 只有在作为普通单位资源建模时才可进入 `R_K`。
 
-状态：拟证明。
+若任一条件失败，bridge 输出
+`not_applicable_ims_sip1_assumptions_failed:<reason>`，不得从该状态伪造
+Petri siphon 结论。
 
-候选 place 类别：
+实现机械检查证书态、可达 witness、极小性、单位容量、一持一求、OR/AND
+缺失、residual marking，以及证书 evidence edges 与实际 state
+holds/requests 的逐项一致性。构造后还独立检查目标 place set 确为 empty、
+siphon 且 inclusion-minimal；任一检查失败都不能标记 exact。closed-world
+事件完备、不可隐藏释放、非容量 guard 已满足、闭包合流等语义条件由
+`DeadlockCertificate.assumptions`、案例 witness 和调用者的理论审计负责；
+API 不把 snapshot 诊断网升级为一般 plant 或 S3PR 双模拟。
 
-- 工件阶段 place：表示 `stage_s(j)`。
-- 机器持有 place：表示工件占有机器。
-- 输入/输出缓冲 place：表示缓冲 token 剩余或占用。
-- AGV 持有 place：表示装载、空车占用、站点等待。
-- 预约 token place：硬预约下可作为守恒资源；软预约需额外 overbook/claim place。
-- blocked place：显式表示 `blocked_complete`、`blocked_unload` 或等待运输状态。
+## 2. Wait-Snapshot Net 构造
 
-## 3. 事件对应
+对 `R_K` 中每个资源建 place `free:r`，其 marking 为
 
-状态：拟证明。
+`M_s(free:r)=cap(r)-occ_s(r)`.
 
-候选 transition 类别：
+对 `J_K` 中每个工件建 transition
 
-- dispatch：可控，获取机器/输入缓冲或预约。
-- service completion：不可控，只移动到完成待卸载或 blocked 状态，不释放资源。
-- unload/handoff/release：可控或语义授权事件，释放机器或 AGV。
-- transport start/choice：可控，获取 AGV/路线/预约。
-- transport completion：不可控，进入站点或 blocked-unload。
-- reservation acquire/redeem/cancel：可控或闭包事件，视预约规则而定。
+`t_j: free:q(j) -> free:h(j)`.
 
-## 4. 经典 S3PR 可用条件
+含义是：工件 `j` 只有先获得它请求的下一资源 `q(j)`，才可能释放当前持有
+资源 `h(j)`。该 transition 不是 IMS 事件本体，而是等待依赖的诊断投影。
 
-状态：文献基线 + 拟证明。
+ordinary siphon 判据采用：
 
-S3PR/siphon 控制可作为基线的条件包括：
+`bullet Sigma subseteq Sigma bullet`,
 
-- 资源持有与路线阶段可由普通 place 保守表示；
-- 每个加工/运输步骤有明确 acquire/release；
-- 不存在未建模软预约过售；
-- 闭包不会隐藏影响 liveness 的可见释放；
-- AGV、缓冲和预约若参与死锁，必须进入 Petri 资源集合。
+即任一向 `Sigma` 输出 token 的 transition，也必须从 `Sigma` 消耗 token。
+实现中等价检查为：若 `Post(t)` 与 `Sigma` 相交，则 `Pre(t)` 也与
+`Sigma` 相交。
 
-若以上条件不满足，只能把 S3PR 作为启发或投影基线。
+## 3. P2c 定理
 
-## 5. 超出经典 S3PR 的 IMS 语义
+在 reachable stable `IMS-SIP^1` 状态中，inclusion-minimal local closed
+blocking core 与其 state-induced wait-snapshot net 中的 inclusion-minimal
+empty siphon 双向对应。
 
-状态：反例候选/待实例化。
+### Core 到 Siphon
 
-以下语义通常超出直接 S3PR：
+取 `Sigma_K={free:r | r in R_K}`。单位容量且 residual 为 0 给出
+`M_s(p)=0` 对所有 `p in Sigma_K`。对任一向 `free:h(j)` 输出的 transition
+`t_j`，其输入为 `free:q(j)`。由于 `q(j) in R_K`，输入也在
+`Sigma_K`，故 `Sigma_K` 满足 siphon 条件。
 
-- `blocked_complete` 或 `blocked_unload` 使完成后继续占有机器/AGV。
-- 硬预约需要未来占用 token 与当前物理占用并存。
-- 软预约允许 overbook，破坏简单守恒 place。
-- 非合流零时间闭包依赖优先级或排序。
-- AGV 路径/站台/交接位引入运输资源层。
+若 `Sigma_K` 含有真子集 `Sigma'` 也是 empty siphon，则对应资源子集
+`R'` 对所有输出回 `R'` 的 holder 仍有输入留在 `R'`。由一持一求和单位
+容量条件，可恢复一个真子 closed blocking core，违背 `K` 的 inclusion
+minimality。因此 `Sigma_K` 是 inclusion-minimal empty siphon。
 
-## 6. Siphon 桥接候选
+### Siphon 到 Core
 
-状态：拟证明。
+给定 inclusion-minimal empty siphon `Sigma`，令
+`R_S={r | free:r in Sigma}`。empty marking 和单位容量说明每个 `r in R_S`
+由唯一核内工件持有。siphon 条件说明每个释放到 `R_S` 的 holder transition
+在释放前请求的 `q(j)` 仍在 `R_S`。因此这些 holder 工件的唯一
+capacity-ready alternative 均被 `R_S` 内资源阻塞，形成 local closed
+blocking core。若存在真子 core，则其资源 places 给出真子 empty siphon，
+违背 `Sigma` 的 minimality。
 
-候选命题：
+## 4. 边界与反例
 
-在满足 Petri 可投影条件的 IMS 子类中，最小封闭阻塞核对应某个最小致死 siphon；反向成立需要 siphon 中每个失标 place 都可恢复为工件-资源阻塞证据。
+P2c 不是一般 Petri/S3PR 桥：
 
-证明方向：
+- C4/C5 的 blocked-unload 或 blocked-complete 状态含 conjunctive
+  request，例如 `{D,G}`；wait-snapshot bridge 必须拒绝，而不是把其中某
+  一个资源投影成伪 siphon。
+- 多容量资源有 residual/witness 算术；简单环或普通 siphon empty 条件不足
+  以刻画容量缺口。
+- OR 替代需要选择语义；一个替代受阻不能推出工件被阻塞。
+- control-only、approval-only 或 soft-reservation place 可以形成 Petri
+  siphon，但没有可审计的工件持有-请求证据，因此不能反向恢复 IMS 核。
 
-- `core -> siphon`：从被封闭资源需求构造不会被外部 transition 重新标识的 place 集。
-- `siphon -> core`：从失标 siphon 追踪到被阻塞工件和不可释放资源。
+## 5. 枚举实现
 
-边界：
+`ims_deadlock.petri` 实现：
 
-- 若 siphon 只含控制或预约辅助 place，可能没有实际工件等待证据。
-- 若 IMS 有 soft reservation，core 可能无法在普通 Petri 守恒网中表达。
+- `build_wait_snapshot_bridge(model,state,certificate)`：验证 `IMS-SIP^1`
+  条件并构造 diagnostic net。
+- `is_siphon(net, places)`：ordinary siphon 谓词。
+- `minimal_empty_siphons(net)`：小规模确定性枚举 inclusion-minimal empty
+  siphons。
+- `certificate_with_wait_snapshot_bridge(...)`：返回附带
+  `corresponding_siphon` 和 `bridge_status` 的证书副本。
 
-## 7. 枚举验证
-
-状态：计算验证。
-
-小模型验证应输出：
-
-- IMS 状态数、Petri 可达标识数；
-- `phi` 是否单射；
-- trace inclusion 或 equivalence 结果；
-- 最小 siphon 列表；
-- 最小 closed core 列表；
-- 匹配失败的最小状态与原因。
+验证只作为证明审计；它不替代 P2c 的数学证明。

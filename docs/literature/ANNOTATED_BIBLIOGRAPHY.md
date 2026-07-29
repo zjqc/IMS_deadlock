@@ -101,10 +101,13 @@ Narahari, Y., Viswanadham, N., & Krishna Prasad, K. R. (1990). Markovian
 models for deadlock analysis in automated manufacturing systems. *Sadhana,
 15*, 343-353. https://doi.org/10.1007/BF02811330
 
-Authorized use: abstract-only context for absorbing Markov modeling, mean time
-to deadlock, mean number of finished parts before deadlock, and transient
-deadlock-time distribution. No equation locator is recorded, so it stays out
-of proof obligations.
+Authorized use: historical absorbing-chain probability anchor. The full
+article gives the finite transient/absorbing DTMC partition and fundamental
+matrix `F=(I-T)^-1` in Section 3 (journal pp. 346-348), mean time to deadlock
+in Section 3.1, absorption probabilities `G=FC` in Section 3.2, and the
+transient time-to-deadlock distribution in Section 4 (journal pp. 350-351).
+The paper treats CTMC measures through the embedded chain. It does not source
+the project's competing-absorption committor sensitivity or Doob-h theorem.
 
 Corstanje, M., & van der Meulen, F. (2025). Guided simulation of conditioned
 chemical reaction networks. *Statistical Inference for Stochastic Processes*.
@@ -125,6 +128,22 @@ consistency; journal p425 (PDF p10) gives Theorem 2 on asymptotic normality and
 variance. The one-dimensional strongly Markov, continuity, and score
 assumptions must be re-established before using the result for IMS deadlock.
 
+Lu, Y., Chen, Y., Hadjicostis, C. N., & Li, Z. (2026). Efficient iterative
+deadlock prevention for flexible manufacturing systems utilizing modified
+resource requirement graphs. *Automatica, 183*, 112631.
+https://doi.org/10.1016/j.automatica.2025.112631
+
+Authorized use: primary current comparator for structural partial-deadlock
+detection and iterative Petri-net control. Publisher full text gives
+Definition 3 for the modified resource requirement graph, Definition 4 for
+safe places, Theorem 1 for the PDDP characterization, Algorithm 1 for
+iterative control-place insertion, and Theorem 2 for liveness of the
+controlled net. The method does not claim a maximally permissive supervisor;
+its polynomial numbers of ILP variables/constraints do not make ILP solution
+polynomial time. It does not provide the IMS operational/Petri/probability
+interface, but it rules out novelty claims based merely on a holder/request
+graph, an ILP deadlock candidate, or iterative control places.
+
 ## Verified Context Sources
 
 Li, Z. W., & Zhou, M. C. (2004). Elementary siphons of Petri nets and their
@@ -137,8 +156,13 @@ No theorem claim is migrated until exact theorem locators are extracted.
 
 Liu et al. Siphon survey. https://doi.org/10.1016/j.ins.2015.08.037
 
-Use as a siphon-review map only until stable locators are recorded. The wrong
-DOI `10.1016/j.ins.2016.02.010` is rejected in `SOURCE_VERIFICATION.md`.
+Use as a secondary siphon-theorem map. Publisher full text exposes Section 4,
+Theorem 2 on persistent siphon marking as a sufficient ordinary-net
+deadlock-free condition, Theorem 3 on unmarked places at an ordinary dead
+marking, and Theorems 4-7 on generalized/controlled-siphon and S3PR-family
+liveness statements. These are survey restatements, not a replacement for the
+original proofs or for the project-specific P2c bridge. The wrong DOI
+`10.1016/j.ins.2016.02.010` remains rejected.
 
 Viswanadham, Johnson, Narahari 1990 conference text.
 
@@ -147,8 +171,33 @@ machine/AGV deadlock example. It is distinct from the journal paper
 `Deadlock prevention and deadlock avoidance in flexible manufacturing systems
 using Petri net models`, https://doi.org/10.1109/70.63257.
 
+Viswanadham, N., Narahari, Y., & Johnson, T. L. (1990). Deadlock prevention
+and deadlock avoidance in flexible manufacturing systems using Petri net
+models. *IEEE Transactions on Robotics and Automation, 6*(6), 713-723.
+https://doi.org/10.1109/70.63257
+
+The full article is authorized as a historical modeling/control baseline: it
+defines the Petri/GSPN setting, models the GE flexible manufacturing system
+with blocked machines and finite input/output buffers, constructs a reachable
+deadlock, and compares reachability-graph prevention with online
+finite-look-ahead avoidance. No numbered theorem/proposition/lemma chain was
+found, so it is not used as a siphon theorem or an IMS equivalence source.
+
 ## Candidate Sources
 
 The remaining DOI-verified rows in `LITERATURE_MATRIX.md` are backlog or
 metadata candidates. They should not appear in theorem statements until their
 full-text assumptions and locators are recorded.
+
+Two freshness candidates have priority over older backlog:
+
+- Pang et al. (2025),
+  https://doi.org/10.1177/01423312251369553, claim an equivalent
+  finite-capacity S3PR construction and ILP minimum-resource initial marking
+  that guarantees liveness without a posteriori verification. Current evidence
+  is abstract-level.
+- Su et al. (2026), https://doi.org/10.1109/TASE.2026.3689269, claim critical
+  resource-limit pairs and linear equations for reachable partial-deadlock
+  detection without reachability-tree traversal. Current evidence is the
+  official peer-reviewed publication record and abstract; this is the
+  highest-priority full-read novelty threat.

@@ -7,7 +7,8 @@ IMS Deadlock 是面向 IMS-RAS 的结构-概率-控制理论闭环项目。目�
 `IMS-RAS^CW 稳定语义`
 `-> 有限 LTS/reachability net`
 `-> capacity-mediated closed blocking core`
-`-> 受限结构无死锁条件与 BIX0 精确阈值`
+`-> IMS-SIP^1 wait-snapshot 精确诊断双向桥或机器可读拒绝`
+`-> 受限结构无死锁条件与 BIX1-SAT 可达精确阈值`
 `-> competing-absorption CTMC`
 `-> exact finite nonblocking supervisor`.
 
@@ -46,8 +47,9 @@ ims-deadlock simulate C0 --mode ctmc --samples 1000 --seed 12345
 ```
 
 五个入口输出 `ims-deadlock/cli/v1` JSON。`prove` 明确标为程序观察，
-不冒充数学证明；没有速率、导数或 Petri 子类映射时返回结构化
-`unavailable`，不补造数据。
+不冒充数学证明；`verify-case` 对满足 `IMS-SIP^1` 的证书返回受限
+wait-snapshot siphon，对不满足条件的案例返回精确拒绝原因。没有速率、
+导数或适用桥接条件时返回结构化 `unavailable`，不补造数据。
 
 ## 验证
 
@@ -64,6 +66,7 @@ PYTHONDONTWRITEBYTECODE=1 python -m mypy --no-incremental src tests
 - 案例发现集用于探索，冻结确认集用于复核；二者必须分离。
 - 只有 `FULLTEXT-THEOREM` 且带精确定位的文献可支撑定理迁移。
 - `C0/C1` 的内建 CTMC 是 `fixture_unverified`，不是从结构案例速率推导的确认结果。
-- 一般 structured Petri/致死虹吸双向桥、含 transfer/drain 的一般制造岛阈值、
-  风险预算控制与 Pareto 定理仍开放。
+- P2c 只关闭 state-induced `IMS-SIP^1` diagnostic net，不是一般
+  structured plant/S3PR 等价；一般制造岛阈值、风险预算控制与 Pareto
+  定理仍开放。
 - 被隔离的历史提交或外部项目产物不得直接转入本项目证据链。

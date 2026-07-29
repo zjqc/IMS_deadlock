@@ -2,17 +2,20 @@
 
 ## Scope
 
-This log records the bounded citation-tracking work performed on 2026-07-29.
-It is an OpenAlex taxonomy screen, not a systematic review and not a proof
-source. The goal was to test whether new in-scope model classes, theorem
-families, complexity boundaries, or counterexample categories kept appearing.
+This log records the bounded citation tracking begun on 2026-07-29 and the
+current-work freshness audit on 2026-07-30. It is not a systematic review and
+not a proof source. The goal is to test whether new in-scope model classes,
+theorem families, complexity boundaries, or counterexample categories keep
+appearing.
 
 Conclusion:
 
-> scope-bounded taxonomy saturation reached in two consecutive bounded rounds (R2/R3), but full-text theorem verification gate remains open.
+> R2/R3 reached historical scope-bounded saturation, but Round 4 found a new
+> reachable-partial-deadlock theorem category and reset the stop counter.
 
-This conclusion means the current taxonomy is stable enough to continue G2
-formalization. It does not mean all relevant citations have been exhausted.
+The historical result was enough to begin G2 formalization. It no longer
+satisfies the current stop rule: `L29-L31` must seed new bounded rounds, and
+`L30-L31` require full-text verification.
 
 ## Method Limits
 
@@ -123,9 +126,14 @@ enter theorem statements only through `SOURCE_VERIFICATION.md` and
     consistency;
   - journal p425 / PDF p10: Theorem 2 on asymptotic normality and variance.
 - `L16`, Narahari et al. (1990):
-  - bibliographic identity and abstract remain verified;
-  - no stable locally auditable equation locator was obtained, so the row
-    remains `ABSTRACT` and cannot support CTMC equations.
+  - full 11-page article inspected;
+  - Section 3 / journal pp. 346-348: finite transient/absorbing partition and
+    `F=(I-T)^-1`;
+  - Section 3.1: mean time to deadlock;
+  - Section 3.2: `G=FC` absorption probabilities;
+  - Section 4 / journal pp. 350-351: transient time-to-deadlock distribution;
+  - upgraded only for this historical DTMC/embedded-chain scope, not for the
+    project's CTMC sensitivity or Doob-h theorem.
 - `B04`, Chen et al. (2011):
   - author-uploaded technical-report text inspected;
   - report p19: Assumptions 1-2 and Theorem 6, with the explicit proviso
@@ -133,7 +141,62 @@ enter theorem statements only through `SOURCE_VERIFICATION.md` and
   - the 2012 correction to Section V-B is recorded and blocks verbatim reuse
     of that implementation paragraph until the correction text is checked.
 
-This audit upgrades only the theorem-specific uses recorded in
-`SOURCE_VERIFICATION.md`. It does not close the remaining L04/L16/L22/B05
-full-text gates and does not transfer any source's complexity or convergence
-result to IMS without the migration assumptions in `MIGRATION_CARDS.md`.
+## Targeted Full-Text Locator Audit, Round 2
+
+- Date: 2026-07-30.
+- `L04`, Liu et al. siphon survey:
+  - publisher full text inspected;
+  - Section 4, Theorems 2-3 locate the ordinary-net deadlock/siphon facts;
+  - Theorems 4-7 map generalized/controlled-siphon and S3PR-family results;
+  - retained as `FULLTEXT-CONTEXT` because it is a secondary survey, not the
+    original proof source.
+- `L22`, Viswanadham, Narahari, and Johnson (1990):
+  - full 11-page journal article inspected;
+  - Petri/GSPN definitions, GE-FMS blocked-machine/buffer model, reachable
+    deadlock, reachability-based prevention, and finite-look-ahead avoidance
+    were located;
+  - retained as `FULLTEXT-CONTEXT` because the methods paper has no numbered
+    theorem/proposition/lemma chain for migration.
+- `B05`, Chen and Li (2011):
+  - DOI and publisher metadata remain stable;
+  - no auditable full theorem text was recovered;
+  - remains blocked for theorem-level use; B04 is the theorem-located
+    maximum-permissiveness benchmark.
+
+These audits close the targeted L04/L16/L22 locator questions with
+scope-specific classifications. B05 remains open by design. No source's
+complexity, liveness, or convergence result transfers to IMS without the
+assumption mapping in `MIGRATION_CARDS.md`.
+
+## Round 4: Current-work Freshness Audit
+
+- Date: 2026-07-30.
+- Search objective: challenge the proposed reachability-certificate,
+  finite-capacity-threshold, and structural-control novelty against work
+  published or indexed after the original anchor set.
+- Current in-scope comparators:
+  - `L29`, Lu, Chen, Hadjicostis, and Li (2026), was read in publisher full
+    text. Its modified resource-requirement graph, PDDP characterization,
+    iterative control-place insertion, and controlled-net liveness theorem
+    make it the mandatory structural/control baseline.
+  - `L30`, Pang et al. (2025), officially describes minimum resource
+    configuration for an equivalent finite-capacity S3PR net. It remains
+    abstract-only and therefore cannot yet support a theorem comparison.
+  - `L31`, Su et al. (2026), officially describes critical
+    resource-limit-pair linear equations for detecting reachable partial
+    deadlocks without a reachability tree. It remains abstract-only and is the
+    highest-priority full-text threat audit.
+- New category found:
+  - `L31` adds a direct reachable-partial-deadlock/no-reachability-tree claim,
+    which is materially closer to the proposed structural certificate than
+    the categories recorded in Rounds 1-3.
+- Consequence:
+  - the previous two-round taxonomy saturation is historical evidence, not a
+    current stop certificate;
+  - freshness tracking is reopened and must be reseeded from `L29-L31`;
+  - at least two consecutive bounded rounds after this reseed must find no new
+    in-scope model, theorem, or counterexample category before the taxonomy
+    stop rule is satisfied again;
+  - no manuscript may claim the first reachable structural certificate,
+    the first reachability-free partial-deadlock detector, or general
+    finite-capacity threshold novelty while `L30-L31` remain unread in full.

@@ -69,17 +69,26 @@ IMS 迁移要求：必须使用容量敏感封闭阻塞核，而不是 WCC 快�
 
 ## CE-SIP1 Siphon 双向映射失败
 
-状态：反例候选/待实例化。
+状态：已实例化 Petri 边界反模型；它攻击一般 Petri-to-IMS 逆映射，不是
+一个 `IMS-SIP^1` 内部反例。
 
 目标击穿命题：任意 IMS 中最小封闭阻塞核与最小致死 siphon 双向等价。
 
-构造要点：
+最小反模型：
 
-- Petri 投影包含预约或控制 place，形成 siphon。
-- 该 siphon 失标不对应任何实际工件阻塞证据，或对应多个 IMS 状态。
-- 或 IMS 的软预约/闭包优先级产生阻塞核，但 Petri 投影未保留关键状态。
+- 一个 Petri place `approval`，初始 marking 为 0；
+- 一个 transition `approval-self-loop`，其 pre/post 均为
+  `{approval}`；
+- `{approval}` 是 inclusion-minimal empty siphon，但 place 不是
+  `free:r`，不存在工件持有边、资源请求边或 IMS reachable prefix。
 
-预期结论：T3 只能在可投影子类中证明双向对应；一般情形最多保留单向蕴含或反例边界。
+失败证据：`tests/test_petri.py` 的
+`test_control_only_empty_siphon_has_no_inverse_ims_core_mapping` 枚举出该
+empty siphon，同时确认它不属于 wait-snapshot resource-place 命名域。
+
+定理修正：P2c 只在 `IMS-SIP^1` state-induced diagnostic net 中证明
+双向对应；任意 plant/control Petri net 的 empty siphon 不能反向恢复 IMS
+blocking core。软预约、审批和闭包优先级的更丰富反例仍保留为后续扩展。
 
 ## CE-INT1 干预创造新 core
 
@@ -94,9 +103,9 @@ IMS 迁移要求：必须使用容量敏感封闭阻塞核，而不是 WCC 快�
 
 预期结论：hitting-all-minimal-cores 需要 core 全集完备和干预不创造新 core；否则必须迭代反例生成。
 
-## CE-BIXD1 `BIX0` 阈值不能越过 persistent-D 边界
+## CE-BIXD1 `BIX1-SAT` 阈值不能越过 persistent-D 边界
 
-状态：已实例化理论边界；程序族验证待补。
+状态：已实例化理论边界；程序分类为 `outside_bix1_sat`。
 
 目标击穿命题：`n_A>=c_M 且 n_B>=c_G` 是所有双向/有限缓冲制造岛
 deadlock 的充要条件，或删除 B->M 回流即可推出一般 deadlock-free。
@@ -114,8 +123,10 @@ deadlock 的充要条件，或删除 B->M 回流即可推出一般 deadlock-free
 buffer-full/calendar/外部-drain 终端边界，不属于 P2 capacity-mediated
 全局死锁；若 drain 存在，则必须把 drain 资源和释放语义纳入新阈值。
 
-定理修正：P3c 只用于候选死锁前无成功 transfer、D 保持为空的 `BIX0`。
-删除回流只消除 M-G 双向封闭核，不能独自保证有限 D 无终端阻塞。
+定理修正：P3c 只用于无成功 transfer 的 `BIX0` 候选态；P3d 只用于
+显式含 drain、且见证前缀没有成功 transfer 的 `BIX1-SAT`。CE-BIXD1
+属于 persistent-D 边界，不是 BIX1-SAT theorem mismatch。删除回流只
+消除 M-G 双向封闭核，不能独自保证有限 D 无终端阻塞。
 
 ## CE-NB1 Nonblocking 不等于所有随机路径完成
 

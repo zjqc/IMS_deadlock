@@ -51,6 +51,15 @@ def test_c1_cycle_screen_true_without_kernel_and_completion_reachable() -> None:
         is False
     )
     assert analysis["certificate"]["available"] is False
+    assert analysis["petri_bridge"] == {
+        "status": "not_applicable_no_reachable_closed_blocking_kernel",
+        "available": False,
+        "corresponding_siphon": None,
+    }
+    assert (
+        analysis["unavailable"]["siphon"]
+        == "not_applicable_no_reachable_closed_blocking_kernel"
+    )
     assert analysis["supervisor"]["available"] is True
     assert analysis["supervisor"]["initial_state_feasible"] is True
     assert analysis["banker_snapshot"]["safe"] is True
@@ -105,6 +114,46 @@ def test_supervisor_requires_reachable_marked_completion() -> None:
     assert analysis["lts"]["marked_state_ids"] == []
     assert analysis["supervisor"]["available"] is False
     assert analysis["supervisor"]["reason"] == "no_marked_completion_reachable"
+
+
+def test_c0_analysis_exposes_exact_wait_snapshot_petri_bridge() -> None:
+    analysis = analyze_case(load_case_spec("C0"), max_states=20)
+
+    assert analysis["petri_bridge"] == {
+        "status": "exact_ims_sip1_wait_snapshot_duality",
+        "available": True,
+        "corresponding_siphon": {
+            "type": "state_induced_wait_snapshot",
+            "places": ["free:r1", "free:r2"],
+            "empty": True,
+            "minimal": True,
+            "core_jobs": ["j1", "j2"],
+            "core_resources": ["r1", "r2"],
+        },
+    }
+    assert analysis["unavailable"]["siphon"] is None
+    certificate = cast(dict[str, Any], analysis["certificate"]["certificate"])
+    assert certificate["bridge_status"] == "exact_ims_sip1_wait_snapshot_duality"
+    assert (
+        certificate["corresponding_siphon"]
+        == analysis["petri_bridge"]["corresponding_siphon"]
+    )
+
+
+def test_non_sip1_certificate_reports_bridge_refusal_without_siphon() -> None:
+    analysis = analyze_case(load_case_spec("C5"), max_states=20)
+
+    assert analysis["certificate"]["available"] is True
+    bridge = cast(dict[str, Any], analysis["petri_bridge"])
+    assert bridge["available"] is False
+    assert bridge["corresponding_siphon"] is None
+    assert cast(str, bridge["status"]).startswith(
+        "not_applicable_ims_sip1_assumptions_failed:"
+    )
+    assert analysis["unavailable"]["siphon"] == bridge["status"]
+    certificate = cast(dict[str, Any], analysis["certificate"]["certificate"])
+    assert certificate["corresponding_siphon"] is None
+    assert certificate["bridge_status"] == bridge["status"]
 
 
 def test_certificate_uses_shortest_reachable_stable_lts_state() -> None:

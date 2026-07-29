@@ -110,7 +110,11 @@ L28 提供条件跳过程全文锚点。
 
 - Markov jump transition path theory 与离散 committor 背景可引用 Metzner et al. 2009，DOI `10.1137/070699500`，但该来源按当前核验边界只支撑 ergodic Markov jump process TPT/discrete committor background，不能直接支撑 absorbing IMS theorem。
 - 本文件中的 committor、平均吸收时间、敏感性和 Doob-`h` 公式在项目内标为标准有限 CTMC 方程/项目推导；吸收 CTMC 条件化主来源现在由 `Corstanje and van der Meulen 2025` 提供可公开核验的 change-of-measure 基线，但把它迁移为 IMS absorbing boundary theorem 仍需单独证明。
-- Narahari 等制造系统吸收 Markov 基线只能按已核验摘要和可读内容边界使用：吸收死锁、平均时间、平均产出和暂态分布是迁移线索；具体定理需全文核验后进入证明依据。
+- Narahari 等制造系统吸收 Markov 基线已全文定位：Section 3 给出
+  `F=(I-T)^-1`，Section 3.1 给出平均死锁时间，Section 3.2 给出
+  `G=FC`，Section 4 给出瞬态死锁时间分布。它只支撑该历史
+  DTMC/embedded-chain 范围，不能替代本项目的 CTMC committor、
+  sensitivity 或 Doob-h 证明。
 
 ## 8. 验证输出
 

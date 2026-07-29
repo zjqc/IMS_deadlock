@@ -99,13 +99,24 @@ Other cards are explicitly marked as context or pending.
 
 ## M10. Narahari Absorbing Markov Layer
 
-- Evidence type: `ABSTRACT` in this library; pending full-text equation locator.
-- 原定理: not recorded yet.
-- 原假设: official abstract indicates absorbing Markov modeling of deadlock performance.
-- IMS映射: possible future basis for MTTD and transient distribution after full equations are located.
-- 缺失假设: no equation locator is currently recorded.
-- 适配命题/反例: cannot support IMS CTMC theorem statements yet.
-- 对应案例: future `C0`, `C5` probability analysis.
+- Evidence type: `FULLTEXT-THEOREM`, historical equation anchor.
+- 原结果: Narahari et al. (1990), Section 3 (journal pp. 346-348), give the
+  finite absorbing-DTMC partition and fundamental matrix `F=(I-T)^-1`;
+  Section 3.1 gives mean time to deadlock; Section 3.2 gives absorption
+  probabilities `G=FC`; Section 4 (journal pp. 350-351) gives the transient
+  time-to-deadlock distribution.
+- 原假设: finite transient/absorbing Markov chain; the stated CTMC measures use
+  its embedded chain and state sojourn times.
+- IMS映射: use as the historical metric lineage after a finite IMS stochastic
+  generator and absorbing classes have been derived from the operational
+  semantics.
+- 缺失假设: the paper does not formulate the project's competing deadlock vs
+  completion committor, generator sensitivity, conditional path law, or
+  Doob-h transform.
+- 适配命题/反例: P4 independently proves the IMS CTMC boundary-value and
+  sensitivity equations; L16 corroborates classical absorption metrics but
+  cannot replace L23/L28 or the project proof.
+- 对应案例: `C0`, `C5` probability analysis after rate provenance is fixed.
 
 ## M11. Rare-event Splitting
 
@@ -136,3 +147,81 @@ Other cards are explicitly marked as context or pending.
 - 缺失假设: the generic P1 reachability net is not automatically an FMS-oriented net with the paper's P-semiflows; BAS, AGV, reservations, and zero-time closure do not automatically preserve that structure.
 - 适配命题/反例: use Theorem 6 as a restricted implementation benchmark, never as proof that every IMS maximum-permissive supervisor has a compact monitor representation. Consult the 2012 Section V-B correction before reproducing the affected construction text.
 - 对应案例: future Petri-encodable restricted confirmation models; not the unrestricted `C4`/`C5` forms.
+
+## M14. Liu et al. Siphon Survey Map
+
+- Evidence type: `FULLTEXT-CONTEXT`, secondary theorem map.
+- 原结果: Section 4, Theorem 2 states a sufficient persistent-marking
+  condition for ordinary-net deadlock freedom; Theorem 3 states that the
+  unmarked places at an ordinary dead marking form a siphon; Theorems 4-7 map
+  controlled-siphon and S3PR-family liveness statements.
+- 原假设: the particular ordinary/generalized Petri-net subclasses and
+  controllability definitions cited by each surveyed theorem.
+- IMS映射: use the ordinary siphon definition and theorem taxonomy to state
+  exactly what the state-induced `IMS-SIP^1` wait-snapshot result resembles.
+- 缺失假设: the survey supplies neither an IMS plant mapping nor an original
+  proof that BAS, AGV, reservation, OR/AND requests, and closure semantics
+  preserve those Petri subclasses.
+- 适配命题/反例: P2c is an independent diagnostic-net theorem; control-only
+  empty siphons and C4/C5 conjunctive requests show why the general reverse
+  implication fails.
+- 对应案例: `C0` exact diagnostic dual; `C4/C5` non-applicability.
+
+## M15. Viswanadham-Narahari-Johnson Historical PN Controller
+
+- Evidence type: `FULLTEXT-CONTEXT`, methods baseline.
+- 原结果: the 1990 journal article constructs a Petri/GSPN model of the GE FMS
+  with blocked machines and finite buffers, exhibits a reachable deadlock, and
+  presents reachability-graph prevention plus online finite-look-ahead
+  avoidance.
+- 原假设: the paper's GE-FMS Petri model, routing/controller semantics, and
+  enumerated or online look-ahead state information.
+- IMS映射: historical comparator for modeling blocked machines/buffers and for
+  distinguishing offline prevention from online avoidance.
+- 缺失假设: no numbered theorem chain establishes a siphon equivalence,
+  maximum permissiveness, or the IMS capacity-auditable certificate.
+- 适配命题/反例: use only for historical positioning and case semantics; P1,
+  P2, P2c, and P5 remain independent project results.
+- 对应案例: `C4`, `C5`, and the exact finite-state supervisor baseline.
+
+## M16. Lu-Chen-Hadjicostis-Li MR2G/PDDP Comparator
+
+- Evidence type: `FULLTEXT-THEOREM`, competing baseline.
+- 原定理: Definition 3 constructs the modified resource requirement graph;
+  Definition 4 identifies safe operation places; Theorem 1 states the PDDP
+  characterization of partial-deadlock markings; Algorithm 1 iteratively
+  inserts control places; Theorem 2 establishes liveness of the controlled
+  Petri net.
+- 原假设: the paper's bounded FMS Petri-net structure, operation/resource
+  places, resource-usage map, safe-place definition, and PDDP/place-invariant
+  controller class.
+- IMS映射: compare its resource-holder/request graph and per-iteration
+  partial-deadlock constraint with the IMS capacity witnesses and intervention
+  layer after an IMS state has a valid PN encoding.
+- 缺失假设: the source does not encode the declared IMS BAS, AGV occupancy,
+  hard-reservation, OR-of-AND, zero-time closure, or shared absorbing
+  probability semantics; it does not claim maximum permissiveness.
+- 适配命题/反例: do not claim that a capacity graph or iterative control-place
+  synthesis is new. The project contribution must instead be the reachable
+  operational certificate and explicitly delimited cross-layer interfaces.
+  C4/C5 and control-only siphons test where the MR2G/Petri assumptions do not
+  directly map.
+- 对应案例: `C0` as restricted overlap; `C4/C5` as IMS-specific boundary;
+  exact P5 supervisor as permissiveness comparator.
+
+## M17. Su et al. Reachable Partial-Deadlock Threat
+
+- Evidence type: `ABSTRACT`, migration blocked pending full read.
+- 原主张: the official 2026 T-ASE abstract claims critical
+  resource-limit pairs and linear equations detect reachable partial
+  deadlocks for a useful Petri-net class without reachability-tree traversal.
+- 原假设: not yet extracted from the full paper.
+- IMS映射: potentially overlaps the project's reachability-certified local
+  blocking core and must be compared before any general novelty claim.
+- 缺失假设: full PN subclass, CRP construction, reachability proof,
+  completeness, and complexity locators are not yet available in this library.
+- 适配命题/反例: no theorem migration is authorized. Until full read, the
+  project may claim neither first reachable structural certificate nor first
+  avoidance of reachability-graph traversal.
+- 对应案例: future restricted PN overlap benchmark; `BIX1-SAT` remains a
+  family-specific exact threshold rather than a scalable general detector.

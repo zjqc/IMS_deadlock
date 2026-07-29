@@ -86,34 +86,48 @@ P2/P2a/P2b 对 capacity-mediated 子域项目内已证明 + 反例边界。Palme
 
 ## T3 虹吸桥接定理
 
-状态：拟证明。
+状态：`IMS-SIP^1` state-induced wait-snapshot diagnostic net 已证明；
+一般 IMS plant/S3PR 双向桥仍开放。
 
 ### Statement
 
-在可投影的 IMS 子类上，最小封闭阻塞核与构造 Petri 网中的最小致死虹吸存在对应；一般 IMS 中仅保留单向蕴含或反例边界。
+在 reachable stable `IMS-SIP^1` 状态中，inclusion-minimal local
+closed blocking core 与 state-induced wait-snapshot diagnostic net 中
+的 inclusion-minimal empty siphon 双向对应。该诊断网只含
+`free:r` places 和“先取得请求资源才释放当前持有资源”的 transitions；
+它不是 P1 reachability net，也不是 IMS plant 或经典 S3PR 网。一般 IMS
+只保留机器可读拒绝与反例边界。
 
 ### Assumptions
 
-- 每个资源占有与工件阶段可投影为 Petri place。
-- 预约 token、AGV 交接和 BAS 卸载都有守恒 place 表示。
-- 闭包不会隐藏可见资源释放。
-- 无软预约过售，或过售已经显式 finite-state 展开。
+- 状态已完成零时间闭包且有可达 witness，core 为 inclusion-minimal。
+- 核资源单位容量、residual 为 0。
+- 每个核工件恰持有一个单位核资源，并恰有一个单资源单位请求。
+- 没有 OR、AND、soft reservation、外部 guard、隐藏 release 或非合流
+  闭包释放路径。
+- AGV/硬预约只有作为普通单位资源时才可进入该诊断桥。
 
 ### Proof obligations
 
-- 从封闭核构造失标或不可恢复 siphon。
-- 从致死 siphon 恢复可审计的工件-资源阻塞核。
-- 证明最小性在映射下保持，或给出只保持包含关系的条件。
+- `[closed in P2c]` 从 minimal core 构造 minimal empty siphon。
+- `[closed in P2c]` 从 minimal empty siphon 恢复一持一求的 minimal
+  local core。
+- `[closed in P2c]` 证明最小性在 functional one-hold/one-request 映射
+  下保持。
+- `[open]` 对 plant-level structured Petri/S3PR 给出独立语义等价或
+  明确更窄子类；不得由诊断快照自动推出。
 
 ### Failure modes
 
-- siphon 含结构 place 但没有对应工件等待证据。
+- C4/C5 conjunctive request、OR 替代或多容量 residual 使诊断桥拒绝。
+- control-only/approval-only empty siphon 没有工件持有-请求证据。
 - AGV/预约 place 被投影掉后 false negative。
-- 软预约使 Petri 守恒关系失真。
+- 软预约或隐藏 release 使 Petri 守恒/等待解释失真。
 
 ### Evidence status
 
-文献基线 + 拟证明 + 反例准备。
+P2c 项目内证明、`ims_deadlock.petri` 最小 siphon 枚举和 C0/C5/OR/
+multi-capacity/control-only 回归。一般 plant/S3PR bridge 仍开放。
 
 ### Case mapping
 
@@ -121,22 +135,28 @@ P2/P2a/P2b 对 capacity-mediated 子域项目内已证明 + 反例边界。Palme
 
 ### Enumeration assertion
 
-对 Petri 子类计算最小 siphon，与 IMS 最小 core 做双向包含检查；一般类仅报告不可映射原因。
+对 `IMS-SIP^1` 计算 minimal empty siphon，与 IMS minimal core 做双向
+包含检查；一般类只报告不可映射原因，不伪造 siphon。
 
 ## T4 结构充分条件与阈值族
 
-状态：chain-decomposable strict-precedence 子类、`BIX0` 双向启动饱和
-阈值和表示敏感复杂性下界已证明；一般多容量/聚合预约、含
-transfer/drain 的制造岛阈值和一般紧凑 IMS 的精确复杂性类别仍拟证明。
+状态：chain-decomposable strict-precedence 子类、`BIX0` 候选态阈值、
+`BIX1-SAT` 可达启动/完成饱和阈值和表示敏感复杂性下界已证明；一般
+多容量/聚合预约、persistent-buffer 制造岛阈值和一般紧凑 IMS 的精确
+复杂性类别仍拟证明。
 
 ### Statement
 
 若所有必须获取且不可抢占保持的机器、缓冲、AGV 和预约 token 存在全局严格获取偏序，并且每个覆盖封闭阻塞核都能把容量缺口分解为 chain-decomposable holder-dependency chain，则在 A8 与窄化 T2 证书定理适用条件下，不存在覆盖所有未完成 non-terminal activities 的封闭阻塞核，因此不存在 capacity-mediated IMS operational deadlock。
 
-对无成功 transfer 前缀的双向启动饱和族 `BIX0`，P3c 给出精确存在性
-阈值：deadlock reachable iff `n_A>=c_M` 且 `n_B>=c_G`。该式只说明
-存在合法死锁前缀，不说明死锁必然发生；`c_D` 只因候选前缀保持 D 为空
-而暂时消失。含 persistent-D、drain、替代路线或时序的更一般族仍开放。
+`BIX0` 的 P3c 只给出已构造无成功-transfer 候选态含 closed kernel 的
+阈值，不作可达性主张。对从空持有状态出发并显式含 start、completion、
+transfer、unload 和 drain 的 `BIX1-SAT`，P3d 给出精确可达性阈值：
+capacity-mediated global deadlock reachable iff
+`n_A>=c_M` 且 `n_B>=c_G`。该式只说明存在死锁前缀，不说明死锁必然
+发生；`c_D,c_V` 只因见证前缀没有成功 transfer 且完成 drain 已显式建模
+而消失。persistent-D、替代路线、外部 drain 或额外优先级的更一般族
+仍开放。
 
 复杂性边界：无 buffer/AGV/reservation/BAS、有限无环路线、原子单单位
 acquire-release 的 `IMS-SU^A` 子类，其 `IMS-SU-SAFE` 由 SU-SAFE
@@ -159,8 +179,10 @@ supervisor 初始可行性至少 NP-hard，完整状态策略可能具有指数�
 - 反证：若存在覆盖所有未完成 non-terminal activities 的 chain-decomposable 封闭核，则由证书到资源链选择引理沿等待证据导出无限严格上升资源依赖；有限严格偏序中不可能存在这种链。
 - 处理多资源需求：至少一个阻塞需求必须导出违反偏序的等待链。
 - 调用窄化 T2：无 covering closed blocking kernel 推出无 capacity-mediated operational deadlock；不得跳过 T2 的覆盖、capacity-ready 和证书条件。
-- `BIX0` 之外、含 transfer/drain/替代路线/时序的双向岛族仍需推导或
-  证伪容量/WIP/AGV 分段阈值，不得预置公式。
+- `[closed in P3d]` 对 `BIX1-SAT` 从空持有状态构造充分性前缀，并利用
+  enabled drain/completion 排除阈值以下的全局死锁。
+- `BIX1-SAT` 之外、含 persistent-D、替代路线、外部 drain 或优先级的
+  双向岛族仍需推导或证伪容量/WIP/AGV 分段阈值，不得预置公式。
 
 ### Failure modes
 
@@ -173,10 +195,11 @@ supervisor 初始可行性至少 NP-hard，完整状态策略可能具有指数�
 ### Evidence status
 
 P3 chain-decomposable strict-precedence 子类无 capacity-mediated 操作
-死锁已项目内证明；P3c 闭合 `BIX0` 的 WIP/机器/AGV 启动饱和阈值；
+死锁已项目内证明；P3c 闭合 `BIX0` 候选态阈值；P3d 闭合
+`BIX1-SAT` 从空状态可达的 WIP/机器/AGV 双向饱和阈值；
 P6 给出 `IMS-SU^A` NP-complete、显式 LTS 多项式 fixed point 和紧凑
 输入至少 NP-hard 的边界。一般操作死锁、永久非资源 guard、多容量/
-聚合预约、一般紧凑 IMS 的精确复杂性分类和含 transfer/drain 的一般
+聚合预约、一般紧凑 IMS 的精确复杂性分类和 persistent-buffer 一般
 制造岛容量/WIP/AGV 阈值仍是 conjecture family 或边界。
 
 ### Case mapping
@@ -218,7 +241,12 @@ P6 给出 `IMS-SU^A` NP-complete、显式 LTS 多项式 fixed point 和紧凑
 
 ### Evidence status
 
-P4 标准有限 CTMC 方程项目内已证明；吸收 CTMC 条件化主来源仍需继续做全文出处加固。Metzner et al. 2009 仍只作为 ergodic Markov jump TPT/discrete committor 背景，不能直接支撑 absorbing IMS theorem；Narahari 仅按当前可核验摘要边界用于制造系统吸收 Markov 迁移线索。
+P4 标准有限 CTMC 方程项目内已证明；条件跳过程/Doob-style 来源已全文
+定位。Metzner et al. 2009 只作为 ergodic Markov jump TPT/discrete
+committor 背景，不能直接支撑 absorbing IMS theorem；Narahari 的全文
+只锚定其 Section 3/3.1/3.2/4 中的有限吸收 DTMC/embedded-chain
+fundamental matrix、平均死锁时间、吸收概率和瞬态分布，不是本项目 CTMC
+sensitivity 或 Doob-h 的来源。
 
 ### Case mapping
 

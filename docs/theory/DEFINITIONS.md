@@ -38,6 +38,8 @@
 
 永久质量 guard、外部同步永不满足、未建模批准缺失、calendar-empty terminal block 或 policy stall 可以造成一般停滞或一般操作死锁边界，但不属于 P2 的容量介导死锁。
 
+`event_calendar_empty` 是编码状态中的当前事实：此刻没有已排程且成熟或待处理的 timed/transport completion。它本身不推出 calendar-empty terminal block。calendar-empty terminal block 是一种解释分类，表示系统因为外部未来事件、调度地平线或未建模事件源缺失而停在非完成边界；P2 仍排除这种解释分类。
+
 ## 4. 准死锁
 
 状态：定义。

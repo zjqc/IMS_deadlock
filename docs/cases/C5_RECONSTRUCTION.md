@@ -49,3 +49,16 @@ blocked-complete behavior.
 The current executable `C5_DAG` is a structural repair witness, not a
 confirmation case. It removes the reverse route, starts with the carrier free,
 and exposes a finite completion path without fabricating CTMC rates.
+
+## BIX Boundary
+
+`BIX1-SAT` is the minimal reachable saturation slice for the P3d threshold:
+it uses an empty initial holding state, explicit A/B start and completion
+chains, and a witness prefix with no successful transfer. In that slice,
+`D` and reservation token `V` disappear from the threshold only because no
+successful transfer has consumed them before the deadlock witness.
+
+`C5_DAG` only eliminates the specific `M-G` return mechanism represented by
+the paired bidirectional slice. It is not a general deadlock-freedom claim for
+manufacturing islands with persistent output buffers, missing drains,
+alternative routes, or external calendar/guard boundaries.

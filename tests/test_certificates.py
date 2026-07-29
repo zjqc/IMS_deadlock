@@ -97,6 +97,98 @@ def test_local_kernel_is_not_global_when_unfinished_job_can_still_move() -> None
     assert local_certificate.kernel_jobs == frozenset({"j1", "j2"})
 
 
+def test_local_kernel_survives_enabled_transition_outside_kernel() -> None:
+    model = IMSModel(
+        id="local-kernel-with-outside-progress",
+        resources={
+            "r1": Resource("r1", 1),
+            "r2": Resource("r2", 1),
+            "r3": Resource("r3", 1),
+        },
+        jobs=("j1", "j2", "j3"),
+    )
+    state = IMSState(
+        id="local-cycle-plus-enabled-job",
+        holds=(
+            Holding("j1", "r1", 1),
+            Holding("j2", "r2", 1),
+        ),
+        requests={
+            "j1": (RequestAlternative((ResourceDemand("r2", 1),)),),
+            "j2": (RequestAlternative((ResourceDemand("r1", 1),)),),
+        },
+        stable=True,
+        complete=False,
+        event_calendar_empty=True,
+        mode_by_job={"j1": "waiting_r2", "j2": "waiting_r1", "j3": "ready"},
+        stage_by_job={"j1": "waiting_r2", "j2": "waiting_r1", "j3": "ready"},
+    )
+    outside_progress = (
+        TransitionSpec(
+            name="complete-j3",
+            kind=EventKind.SERVICE_COMPLETE,
+            job_id="j3",
+            source_mode="ready",
+            target_mode="completed",
+            controllable=False,
+            zero_time=False,
+            mark_complete=True,
+        ),
+    )
+
+    global_certificate = find_deadlock_certificate(model, state, outside_progress)
+    local_certificate = find_local_blocking_certificate(model, state, outside_progress)
+
+    assert global_certificate is None
+    assert local_certificate is not None
+    assert local_certificate.scope == "local"
+    assert local_certificate.kernel_jobs == frozenset({"j1", "j2"})
+    assert local_certificate.kernel_resources == frozenset({"r1", "r2"})
+
+
+def test_local_kernel_rejects_enabled_progress_inside_kernel() -> None:
+    model = IMSModel(
+        id="local-kernel-with-inside-progress",
+        resources={
+            "r1": Resource("r1", 1),
+            "r2": Resource("r2", 1),
+        },
+        jobs=("j1", "j2"),
+    )
+    state = IMSState(
+        id="local-cycle-plus-enabled-release",
+        holds=(
+            Holding("j1", "r1", 1),
+            Holding("j2", "r2", 1),
+        ),
+        requests={
+            "j1": (RequestAlternative((ResourceDemand("r2", 1),)),),
+            "j2": (RequestAlternative((ResourceDemand("r1", 1),)),),
+        },
+        stable=True,
+        complete=False,
+        event_calendar_empty=True,
+        mode_by_job={"j1": "waiting_r2", "j2": "waiting_r1"},
+        stage_by_job={"j1": "waiting_r2", "j2": "waiting_r1"},
+    )
+    inside_progress = (
+        TransitionSpec(
+            name="j1-release-r1",
+            kind=EventKind.RELEASE,
+            job_id="j1",
+            source_mode="waiting_r2",
+            target_mode="released_r1",
+            controllable=False,
+            zero_time=False,
+            release=(ResourceDemand("r1", 1),),
+        ),
+    )
+
+    local_certificate = find_local_blocking_certificate(model, state, inside_progress)
+
+    assert local_certificate is None
+
+
 def test_request_alternatives_use_or_semantics() -> None:
     model = IMSModel(
         id="or-requests",

@@ -43,7 +43,12 @@ For each seed source, record:
 
 The search may declare taxonomy saturation only after two consecutive bounded
 tracking rounds produce no new in-scope model category, theorem category, or
-critical counterexample. Current status: **scope-bounded taxonomy saturation reached in two consecutive bounded rounds (R2/R3), but full-text theorem verification gate remains open**. This is not a completed systematic review and does not claim exhaustive citation saturation.
+critical counterexample. Current status: **R2/R3 reached historical
+scope-bounded saturation, but the 2026-07-30 freshness audit found the `L31`
+reachable-partial-deadlock/no-reachability-tree theorem category and reset the
+stop counter**. `L29-L31` must seed at least two new no-category rounds. This
+is not a completed systematic review and does not claim exhaustive citation
+saturation.
 
 ## Theorem-use Rule
 

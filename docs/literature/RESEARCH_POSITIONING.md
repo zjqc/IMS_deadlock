@@ -16,6 +16,57 @@ bridge:
 4. a probability layer that uses the same certificates as absorbing classes,
    not a disconnected simulation metric.
 
+The contribution is therefore an interface theorem package, not a toolbox
+inventory:
+
+`reachable IMS state`
+`-> capacity-auditable closed blocking core`
+`-> exact IMS-SIP1 wait-snapshot dual when and only when its assumptions hold`
+`-> shared deadlock absorbing class for probability and supervision`.
+
+The paired negative results are part of the contribution: conjunctive/OR
+requests, multi-capacity residuals, control-only siphons, persistent-buffer
+occupancy, and transport/resource projection each mark a boundary where one of
+the arrows must be refused or replaced.
+
+## Current Novelty Threats
+
+Recent Petri-net work already provides iterative liveness-enforcing
+supervisors, reduced/step-graph synthesis, finite-capacity S3PR resource
+configuration, robust unreliable-resource control, and transport-equipment
+deadlock handling. Accordingly, the paper must not claim that siphon control,
+resource configuration, state-space reduction, AGV deadlock, or probability
+of deadlock is generically new.
+
+Two current comparators now delimit the structural claim especially sharply.
+Lu et al. (`L29`) already characterize partial-deadlock markings through a
+modified resource-requirement graph and PDDP constraints and synthesize a
+liveness-enforcing Petri-net controller. Su et al. (`L31`) officially claim
+reachable partial-deadlock detection through critical resource-limit-pair
+linear equations without constructing a reachability tree; because only the
+abstract has been verified, both its exact reachability meaning and its proof
+boundary remain open. Until that full-text audit is complete, this project
+must not claim to be the first reachable structural certificate or the first
+reachability-free detector. Pang et al. (`L30`) similarly blocks a broad
+"first finite-capacity threshold" claim until its equivalent-S3PR assumptions
+are read in full.
+
+The defensible gap is narrower:
+
+- existing structural candidates need not be reachable under the declared IMS
+  operational semantics;
+- a Petri resource graph need not expose BAS, AGV occupancy, hard reservation,
+  zero-time closure, and OR-of-AND capacity evidence in one auditable object;
+- classical probability and supervisor layers do not automatically use the
+  same minimal operational certificate as their absorbing/forbidden boundary;
+- restricted exact bridges are often asserted beyond their assumptions,
+  whereas this project makes refusal and counterexamples machine visible.
+
+The present `BIX1-SAT` result is therefore only a family-specific exact
+reachability threshold under its explicit start/completion/drain semantics. It
+is not evidence for a general IMS threshold and is not a priority claim over
+finite-capacity S3PR configuration.
+
 ## Target Venues
 
 - If the result yields general finite-state/DES/RAS theorems and complexity or
@@ -35,9 +86,15 @@ Not allowed:
 
 - "A cycle implies deadlock" outside the single-instance restricted subclass.
 - "Siphon theorem applies to IMS" without a Petri-net semantic equivalence.
+- "The wait-snapshot diagnostic net is an IMS plant or S3PR net." It is a
+  state-induced exact dual only inside `IMS-SIP^1`.
 - "Exact supervisor is scalable" without evidence.
 - "Doob-h explains deadlock paths" without verified CTMC equations and source
   locators.
+- "First reachable partial-deadlock certificate" or "first
+  reachability-free detector" before the `L31` full-text comparison.
+- "First finite-capacity deadlock threshold" from the restricted `BIX1-SAT`
+  theorem.
 
 ## Stop Condition
 

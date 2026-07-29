@@ -7,10 +7,10 @@
 
 | Gate | 状态 | 当前证据 | 未关闭项 |
 | --- | --- | --- | --- |
-| G0 仓库门 | PASS | Dell 目标路径和 GitHub SSH 已核验；污染历史已隔离；干净主分支和项目专用运行时已建立 | 最终集成提交仍需在新干净 worktree 验证后前推 |
-| G1 文献门 | PARTIAL | 六条文献链、36 项审计矩阵、两轮有界分类饱和、11 个全文定理锚点和迁移卡 | L04/L16/L22/B05 仍是 context/candidate，不能支撑定理；一般虹吸桥仍需原文与证明共同关闭 |
-| G2 理论门 | PASS（严格受限主链） | P1 有限 LTS/reachability-net；P2 capacity-mediated 封闭核 iff；P3 chain-decomposable 偏序充分条件；P4 CTMC；P5 supervisor；P6 复杂性边界 | structured Petri/虹吸双向桥、双向岛精确阈值、一般紧凑 IMS 精确复杂性和 risk-budget 控制仍开放 |
-| G3 算法门 | PASS（严格小有限模型） | Dell 干净集成 worktree 使用项目专用 Python 3.13.9：91 tests、Ruff check/format、strict mypy、五入口 CLI、C0-C5/C5_DAG 和 648 点 BIX0 网格全部通过；两轮独立代码复核 PASS | Petri/siphon 枚举、结构案例速率推导、一般制造岛阈值、风险预算/Pareto 算法仍属于后续开放项，不在本 PASS 内 |
+| G0 仓库门 | PASS | Dell 目标路径、GitHub SSH、干净集成 worktree 和项目专用 Python 3.13.9 已核验；污染历史保持隔离；最终源状态在该 worktree 验证后前推 `origin/main` | 无 |
+| G1 文献门 | PARTIAL | 六条文献链、39 项审计矩阵、13 个全文定理锚点、迁移卡；L04/L16/L22/L29 已完成范围定位 | `L31` 新增可达部分死锁类别并重置饱和计数；L30/L31 需全文；需以 L29-L31 为种子再完成连续两轮无新类别追踪 |
+| G2 理论门 | PASS（严格受限主链） | P1 有限 LTS/reachability-net；P2 capacity-mediated 封闭核 iff；P2c `IMS-SIP^1` 诊断虹吸双向桥；P3 偏序充分条件；P3d `BIX1-SAT` 可达阈值；P4 CTMC；P5 supervisor；P6 复杂性边界 | plant-level structured Petri/S3PR 桥、persistent-buffer 一般岛阈值、一般紧凑 IMS 精确复杂性和 risk-budget 控制仍开放 |
+| G3 算法门 | PASS（严格小有限模型 + P2c/P3d） | Dell 干净集成 worktree、项目 Python 3.13.9：111 tests、Ruff check/format、strict mypy；C0 exact Petri bridge、拒绝边界、BIX1-SAT 144 点小网格和双重复核通过 | 一般 plant/S3PR、结构案例物理速率、persistent-buffer 一般阈值和风险预算/Pareto 算法仍开放 |
 | G4 案例冻结门 | NOT FROZEN | C0-C5 发现集、反例账本、预注册模板和冻结协议已建立 | 确认模型、参数范围、哈希、指标与基线尚未冻结；不得报告确认结果 |
 | G5 论文门 | NOT STARTED | 研究定位、定理梯和证据边界已建立 | 需 G3/G4 后进行精确分析与独立 DES 一致性、负例/代价/边界报告和论文成稿 |
 
@@ -36,8 +36,8 @@
 - metadata/abstract/context 只能用于导航或历史说明。
 
 当前 `PARTIAL` 不阻止受限 P1-P6 的项目内证明，因为这些证明所用的外部
-锚点已核验；它阻止把尚未全文定位的虹吸、历史 Markov 方程或 Petri
-最大许可性候选写成论文证据。
+锚点已核验；它阻止任何“首个可达/无需 reachability tree 的结构检测”
+或“一般有限容量阈值”优先权表述，也阻止把 L30/L31 摘要写成定理依据。
 
 ## G2 理论门
 
@@ -46,16 +46,18 @@
 `IMS-RAS^CW 稳定语义`
 `-> finite LTS/reachability-net`
 `-> covering closed blocking core iff capacity-mediated deadlock`
+`-> IMS-SIP^1 state-induced wait-snapshot minimal empty siphon dual`
 `-> strict-precedence restricted sufficient condition`
+`-> BIX1-SAT reachable saturation threshold`
 `-> finite competing-absorption CTMC`
 `-> exact finite full-observation supervisor`
 `-> representation-sensitive complexity boundary`.
 
 所有更强结论必须保持 `拟证明` 或 `开放`：
 
-- 一般 IMS 与 structured Petri/S3PR 的同构；
-- 最小封闭核与最小致死虹吸的双向最小性；
-- 双向岛容量/AGV/WIP 的精确阈值；
+- 一般 IMS 与 plant-level structured Petri/S3PR 的同构；
+- `IMS-SIP^1` 之外最小封闭核与最小致死虹吸的双向最小性；
+- persistent-buffer、替代路线或外部 drain 下的一般双向岛精确阈值；
 - 一般紧凑 IMS 在 NP-hard 下界之上的完备复杂性；
 - risk-budget 控制的递归可行性/Pareto 最优性。
 
@@ -66,6 +68,10 @@
 - 穷举小模型的稳定状态与事件映射，输出确定性状态 ID 和最短可达前缀；
 - 核验 capacity-aware closed kernel，并把 simple cycle、terminal SCC/knot、
   Banker、Petri siphon 和 exact supervisor 分成不同假设层；
+- 对 `IMS-SIP^1` 构造 immutable state-induced wait-snapshot net，核验
+  evidence fidelity、minimal empty siphon，并对 OR/AND、多容量和
+  control-only 边界给出机器可读拒绝；
+- 对 `BIX1-SAT` 从空状态穷举小网格，截断行不得计作理论证据；
 - exact supervisor 检查不可控闭合、marked coaccessibility 与初始可行性；
 - CTMC 报告 committor、平均吸收时间、线性残差、灵敏度、Doob-h 行和和
   生成元来源；

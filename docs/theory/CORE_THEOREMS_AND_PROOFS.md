@@ -21,6 +21,12 @@
 - `CW9` 首篇排除项：无设备故障、无抢占、无动态插单、无无限外生到达、无软预约过售。
 - `CW10` 死锁判定排除策略停滞：人为禁用可控事件造成的 policy stall 不叫系统操作死锁；calendar-empty terminal block 必须单独标注为终端阻塞边界，不能混入结构死锁证书。
 
+`event_calendar_empty` 只记录编码状态中当前没有 scheduled timed completion
+或 transport completion。它不是 calendar-empty terminal block 的同义词；
+后者是对外部/未来事件缺失、调度地平线耗尽或未建模事件源造成停滞的解释
+分类。P2 排除的是 calendar-empty terminal block 解释分类，而不是所有
+`event_calendar_empty=True` 的状态事实。
+
 ### 稳定状态的直接进展
 
 对 `s in S_st` 和未完成工件 `j`，令 `Alt_s(j)` 为其 capacity-ready 直接进展替代集合：事件的非容量 guard、时钟成熟条件、同步握手和策略选择已经满足，剩余问题只是不知道所需容量或硬预约 token 是否可用。若 `j` 已完成，则 `Alt_s(j)=emptyset`。若 `j` 的下一步是当前 enabled 的 timed/transport completion、纯完成标记、无需新容量的释放、无需新容量的交接或无需新容量的卸载，则对应 alternative 的需求向量为空。若 `j` 处于 blocked-after-service 或 blocked-unload，则其替代包含所有当前非容量 guard 已满足的卸载、交接、进入输出缓冲、获得 AGV、兑现硬预约等直接解除阻塞动作。
@@ -166,17 +172,65 @@
 
 证明：在 `IMS-RAS^1` 中每个阻塞替代只有一个请求资源，容量缺口等价于该资源被某个核内工件持有；于是每个阻塞工件在等待图中有一条指向 holder 的边。若 `C` 是 terminal SCC，则 `C` 内每个请求资源的 holder 仍在 `C` 内，无出边保证所有请求均由 `C` 内持有阻塞，得到局部封闭阻塞核 `K_C`。反过来，设 `K` 是 inclusion-minimal 局部封闭阻塞核。核内等待图每个节点出度为 1 且所有出边留在核内；若该图含多个 terminal SCC 或含不属于 terminal SCC 的前驱节点，则删去前驱节点或取其中一个 terminal SCC 仍保持封闭阻塞，违背 inclusion-minimal。因此 `K` 对应恰一个 terminal SCC。覆盖性把局部结论提升为全局结论。该推论不适用于多容量、多请求、OR-of-AND 替代、AGV/预约拆分或残余容量情形。
 
+### P2c `IMS-SIP^1` wait-snapshot siphon bridge
+
+定义 `IMS-SIP^1` 为 `IMS-RAS^CW` 的局部证书子类：状态 `s` reachable
+且 stable；证书以 `shortest_reachable_prefix is not None` 或等价案例 witness
+记录可达性；证书核 `K` inclusion-minimal；每个核内资源或硬预约 token
+单位容量且 residual 为 0；每个核内工件恰持有一个核内资源 `h(j)` 并
+恰有一个当前 request alternative，该 alternative 恰请求一个单位核内资源
+`q(j)`；无 OR、无 conjunctive AND 请求、无 soft reservation、无外部
+guard、无隐藏 release、无影响释放的非合流闭包。AGV 与硬预约 token 只有
+作为普通单位资源时才可纳入。
+
+当前实现只机械检查可达 witness 是否提供、证书极小性、稳定态、单位容量、
+一持一求、OR/AND 缺失和 residual marking。closed-world 事件完备、无隐藏
+release、guard 已满足和闭包语义仍由证书假设、案例 witness 与人工证明审计
+承担；该实现不是一般 plant/S3PR 双模拟检查器。
+
+对给定 `s,K` 构造 state-induced wait-snapshot Petri net：
+
+- place 集 `P_K={free:r | r in R_K}`；
+- marking `M_s(free:r)=cap(r)-occ_s(r)`；
+- 对每个 `j in J_K` 建 transition `t_j`，满足
+  `Pre(t_j)={free:q(j)}` 且 `Post(t_j)={free:h(j)}`。
+
+这里 `t_j` 不是 IMS 事件本体，而是“获得请求资源后才可能释放当前资源”的
+等待依赖诊断投影。该网不同于 P1 的 one-place-per-state reachability net。
+
+**定理 P2c。** 在 reachable stable `IMS-SIP^1` 状态中，inclusion-minimal
+local closed blocking core 与上述 wait-snapshot net 中的
+inclusion-minimal empty siphon 双向对应。
+
+**证明。** 正向取 `Sigma_K={free:r | r in R_K}`。单位容量和 residual 为
+0 说明 `Sigma_K` 在 `M_s` 下 empty。任一向 `free:h(j)` 输出的 transition
+为 `t_j`，而 `t_j` 的输入 `free:q(j)` 仍在 `Sigma_K`，故
+`bullet Sigma_K subseteq Sigma_K bullet`，`Sigma_K` 是 ordinary siphon。
+若 `Sigma_K` 有真子 empty siphon，则该真子资源集在一持一求语义下恢复出
+真子 local closed blocking core，违背 `K` 的 inclusion minimality。
+
+反向给定 inclusion-minimal empty siphon `Sigma`。令
+`R_S={r | free:r in Sigma}`。empty marking 与单位容量给出每个 `r in R_S`
+均由唯一核内工件持有。siphon 条件说明任一释放到 `R_S` 的 holder
+transition 在释放前请求的资源也在 `R_S`；一持一求和无替代条件于是恢复出
+一个 local closed blocking core。若它不是 inclusion-minimal，则其真子
+core 对应真子 empty siphon，矛盾。
+
+该结论不适用于 C4/C5 这类 conjunctive request、OR 路由、多容量 residual、
+soft reservation、control-only siphon 或任何缺少工件持有-请求证据的
+Petri 辅助 place。
+
 ### Assumption dependence
 
-P2 使用 `CW2-CW8`、`CW10` 与 capacity-mediated domain 定义。P2b 额外使用单实例、一持一求、无替代和出度为 1 条件。
+P2 使用 `CW2-CW8`、`CW10` 与 capacity-mediated domain 定义。P2b 额外使用单实例、一持一求、无替代和出度为 1 条件。P2c 额外使用 `IMS-SIP^1` 的 reachable stable、单位容量、一持一求、无 OR、无 AND、无隐藏 release 和 ordinary wait-snapshot net 条件；它不使用 P1 reachability-net 构造。
 
 ### Failure counterexample obligation
 
-`C1` 必须给出资源图有环但 residual 足够的非死锁状态。`C3` 必须给出多容量下简单环或无汇 WCC 产生错误判据的反例。另需新增非资源边界反例：某工件因永久质量 guard、外部同步永不满足或未建模批准缺失而无 admissible successor，但没有 capacity-ready alternative；该状态可是一种一般操作死锁/终端阻塞，却不是 P2 的 capacity-mediated deadlock。
+`C1` 必须给出资源图有环但 residual 足够的非死锁状态。`C3` 必须给出多容量下简单环或无汇 WCC 产生错误判据的反例。另需新增非资源边界反例：某工件因永久质量 guard、外部同步永不满足或未建模批准缺失而无 admissible successor，但没有 capacity-ready alternative；该状态可是一种一般操作死锁/终端阻塞，却不是 P2 的 capacity-mediated deadlock。P2c 另需保留 control-only/approval-only siphon 反例：Petri 投影中存在 empty siphon，但没有 IMS 工件持有-请求证据，故不能反向恢复 blocking core。
 
 ### Case/enum verifier
 
-枚举小模型所有可达稳定状态，对每个 capacity-mediated deadlock 生成覆盖核；对每个覆盖核用事件分类检查无后继。对无 capacity-ready alternative 的非资源 guard 阻塞，验证其被标为 P2 外边界。枚举只用于反例搜索和实现审计，不替代上述证明。
+枚举小模型所有可达稳定状态，对每个 capacity-mediated deadlock 生成覆盖核；对每个覆盖核用事件分类检查无后继。对无 capacity-ready alternative 的非资源 guard 阻塞，验证其被标为 P2 外边界。对 `IMS-SIP^1` 小模型构造 wait-snapshot net，枚举 minimal empty siphon 并与 local core 比对；对 C4/C5、OR 替代和多容量状态断言 bridge 拒绝。枚举只用于反例搜索和实现审计，不替代上述证明。
 
 ## 3. P3 全局获取偏序无死锁定理
 
@@ -186,17 +240,17 @@ P2 使用 `CW2-CW8`、`CW10` 与 capacity-mediated domain 定义。P2b 额外使
 
 ### 定义 3.2 chain-decomposable certificate
 
-封闭阻塞核 `K` 是 chain-decomposable 的，当且仅当对每条 witness `(j,a,r) in W_K`，存在一个 holder 记录 `(j_h,r,q,j,a) in H_K`，其中 witness 资源或硬预约 token `r` 本身就是 `j_h` 当前不可自主释放持有的关键资源，且 `r in R_key`。若 `j_h` 的释放依赖于它自己的某个被阻塞 capacity-ready 替代，并为该替代选择 witness `r'`，则 acquisition precedence 要求
+封闭阻塞核 `K` 是 chain-decomposable 的，当且仅当对每条 witness `(j,a,r) in W_K`，存在一个 holder 记录 `(j_h,r,q,j,a) in H_K`，其中 witness 资源或硬预约 token `r` 本身就是 `j_h` 当前不可自主释放持有的关键资源，且 `r in R_key`；并且对每个被选中的 holder `j_h`，都存在属于 `j_h` 自己的 blocked capacity-ready 替代及其下一条 witness `r'`。acquisition precedence 要求
 
 `r < r'`.
 
-该条件排除无法把聚合容量缺口分解到具体 holder-dependency chain 的情形；一般多容量、池化硬预约、共享库存或批量容量聚合只作为 P3 之外的候选扩展。
+该条件排除只在“若释放依赖”时才给出下一跳的空洞证明；每个被选中的 holder 都必须提供自己的下一条阻塞责任链。无法把聚合容量缺口分解到具体 holder-dependency chain 的情形，一般多容量、池化硬预约、共享库存或批量容量聚合只作为 P3 之外的候选扩展。
 
 ### 引理 P3-L1 证书到资源链选择
 
 若 `K` 是非空 covering closed blocking core 且 chain-decomposable，则从任一 witness 出发，可以构造一条无限资源序列 `r_1,r_2,...`，满足每一步 `r_n < r_{n+1}`。
 
-证明：取任意 witness `(j_0,a_0,r_1) in W_K`。由 chain-decomposable，存在 holder `j_1` 持有或硬预约 witness 资源 `r_1`，并且该持有的释放依赖于 `j_1` 的某个被阻塞 capacity-ready 替代。条件 2 保证这个替代有 witness，记为 `r_2`，且 acquisition precedence 给出 `r_1 < r_2`。对 witness `r_2` 重复同一选择。`K` 有限但选择过程可无限重复；每一步都由 chain-decomposable 和替代全阻塞给出下一 witness，得到无限严格上升链。
+证明：取任意 witness `(j_0,a_0,r_1) in W_K`。由 chain-decomposable，存在 holder `j_1` 持有或硬预约 witness 资源 `r_1`；同一定义还要求这个被选中的 holder `j_1` 有自己的 blocked capacity-ready 替代和下一 witness，记为 `r_2`。acquisition precedence 给出 `r_1 < r_2`。对 witness `r_2` 重复同一选择。`K` 有限但选择过程可无限重复；每一步都由 chain-decomposable 的 holder-specific next-witness 条件给出下一 witness，得到无限严格上升链。
 
 ### 定理 P3
 
@@ -228,52 +282,97 @@ P2 使用 `CW2-CW8`、`CW10` 与 capacity-mediated domain 定义。P2b 额外使
 
 对满足偏序的小模型网格枚举覆盖核，并额外检查每个候选核是否 chain-decomposable；若发现 chain-decomposable 覆盖核，输出违反偏序的最短资源链；若发现非 chain-decomposable 聚合核或非资源 guard 终端阻塞，登记为 P3 外边界案例。
 
-### P3c 双向启动饱和族 `BIX0` 的精确阈值
+### P3c 双向启动饱和候选态 `BIX0`
 
 定义 `BIX0(c_M,c_G,c_D,n_A,n_B)`，其中
-`c_M,c_G,c_D >= 1`。从空资源状态出发：
+`c_M,c_G,c_D >= 1`。它构造一个无成功 transfer 前缀的候选饱和状态：
 
 - 至多 `c_M` 个 A 类工件可启动并各持有一个 `M`；服务后 BAS 保持
   `M`，其唯一 capacity-ready 进展原子请求一个 `D` 槽和一个 `G`；
 - 至多 `c_G` 个 B 类工件可启动并各持有一个 `G`；blocked-unload
   保持 `G`，其唯一 capacity-ready 进展原子请求一个 `M`；
-- 候选死锁前缀只含合法启动和进入上述阻塞阶段的事件，不含任何成功
-  A/B transfer，因此 `D` 从初始空保持为空；
+- 候选状态不含任何成功 A/B transfer，因此 `D` 从初始空保持为空；
 - 没有替代路线、自主释放、软预约、额外 guard 或 policy/calendar
-  停止；合法交错允许先形成全部阻塞者再选择 transfer。
+  停止。
 
-这里“可达”是存在一个合法事件前缀，不是所有调度都必然死锁。
-
-**定理 P3c。** `BIX0` 中 capacity-mediated global operational deadlock
-可达，当且仅当
+**命题 P3c。** `BIX0` 候选状态存在 closed blocking kernel，当且仅当
 
 `n_A >= c_M` 且 `n_B >= c_G`。
 
-**充分性。** 先使恰好 `c_M` 个 A 工件持满 `M` 并等待 `{D,G}`，再使
-恰好 `c_G` 个 B 工件持满 `G` 并等待 `M`。此时 residual
-`M=0,G=0,D=c_D>=1`。每个 A 的 conjunctive request 因 `G` 缺口而
-不可发生；每个 B 因 `M` 缺口而不可发生；进一步启动也因对应启动资源
-已满而不可发生，且不存在自主释放。全部未完成活动由同一 `M-G` 封闭核
+`BIX0` 是候选态前置结果，不再作为可达性定理使用。它只机检在一个
+已构造的空前缀饱和状态上，闭核阈值是否等于 `M-G` 双向容量阈值。
+
+### P3d 可达饱和族 `BIX1-SAT`
+
+定义 `BIX1-SAT(c_M,c_G,c_D,c_V,n_A,n_B)`，其中
+`c_M,c_G,c_D,c_V >= 1`。模型从空持有状态出发，所有 A 工件初始请求
+`M`，所有 B 工件初始请求 `G`，且事件注册表显式含有下列完成事件；
+`event_calendar_empty=True` 只表示没有外部日历，不表示完成事件缺失。
+
+- A 链：`start` 获取 `M` 并清除启动请求；`service_complete` 为
+  uncontrollable，仍持有 `M`，并请求 `{G,D,V}`；`transfer` 为
+  controllable，原子获取 `G,D,V`、释放 `M` 并清除请求；`drain` 为
+  uncontrollable，释放 `G,D,V` 并完成。
+- B 链：`start` 获取 `G` 并清除启动请求；`transport_complete` 为
+  uncontrollable，仍持有 `G`，并请求 `M`；`unload` 为 controllable，
+  原子获取 `M`、释放 `G` 并清除请求；`complete` 为 uncontrollable，
+  释放 `M` 并完成。
+- `V` 是 hard reservation token。所有转移都是显式 `TransitionSpec`；
+  零时闭包在该族中平凡。
+
+**定理 P3d。** `BIX1-SAT` 中 capacity-mediated global operational
+deadlock 可达，当且仅当
+
+`n_A >= c_M` 且 `n_B >= c_G`。
+
+**充分性。** 先对恰好 `c_M` 个 A 工件依次执行 `start` 与
+`service_complete`，使它们持满 `M` 并请求 `{G,D,V}`；再对恰好
+`c_G` 个 B 工件依次执行 `start` 与 `transport_complete`，使它们
+持满 `G` 并请求 `M`。该前缀没有成功 transfer，因此 residual
+`M=0,G=0,D=c_D,V=c_V`。每个 A 的 AND 请求因 `G` 缺口而不可发生；
+每个 B 因 `M` 缺口而不可发生；任何未启动 A/B 也分别因 `M/G` 满而
+不能启动。所有 completion 事件已显式建模，但在该状态没有工件处于
+可触发 completion 的 source mode。全部未完成活动由同一 `M-G` 封闭核
 覆盖，故由 P2 得到 capacity-mediated global deadlock。
 
-**必要性。** 在不含成功 transfer 的前缀中 `D` 始终有空位。若某 A
-阻塞，其 `{D,G}` 请求只能因 `G` 满而阻塞；`G` 的唯一 holder 是 B
-阻塞者，所以至少需要 `c_G` 个 B 工件。对称地，任一 B 的 `M` 请求
-阻塞要求 `M` 满，而 `M` 的唯一 holder 是 A 阻塞者，所以至少需要
-`c_M` 个 A 工件。没有 A 时 `M` 可用、B 可进展；没有 B 时 `G` 可用、
-A 可进展。因此任何该族全局死锁都同时需要两类阻塞者，得到
+**必要性。** 先观察任一全局死锁都不能含 `a_transferred` 工件，因为
+其 `drain` uncontrollable 且 enabled；也不能含 `b_on_M` 工件，因为其
+`complete` uncontrollable 且 enabled。因此在全局死锁中，`M` 只可能由
+尚未 transfer 的 A 持有，`G` 只可能由尚未 unload 的 B 持有，并且
+`D,V` 无占用。
+
+若 `n_A<c_M`，则 `M` 不可能被持满，故 residual `M>0`。如果存在
+`b_blocked_unload` 工件，其 `unload` enabled；否则任一未完成 B 必处于
+`b_idle` 或 `b_in_transport`，而前者在 `G` 有余量时可 `start`，后者的
+`transport_complete` enabled。若 `G` 无余量，则必有 B 持有 G；在没有
+`b_blocked_unload` 的假设下，该 holder 处于 `b_in_transport`，仍有
+enabled completion。若没有未完成 B，则任一未完成 A 处于 `a_idle`、
+`a_in_service` 或 `a_blocked_complete`；分别有 `start`、
+`service_complete`，或因 `D,V` 空闲且不存在 B 占满 G 而有 `transfer`。
+所以不存在全局死锁。
+
+对称地，若 `n_B<c_G`，则在上述死锁必要状态形态中 residual `G>0` 且
+`D,V` 全空。任一 `a_blocked_complete` 的 `{G,D,V}` transfer enabled；
+若没有这种工件，则任一未完成 A 的 `start` 或 `service_complete`
+enabled。若没有未完成 A，任一未完成 B 的 `start`、
+`transport_complete`、`unload` 或 `complete` 链上至少一个事件 enabled；
+其中若 M 被 A 持满，则这些 A 必处于 `a_in_service` 或
+`a_blocked_complete`，前者 completion enabled，后者 transfer enabled。
+故任何全局死锁都必须同时满足
 `n_A>=c_M,n_B>=c_G`。
 
-**为什么 `c_D` 暂时消失。** 只要 `c_D>=1` 且候选前缀没有成功
-transfer，`D` 始终可用；A 的 AND 请求已经被 `G` 缺口击穿，所以
-`D` 容量不进入这个特定可达性阈值。这不是一般有限输出缓冲无关性结论。
+**为什么 `c_D,c_V` 消失。** P3d 的见证前缀没有成功 transfer，
+因此没有工件持有 `D` 或 `V`；A 的 AND 请求已由 `G` 缺口阻塞。
+在 `c_D,c_V>=1` 的本族内，`D,V` 不进入阈值。这不是一般有限缓冲或
+预约容量无关性结论。
 
 **边界反例。** 若允许成功 A transfer 后长期占用 `D`，则
 `c_M=c_G=c_D=1,n_A=2,n_B=0` 已击穿上述一般化：A1 进入并占满 D，
 A2 随后持 M 等待 D。若 D 中实体没有已建模的 capacity-ready drain，
 该状态属于 buffer-full/calendar/外部-drain 终端边界，而不是 P2 的
 capacity-mediated 全局死锁；若 drain 已建模，则阈值取决于 drain
-资源与释放语义。故不能把 `BIX0` 公式扩展为一般 C5 阈值。
+资源与释放语义。该反例分类为 `outside_bix1_sat`，不是 P3d 的
+theorem mismatch。
 
 **DAG repair 边界。** 删除 B 对 M 的回流请求，并给 B 一个 enabled
 release/unload，会破坏上述 `M-G` 封闭核。它只消除这个双向饱和机制；
