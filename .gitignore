@@ -1,0 +1,75 @@
+# Python caches and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and local tooling
+.venv/
+venv/
+env/
+.python-version
+.ipynb_checkpoints/
+
+# Builds and packaging
+build/
+dist/
+*.egg-info/
+site/
+
+# IDE and OS metadata
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+secrets/
+secret/
+keys/
+*.pem
+*.key
+*.crt
+id_rsa*
+id_ed25519*
+
+# Generated outputs, data, caches, and downloads
+_path_tape_cache/
+outputs*/
+output*/
+artifacts/
+logs/
+data/
+datasets/
+downloads/
+papers/
+raw_papers/
+tmp/
+temp/
+
+# Large or imported blobs
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.pdf
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.sqlite
+*.db
+
+# Keep authored documentation and structured case specifications trackable
+!docs/**/*.md
+!cases/**/*.json
+!cases/**/*.yaml
+!cases/**/*.yml
