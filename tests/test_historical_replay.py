@@ -330,7 +330,9 @@ def _valid_result(case_id: str) -> dict[str, Any]:
                     "cell_id": "G01_FWD_DAG",
                     "quantitative": {
                         "deadlock_probability": {"s0": 0.25},
-                        "probability_bounds": {"min": 0.0, "max": 1.0},
+                        "committor_residual_inf_norm": 0.0,
+                        "mean_time_residual_inf_norm": 0.0,
+                        "probability_bounds": {"min": 0.25, "max": 0.25},
                         "probability_bounds_valid": True,
                     },
                     "terminal_classification": _terminal_classification(["s_dead"]),
@@ -346,7 +348,9 @@ def _valid_result(case_id: str) -> dict[str, Any]:
             "classification": "medium_instance_executed",
             "quantitative": {
                 "deadlock_probability": {"s0": 0.25},
-                "probability_bounds": {"min": 0.0, "max": 1.0},
+                "committor_residual_inf_norm": 0.0,
+                "mean_time_residual_inf_norm": 0.0,
+                "probability_bounds": {"min": 0.25, "max": 0.25},
                 "probability_bounds_valid": True,
             },
             "terminal_classification": _terminal_classification(["s_dead"]),
@@ -1875,6 +1879,55 @@ def test_summarize_rejects_missing_extra_and_writes_replay_only_summary(
     by_case = {score["case_id"]: score for score in cast(list[Any], summary["scores"])}
     assert by_case["G4_IMS_PARAMETER_GRID"]["mechanism"]["status"] == "PASS"
     assert by_case["G4_MEDIUM_ISLAND_REBUILD"]["mechanism"]["status"] == "PASS"
+    assert (
+        by_case["G4_MEDIUM_ISLAND_REBUILD"]["mechanism"][
+            "probability_absolute_tolerance"
+        ]
+        == 1e-10
+    )
+
+
+def test_probability_bounds_accept_solver_roundoff_not_material_violation() -> None:
+    assert replay._bounds_mapping_valid({"min": -0.0, "max": 1.0000000000000002})
+    assert not replay._bounds_mapping_valid({"min": -1e-6, "max": 1.0})
+    assert not replay._bounds_mapping_valid({"min": 0.0, "max": 1.0 + 1e-6})
+    assert not replay._bounds_mapping_valid({"min": 0.75, "max": 0.25})
+    assert not replay._bounds_mapping_valid({"min": False, "max": 1.0})
+
+
+@pytest.mark.parametrize(
+    ("mutation", "value"),
+    [
+        ("extra_probability", 2.0),
+        ("mismatched_bounds", 1.0),
+        ("committor_residual", 1e-6),
+        ("mean_time_residual", 1e-6),
+    ],
+)
+def test_mechanism_recomputes_quantitative_integrity(
+    mutation: str,
+    value: float,
+) -> None:
+    result = _valid_result("G4_MEDIUM_ISLAND_REBUILD")
+    quantitative = cast(dict[str, Any], result["quantitative"])
+    if mutation == "extra_probability":
+        cast(dict[str, Any], quantitative["deadlock_probability"])["bad"] = value
+    elif mutation == "mismatched_bounds":
+        cast(dict[str, Any], quantitative["probability_bounds"])["max"] = value
+    elif mutation == "committor_residual":
+        quantitative["committor_residual_inf_norm"] = value
+    else:
+        quantitative["mean_time_residual_inf_norm"] = value
+
+    mechanism = replay._mechanism_check(
+        "G4_MEDIUM_ISLAND_REBUILD",
+        result,
+        {"exit_code": 0, "timed_out": False, "estimand_ids": ["x"]},
+        BUNDLE_ROOT,
+    )
+
+    assert mechanism["status"] == "FAIL"
+    assert mechanism["probability_bounds_valid"] is False
 
 
 def test_real_payload_estimands_terminal_classification_and_crp_strictness(
