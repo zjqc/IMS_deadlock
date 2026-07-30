@@ -193,6 +193,30 @@ The following negative evidence remains part of the record:
 No negative row is deleted, reclassified as a new held-out success, or used to
 claim an independent confirmation pass.
 
+## Post-R3 Comparator Hardening
+
+PR review identified a separate tooling defect in
+`compare_capture_hashes`: after a malformed record had already failed schema
+validation, the result builder still indexed `stdout_raw_sha256` directly and
+could raise `KeyError` instead of returning an auditable refusal.
+
+The post-R3 fix makes required hash comparisons fail closed: both values must
+be nonempty strings and equal, and the detailed payload uses safe lookups so a
+missing primary or repro field is reported as `null` with `match=false`.
+Regression tests cover missing raw hashes on either side and malformed
+canonical/stderr fields.
+
+The review suggestion to treat two absent canonical JSON hashes as a successful
+match was deliberately not adopted. The frozen G5 reproducibility policy
+requires a canonical JSON SHA-256 match, and the G6 replay contract permits
+primary/repro equality only after two formal-success records exist. Therefore
+`None`/`None` remains `records_valid=false`,
+`stdout_canonical_json_sha256_match=false`, and overall `match=false`.
+
+This is future capture-tool hardening only. It was implemented after the
+immutable R3 code tree was executed and is not used to rerun, rescore, replace,
+or upgrade G5 or R3 evidence.
+
 ## Remaining Scope
 
 R3 closes only the historical replay mechanism-regression question:
