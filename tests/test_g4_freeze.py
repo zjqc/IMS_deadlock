@@ -6,6 +6,8 @@ from typing import Any
 import pytest
 
 from ims_deadlock.g4_freeze import (
+    G4_DISCOVERY_CASE_IDS,
+    G4_DISCOVERY_FAMILY_IDS,
     G4_REQUIRED_BASELINES,
     G4_REQUIRED_FAMILIES,
     G4_REQUIRED_METRICS,
@@ -41,7 +43,8 @@ def _confirmation_case(case_id: str, family: str) -> dict[str, object]:
         "protocol": "g4_confirmation_freeze_v1",
         "contamination": {
             "derived_from_discovery_case": False,
-            "excluded_discovery_case_ids": [],
+            "excluded_discovery_case_ids": list(G4_DISCOVERY_CASE_IDS),
+            "excluded_discovery_family_ids": list(G4_DISCOVERY_FAMILY_IDS),
             "provenance": "independent_preregistration",
         },
         "input_payload": {
@@ -190,7 +193,8 @@ def _complete_bundle(tmp_path: Path, *, include_freeze_entry: bool = True) -> Pa
     }
     exclusions = {
         "schema_version": "ims-deadlock/g4-exclusions/v1",
-        "excluded_discovery_case_ids": [],
+        "excluded_discovery_case_ids": list(G4_DISCOVERY_CASE_IDS),
+        "excluded_discovery_family_ids": list(G4_DISCOVERY_FAMILY_IDS),
         "forbidden_result_keys": [
             "observed_result",
             "confirmation_result",
@@ -313,6 +317,25 @@ def test_freeze_check_requires_all_families_predictions_and_baselines(
 
     assert result.status == "NOT_FROZEN"
     assert any("required G4 families" in error for error in result.errors)
+
+
+def test_freeze_check_requires_complete_discovery_exclusions(
+    tmp_path: Path,
+) -> None:
+    root = _complete_bundle(tmp_path)
+    exclusions_path = root / "exclusions.json"
+    exclusions = json.loads(exclusions_path.read_text(encoding="utf-8"))
+    exclusions["excluded_discovery_family_ids"] = ["BIX1-SAT"]
+    _write_json(exclusions_path, exclusions)
+    entry_path = root / "FREEZE_ENTRY.json"
+    entry = json.loads(entry_path.read_text(encoding="utf-8"))
+    entry["artifact_hashes"]["exclusions_sha256"] = _canonical_sha(exclusions)
+    _write_json(entry_path, entry)
+
+    result = check_g4_freeze(root)
+
+    assert result.status == "NOT_FROZEN"
+    assert any("discovery family exclusions" in error for error in result.errors)
 
 
 def test_freeze_check_rejects_result_directory_or_inspected_flag(

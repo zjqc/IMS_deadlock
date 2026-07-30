@@ -12,6 +12,19 @@ from pathlib import Path
 from typing import Any, Literal
 
 FREEZE_CHECK_SCHEMA_VERSION = "ims-deadlock/g4-freeze-check/v1"
+G4_DISCOVERY_CASE_IDS = (
+    "C0",
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5",
+    "C5_DAG",
+)
+G4_DISCOVERY_FAMILY_IDS = (
+    "BIX1-SAT",
+    "BIX2-PERSIST",
+)
 G4_REQUIRED_FAMILIES = (
     "G4-ADVERSARIAL-BOUNDARY",
     "G4-B05-SUPERVISOR-COMPARATOR",
@@ -312,8 +325,21 @@ def _validate_confirmation_case_payload(
     contamination = payload.get("contamination")
     if not isinstance(contamination, dict):
         errors.append(f"{label} contamination must be an object")
-    elif contamination.get("derived_from_discovery_case") is not False:
-        errors.append(f"{label} must not be derived from discovery")
+    else:
+        if contamination.get("derived_from_discovery_case") is not False:
+            errors.append(f"{label} must not be derived from discovery")
+        if contamination.get("provenance") != "independent_preregistration":
+            errors.append(f"{label} must use independent preregistration provenance")
+        if not _matches_string_set(
+            contamination.get("excluded_discovery_case_ids"),
+            G4_DISCOVERY_CASE_IDS,
+        ):
+            errors.append(f"{label} discovery case exclusions are incomplete")
+        if not _matches_string_set(
+            contamination.get("excluded_discovery_family_ids"),
+            G4_DISCOVERY_FAMILY_IDS,
+        ):
+            errors.append(f"{label} discovery family exclusions are incomplete")
     input_payload = payload.get("input_payload")
     if not isinstance(input_payload, dict):
         errors.append(f"{label} input_payload must be an object")
@@ -606,10 +632,22 @@ def _validate_exclusions(
         errors,
     )
     excluded = payload.get("excluded_discovery_case_ids")
-    if not isinstance(excluded, list) or any(
-        not isinstance(case_id, str) or not case_id for case_id in excluded
+    if (
+        not isinstance(excluded, list)
+        or any(not isinstance(case_id, str) or not case_id for case_id in excluded)
+        or set(excluded) != set(G4_DISCOVERY_CASE_IDS)
     ):
-        errors.append("excluded discovery case IDs must be a string list")
+        errors.append("discovery case exclusions must be complete")
+    excluded_families = payload.get("excluded_discovery_family_ids")
+    if (
+        not isinstance(excluded_families, list)
+        or any(
+            not isinstance(family_id, str) or not family_id
+            for family_id in excluded_families
+        )
+        or set(excluded_families) != set(G4_DISCOVERY_FAMILY_IDS)
+    ):
+        errors.append("discovery family exclusions must be complete")
     keys = payload.get("forbidden_result_keys")
     if not _nonempty_string_list(keys):
         errors.append("forbidden result keys must be a nonempty string list")
@@ -866,6 +904,15 @@ def _nonempty_string_list(value: object) -> bool:
         isinstance(value, list)
         and bool(value)
         and all(isinstance(item, str) and bool(item.strip()) for item in value)
+    )
+
+
+def _matches_string_set(value: object, expected: tuple[str, ...]) -> bool:
+    return (
+        isinstance(value, list)
+        and all(isinstance(item, str) for item in value)
+        and len(value) == len(set(value))
+        and set(value) == set(expected)
     )
 
 
