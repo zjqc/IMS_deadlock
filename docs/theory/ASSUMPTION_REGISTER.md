@@ -230,3 +230,64 @@ dag 模式只删除 C 的 `Q->M` 请求并让 C 显式释放 Q 完成。
 失败后果：增加可选 drain 不能自动证明结构无死锁；增加替代路线、
 AGV/预约、多个 persistent buffers 或外部/日历释放时，P3e 必须停止适用
 并进入新的迁移卡、反例和发现协议。
+
+## A18 G4 `L31` CRP evidence-profile input boundary
+
+状态：G4 development comparator 假设。
+
+`L31` comparator 输入必须显式声明 S4PR applicability，给出外部 S4PR
+embedding 的内容 hash，冻结 CRP/resource-limit-pair set，冻结 translated
+IMS target state，并把 external legal-prefix claim 与 independent finite-LTS
+BFS classification 分开记录。
+
+用途：G4 CRP evidence-profile audit；`PO-T3-8a`。
+
+失败后果：缺少 hash、S4PR 适用性、冻结候选或独立 BFS 时，只能返回
+`incomplete_evidence`、`not_applicable` 或相应 refusal；不得生成 CRP、
+不得运行 SBA、不得把外部 claim 当作 reachability evidence。若完整输入中
+external legal-prefix claim 与独立 BFS 相反，必须保留为
+`evidence_disagreement`，不得改写成 source theorem 的正例或反例。
+
+## A19 G4 `L32/L33` fixed output-counter oracle boundary
+
+状态：G4 development comparator 假设。
+
+`L32/L33` comparator 的目标状态、recorder event tuple 和 fixed count vector
+必须在运行前给定且不可变。有限 LTS BFS 只在
+`(state, bounded_count_vector)` 上判定固定输出计数目标可达性。
+
+用途：G4 fixed-recorder-target oracle；`PO-T3-7a`。
+
+失败后果：若目标或计数由 reachable output 反推、若计数剪枝不可靠、或若
+只证明 source transform 的单向 preservation，结果必须标为 adapted oracle
+边界；不得声称 reproduction of `L32/L33` PN transformation、BA/SBA 或
+source complexity。
+
+## A20 G4 `L30` externally supplied sufficient inequalities
+
+状态：G4 development comparator 假设。
+
+`L30` checker 只接受已声明的 finite-capacity S3PR/ENS3PR overlap 和
+provenance=`sms_derived_external` 的整数线性 `>=` 约束。capacity vector 和
+constraints 均为外部供应输入。
+
+用途：G4 supplied-inequality checker；`PO-T4-8a`。
+
+失败后果：缺少适用性或来源证据时必须拒绝；checker 输出只能解释为
+sufficient-condition check，不是 SMS enumeration、ILP、minimum `M0(P_R)`、
+必要性证明或 exact IMS threshold。
+
+## A21 G4 `B05` supplied candidate-monitor cover boundary
+
+状态：G4 development comparator 假设。
+
+`B05`-inspired cover backend 只在 explicit legal states、first-met bad
+states 和 frozen supplied candidate monitor cover sets 上运行。候选 monitor
+的覆盖关系是输入，不由 backend 合成。
+
+用途：G4 adapted candidate-monitor cover；`PO-T6-7a`。
+
+失败后果：optimality 只限于 supplied candidate set。候选集不能覆盖所有 bad
+state 且保持 legal 时返回 infeasible；不得声称 P-semiflow synthesis、MCPP、
+source-net control-place synthesis、source theorem minimality 或 maximal
+permissiveness。

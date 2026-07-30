@@ -229,6 +229,11 @@ or cosmetic rewriting never count as an IMS contribution.
 - 适配命题/反例: compare CRP candidates against IMS operational certificates.
   A linear-equation candidate without an IMS reachable prefix remains a
   false-positive boundary.
+- G4 comparator boundary: the `L31` row is only a CRP evidence-profile audit.
+  It requires declared S4PR applicability, a content hash for the supplied
+  S4PR embedding, frozen external CRP/resource-limit-pair evidence, and an
+  independent finite-LTS BFS classification of the translated IMS target. It
+  does not generate CRPs, run SBA, or reproduce the source detector.
 - 对应案例: future restricted PN overlap benchmark; `BIX1-SAT` remains a
   family-specific exact threshold rather than a scalable general detector.
 
@@ -253,6 +258,11 @@ or cosmetic rewriting never count as an IMS contribution.
   Also do not assume the construction fails: any projected bisimulation,
   completeness, or fixed-original-target theorem must be separately stated and
   proved.
+- G4 comparator boundary: the `L32/L33` row is an adapted fixed-output-counter
+  target oracle over the project's finite LTS, implemented as BFS on
+  `(state, bounded_count_vector)`. It is not source transform reproduction and
+  does not claim to implement the PN/USPN/UniPN construction, source BA/SBA
+  subroutines, or source complexity bounds.
 - 对应案例: future restricted-Petri overlap model plus `C4/C5` preservation
   attacks.
 
@@ -289,6 +299,10 @@ or cosmetic rewriting never count as an IMS contribution.
   semantics.
 - 适配命题/反例: L30 is sufficient not exact iff. It blocks broad finite-capacity
   novelty, but it does not replace family-specific exact IMS threshold proofs.
+- G4 comparator boundary: the `L30` checker evaluates only externally supplied
+  SMS-derived sufficient inequalities for a declared finite-capacity
+  S3PR/ENS3PR overlap. It performs no SMS enumeration, no ILP, no minimum
+  `M0(P_R)` computation, and no exact IMS threshold or iff classification.
 - 对应案例: `BIX1-SAT`, future restricted finite-capacity Petri overlap models.
 
 ## M21. Chen-Li Compressed Maximally Permissive Supervisor
@@ -308,5 +322,10 @@ or cosmetic rewriting never count as an IMS contribution.
   BAS/AGV/reservation/closure semantics, and probability-layer coupling.
 - 适配命题/反例: maximum permissiveness is a benchmark, not a generic IMS
   theorem. Full RG enumeration and NP-hard MCPP must remain visible.
+- G4 comparator boundary: the `B05`-inspired backend is an exhaustive
+  minimum-cardinality cover over a frozen, supplied candidate-monitor set and
+  explicit legal/first-met bad states. Its optimality is candidate-set-local
+  only; it performs no P-semiflow synthesis, MCPP solving, control-place
+  synthesis in the source net, or source-theorem maximal-permissiveness proof.
 - 对应案例: future Petri-encodable restricted confirmation models and P5 exact
   finite supervisor checks.

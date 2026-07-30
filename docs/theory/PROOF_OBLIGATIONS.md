@@ -60,9 +60,22 @@
   instrumented counter state 的保存方向、固定原目标映射到 recorder
   target 时的 existential/fixed-count 量化、完成/死锁谓词投影，以及
   BAS/AGV/预约/OR/AND/闭包语义是否已进入 source plant model。
+- `PO-T3-7a` G4 的 `L32/L33` fixed-recorder-target comparator 必须证明：
+  对给定有限 LTS、预注册目标状态、事件计数器集合和固定输出计数，增强
+  BFS 在 `(state, bounded_count_vector)` 上的可达性等价于“存在一条原 LTS
+  路径到该目标且记录事件计数恰为固定向量”。计数上界剪枝、最短 witness
+  的确定性、目标/计数输入不可由 reachable output 推断，都必须可审计。
+  该义务只关闭 adapted finite-LTS oracle，不关闭 `L32/L33` source
+  transform reproduction。
 - `PO-T3-8` 若使用 `L31` CRP，必须先限定到 S4PR overlap，并把 CRP
   marking-level iff 与 IMS closed blocking core 的对象差异写清楚；候选
   marking 没有 executable prefix 时必须作为 unreachable candidate 拒绝。
+- `PO-T3-8a` G4 的 `L31` CRP evidence-profile audit 必须证明 reachability
+  分类独立于 supplied CRP/legal-prefix claim：输入只可包含 S4PR 适用性、
+  外部 S4PR embedding hash、冻结 CRP/resource-limit-pair set、冻结 IMS
+  target state 和外部 legal-prefix claim；可达/不可达必须由独立有限
+  LTS BFS 给出。audit 不得生成 CRP、不得运行 SBA、不得把
+  `evidence_disagreement` 改写成 source theorem result。
 
 计算验证：
 
@@ -74,6 +87,8 @@
 - G4 必须包含 recorder-preservation/target-quantification obligation：
   若 recorder case 可证明保存所需目标，则承认为 comparator agreement；
   若只能证明单向保存或量化不匹配，则记录为未迁移边界，而不是硬造负例。
+- G4 CRP evidence-profile 必须保存 disagreement/unreachable/not-applicable
+  等负面分类，不得用 CRP 方程或外部 claim 覆盖独立 BFS 结论。
 
 ## T4 结构充分条件与阈值
 
@@ -111,6 +126,11 @@ persistent-D 三资源环及其删回流修复。一般操作死锁、多容量/
   resource-configuration baseline；若声称 exact reachable iff threshold，
   必须另外证明候选死锁 marking 的 reachability、阈值必要性和 IMS 语义
   覆盖，不能由 liveness-sufficient initial marking theorem 推出。
+- `PO-T4-8a` G4 的 `L30` supplied-inequality checker 必须证明输出含义只是
+  sufficient-condition evaluation：输入需声明 `finite_capacity_s3pr_ens3pr`
+  适用且 inequality provenance 为 `sms_derived_external`；checker 只评价
+  已供应整数线性 `>=` 约束和容量向量。不得声称 SMS enumeration、Algorithm
+  1、ILP、minimum `M0(P_R)`、必要性、或 exact IMS threshold。
 - `PO-T4-9` `L34/L35` BA/SBA 给定 NIS 的 legal-firing-sequence 判定只能
   作为比较过滤器；项目正向可达结论仍须保存显式合法 firing/event
   sequence，小确认模型的不可达结论须由完整有限 LTS/BFS 穷举独立关闭。
@@ -164,6 +184,12 @@ L28 已全文核验，竞争吸收 IMS 适配由 P4 独立证明。
 - `PO-T6-7` `B05` compressed maximally permissive supervisor 只能在完整
   RG、legal/FBM covering 和 MCPP 求解已明确的小 PN overlap 中作为
   comparator；不得作为紧凑 IMS 的多项式或一般最大许可控制定理。
+- `PO-T6-7a` G4 的 `B05`-inspired exhaustive cover 必须证明 optimality 只
+  相对于 supplied candidate-monitor set：给定 explicit legal states、
+  first-met bad states 和候选 monitor cover sets，穷举选择保持 legal 且覆盖
+  bad 的字典序确定最小基数子集；若候选集不完备则返回 infeasible。该证明
+  不得外推为 P-semiflow synthesis、MCPP optimality、source-net minimal
+  control places 或 source-theorem maximal permissiveness。
 
 计算验证：
 

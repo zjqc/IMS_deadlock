@@ -5,11 +5,51 @@ import pytest
 from pytest import MonkeyPatch
 
 from ims_deadlock import cases
-from ims_deadlock.cases import CASE_SCHEMA_VERSION, list_case_ids, load_case_spec
+from ims_deadlock.cases import (
+    CASE_SCHEMA_VERSION,
+    case_manifest,
+    list_case_ids,
+    load_case_spec,
+)
 
 
 def test_case_manifest_exposes_all_discovery_cases() -> None:
     assert list_case_ids() == ("C0", "C1", "C2", "C3", "C4", "C5", "C5_DAG")
+
+
+def test_discovery_listing_excludes_nested_confirmation_cases(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+) -> None:
+    monkeypatch.setattr(cases, "_CASES_DIR", tmp_path)
+    discovery_payload = {
+        "schema_version": CASE_SCHEMA_VERSION,
+        "case_id": "DISCOVERY",
+        "model": {
+            "id": "discovery-model",
+            "resources": [{"id": "r1", "capacity": 1, "kind": "machine"}],
+            "jobs": ["j1"],
+        },
+        "initial_state": {
+            "id": "discovery-state",
+            "holds": [],
+            "requests": {},
+            "completed_jobs": [],
+            "stable": True,
+            "complete": False,
+            "event_calendar_empty": True,
+        },
+    }
+    (tmp_path / "DISCOVERY.json").write_text(
+        json.dumps(discovery_payload), encoding="utf-8"
+    )
+    confirmation_dir = tmp_path / "confirmation" / "g4"
+    confirmation_dir.mkdir(parents=True)
+    (confirmation_dir / "G4-HELD-OUT.json").write_text(
+        json.dumps({"case_id": "G4-HELD-OUT"}), encoding="utf-8"
+    )
+
+    assert list_case_ids() == ("DISCOVERY",)
+    assert tuple(spec.case_id for spec in case_manifest()) == ("DISCOVERY",)
 
 
 def test_case_loader_reads_json_spec_for_c0() -> None:

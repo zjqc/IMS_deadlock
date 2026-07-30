@@ -62,10 +62,11 @@ class CaseSpec:
         return payload
 
 
-def load_case_spec(case_id: str) -> CaseSpec:
+def load_case_spec(case_id: str, *, root: Path | None = None) -> CaseSpec:
     """Load a declarative case JSON file from ``cases/``."""
 
-    path = _CASES_DIR / f"{case_id.upper()}.json"
+    cases_dir = _CASES_DIR if root is None else root
+    path = cases_dir / f"{case_id.upper()}.json"
     if not path.exists():
         raise ValueError(f"unknown case specification {case_id!r}")
     with path.open("r", encoding="utf-8") as handle:
@@ -139,18 +140,19 @@ def load_builtin_case(case_id: str) -> tuple[IMSModel, IMSState]:
     return spec.model, spec.initial_state
 
 
-def list_case_ids() -> tuple[str, ...]:
-    if not _CASES_DIR.exists():
+def list_case_ids(*, root: Path | None = None) -> tuple[str, ...]:
+    cases_dir = _CASES_DIR if root is None else root
+    if not cases_dir.exists():
         return ()
     return tuple(
-        sorted(
-            path.stem.upper() for path in _CASES_DIR.glob("*.json") if path.is_file()
-        )
+        sorted(path.stem.upper() for path in cases_dir.glob("*.json") if path.is_file())
     )
 
 
-def case_manifest() -> tuple[CaseSpec, ...]:
-    return tuple(load_case_spec(case_id) for case_id in list_case_ids())
+def case_manifest(*, root: Path | None = None) -> tuple[CaseSpec, ...]:
+    return tuple(
+        load_case_spec(case_id, root=root) for case_id in list_case_ids(root=root)
+    )
 
 
 def _case_spec_from_json(payload: dict[str, Any]) -> CaseSpec:
