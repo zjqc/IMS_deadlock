@@ -29,6 +29,12 @@ CAPTURE_RECORD_SCHEMA = "ims-deadlock/g6-historical-replay-capture/v1"
 COMPARE_SCHEMA = "ims-deadlock/g6-historical-replay-compare/v1"
 SUMMARY_SCHEMA = "ims-deadlock/g6-historical-replay-summary/v1"
 SCHEDULE_STATE_SCHEMA = "ims-deadlock/g6-historical-replay-schedule-state/v1"
+SCHEDULE_LOCK_INCIDENT_SCHEMA = (
+    "ims-deadlock/g6-historical-replay-schedule-lock-incident/v1"
+)
+SCHEDULE_LOCK_CONTENTION_WAIT_SECONDS = 30.0
+SCHEDULE_LOCK_STALE_SECONDS = 60.0
+SCHEDULE_LOCK_INITIALIZATION_GRACE_SECONDS = 0.25
 CASE_IDS = (
     "G4_CRP_S4PR_AGREE",
     "G4_CRP_OUTSIDE_S4PR",
@@ -1312,7 +1318,7 @@ def _acquire_schedule_slot(
         _replace_json_atomic(state_path, state)
         return entry
     finally:
-        _release_case_lease(lock_path)
+        _release_schedule_state_lock(lock_path)
 
 
 def _finish_schedule_slot(
@@ -1396,7 +1402,7 @@ def _finish_schedule_slot(
             )
         _replace_json_atomic(state_path, state)
     finally:
-        _release_case_lease(lock_path)
+        _release_schedule_state_lock(lock_path)
 
 
 def _acquire_schedule_state_lock(path: Path, case_id: str, run_label: str) -> None:
@@ -1408,24 +1414,166 @@ def _acquire_schedule_state_lock(path: Path, case_id: str, run_label: str) -> No
         "case_id": case_id,
         "run_label": run_label,
     }
-    deadline = time.monotonic() + 0.25
+    deadline = time.monotonic() + SCHEDULE_LOCK_CONTENTION_WAIT_SECONDS
     fd: int | None = None
     while fd is None:
         try:
             fd = os.open(str(path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
         except FileExistsError as exc:
-            if time.monotonic() >= deadline:
-                raise ReplayError(
-                    "existing schedule lease requires manual incident classification; "
-                    "automatic recovery is forbidden"
-                ) from exc
-            time.sleep(0.01)
+            if time.monotonic() < deadline:
+                time.sleep(0.01)
+                continue
+            if sys.platform == "win32":
+                _write_schedule_lock_incident(
+                    path,
+                    case_id=case_id,
+                    run_label=run_label,
+                    classification="windows_schedule_lease_contention_timeout",
+                    owner_liveness="unknown",
+                    read_lease_metadata=False,
+                )
+            else:
+                lease_status = _schedule_lock_status(path)
+                classification = str(lease_status["classification"])
+                if classification in {"None", "missing_schedule_lease"}:
+                    classification = _schedule_lock_timeout_classification(lease_status)
+                _write_schedule_lock_incident(
+                    path,
+                    case_id=case_id,
+                    run_label=run_label,
+                    classification=classification,
+                    owner_liveness=str(lease_status["owner_liveness"]),
+                )
+            raise ReplayError(
+                "existing schedule lease requires manual incident classification; "
+                "automatic recovery is forbidden"
+            ) from exc
         except OSError as exc:
             raise ReplayError(f"cannot create schedule lease: {path}") from exc
     try:
         os.write(fd, _json_text(payload).encode("utf-8"))
     finally:
         os.close(fd)
+
+
+def _schedule_lock_status(path: Path) -> dict[str, object]:
+    try:
+        payload = _load_json_object(path)
+    except ReplayError:
+        try:
+            stat = path.stat()
+            if time.time() - stat.st_mtime < SCHEDULE_LOCK_INITIALIZATION_GRACE_SECONDS:
+                return {
+                    "classification": None,
+                    "owner_liveness": "unknown",
+                    "age_exceeded": False,
+                }
+        except OSError:
+            pass
+        if path.exists():
+            return {
+                "classification": "unclassifiable_schedule_lease",
+                "owner_liveness": "unknown",
+                "age_exceeded": True,
+            }
+        return {
+            "classification": "missing_schedule_lease",
+            "owner_liveness": "unknown",
+            "age_exceeded": False,
+        }
+    try:
+        pid = _strict_int(payload.get("pid"))
+        hostname = _string(payload.get("hostname"), "hostname")
+        started_at = _strict_float(payload.get("started_at"))
+        _string(payload.get("case_id"), "case_id")
+        _string(payload.get("run_label"), "run_label")
+    except ReplayError:
+        return {
+            "classification": "unclassifiable_schedule_lease",
+            "owner_liveness": "unknown",
+            "age_exceeded": True,
+        }
+    liveness = _schedule_lock_owner_liveness(pid, hostname)
+    if liveness == "dead":
+        classification = "dead_schedule_lease_owner"
+    else:
+        classification = None
+    return {
+        "classification": classification,
+        "owner_liveness": liveness,
+        "age_exceeded": time.time() - started_at >= SCHEDULE_LOCK_STALE_SECONDS,
+    }
+
+
+def _schedule_lock_timeout_classification(status: Mapping[str, object]) -> str:
+    owner_liveness = _string(status.get("owner_liveness"), "owner_liveness")
+    age_exceeded = status.get("age_exceeded") is True
+    if owner_liveness == "live":
+        return "live_schedule_lease_contention_timeout"
+    if owner_liveness == "unknown" and age_exceeded:
+        return "unknown_schedule_lease_age_exceeded"
+    if owner_liveness == "unknown":
+        return "unknown_schedule_lease_contention_timeout"
+    return "schedule_lease_contention_timeout"
+
+
+def _schedule_lock_owner_liveness(pid: int, hostname: str) -> str:
+    if hostname != socket.gethostname():
+        return "unknown"
+    if sys.platform == "win32":
+        return "unknown"
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return "dead"
+    except PermissionError:
+        return "unknown"
+    except OSError:
+        return "unknown"
+    return "live"
+
+
+def _write_schedule_lock_incident(
+    lock_path: Path,
+    *,
+    case_id: str,
+    run_label: str,
+    classification: str,
+    owner_liveness: str,
+    read_lease_metadata: bool = True,
+) -> None:
+    lease_payload: object = None
+    if read_lease_metadata:
+        try:
+            lease_payload = _load_json_object(lock_path)
+        except ReplayError:
+            lease_payload = None
+    incident = {
+        "schema_version": SCHEDULE_LOCK_INCIDENT_SCHEMA,
+        "classification": classification,
+        "owner_liveness": owner_liveness,
+        "action": "fail_closed_no_auto_reap",
+        "lease_path": str(lock_path),
+        "case_id": case_id,
+        "run_label": run_label,
+        "pid": os.getpid(),
+        "hostname": socket.gethostname(),
+        "observed_at": time.time(),
+        "lease_metadata": lease_payload,
+    }
+    incident_path = lock_path.with_name(
+        f"{lock_path.name}.incident-{time.time_ns()}-{os.getpid()}.json"
+    )
+    _write_json_atomic(incident_path, incident)
+
+
+def _release_schedule_state_lock(path: Path) -> None:
+    try:
+        path.unlink(missing_ok=True)
+    except PermissionError as exc:
+        raise ReplayError(f"cannot release schedule lease: {path}") from exc
+    except OSError as exc:
+        raise ReplayError(f"cannot release schedule lease: {path}") from exc
 
 
 def _load_schedule_state(path: Path, lock: Mapping[str, object]) -> dict[str, object]:
