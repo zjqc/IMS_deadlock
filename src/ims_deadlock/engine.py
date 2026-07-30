@@ -657,7 +657,7 @@ def _apply_transition(
         completed_jobs=completed_jobs,
         stable=True,
         complete=complete,
-        event_calendar_empty=state.event_calendar_empty,
+        event_calendar_empty=True if complete else state.event_calendar_empty,
         stage_by_job=stage_by_job,
         mode_by_job=mode_by_job,
         zero_time_trace=(
