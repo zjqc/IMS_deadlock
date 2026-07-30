@@ -382,7 +382,7 @@ def _quantitative(initial_state: str) -> dict[str, Any]:
         "mean_absorption_time": {initial_state: 4.0},
         "committor_residual_inf_norm": 0.0,
         "mean_time_residual_inf_norm": 0.0,
-        "probability_bounds": {"min": 0.0, "max": 1.0},
+        "probability_bounds": {"min": 0.5, "max": 0.5},
         "probability_bounds_valid": True,
     }
 
@@ -717,6 +717,72 @@ def test_score_run_requires_all_nine_cases_and_matching_capture_hashes(
     )
     assert bad_score["execution_status"] == "INVALID_RESULT"
     assert bad_score["reproducibility"]["canonical_json_match"] is False
+
+
+def test_quantitative_scoring_accepts_solver_roundoff_not_material_violation() -> None:
+    rounded = json.loads(json.dumps(_supported_results()["G4_MEDIUM_ISLAND_REBUILD"]))
+    initial_state = rounded["ctmc_initial_state"]
+    rounded["quantitative"]["deadlock_probability"][initial_state] = 1.0000000000000002
+    rounded["quantitative"]["probability_bounds"] = {
+        "min": 1.0000000000000002,
+        "max": 1.0000000000000002,
+    }
+    rounded_score = score_case(
+        BUNDLE_ROOT,
+        rounded,
+        _record("G4_MEDIUM_ISLAND_REBUILD", rounded, "primary"),
+    )
+
+    outside = json.loads(json.dumps(rounded))
+    outside["quantitative"]["probability_bounds"]["max"] = 1.0 + 1e-6
+    outside_score = score_case(
+        BUNDLE_ROOT,
+        outside,
+        _record("G4_MEDIUM_ISLAND_REBUILD", outside, "primary"),
+    )
+
+    assert rounded_score.scientific_status is ScientificStatus.SUPPORTED
+    assert not any(
+        "probability bounds are outside" in reason for reason in rounded_score.reasons
+    )
+    assert outside_score.scientific_status is ScientificStatus.FALSIFIED
+    assert any(
+        "probability bounds are outside" in reason for reason in outside_score.reasons
+    )
+
+
+@pytest.mark.parametrize(
+    ("mutation", "reason_fragment"),
+    [
+        ("extra_probability", "deadlock probabilities contain an invalid value"),
+        ("mismatched_bounds", "probability bounds do not match"),
+        ("committor_residual", "committor_residual_inf_norm exceeds"),
+        ("mean_time_residual", "mean_time_residual_inf_norm exceeds"),
+    ],
+)
+def test_quantitative_scoring_recomputes_full_map_bounds_and_residuals(
+    mutation: str,
+    reason_fragment: str,
+) -> None:
+    result = json.loads(json.dumps(_supported_results()["G4_MEDIUM_ISLAND_REBUILD"]))
+    quantitative = result["quantitative"]
+    if mutation == "extra_probability":
+        quantitative["deadlock_probability"]["bad"] = 2.0
+    elif mutation == "mismatched_bounds":
+        quantitative["probability_bounds"] = {"min": 0.0, "max": 1.0}
+    elif mutation == "committor_residual":
+        quantitative["committor_residual_inf_norm"] = 1e-6
+    else:
+        quantitative["mean_time_residual_inf_norm"] = 1e-6
+
+    score = score_case(
+        BUNDLE_ROOT,
+        result,
+        _record("G4_MEDIUM_ISLAND_REBUILD", result, "primary"),
+    )
+
+    assert score.scientific_status is ScientificStatus.FALSIFIED
+    assert any(reason_fragment in reason for reason in score.reasons)
 
 
 def test_score_run_preserves_boundary_nonminimal_metric_failures(
