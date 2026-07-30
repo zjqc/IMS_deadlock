@@ -345,14 +345,16 @@ Record exact:
 Run only:
 
 ```text
-python -m pytest tests/test_confirmation.py tests/test_g4_freeze.py -q
+python -m pytest tests/test_confirmation.py tests/test_g4_protocol.py tests/test_g4_freeze.py -q
+python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 validate
 python -m ims_deadlock.g4_freeze --root cases/confirmation/g4 check
 ```
 
 Expected before the seal: schema passes but status is `NOT_FROZEN` solely
-because `FREEZE_ENTRY.json` is absent. Do not invoke `validate`, `prove`,
-`quantify`, `simulate`, `verify-case`, or any G4 experiment entrypoint on these
-files.
+because `FREEZE_ENTRY.json` is absent. The `g4_protocol validate` operation is
+structural-only and must not invoke scientific backends. Do not invoke
+`g4_protocol run`, public `validate`/`prove`/`quantify`/`simulate`/`verify-case`,
+or any other G4 scientific experiment entrypoint on these files.
 
 - [ ] **Step 5: Commit A and Commit B**
 
