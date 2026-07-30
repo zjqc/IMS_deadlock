@@ -1,0 +1,99 @@
+{
+  "schema_version": "ims-deadlock/confirmation-case/v1",
+  "case_id": "G4_L30_RESOURCE_BASELINE",
+  "family": "G4",
+  "held_out": true,
+  "status": "PREREGISTERED",
+  "protocol": "g4_confirmation_freeze_v1",
+  "contamination": {
+    "derived_from_discovery_case": false,
+    "excluded_discovery_case_ids": [
+      "C0",
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C5_DAG"
+    ],
+    "excluded_discovery_family_ids": [
+      "BIX1-SAT",
+      "BIX2-PERSIST"
+    ],
+    "provenance": "independent_preregistration"
+  },
+  "input_payload": {
+    "schema_version": "ims-deadlock/g4-protocol-input/v1",
+    "g4_family": "G4-L30-RESOURCE-BASELINE",
+    "protocol_kind": "supplied_l30_inequalities",
+    "protocol_input": {
+      "capacities": {
+        "R_buffer": 3,
+        "R_machine_A": 2,
+        "R_machine_B": 2,
+        "R_tool": 1
+      },
+      "inequalities": [
+        {
+          "name": "sms_ext_01",
+          "coefficients": [
+            [
+              "R_buffer",
+              1
+            ],
+            [
+              "R_machine_A",
+              1
+            ]
+          ],
+          "rhs": 4
+        },
+        {
+          "name": "sms_ext_02",
+          "coefficients": [
+            [
+              "R_buffer",
+              1
+            ],
+            [
+              "R_machine_B",
+              1
+            ]
+          ],
+          "rhs": 4
+        },
+        {
+          "name": "sms_ext_03",
+          "coefficients": [
+            [
+              "R_machine_A",
+              1
+            ],
+            [
+              "R_machine_B",
+              1
+            ],
+            [
+              "R_tool",
+              1
+            ]
+          ],
+          "rhs": 5
+        }
+      ],
+      "finite_capacity_s3pr_ens3pr": true,
+      "inequality_provenance": "sms_derived_external"
+    }
+  },
+  "expected_outputs_schema": {
+    "type": "object",
+    "required_fields": [
+      "classification",
+      "applicable",
+      "sufficient_conditions_satisfied",
+      "evaluations",
+      "exact_ims_threshold_claimed",
+      "source_algorithm_reproduced"
+    ]
+  }
+}

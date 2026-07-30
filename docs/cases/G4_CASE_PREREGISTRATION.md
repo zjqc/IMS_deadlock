@@ -1,17 +1,25 @@
-# G4 Literature-Informed Case Preregistration Draft
+# G4 Literature-Informed Case Preregistration
 
-Status: `DRAFT-NOT-FROZEN`.
+Status: `B-PREREGISTRATION-CANDIDATE-PENDING-C-SEAL`.
 
-This document designs the next hard G4 gate after the seven-paper audit. It
-does not freeze cases, does not report results, and does not upgrade any
-theorem truth status. All rows are planned confirmation candidates or
-comparator checks whose final parameters, hashes, prediction sheet, runtime,
-and baseline manifests still must be frozen in `CONFIRMATION_PREREGISTRATION.md`.
+This document records the B-stage G4 preregistration candidate after the
+seven-paper audit and final implementation lock
+`2a89fe1409d5000225e22499878454e964c01363`. The held-out JSON inputs,
+predictions, baseline applicability, metric applicability, random streams,
+runtime lock, script manifest, theory manifest, and exclusions currently live
+under `cases/confirmation/g4/`.
+
+This is not a C seal. `case_manifest.json` is present, but
+`FREEZE_ENTRY.json` is not present in the current local bundle, so G4 remains
+pending C seal and no held-out scientific backend may be executed or reported
+from these files. This document does not report results, does not inspect
+outcomes, and does not upgrade any theorem truth status.
 
 ## Design Principles
 
-- Keep discovery cases out of confirmation: `C0-C5`, `BIX1-SAT`, and
-  `BIX2-PERSIST` can inspire mechanisms but cannot become held-out evidence.
+- Keep discovery cases out of confirmation: `C0-C5`, `C5_DAG`, `BIX1-SAT`,
+  and `BIX2-PERSIST` can inspire mechanisms but cannot become held-out
+  evidence.
 - Separate structural/algebraic candidates from executable prefixes. A CRP,
   siphon, state-equation NIS, or recorder-transformed marking is not an IMS
   result until reachability and semantic mapping obligations are checked.
@@ -20,16 +28,61 @@ and baseline manifests still must be frozen in `CONFIRMATION_PREREGISTRATION.md`
 - Treat `L30`, `L31`, `L32/L33`, `L34/L35`, and `B05` as comparators with
   explicit assumptions, not theorem donors.
 
-## Planned G4 Families
+## Candidate G4 Cases
 
-| Family | Purpose | Required outcome fields | Freeze status |
-| --- | --- | --- | --- |
-| `G4-CRP-S4PR-AGREE` | Restricted S4PR overlap where IMS wait-snapshot/core, S4PR CRP, and executable prefix should agree. | S4PR map hash, CRP set, IMS core, SBA/BFS prefix, siphon/core comparison. | draft |
-| `G4-CRP-UNREACHABLE-CANDIDATE` | Structural/algebraic CRP or siphon candidate exists, but legal firing sequence or IMS prefix is absent. | candidate equations, failed SBA/BFS reason, no IMS deadlock claim, supervisor-not-needed flag. | draft |
-| `G4-CRP-OUTSIDE-S4PR` | BAS blocked-unload, AGV occupancy/reservation, or AND request violates S4PR/CRP assumptions. | refusal code, missing S4PR assumption, IMS certificate status, projection false-positive/false-negative note. | draft |
-| `G4-RECORDER-TARGET-QUANTIFICATION` | `L32/L33` recorder-place transformation obligation for fixed original targets. | original target, recorder target construction, existential/fixed-count quantifier check, preservation direction. | draft |
-| `G4-L30-RESOURCE-BASELINE` | Finite-capacity S3PR/ENS3PR resource-configuration comparator. | sufficient-resource prediction, IMS exact-threshold prediction, disagreement classification. | draft |
-| `G4-B05-SUPERVISOR-COMPARATOR` | Small explicit PN/RG maximally permissive supervisor comparator. | full RG hash, legal/FBM covering summary, MCPP status, permissiveness comparison, inapplicability reason if not run. | draft |
+| Case ID | Family | Purpose | Prediction class | B status |
+| --- | --- | --- | --- | --- |
+| `G4_CRP_S4PR_AGREE` | `G4-CRP-S4PR-AGREE` | Restricted S4PR overlap where IMS wait-snapshot/core, S4PR CRP, and executable prefix should agree. | `partial_deadlock_bridge_agreement` | preregistered candidate |
+| `G4_CRP_UNREACHABLE_CANDIDATE` | `G4-CRP-UNREACHABLE-CANDIDATE` | Structural/algebraic CRP or siphon candidate exists, but legal firing sequence or IMS prefix is absent. | `unreachable_candidate` | preregistered candidate |
+| `G4_CRP_OUTSIDE_S4PR` | `G4-CRP-OUTSIDE-S4PR` | BAS blocked-unload, AGV occupancy/reservation, or AND/OR request violates S4PR/CRP assumptions. | `not_applicable` | preregistered candidate |
+| `G4_RECORDER_TARGET_QUANTIFICATION` | `G4-RECORDER-TARGET-QUANTIFICATION` | `L32/L33` recorder-place transformation obligation for a fixed original target and fixed recorder counts. | `ordinary_and_fixed_target_reachable_with_distinct_shortest_witnesses` | preregistered candidate |
+| `G4_L30_RESOURCE_BASELINE` | `G4-L30-RESOURCE-BASELINE` | Finite-capacity S3PR/ENS3PR resource-configuration comparator using supplied inequalities only. | `sufficient_conditions_satisfied` | preregistered candidate |
+| `G4_B05_SUPERVISOR_COMPARATOR` | `G4-B05-SUPERVISOR-COMPARATOR` | Small explicit finite-LTS monitor-cover comparator plus independent finite-state supervisor baseline. | `two_monitor_legal_preserving_cover` | preregistered candidate |
+| `G4_IMS_PARAMETER_GRID` | `G4-IMS-PARAMETER-GRID` | Ten held-out bidirectional BAS grid cells. | `acyclic_controls_safe_and_bidirectional_cells_structurally_exposed` | preregistered candidate |
+| `G4_MEDIUM_ISLAND_REBUILD` | `G4-MEDIUM-ISLAND-REBUILD` | Independently specified three-island BAS/AGV rebuild. | `transport_inclusive_closed_core_exposure` | preregistered candidate |
+| `G4_ADVERSARIAL_BOUNDARY` | `G4-ADVERSARIAL-BOUNDARY` | OR-of-AND, multi-capacity, AGV, and reservation boundary snapshot. | `closed_core_snapshot_with_nontransferable_or_and_semantics` | preregistered candidate |
+
+## Ten-Cell Grid Prediction
+
+The `G4_IMS_PARAMETER_GRID` row freezes ten boolean predictions. These are
+pre-result predictions only.
+
+| Cell | Expected reachable closed core |
+| --- | --- |
+| `G01_FWD_DAG` | `false` |
+| `G02_REV_DAG` | `false` |
+| `G03_BALANCED_TIGHT` | `true` |
+| `G04_BALANCED_AGV2` | `true` |
+| `G05_BALANCED_BUFFER2` | `true` |
+| `G06_BALANCED_MACHINE2` | `true` |
+| `G07_BALANCED_LOW_WIP` | `true` |
+| `G08_FORWARD_SKEW` | `true` |
+| `G09_FAST_RELEASE` | `true` |
+| `G10_SLOW_TRANSFER` | `true` |
+
+## Structural Validation Boundary
+
+Current local structure evidence is limited to no-result JSON/document
+inspection:
+
+- `case_manifest.json` exists and lists nine canonical-json case hashes;
+- nine `cases/confirmation/g4/cases/*.json` files exist and declare
+  `held_out=true`, `status="PREREGISTERED"`, protocol
+  `g4_confirmation_freeze_v1`, and `provenance="independent_preregistration"`;
+- `predictions.json` contains one prediction for each of the nine case IDs and
+  the ten grid-cell booleans above;
+- `metrics_schema.json` contains the required metric IDs and freeze-time
+  applicability reasons;
+- `baseline_applicability.json`, `random_stream_manifest.json`,
+  `runtime_lock.json`, `experiment_scripts_manifest.json`,
+  `theory_manifest.json`, and `exclusions.json` are present;
+- `FREEZE_ENTRY.json` is absent, so a complete freeze check must remain
+  `NOT_FROZEN`.
+
+The permitted pre-seal checks are schema, parser, hash, and structural
+validation only. They may not enumerate held-out state spaces, classify
+deadlocks, synthesize supervisors, solve CTMCs, run DES, compute rare-event
+estimators, or inspect output directories.
 
 ## CRP Triad
 
@@ -132,18 +185,35 @@ If any condition fails, the baseline is reported as inapplicable. A successful
 run compares structural compression and permissiveness only; it does not prove
 that compact IMS supervisor synthesis is tractable.
 
-## Freeze Checklist
+## Metric Applicability Boundary
 
-Before G4 can move from draft to frozen, record:
+For the current B candidate:
 
-- exact case JSON identifiers and SHA-256 hashes;
+- `supervisor_throughput_loss`, `supervisor_makespan_loss`,
+  `supervisor_wip_change`, and `supervisor_due_date_risk_change` are
+  inapplicable for every G4 case.
+- `conditioned_path_mass` is inapplicable for every G4 case.
+- `rare_event_efficiency` is inapplicable for every G4 case.
+- CTMC exact probability and mean absorption time apply only to
+  `G4_IMS_PARAMETER_GRID` and `G4_MEDIUM_ISLAND_REBUILD`.
+- DES confidence intervals apply only to `G4_IMS_PARAMETER_GRID` and
+  `G4_MEDIUM_ISLAND_REBUILD`.
+
+## Seal Checklist
+
+Before G4 can move from B candidate to C-sealed frozen, record:
+
+- exact case manifest and SHA-256 hash;
+- `FREEZE_ENTRY.json` with `confirmation_results_inspected=false`;
 - S4PR/IMS embedding specifications and hashes;
 - prediction sheet for every family above;
 - baseline applicability sheet for `L30`, `L31`, `L32/L33`, `L34/L35`, and
   `B05`;
-- explicit-prefix verifier and full finite BFS/LTS oracle per case; SBA may be
-  added as a separately reported comparator but cannot be the sole oracle;
+- explicit-prefix verifier and full finite BFS/LTS oracle for every case where
+  reachability is part of the frozen estimand; SBA may be added as a separately
+  reported comparator but cannot be the sole oracle;
 - metric schema and negative-result reporting rules;
 - runtime and command lock.
 
-Until all fields are filled, G4 status remains `NOT FROZEN`.
+Until the C seal exists and passes the no-result freeze checker, G4 status
+remains `B-PREREGISTRATION-CANDIDATE-PENDING-C-SEAL`.

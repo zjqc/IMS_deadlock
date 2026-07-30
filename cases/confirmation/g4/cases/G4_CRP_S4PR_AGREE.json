@@ -1,0 +1,217 @@
+{
+  "schema_version": "ims-deadlock/confirmation-case/v1",
+  "case_id": "G4_CRP_S4PR_AGREE",
+  "family": "G4",
+  "held_out": true,
+  "status": "PREREGISTERED",
+  "protocol": "g4_confirmation_freeze_v1",
+  "contamination": {
+    "derived_from_discovery_case": false,
+    "excluded_discovery_case_ids": [
+      "C0",
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C5_DAG"
+    ],
+    "excluded_discovery_family_ids": [
+      "BIX1-SAT",
+      "BIX2-PERSIST"
+    ],
+    "provenance": "independent_preregistration"
+  },
+  "input_payload": {
+    "schema_version": "ims-deadlock/g4-protocol-input/v1",
+    "g4_family": "G4-CRP-S4PR-AGREE",
+    "protocol_kind": "crp_evidence_audit",
+    "protocol_input": {
+      "finite_lts": {
+        "states": [
+          "q0",
+          "q1",
+          "q2",
+          "q3",
+          "q_dead",
+          "q_done"
+        ],
+        "initial_state": "q0",
+        "marked_states": [
+          "q_done"
+        ],
+        "transitions": [
+          {
+            "source": "q0",
+            "event": "admit_left",
+            "target": "q1",
+            "controllable": true
+          },
+          {
+            "source": "q1",
+            "event": "admit_right",
+            "target": "q2",
+            "controllable": true
+          },
+          {
+            "source": "q2",
+            "event": "left_service_complete",
+            "target": "q3",
+            "controllable": false
+          },
+          {
+            "source": "q3",
+            "event": "right_service_complete",
+            "target": "q_dead",
+            "controllable": false
+          },
+          {
+            "source": "q2",
+            "event": "safe_release",
+            "target": "q_done",
+            "controllable": true
+          }
+        ]
+      },
+      "state_bound": 32,
+      "crp_profile": {
+        "s4pr_applicable": true,
+        "embedding": {
+          "activity_places": [
+            "p_left_hold_x",
+            "p_right_hold_y"
+          ],
+          "initial_resource_marking": {
+            "p_r_x": 1,
+            "p_r_y": 1
+          },
+          "resource_places": [
+            "p_r_x",
+            "p_r_y"
+          ],
+          "transitions": [
+            "t_admit_left",
+            "t_admit_right",
+            "t_left_blocks_on_y",
+            "t_right_blocks_on_x"
+          ]
+        },
+        "embedding_sha256": "f1684c411cae28286e19b3c4b7adb92d58e89685a68a0f265ae341b5667d50bb",
+        "crp_pairs": [
+          [
+            "p_left_hold_x",
+            "p_r_y"
+          ],
+          [
+            "p_right_hold_y",
+            "p_r_x"
+          ]
+        ],
+        "translated_target_state": "q_dead",
+        "external_prefix_claimed": true,
+        "outside_s4pr_reasons": []
+      },
+      "partial_deadlock_bridge": {
+        "target_state": "q_dead",
+        "target_snapshot": {
+          "schema_version": "ims-deadlock/case/v1",
+          "case_id": "G4_CRP_AGREE_TARGET",
+          "title": "Independent local partial-deadlock target",
+          "status": "PREREGISTERED",
+          "model": {
+            "id": "g4-crp-agree-target",
+            "resources": [
+              {
+                "id": "cell_x",
+                "capacity": 1,
+                "kind": "machine"
+              },
+              {
+                "id": "cell_y",
+                "capacity": 1,
+                "kind": "machine"
+              },
+              {
+                "id": "free_fixture",
+                "capacity": 1,
+                "kind": "machine"
+              }
+            ],
+            "jobs": [
+              "free_job",
+              "left_job",
+              "right_job"
+            ]
+          },
+          "initial_state": {
+            "id": "q-dead-snapshot",
+            "holds": [
+              {
+                "job_id": "left_job",
+                "resource_id": "cell_x",
+                "units": 1
+              },
+              {
+                "job_id": "right_job",
+                "resource_id": "cell_y",
+                "units": 1
+              }
+            ],
+            "requests": {
+              "left_job": [
+                [
+                  {
+                    "resource_id": "cell_y",
+                    "units": 1
+                  }
+                ]
+              ],
+              "right_job": [
+                [
+                  {
+                    "resource_id": "cell_x",
+                    "units": 1
+                  }
+                ]
+              ]
+            },
+            "completed_jobs": [],
+            "stable": true,
+            "complete": false,
+            "event_calendar_empty": true,
+            "stage_by_job": {
+              "free_job": "outside",
+              "left_job": "blocked_on_y",
+              "right_job": "blocked_on_x"
+            },
+            "mode_by_job": {
+              "free_job": "outside",
+              "left_job": "blocked_on_y",
+              "right_job": "blocked_on_x"
+            }
+          },
+          "transitions": [],
+          "calendar": [],
+          "notes": [
+            "The unfinished free_job is outside the two-job blocking core.",
+            "The bridge comparison is restricted to exact resource-set equality."
+          ]
+        },
+        "crp_resource_to_ims_resource": {
+          "p_r_x": "cell_x",
+          "p_r_y": "cell_y"
+        },
+        "comparison_rule": "exact_resource_set_equality"
+      },
+      "outside_scope_generator": null
+    }
+  },
+  "expected_outputs_schema": {
+    "type": "object",
+    "required_fields": [
+      "classification",
+      "evidence_profile_audit",
+      "partial_deadlock_bridge"
+    ]
+  }
+}

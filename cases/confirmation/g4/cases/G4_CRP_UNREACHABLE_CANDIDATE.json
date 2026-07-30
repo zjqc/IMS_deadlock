@@ -1,0 +1,126 @@
+{
+  "schema_version": "ims-deadlock/confirmation-case/v1",
+  "case_id": "G4_CRP_UNREACHABLE_CANDIDATE",
+  "family": "G4",
+  "held_out": true,
+  "status": "PREREGISTERED",
+  "protocol": "g4_confirmation_freeze_v1",
+  "contamination": {
+    "derived_from_discovery_case": false,
+    "excluded_discovery_case_ids": [
+      "C0",
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C5_DAG"
+    ],
+    "excluded_discovery_family_ids": [
+      "BIX1-SAT",
+      "BIX2-PERSIST"
+    ],
+    "provenance": "independent_preregistration"
+  },
+  "input_payload": {
+    "schema_version": "ims-deadlock/g4-protocol-input/v1",
+    "g4_family": "G4-CRP-UNREACHABLE-CANDIDATE",
+    "protocol_kind": "crp_evidence_audit",
+    "protocol_input": {
+      "finite_lts": {
+        "states": [
+          "u0",
+          "u_load",
+          "u_a",
+          "u_b",
+          "u_done",
+          "u_candidate"
+        ],
+        "initial_state": "u0",
+        "marked_states": [
+          "u_done"
+        ],
+        "transitions": [
+          {
+            "source": "u0",
+            "event": "pick",
+            "target": "u_load",
+            "controllable": true
+          },
+          {
+            "source": "u_load",
+            "event": "route_a",
+            "target": "u_a",
+            "controllable": true
+          },
+          {
+            "source": "u_load",
+            "event": "route_b",
+            "target": "u_b",
+            "controllable": true
+          },
+          {
+            "source": "u_a",
+            "event": "release_a",
+            "target": "u_done",
+            "controllable": false
+          },
+          {
+            "source": "u_b",
+            "event": "release_b",
+            "target": "u_done",
+            "controllable": false
+          }
+        ]
+      },
+      "state_bound": 32,
+      "crp_profile": {
+        "s4pr_applicable": true,
+        "embedding": {
+          "activity_places": [
+            "p_load",
+            "p_fixture_a",
+            "p_fixture_b"
+          ],
+          "initial_resource_marking": {
+            "p_r_a": 1,
+            "p_r_b": 1
+          },
+          "resource_places": [
+            "p_r_a",
+            "p_r_b"
+          ],
+          "transitions": [
+            "t_pick",
+            "t_route_a",
+            "t_route_b",
+            "t_release"
+          ]
+        },
+        "embedding_sha256": "a22fc764e2d9c3fefa705a1a8856785e000e2bf183bc90668eb51d1817734474",
+        "crp_pairs": [
+          [
+            "p_fixture_a",
+            "p_r_b"
+          ],
+          [
+            "p_fixture_b",
+            "p_r_a"
+          ]
+        ],
+        "translated_target_state": "u_candidate",
+        "external_prefix_claimed": false,
+        "outside_s4pr_reasons": []
+      },
+      "partial_deadlock_bridge": null,
+      "outside_scope_generator": null
+    }
+  },
+  "expected_outputs_schema": {
+    "type": "object",
+    "required_fields": [
+      "classification",
+      "evidence_profile_audit"
+    ]
+  }
+}

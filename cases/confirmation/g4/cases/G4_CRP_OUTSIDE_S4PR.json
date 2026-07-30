@@ -1,0 +1,74 @@
+{
+  "schema_version": "ims-deadlock/confirmation-case/v1",
+  "case_id": "G4_CRP_OUTSIDE_S4PR",
+  "family": "G4",
+  "held_out": true,
+  "status": "PREREGISTERED",
+  "protocol": "g4_confirmation_freeze_v1",
+  "contamination": {
+    "derived_from_discovery_case": false,
+    "excluded_discovery_case_ids": [
+      "C0",
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C5_DAG"
+    ],
+    "excluded_discovery_family_ids": [
+      "BIX1-SAT",
+      "BIX2-PERSIST"
+    ],
+    "provenance": "independent_preregistration"
+  },
+  "input_payload": {
+    "schema_version": "ims-deadlock/g4-protocol-input/v1",
+    "g4_family": "G4-CRP-OUTSIDE-S4PR",
+    "protocol_kind": "crp_evidence_audit",
+    "protocol_input": {
+      "finite_lts": {
+        "states": [
+          "outside_scope_only"
+        ],
+        "initial_state": "outside_scope_only",
+        "marked_states": [],
+        "transitions": []
+      },
+      "state_bound": 8,
+      "crp_profile": {
+        "s4pr_applicable": false,
+        "embedding": null,
+        "embedding_sha256": null,
+        "crp_pairs": [],
+        "translated_target_state": null,
+        "external_prefix_claimed": null,
+        "outside_s4pr_reasons": [
+          "conjunctive OR-of-AND requests are retained explicitly",
+          "AGV occupancy participates in the blocking kernel",
+          "hard reservation tokens are held across the blocked decision"
+        ]
+      },
+      "partial_deadlock_bridge": null,
+      "outside_scope_generator": {
+        "generator_id": "or_and_reservation_v1",
+        "parameters": {
+          "instance_id": "CRP_SCOPE_ATTACK",
+          "fixture_capacity": 2,
+          "cart_capacity": 1,
+          "reservation_capacity": 1,
+          "decision_rate": 0.65,
+          "state_bound": 96
+        }
+      }
+    }
+  },
+  "expected_outputs_schema": {
+    "type": "object",
+    "required_fields": [
+      "classification",
+      "evidence_profile_audit",
+      "outside_scope_boundary"
+    ]
+  }
+}

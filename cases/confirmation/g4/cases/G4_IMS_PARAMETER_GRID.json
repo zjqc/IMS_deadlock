@@ -1,0 +1,162 @@
+{
+  "schema_version": "ims-deadlock/confirmation-case/v1",
+  "case_id": "G4_IMS_PARAMETER_GRID",
+  "family": "G4",
+  "held_out": true,
+  "status": "PREREGISTERED",
+  "protocol": "g4_confirmation_freeze_v1",
+  "contamination": {
+    "derived_from_discovery_case": false,
+    "excluded_discovery_case_ids": [
+      "C0",
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C5_DAG"
+    ],
+    "excluded_discovery_family_ids": [
+      "BIX1-SAT",
+      "BIX2-PERSIST"
+    ],
+    "provenance": "independent_preregistration"
+  },
+  "input_payload": {
+    "schema_version": "ims-deadlock/g4-protocol-input/v1",
+    "g4_family": "G4-IMS-PARAMETER-GRID",
+    "protocol_kind": "bidirectional_island_grid",
+    "protocol_input": {
+      "generator_id": "bidirectional_bas_v1",
+      "cells": [
+        {
+          "cell_id": "G01_FWD_DAG",
+          "machine_capacity": 1,
+          "buffer_capacity": 1,
+          "agv_count": 1,
+          "forward_wip": 2,
+          "reverse_wip": 0,
+          "service_rate": 1.1,
+          "transfer_rate": 0.8,
+          "release_rate": 0.6,
+          "state_bound": 4096
+        },
+        {
+          "cell_id": "G02_REV_DAG",
+          "machine_capacity": 1,
+          "buffer_capacity": 1,
+          "agv_count": 1,
+          "forward_wip": 0,
+          "reverse_wip": 2,
+          "service_rate": 1.1,
+          "transfer_rate": 0.8,
+          "release_rate": 0.6,
+          "state_bound": 4096
+        },
+        {
+          "cell_id": "G03_BALANCED_TIGHT",
+          "machine_capacity": 1,
+          "buffer_capacity": 1,
+          "agv_count": 1,
+          "forward_wip": 2,
+          "reverse_wip": 2,
+          "service_rate": 1.1,
+          "transfer_rate": 0.8,
+          "release_rate": 0.6,
+          "state_bound": 16384
+        },
+        {
+          "cell_id": "G04_BALANCED_AGV2",
+          "machine_capacity": 1,
+          "buffer_capacity": 1,
+          "agv_count": 2,
+          "forward_wip": 2,
+          "reverse_wip": 2,
+          "service_rate": 1.1,
+          "transfer_rate": 0.8,
+          "release_rate": 0.6,
+          "state_bound": 16384
+        },
+        {
+          "cell_id": "G05_BALANCED_BUFFER2",
+          "machine_capacity": 1,
+          "buffer_capacity": 2,
+          "agv_count": 1,
+          "forward_wip": 2,
+          "reverse_wip": 2,
+          "service_rate": 1.1,
+          "transfer_rate": 0.8,
+          "release_rate": 0.6,
+          "state_bound": 16384
+        },
+        {
+          "cell_id": "G06_BALANCED_MACHINE2",
+          "machine_capacity": 2,
+          "buffer_capacity": 1,
+          "agv_count": 1,
+          "forward_wip": 2,
+          "reverse_wip": 2,
+          "service_rate": 1.1,
+          "transfer_rate": 0.8,
+          "release_rate": 0.6,
+          "state_bound": 16384
+        },
+        {
+          "cell_id": "G07_BALANCED_LOW_WIP",
+          "machine_capacity": 1,
+          "buffer_capacity": 1,
+          "agv_count": 1,
+          "forward_wip": 1,
+          "reverse_wip": 1,
+          "service_rate": 1.1,
+          "transfer_rate": 0.8,
+          "release_rate": 0.6,
+          "state_bound": 2048
+        },
+        {
+          "cell_id": "G08_FORWARD_SKEW",
+          "machine_capacity": 1,
+          "buffer_capacity": 1,
+          "agv_count": 1,
+          "forward_wip": 3,
+          "reverse_wip": 1,
+          "service_rate": 1.1,
+          "transfer_rate": 0.8,
+          "release_rate": 0.6,
+          "state_bound": 16384
+        },
+        {
+          "cell_id": "G09_FAST_RELEASE",
+          "machine_capacity": 1,
+          "buffer_capacity": 1,
+          "agv_count": 1,
+          "forward_wip": 2,
+          "reverse_wip": 2,
+          "service_rate": 1.1,
+          "transfer_rate": 0.8,
+          "release_rate": 1.2,
+          "state_bound": 16384
+        },
+        {
+          "cell_id": "G10_SLOW_TRANSFER",
+          "machine_capacity": 1,
+          "buffer_capacity": 1,
+          "agv_count": 1,
+          "forward_wip": 2,
+          "reverse_wip": 2,
+          "service_rate": 1.1,
+          "transfer_rate": 0.35,
+          "release_rate": 0.6,
+          "state_bound": 16384
+        }
+      ]
+    }
+  },
+  "expected_outputs_schema": {
+    "type": "object",
+    "required_fields": [
+      "classification",
+      "cells"
+    ]
+  }
+}

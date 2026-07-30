@@ -1,0 +1,793 @@
+{
+  "applicability": [
+    {
+      "baselines": {
+        "B05_ADAPTED_MONITOR_COVER": {
+          "applicable": false,
+          "reason": "This case is an L31 S4PR evidence-profile row; it does not supply legal-state and bad-state monitor-cover inputs.",
+          "required_evidence": [
+            "complete supplied candidate monitor set",
+            "legal-state preservation list"
+          ]
+        },
+        "L30_SUPPLIED_SUFFICIENT_INEQUALITIES": {
+          "applicable": false,
+          "reason": "No externally SMS-derived sufficient inequalities or finite-capacity S3PR/ENS3PR applicability evidence are supplied for this row.",
+          "required_evidence": [
+            "sms_derived_external inequality provenance",
+            "capacity vector"
+          ]
+        },
+        "L31_CRP_EVIDENCE_PROFILE": {
+          "applicable": true,
+          "reason": "The case supplies S4PR applicability, an embedding hash, CRP/resource-limit pairs, a translated IMS target, and an external legal-prefix claim.",
+          "required_evidence": [
+            "embedding content hash",
+            "frozen CRP/resource-limit pair set",
+            "finite-LTS target classification"
+          ]
+        },
+        "L32_L33_FIXED_RECORDER_TARGET": {
+          "applicable": false,
+          "reason": "The row has no fixed recorder count vector.",
+          "required_evidence": [
+            "target state",
+            "recorder events",
+            "fixed count vector"
+          ]
+        },
+        "L34_L35_FIXED_NIS_FILTER": {
+          "applicable": false,
+          "reason": "No fixed NIS filter is preregistered for this row.",
+          "required_evidence": [
+            "fixed NIS filter definition",
+            "filter applicability statement"
+          ]
+        },
+        "banker_safety_sequence": {
+          "applicable": false,
+          "reason": "The row is a CRP evidence-profile audit rather than a banker resource-allocation state.",
+          "required_evidence": [
+            "allocation matrix",
+            "maximum demand matrix",
+            "available vector"
+          ]
+        },
+        "delete_backflow_repair": {
+          "applicable": false,
+          "reason": "No backflow edge deletion repair candidate is part of the preregistered input.",
+          "required_evidence": [
+            "backflow edge set",
+            "repair candidate list"
+          ]
+        },
+        "exact_max_nonblocking_supervisor": {
+          "applicable": false,
+          "reason": "The row freezes a reachability and partial-deadlock bridge, not a legal-language or controllable-event specification for supervisor synthesis.",
+          "required_evidence": [
+            "finite LTS",
+            "initial state",
+            "target state"
+          ]
+        },
+        "simple_directed_cycle": {
+          "applicable": true,
+          "reason": "The frozen IMS target snapshot supplies the hold-request graph needed for a simple-cycle screen.",
+          "required_evidence": [
+            "wait-for graph snapshot"
+          ]
+        },
+        "state_dependent_knot": {
+          "applicable": true,
+          "reason": "The frozen IMS target snapshot supplies capacities, holdings, and requests for the capacity-aware knot screen.",
+          "required_evidence": [
+            "state-dependent wait graph",
+            "knot candidate"
+          ]
+        },
+        "wait_snapshot_siphon": {
+          "applicable": true,
+          "reason": "The restricted S4PR bridge supplies the exact wait snapshot and resource mapping required for the diagnostic siphon comparison.",
+          "required_evidence": [
+            "wait snapshot",
+            "siphon candidate"
+          ]
+        }
+      },
+      "case_id": "G4_CRP_S4PR_AGREE"
+    },
+    {
+      "baselines": {
+        "B05_ADAPTED_MONITOR_COVER": {
+          "applicable": false,
+          "reason": "This L31 candidate row does not supply monitor-cover candidates.",
+          "required_evidence": [
+            "candidate monitor list",
+            "first-met bad states"
+          ]
+        },
+        "L30_SUPPLIED_SUFFICIENT_INEQUALITIES": {
+          "applicable": false,
+          "reason": "No externally SMS-derived inequality set is supplied.",
+          "required_evidence": [
+            "sms_derived_external inequalities",
+            "finite-capacity applicability"
+          ]
+        },
+        "L31_CRP_EVIDENCE_PROFILE": {
+          "applicable": true,
+          "reason": "The row supplies an S4PR evidence profile and a frozen translated target for independent reachability classification.",
+          "required_evidence": [
+            "S4PR embedding hash",
+            "external legal-prefix claim",
+            "translated IMS target"
+          ]
+        },
+        "L32_L33_FIXED_RECORDER_TARGET": {
+          "applicable": false,
+          "reason": "The row does not include fixed recorder counts.",
+          "required_evidence": [
+            "recorder event set",
+            "fixed count vector"
+          ]
+        },
+        "L34_L35_FIXED_NIS_FILTER": {
+          "applicable": false,
+          "reason": "No fixed NIS filter is supplied.",
+          "required_evidence": [
+            "NIS filter"
+          ]
+        },
+        "banker_safety_sequence": {
+          "applicable": false,
+          "reason": "No banker allocation matrices are supplied.",
+          "required_evidence": [
+            "allocation matrix",
+            "available vector"
+          ]
+        },
+        "delete_backflow_repair": {
+          "applicable": false,
+          "reason": "No backflow repair candidate is supplied.",
+          "required_evidence": [
+            "backflow repair input"
+          ]
+        },
+        "exact_max_nonblocking_supervisor": {
+          "applicable": true,
+          "reason": "The finite LTS and frozen target permit an exact independent finite-state classification.",
+          "required_evidence": [
+            "finite LTS",
+            "target state"
+          ]
+        },
+        "simple_directed_cycle": {
+          "applicable": false,
+          "reason": "No wait-for graph cycle snapshot is supplied.",
+          "required_evidence": [
+            "wait-for graph"
+          ]
+        },
+        "state_dependent_knot": {
+          "applicable": false,
+          "reason": "No knot snapshot is supplied.",
+          "required_evidence": [
+            "knot snapshot"
+          ]
+        },
+        "wait_snapshot_siphon": {
+          "applicable": false,
+          "reason": "No siphon snapshot is supplied.",
+          "required_evidence": [
+            "siphon snapshot"
+          ]
+        }
+      },
+      "case_id": "G4_CRP_UNREACHABLE_CANDIDATE"
+    },
+    {
+      "baselines": {
+        "B05_ADAPTED_MONITOR_COVER": {
+          "applicable": false,
+          "reason": "The row is an outside-S4PR refusal and does not provide monitor candidates.",
+          "required_evidence": [
+            "monitor candidates",
+            "bad-state set"
+          ]
+        },
+        "L30_SUPPLIED_SUFFICIENT_INEQUALITIES": {
+          "applicable": false,
+          "reason": "No SMS-derived inequality input is supplied.",
+          "required_evidence": [
+            "SMS-derived inequality set"
+          ]
+        },
+        "L31_CRP_EVIDENCE_PROFILE": {
+          "applicable": true,
+          "reason": "Applicable as a refusal audit because the row explicitly declares missing S4PR applicability for a BAS/AGV/AND structure.",
+          "required_evidence": [
+            "outside-S4PR boundary evidence",
+            "applicability declaration"
+          ]
+        },
+        "L32_L33_FIXED_RECORDER_TARGET": {
+          "applicable": false,
+          "reason": "No fixed recorder target/count input is supplied.",
+          "required_evidence": [
+            "fixed recorder counts"
+          ]
+        },
+        "L34_L35_FIXED_NIS_FILTER": {
+          "applicable": false,
+          "reason": "No NIS filter input is supplied.",
+          "required_evidence": [
+            "NIS filter"
+          ]
+        },
+        "banker_safety_sequence": {
+          "applicable": true,
+          "reason": "The exact generated boundary supplies a finite allocation/request snapshot; the banker output remains a limited diagnostic for OR alternatives.",
+          "required_evidence": [
+            "banker snapshot"
+          ]
+        },
+        "delete_backflow_repair": {
+          "applicable": false,
+          "reason": "No repair-by-deletion candidate is supplied.",
+          "required_evidence": [
+            "deletion repair candidate"
+          ]
+        },
+        "exact_max_nonblocking_supervisor": {
+          "applicable": false,
+          "reason": "The row is a static outside-S4PR scope attack and does not define a marked completion language for a meaningful nonblocking supervisor.",
+          "required_evidence": [
+            "finite LTS",
+            "state bound"
+          ]
+        },
+        "simple_directed_cycle": {
+          "applicable": true,
+          "reason": "The exact boundary generator materializes a hold-request graph for the simple-cycle screen.",
+          "required_evidence": [
+            "wait-for graph"
+          ]
+        },
+        "state_dependent_knot": {
+          "applicable": true,
+          "reason": "The exact boundary generator retains OR-of-AND requests and capacities for the state-dependent knot screen.",
+          "required_evidence": [
+            "knot input"
+          ]
+        },
+        "wait_snapshot_siphon": {
+          "applicable": true,
+          "reason": "The exact generated boundary can be projected to the project's diagnostic wait-snapshot Petri net, with refusal retained if bridge assumptions fail.",
+          "required_evidence": [
+            "siphon snapshot"
+          ]
+        }
+      },
+      "case_id": "G4_CRP_OUTSIDE_S4PR"
+    },
+    {
+      "baselines": {
+        "B05_ADAPTED_MONITOR_COVER": {
+          "applicable": false,
+          "reason": "The row has no supplied candidate monitor cover set.",
+          "required_evidence": [
+            "candidate monitor set"
+          ]
+        },
+        "L30_SUPPLIED_SUFFICIENT_INEQUALITIES": {
+          "applicable": false,
+          "reason": "No externally SMS-derived inequalities are supplied.",
+          "required_evidence": [
+            "external inequality set"
+          ]
+        },
+        "L31_CRP_EVIDENCE_PROFILE": {
+          "applicable": false,
+          "reason": "No S4PR embedding or CRP/resource-limit profile is supplied.",
+          "required_evidence": [
+            "S4PR embedding",
+            "CRP/resource-limit pairs"
+          ]
+        },
+        "L32_L33_FIXED_RECORDER_TARGET": {
+          "applicable": true,
+          "reason": "The row supplies a finite LTS, target state, recorder event set, and fixed count vector.",
+          "required_evidence": [
+            "target state",
+            "recorder events",
+            "fixed counts"
+          ]
+        },
+        "L34_L35_FIXED_NIS_FILTER": {
+          "applicable": false,
+          "reason": "No fixed NIS filter is supplied.",
+          "required_evidence": [
+            "NIS filter"
+          ]
+        },
+        "banker_safety_sequence": {
+          "applicable": false,
+          "reason": "No banker matrix snapshot is supplied.",
+          "required_evidence": [
+            "banker matrices"
+          ]
+        },
+        "delete_backflow_repair": {
+          "applicable": false,
+          "reason": "No backflow deletion repair candidate is supplied.",
+          "required_evidence": [
+            "backflow deletion candidate"
+          ]
+        },
+        "exact_max_nonblocking_supervisor": {
+          "applicable": true,
+          "reason": "The row supplies a full finite LTS suitable for exact post-freeze finite-state checking.",
+          "required_evidence": [
+            "finite LTS",
+            "initial state"
+          ]
+        },
+        "simple_directed_cycle": {
+          "applicable": false,
+          "reason": "No directed wait graph is supplied.",
+          "required_evidence": [
+            "directed wait graph"
+          ]
+        },
+        "state_dependent_knot": {
+          "applicable": false,
+          "reason": "No knot snapshot is supplied.",
+          "required_evidence": [
+            "knot snapshot"
+          ]
+        },
+        "wait_snapshot_siphon": {
+          "applicable": false,
+          "reason": "No siphon snapshot is supplied.",
+          "required_evidence": [
+            "siphon snapshot"
+          ]
+        }
+      },
+      "case_id": "G4_RECORDER_TARGET_QUANTIFICATION"
+    },
+    {
+      "baselines": {
+        "B05_ADAPTED_MONITOR_COVER": {
+          "applicable": false,
+          "reason": "The row supplies no candidate monitor covers.",
+          "required_evidence": [
+            "candidate monitor covers"
+          ]
+        },
+        "L30_SUPPLIED_SUFFICIENT_INEQUALITIES": {
+          "applicable": true,
+          "reason": "The row supplies finite-capacity S3PR/ENS3PR applicability, an external SMS-derived inequality set, and a capacity vector.",
+          "required_evidence": [
+            "finite_capacity_s3pr_ens3pr true",
+            "sms_derived_external provenance",
+            "capacity vector"
+          ]
+        },
+        "L31_CRP_EVIDENCE_PROFILE": {
+          "applicable": false,
+          "reason": "No S4PR embedding or CRP/resource-limit evidence profile is supplied.",
+          "required_evidence": [
+            "S4PR embedding hash",
+            "CRP/resource-limit pairs"
+          ]
+        },
+        "L32_L33_FIXED_RECORDER_TARGET": {
+          "applicable": false,
+          "reason": "No fixed recorder target/count input is supplied.",
+          "required_evidence": [
+            "recorder target",
+            "fixed count vector"
+          ]
+        },
+        "L34_L35_FIXED_NIS_FILTER": {
+          "applicable": false,
+          "reason": "No NIS filter is supplied.",
+          "required_evidence": [
+            "NIS filter"
+          ]
+        },
+        "banker_safety_sequence": {
+          "applicable": false,
+          "reason": "A capacity vector and sufficient inequalities do not supply job allocations, remaining demands, or an available vector for a banker sequence.",
+          "required_evidence": [
+            "capacity vector",
+            "resource demand interpretation"
+          ]
+        },
+        "delete_backflow_repair": {
+          "applicable": false,
+          "reason": "No graph backflow repair candidate is supplied.",
+          "required_evidence": [
+            "backflow graph",
+            "repair candidate"
+          ]
+        },
+        "exact_max_nonblocking_supervisor": {
+          "applicable": false,
+          "reason": "This row supplies inequalities and capacities, not an explicit finite LTS.",
+          "required_evidence": [
+            "finite LTS"
+          ]
+        },
+        "simple_directed_cycle": {
+          "applicable": false,
+          "reason": "No wait-for graph is supplied.",
+          "required_evidence": [
+            "wait-for graph"
+          ]
+        },
+        "state_dependent_knot": {
+          "applicable": false,
+          "reason": "No state-dependent knot snapshot is supplied.",
+          "required_evidence": [
+            "knot snapshot"
+          ]
+        },
+        "wait_snapshot_siphon": {
+          "applicable": false,
+          "reason": "No siphon snapshot is supplied.",
+          "required_evidence": [
+            "siphon snapshot"
+          ]
+        }
+      },
+      "case_id": "G4_L30_RESOURCE_BASELINE"
+    },
+    {
+      "baselines": {
+        "B05_ADAPTED_MONITOR_COVER": {
+          "applicable": true,
+          "reason": "The row supplies legal states, first-met bad states, and candidate monitor cover sets.",
+          "required_evidence": [
+            "legal state list",
+            "first-met bad states",
+            "candidate monitor cover sets"
+          ]
+        },
+        "L30_SUPPLIED_SUFFICIENT_INEQUALITIES": {
+          "applicable": false,
+          "reason": "No external SMS-derived inequality set is supplied.",
+          "required_evidence": [
+            "external inequality set"
+          ]
+        },
+        "L31_CRP_EVIDENCE_PROFILE": {
+          "applicable": false,
+          "reason": "No S4PR embedding or CRP evidence profile is supplied.",
+          "required_evidence": [
+            "S4PR embedding"
+          ]
+        },
+        "L32_L33_FIXED_RECORDER_TARGET": {
+          "applicable": false,
+          "reason": "No recorder count vector is supplied.",
+          "required_evidence": [
+            "recorder count vector"
+          ]
+        },
+        "L34_L35_FIXED_NIS_FILTER": {
+          "applicable": false,
+          "reason": "No fixed NIS filter is supplied.",
+          "required_evidence": [
+            "NIS filter"
+          ]
+        },
+        "banker_safety_sequence": {
+          "applicable": false,
+          "reason": "The row is a finite-LTS monitor-cover task, not a banker matrix task.",
+          "required_evidence": [
+            "banker matrices"
+          ]
+        },
+        "delete_backflow_repair": {
+          "applicable": false,
+          "reason": "No backflow deletion repair candidate is supplied.",
+          "required_evidence": [
+            "backflow deletion candidate"
+          ]
+        },
+        "exact_max_nonblocking_supervisor": {
+          "applicable": true,
+          "reason": "The row supplies a full finite LTS and legal/bad partitions for exact finite-state comparison.",
+          "required_evidence": [
+            "finite LTS",
+            "legal and bad state partition"
+          ]
+        },
+        "simple_directed_cycle": {
+          "applicable": false,
+          "reason": "No directed wait graph cycle snapshot is supplied.",
+          "required_evidence": [
+            "wait-for graph"
+          ]
+        },
+        "state_dependent_knot": {
+          "applicable": false,
+          "reason": "No knot snapshot is supplied.",
+          "required_evidence": [
+            "knot snapshot"
+          ]
+        },
+        "wait_snapshot_siphon": {
+          "applicable": false,
+          "reason": "No siphon snapshot is supplied.",
+          "required_evidence": [
+            "siphon snapshot"
+          ]
+        }
+      },
+      "case_id": "G4_B05_SUPERVISOR_COMPARATOR"
+    },
+    {
+      "baselines": {
+        "B05_ADAPTED_MONITOR_COVER": {
+          "applicable": false,
+          "reason": "The grid row does not supply candidate monitor cover sets.",
+          "required_evidence": [
+            "candidate monitor covers"
+          ]
+        },
+        "L30_SUPPLIED_SUFFICIENT_INEQUALITIES": {
+          "applicable": false,
+          "reason": "No external SMS-derived inequality set is supplied for the grid.",
+          "required_evidence": [
+            "external inequality set"
+          ]
+        },
+        "L31_CRP_EVIDENCE_PROFILE": {
+          "applicable": false,
+          "reason": "No S4PR embedding or CRP profile is supplied for the grid.",
+          "required_evidence": [
+            "S4PR embedding"
+          ]
+        },
+        "L32_L33_FIXED_RECORDER_TARGET": {
+          "applicable": false,
+          "reason": "No fixed recorder target is supplied for the grid.",
+          "required_evidence": [
+            "fixed recorder target"
+          ]
+        },
+        "L34_L35_FIXED_NIS_FILTER": {
+          "applicable": false,
+          "reason": "No fixed NIS filter is supplied for the grid.",
+          "required_evidence": [
+            "NIS filter"
+          ]
+        },
+        "banker_safety_sequence": {
+          "applicable": true,
+          "reason": "Each generated grid cell has finite resource capacities that can be evaluated by a banker-style baseline after freeze.",
+          "required_evidence": [
+            "generated cell capacity vector",
+            "resource demand interpretation"
+          ]
+        },
+        "delete_backflow_repair": {
+          "applicable": false,
+          "reason": "The grid does not supply backflow deletion candidates.",
+          "required_evidence": [
+            "backflow repair candidates"
+          ]
+        },
+        "exact_max_nonblocking_supervisor": {
+          "applicable": true,
+          "reason": "Generated cells are finite-state models subject to the preregistered state bound.",
+          "required_evidence": [
+            "generated finite LTS",
+            "state bound check"
+          ]
+        },
+        "simple_directed_cycle": {
+          "applicable": true,
+          "reason": "Generated wait snapshots may be projected to directed wait graphs after freeze.",
+          "required_evidence": [
+            "wait snapshot projection"
+          ]
+        },
+        "state_dependent_knot": {
+          "applicable": true,
+          "reason": "Generated finite states can be checked for state-dependent knot structure after freeze.",
+          "required_evidence": [
+            "state-dependent wait graph"
+          ]
+        },
+        "wait_snapshot_siphon": {
+          "applicable": true,
+          "reason": "Generated finite states can be projected to wait snapshots for siphon checks after freeze.",
+          "required_evidence": [
+            "wait snapshot",
+            "Petri projection"
+          ]
+        }
+      },
+      "case_id": "G4_IMS_PARAMETER_GRID"
+    },
+    {
+      "baselines": {
+        "B05_ADAPTED_MONITOR_COVER": {
+          "applicable": false,
+          "reason": "The medium rebuild row does not supply monitor cover candidates.",
+          "required_evidence": [
+            "monitor cover candidates"
+          ]
+        },
+        "L30_SUPPLIED_SUFFICIENT_INEQUALITIES": {
+          "applicable": false,
+          "reason": "No external SMS-derived inequalities are supplied.",
+          "required_evidence": [
+            "external inequality set"
+          ]
+        },
+        "L31_CRP_EVIDENCE_PROFILE": {
+          "applicable": false,
+          "reason": "No S4PR embedding hash or CRP/resource-limit profile is supplied.",
+          "required_evidence": [
+            "S4PR embedding hash"
+          ]
+        },
+        "L32_L33_FIXED_RECORDER_TARGET": {
+          "applicable": false,
+          "reason": "No fixed recorder count target is supplied.",
+          "required_evidence": [
+            "fixed count target"
+          ]
+        },
+        "L34_L35_FIXED_NIS_FILTER": {
+          "applicable": false,
+          "reason": "No fixed NIS filter is supplied.",
+          "required_evidence": [
+            "NIS filter"
+          ]
+        },
+        "banker_safety_sequence": {
+          "applicable": true,
+          "reason": "The island capacities can be converted to banker-style resource availability after freeze.",
+          "required_evidence": [
+            "island capacity vector",
+            "route demand interpretation"
+          ]
+        },
+        "delete_backflow_repair": {
+          "applicable": false,
+          "reason": "No frozen edge-deletion intervention or paired repaired generator is part of the medium confirmation row.",
+          "required_evidence": [
+            "generated wait graph",
+            "candidate backflow edge set"
+          ]
+        },
+        "exact_max_nonblocking_supervisor": {
+          "applicable": true,
+          "reason": "The rebuild is finite-state under the preregistered state bound.",
+          "required_evidence": [
+            "generated finite LTS",
+            "state bound check"
+          ]
+        },
+        "simple_directed_cycle": {
+          "applicable": true,
+          "reason": "Generated wait snapshots can be checked for simple directed cycles after freeze.",
+          "required_evidence": [
+            "wait-for graph snapshot"
+          ]
+        },
+        "state_dependent_knot": {
+          "applicable": true,
+          "reason": "Generated island states can be checked for state-dependent knots after freeze.",
+          "required_evidence": [
+            "state-dependent wait graph"
+          ]
+        },
+        "wait_snapshot_siphon": {
+          "applicable": true,
+          "reason": "Generated island states can be projected to wait snapshots for siphon checks after freeze.",
+          "required_evidence": [
+            "wait snapshot",
+            "siphon candidate"
+          ]
+        }
+      },
+      "case_id": "G4_MEDIUM_ISLAND_REBUILD"
+    },
+    {
+      "baselines": {
+        "B05_ADAPTED_MONITOR_COVER": {
+          "applicable": false,
+          "reason": "The adversarial boundary does not supply candidate monitor cover sets.",
+          "required_evidence": [
+            "candidate monitor covers"
+          ]
+        },
+        "L30_SUPPLIED_SUFFICIENT_INEQUALITIES": {
+          "applicable": false,
+          "reason": "No externally SMS-derived inequality set is supplied for the adversarial boundary.",
+          "required_evidence": [
+            "external inequality set"
+          ]
+        },
+        "L31_CRP_EVIDENCE_PROFILE": {
+          "applicable": false,
+          "reason": "No S4PR embedding or CRP profile is supplied; the row intentionally targets boundary behavior.",
+          "required_evidence": [
+            "S4PR embedding",
+            "CRP/resource-limit pairs"
+          ]
+        },
+        "L32_L33_FIXED_RECORDER_TARGET": {
+          "applicable": false,
+          "reason": "No recorder target/count vector is supplied.",
+          "required_evidence": [
+            "recorder target",
+            "fixed count vector"
+          ]
+        },
+        "L34_L35_FIXED_NIS_FILTER": {
+          "applicable": false,
+          "reason": "No fixed NIS filter is supplied.",
+          "required_evidence": [
+            "NIS filter"
+          ]
+        },
+        "banker_safety_sequence": {
+          "applicable": true,
+          "reason": "The explicit resource capacities can be evaluated as a banker-style resource snapshot after freeze.",
+          "required_evidence": [
+            "capacity vector",
+            "branch demand interpretation"
+          ]
+        },
+        "delete_backflow_repair": {
+          "applicable": false,
+          "reason": "The adversarial snapshot freezes no edge-deletion intervention and must not invent one after inspection.",
+          "required_evidence": [
+            "generated wait graph",
+            "reservation-token dependency edges"
+          ]
+        },
+        "exact_max_nonblocking_supervisor": {
+          "applicable": false,
+          "reason": "The adversarial row is a static boundary snapshot without a marked completion language, so maximal nonblocking supervision is not a defined comparison.",
+          "required_evidence": [
+            "generated finite LTS",
+            "state bound check"
+          ]
+        },
+        "simple_directed_cycle": {
+          "applicable": true,
+          "reason": "Generated wait snapshots can be checked for simple directed cycles after freeze.",
+          "required_evidence": [
+            "wait-for graph"
+          ]
+        },
+        "state_dependent_knot": {
+          "applicable": true,
+          "reason": "OR-of-AND reservations can be checked for state-dependent knot structure after freeze.",
+          "required_evidence": [
+            "state-dependent wait graph"
+          ]
+        },
+        "wait_snapshot_siphon": {
+          "applicable": true,
+          "reason": "Generated wait snapshots can be projected to siphon candidates after freeze.",
+          "required_evidence": [
+            "wait snapshot",
+            "siphon candidate"
+          ]
+        }
+      },
+      "case_id": "G4_ADVERSARIAL_BOUNDARY"
+    }
+  ],
+  "schema_version": "ims-deadlock/g4-baselines/v1"
+}

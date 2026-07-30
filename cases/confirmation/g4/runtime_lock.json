@@ -1,0 +1,44 @@
+{
+  "schema_version": "ims-deadlock/g4-runtime-lock/v1",
+  "implementation_commit": "2a89fe1409d5000225e22499878454e964c01363",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": {
+    "executable": "D:\\worktree\\IMS_deadlock-final-integration\\.venv\\Scripts\\python.exe",
+    "version": "3.13.9"
+  },
+  "packages": {
+    "ims-deadlock": "0.1.0",
+    "mypy": "2.3.0",
+    "pip": "25.2",
+    "pytest": "9.1.1",
+    "ruff": "0.16.0"
+  },
+  "commands": [
+    "python -m ims_deadlock.g4_freeze --root cases/confirmation/g4 check",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 validate",
+    "python -m pytest tests/test_confirmation.py tests/test_g4_protocol.py tests/test_g4_freeze.py -q",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_ADVERSARIAL_BOUNDARY",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_B05_SUPERVISOR_COMPARATOR",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_CRP_OUTSIDE_S4PR",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_CRP_S4PR_AGREE",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_CRP_UNREACHABLE_CANDIDATE",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_IMS_PARAMETER_GRID",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_L30_RESOURCE_BASELINE",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_MEDIUM_ISLAND_REBUILD",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_RECORDER_TARGET_QUANTIFICATION"
+  ],
+  "command_descriptions": {
+    "python -m ims_deadlock.g4_freeze --root cases/confirmation/g4 check": "structural_no_result_integrity_check; required before and after the seal",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 validate": "structural_only_protocol_parse; allowed before the seal and forbidden from invoking scientific backends",
+    "python -m pytest tests/test_confirmation.py tests/test_g4_protocol.py tests/test_g4_freeze.py -q": "development_and_schema_regression_tests; allowed before the seal",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_ADVERSARIAL_BOUNDARY": "post_freeze_only; exact generated boundary snapshot analysis without CTMC or DES",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_B05_SUPERVISOR_COMPARATOR": "post_freeze_only; supplied monitor-cover comparison and independent exact finite-LTS supervisor",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_CRP_OUTSIDE_S4PR": "post_freeze_only; CRP applicability refusal plus exact IMS boundary materialization",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_CRP_S4PR_AGREE": "post_freeze_only; finite-LTS CRP audit plus exact mapped IMS partial-deadlock certificate",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_CRP_UNREACHABLE_CANDIDATE": "post_freeze_only; complete finite-LTS nonreachability audit of the supplied candidate",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_IMS_PARAMETER_GRID": "post_freeze_only; ten exact generators, complete LTS, case-derived CTMC, and fixed-stream DES",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_L30_RESOURCE_BASELINE": "post_freeze_only; exact evaluation of three supplied sufficient inequalities",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_MEDIUM_ISLAND_REBUILD": "post_freeze_only; exact medium generator, complete LTS, case-derived CTMC, and fixed-stream DES",
+    "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_RECORDER_TARGET_QUANTIFICATION": "post_freeze_only; separate ordinary and fixed-recorder-count finite-LTS reachability audit"
+  }
+}

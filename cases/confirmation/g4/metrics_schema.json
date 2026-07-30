@@ -1,0 +1,489 @@
+{
+  "metrics": [
+    {
+      "applicability_by_case": {
+        "G4_ADVERSARIAL_BOUNDARY": {
+          "applicable": true,
+          "reason": "adversarial row preregisters a finite blocking-kernel certificate and proper-subkernel check"
+        },
+        "G4_B05_SUPERVISOR_COMPARATOR": {
+          "applicable": false,
+          "reason": "B05 row compares monitor-cover/supervisor structure and does not claim a project deadlock-certificate minimality score"
+        },
+        "G4_CRP_OUTSIDE_S4PR": {
+          "applicable": true,
+          "reason": "outside-S4PR row still has an IMS boundary certificate whose minimality is checked independently of CRP applicability"
+        },
+        "G4_CRP_S4PR_AGREE": {
+          "applicable": true,
+          "reason": "agreement row preregisters the IMS closed blocking core and proper-subkernel minimality check"
+        },
+        "G4_CRP_UNREACHABLE_CANDIDATE": {
+          "applicable": false,
+          "reason": "unreachable-candidate row has no reachable IMS blocking certificate to minimize"
+        },
+        "G4_IMS_PARAMETER_GRID": {
+          "applicable": true,
+          "reason": "grid row preregisters exact certificate extraction and subset minimality across frozen grid points"
+        },
+        "G4_L30_RESOURCE_BASELINE": {
+          "applicable": false,
+          "reason": "L30 row is a supplied sufficient-inequality comparator, not a project certificate-minimality claim"
+        },
+        "G4_MEDIUM_ISLAND_REBUILD": {
+          "applicable": true,
+          "reason": "medium rebuild row preregisters finite certificate extraction and subset minimality for the held-out island model"
+        },
+        "G4_RECORDER_TARGET_QUANTIFICATION": {
+          "applicable": false,
+          "reason": "recorder row evaluates fixed-target quantification rather than a minimal deadlock certificate"
+        }
+      },
+      "definition": "For each applicable frozen case, no proper subkernel of the reported closed blocking kernel remains closed and blocking under the same zero-time-closed state semantics.",
+      "denominator": "applicable frozen cases with a reachable IMS closed blocking certificate",
+      "metric_id": "certificate_minimality",
+      "unit": "boolean per applicable case"
+    },
+    {
+      "applicability_by_case": {
+        "G4_ADVERSARIAL_BOUNDARY": {
+          "applicable": false,
+          "reason": "the adversarial row is a static boundary snapshot and no conditioned path-mass estimator is implemented"
+        },
+        "G4_B05_SUPERVISOR_COMPARATOR": {
+          "applicable": false,
+          "reason": "B05 exact comparator row has no stochastic path-mass estimand"
+        },
+        "G4_CRP_OUTSIDE_S4PR": {
+          "applicable": false,
+          "reason": "outside-S4PR refusal row is exact semantic applicability, not a stochastic path-mass question"
+        },
+        "G4_CRP_S4PR_AGREE": {
+          "applicable": false,
+          "reason": "S4PR agreement row is exact finite reachability and does not preregister CTMC path-mass accounting"
+        },
+        "G4_CRP_UNREACHABLE_CANDIDATE": {
+          "applicable": false,
+          "reason": "unreachable-candidate row is exact nonreachability; conditioned path mass is undefined"
+        },
+        "G4_IMS_PARAMETER_GRID": {
+          "applicable": false,
+          "reason": "the locked implementation derives a Doob generator but does not yet define or compute conditioned path mass"
+        },
+        "G4_L30_RESOURCE_BASELINE": {
+          "applicable": false,
+          "reason": "L30 sufficient-inequality comparator has no CTMC path-mass estimand"
+        },
+        "G4_MEDIUM_ISLAND_REBUILD": {
+          "applicable": false,
+          "reason": "the locked implementation derives a Doob generator but does not yet define or compute conditioned path mass"
+        },
+        "G4_RECORDER_TARGET_QUANTIFICATION": {
+          "applicable": false,
+          "reason": "recorder fixed-target row is an exact reachability-mapping obligation, not a CTMC path-mass metric"
+        }
+      },
+      "definition": "Probability flux through certificate-bearing transient states conditioned on eventual deadlock absorption, computed from the frozen CTMC partition.",
+      "denominator": "applicable stochastic frozen cases with a defined absorbing deadlock event",
+      "metric_id": "conditioned_path_mass",
+      "unit": "probability in [0, 1]"
+    },
+    {
+      "applicability_by_case": {
+        "G4_ADVERSARIAL_BOUNDARY": {
+          "applicable": false,
+          "reason": "the adversarial target is a static snapshot without a transient CTMC initial state"
+        },
+        "G4_B05_SUPERVISOR_COMPARATOR": {
+          "applicable": false,
+          "reason": "B05 row is exact-only; DES sampling is not part of the frozen comparator"
+        },
+        "G4_CRP_OUTSIDE_S4PR": {
+          "applicable": false,
+          "reason": "outside-S4PR row is exact-only; DES sampling cannot decide the bridge refusal"
+        },
+        "G4_CRP_S4PR_AGREE": {
+          "applicable": false,
+          "reason": "S4PR agreement row is exact-only; DES sampling is not evidence for CRP/IMS equivalence"
+        },
+        "G4_CRP_UNREACHABLE_CANDIDATE": {
+          "applicable": false,
+          "reason": "unreachable-candidate row is exact-only; DES sampling cannot prove absence of a legal prefix"
+        },
+        "G4_IMS_PARAMETER_GRID": {
+          "applicable": true,
+          "reason": "parameter-grid row preregisters DES confidence intervals with fixed seeds and replicate count"
+        },
+        "G4_L30_RESOURCE_BASELINE": {
+          "applicable": false,
+          "reason": "L30 row is exact-only; DES sampling is outside the sufficient-inequality comparison"
+        },
+        "G4_MEDIUM_ISLAND_REBUILD": {
+          "applicable": true,
+          "reason": "medium rebuild row preregisters DES confidence intervals with fixed seeds and replicate count"
+        },
+        "G4_RECORDER_TARGET_QUANTIFICATION": {
+          "applicable": false,
+          "reason": "recorder row is exact-only; DES sampling cannot settle the fixed target quantifier"
+        }
+      },
+      "definition": "For each frozen master seed, the direct Gillespie estimate of deadlock-before-completion probability and its two-sided 95% Wilson score interval, using exactly the frozen replicate count and sha256(master_seed:replication_index) streams. Report all three seed-specific intervals and whether the exact CTMC probability lies in each interval; do not pool or retune after inspection.",
+      "denominator": "all frozen Bernoulli absorption trajectories for each master seed in each applicable stochastic case",
+      "metric_id": "des_confidence_interval",
+      "unit": "probability interval in [0, 1] at frozen 95% confidence"
+    },
+    {
+      "applicability_by_case": {
+        "G4_ADVERSARIAL_BOUNDARY": {
+          "applicable": false,
+          "reason": "the adversarial target is an already blocked static snapshot, not a competing-absorption CTMC"
+        },
+        "G4_B05_SUPERVISOR_COMPARATOR": {
+          "applicable": false,
+          "reason": "B05 row compares supervisor structure, not absorbing deadlock probability"
+        },
+        "G4_CRP_OUTSIDE_S4PR": {
+          "applicable": false,
+          "reason": "outside-S4PR row asks for a semantic refusal boundary rather than a probability"
+        },
+        "G4_CRP_S4PR_AGREE": {
+          "applicable": false,
+          "reason": "S4PR agreement row asks for exact structural/reachability agreement rather than a probability"
+        },
+        "G4_CRP_UNREACHABLE_CANDIDATE": {
+          "applicable": false,
+          "reason": "unreachable-candidate row has no reachable deadlock event for CTMC absorption"
+        },
+        "G4_IMS_PARAMETER_GRID": {
+          "applicable": true,
+          "reason": "parameter-grid row preregisters exact absorbing deadlock probability where the frozen CTMC is finite"
+        },
+        "G4_L30_RESOURCE_BASELINE": {
+          "applicable": false,
+          "reason": "L30 row is a sufficient-resource comparator and does not define an absorbing probability"
+        },
+        "G4_MEDIUM_ISLAND_REBUILD": {
+          "applicable": true,
+          "reason": "medium rebuild row preregisters exact absorbing deadlock probability for the frozen finite CTMC"
+        },
+        "G4_RECORDER_TARGET_QUANTIFICATION": {
+          "applicable": false,
+          "reason": "recorder row evaluates fixed-target reachability rather than stochastic absorption"
+        }
+      },
+      "definition": "Exact absorbing probability of reaching any preregistered deadlock class before completion under the frozen CTMC rates.",
+      "denominator": "applicable frozen finite CTMC cases with deadlock and completion absorbing classes",
+      "metric_id": "exact_deadlock_probability",
+      "unit": "probability in [0, 1]"
+    },
+    {
+      "applicability_by_case": {
+        "G4_ADVERSARIAL_BOUNDARY": {
+          "applicable": false,
+          "reason": "the adversarial target is a static snapshot and has no transient CTMC clock"
+        },
+        "G4_B05_SUPERVISOR_COMPARATOR": {
+          "applicable": false,
+          "reason": "B05 exact comparator row has no frozen CTMC timing model"
+        },
+        "G4_CRP_OUTSIDE_S4PR": {
+          "applicable": false,
+          "reason": "outside-S4PR refusal row has no frozen CTMC timing model"
+        },
+        "G4_CRP_S4PR_AGREE": {
+          "applicable": false,
+          "reason": "S4PR agreement row has no frozen CTMC timing model"
+        },
+        "G4_CRP_UNREACHABLE_CANDIDATE": {
+          "applicable": false,
+          "reason": "unreachable-candidate row has no frozen CTMC timing model"
+        },
+        "G4_IMS_PARAMETER_GRID": {
+          "applicable": true,
+          "reason": "parameter-grid row preregisters mean absorption time for finite CTMC grid points"
+        },
+        "G4_L30_RESOURCE_BASELINE": {
+          "applicable": false,
+          "reason": "L30 comparator row has no frozen CTMC timing model"
+        },
+        "G4_MEDIUM_ISLAND_REBUILD": {
+          "applicable": true,
+          "reason": "medium rebuild row preregisters mean absorption time for the frozen finite CTMC"
+        },
+        "G4_RECORDER_TARGET_QUANTIFICATION": {
+          "applicable": false,
+          "reason": "recorder row has no frozen CTMC timing model"
+        }
+      },
+      "definition": "Expected time to absorption into completion or deadlock, with any conditional variant declared before post-freeze execution.",
+      "denominator": "applicable frozen finite CTMC cases",
+      "metric_id": "mean_absorption_time",
+      "unit": "time units from frozen case rates"
+    },
+    {
+      "applicability_by_case": {
+        "G4_ADVERSARIAL_BOUNDARY": {
+          "applicable": false,
+          "reason": "no rare-event estimator or transient stochastic model is implemented for the static boundary snapshot"
+        },
+        "G4_B05_SUPERVISOR_COMPARATOR": {
+          "applicable": false,
+          "reason": "B05 row is exact-only and has no rare-event simulation design"
+        },
+        "G4_CRP_OUTSIDE_S4PR": {
+          "applicable": false,
+          "reason": "outside-S4PR refusal row is exact-only and has no rare-event simulation design"
+        },
+        "G4_CRP_S4PR_AGREE": {
+          "applicable": false,
+          "reason": "S4PR agreement row is exact-only and has no rare-event simulation design"
+        },
+        "G4_CRP_UNREACHABLE_CANDIDATE": {
+          "applicable": false,
+          "reason": "unreachable-candidate row is exact-only and has no rare-event simulation design"
+        },
+        "G4_IMS_PARAMETER_GRID": {
+          "applicable": false,
+          "reason": "only direct Gillespie cross-checks are implemented; no importance sampler or rare-event efficiency comparator is frozen"
+        },
+        "G4_L30_RESOURCE_BASELINE": {
+          "applicable": false,
+          "reason": "L30 row is exact-only and has no rare-event simulation design"
+        },
+        "G4_MEDIUM_ISLAND_REBUILD": {
+          "applicable": false,
+          "reason": "only direct Gillespie cross-checks are implemented; no importance sampler or rare-event efficiency comparator is frozen"
+        },
+        "G4_RECORDER_TARGET_QUANTIFICATION": {
+          "applicable": false,
+          "reason": "recorder row is exact-only and has no rare-event simulation design"
+        }
+      },
+      "definition": "Variance, effective sample size, and wall-clock cost for preregistered rare-event estimation, reported only for fixed-stream stochastic rows.",
+      "denominator": "applicable stochastic frozen cases with a preregistered rare-event design",
+      "metric_id": "rare_event_efficiency",
+      "unit": "variance and effective-sample-size diagnostics"
+    },
+    {
+      "applicability_by_case": {
+        "G4_ADVERSARIAL_BOUNDARY": {
+          "applicable": false,
+          "reason": "adversarial boundary row does not preregister a repair policy or due-date schedule comparison"
+        },
+        "G4_B05_SUPERVISOR_COMPARATOR": {
+          "applicable": false,
+          "reason": "B05 exact comparator row must not claim performance savings from supervisor structure"
+        },
+        "G4_CRP_OUTSIDE_S4PR": {
+          "applicable": false,
+          "reason": "outside-S4PR refusal row has no supervisor policy or due-date schedule comparison"
+        },
+        "G4_CRP_S4PR_AGREE": {
+          "applicable": false,
+          "reason": "S4PR agreement row is exact-only and does not preregister supervisor performance"
+        },
+        "G4_CRP_UNREACHABLE_CANDIDATE": {
+          "applicable": false,
+          "reason": "unreachable-candidate row must not credit supervisor cost for an unreachable marking"
+        },
+        "G4_IMS_PARAMETER_GRID": {
+          "applicable": false,
+          "reason": "no due-date model or policy-conditioned stochastic generator is frozen for the grid"
+        },
+        "G4_L30_RESOURCE_BASELINE": {
+          "applicable": false,
+          "reason": "L30 resource baseline row has no supervisor policy or due-date schedule comparison"
+        },
+        "G4_MEDIUM_ISLAND_REBUILD": {
+          "applicable": false,
+          "reason": "no due-date model or policy-conditioned stochastic generator is frozen for the medium case"
+        },
+        "G4_RECORDER_TARGET_QUANTIFICATION": {
+          "applicable": false,
+          "reason": "recorder row has no supervisor policy or due-date schedule comparison"
+        }
+      },
+      "definition": "Change in due-date risk under the frozen supervisor relative to the uncontrolled feasible baseline, using the same arrivals, processing rates, and due-date rule.",
+      "denominator": "applicable cases with a preregistered supervisor and due-date-risk model",
+      "metric_id": "supervisor_due_date_risk_change",
+      "unit": "risk difference"
+    },
+    {
+      "applicability_by_case": {
+        "G4_ADVERSARIAL_BOUNDARY": {
+          "applicable": false,
+          "reason": "adversarial boundary row does not preregister a repair policy or makespan comparison"
+        },
+        "G4_B05_SUPERVISOR_COMPARATOR": {
+          "applicable": false,
+          "reason": "B05 exact comparator row must not report performance loss from monitor-cover structure"
+        },
+        "G4_CRP_OUTSIDE_S4PR": {
+          "applicable": false,
+          "reason": "outside-S4PR refusal row has no supervisor makespan comparison"
+        },
+        "G4_CRP_S4PR_AGREE": {
+          "applicable": false,
+          "reason": "S4PR agreement row is exact-only and has no supervisor makespan comparison"
+        },
+        "G4_CRP_UNREACHABLE_CANDIDATE": {
+          "applicable": false,
+          "reason": "unreachable-candidate row has no reachable target for supervisor makespan comparison"
+        },
+        "G4_IMS_PARAMETER_GRID": {
+          "applicable": false,
+          "reason": "the exact supervisor is structural; no policy-conditioned makespan estimand is frozen"
+        },
+        "G4_L30_RESOURCE_BASELINE": {
+          "applicable": false,
+          "reason": "L30 resource baseline row has no supervisor makespan comparison"
+        },
+        "G4_MEDIUM_ISLAND_REBUILD": {
+          "applicable": false,
+          "reason": "the exact supervisor is structural; no policy-conditioned makespan estimand is frozen"
+        },
+        "G4_RECORDER_TARGET_QUANTIFICATION": {
+          "applicable": false,
+          "reason": "recorder row has no supervisor makespan comparison"
+        }
+      },
+      "definition": "Makespan increase under the frozen supervisor relative to the uncontrolled feasible baseline.",
+      "denominator": "applicable cases with a preregistered supervisor and makespan model",
+      "metric_id": "supervisor_makespan_loss",
+      "unit": "time units from frozen case rates"
+    },
+    {
+      "applicability_by_case": {
+        "G4_ADVERSARIAL_BOUNDARY": {
+          "applicable": false,
+          "reason": "adversarial boundary row does not preregister a repair policy or throughput comparison"
+        },
+        "G4_B05_SUPERVISOR_COMPARATOR": {
+          "applicable": false,
+          "reason": "B05 exact comparator row must not convert structural compression into a throughput claim"
+        },
+        "G4_CRP_OUTSIDE_S4PR": {
+          "applicable": false,
+          "reason": "outside-S4PR refusal row has no supervisor throughput comparison"
+        },
+        "G4_CRP_S4PR_AGREE": {
+          "applicable": false,
+          "reason": "S4PR agreement row is exact-only and has no supervisor throughput comparison"
+        },
+        "G4_CRP_UNREACHABLE_CANDIDATE": {
+          "applicable": false,
+          "reason": "unreachable-candidate row has no reachable target for supervisor throughput comparison"
+        },
+        "G4_IMS_PARAMETER_GRID": {
+          "applicable": false,
+          "reason": "finite-batch completion is modeled, but no regenerative throughput estimand is frozen"
+        },
+        "G4_L30_RESOURCE_BASELINE": {
+          "applicable": false,
+          "reason": "L30 resource baseline row has no supervisor throughput comparison"
+        },
+        "G4_MEDIUM_ISLAND_REBUILD": {
+          "applicable": false,
+          "reason": "finite-batch completion is modeled, but no regenerative throughput estimand is frozen"
+        },
+        "G4_RECORDER_TARGET_QUANTIFICATION": {
+          "applicable": false,
+          "reason": "recorder row has no supervisor throughput comparison"
+        }
+      },
+      "definition": "Throughput decrease under the frozen supervisor relative to the uncontrolled feasible baseline.",
+      "denominator": "applicable cases with a preregistered supervisor and throughput model",
+      "metric_id": "supervisor_throughput_loss",
+      "unit": "throughput difference"
+    },
+    {
+      "applicability_by_case": {
+        "G4_ADVERSARIAL_BOUNDARY": {
+          "applicable": false,
+          "reason": "adversarial boundary row does not preregister a repair policy or WIP comparison"
+        },
+        "G4_B05_SUPERVISOR_COMPARATOR": {
+          "applicable": false,
+          "reason": "B05 exact comparator row must not claim WIP change from monitor-cover structure"
+        },
+        "G4_CRP_OUTSIDE_S4PR": {
+          "applicable": false,
+          "reason": "outside-S4PR refusal row has no supervisor WIP comparison"
+        },
+        "G4_CRP_S4PR_AGREE": {
+          "applicable": false,
+          "reason": "S4PR agreement row is exact-only and has no supervisor WIP comparison"
+        },
+        "G4_CRP_UNREACHABLE_CANDIDATE": {
+          "applicable": false,
+          "reason": "unreachable-candidate row has no reachable target for supervisor WIP comparison"
+        },
+        "G4_IMS_PARAMETER_GRID": {
+          "applicable": false,
+          "reason": "WIP is a frozen input and no policy-dependent WIP response model is implemented"
+        },
+        "G4_L30_RESOURCE_BASELINE": {
+          "applicable": false,
+          "reason": "L30 resource baseline row has no supervisor WIP comparison"
+        },
+        "G4_MEDIUM_ISLAND_REBUILD": {
+          "applicable": false,
+          "reason": "WIP is a frozen input and no policy-dependent WIP response model is implemented"
+        },
+        "G4_RECORDER_TARGET_QUANTIFICATION": {
+          "applicable": false,
+          "reason": "recorder row has no supervisor WIP comparison"
+        }
+      },
+      "definition": "Mean WIP change under the frozen supervisor relative to the uncontrolled feasible baseline.",
+      "denominator": "applicable cases with a preregistered supervisor and WIP model",
+      "metric_id": "supervisor_wip_change",
+      "unit": "jobs"
+    },
+    {
+      "applicability_by_case": {
+        "G4_ADVERSARIAL_BOUNDARY": {
+          "applicable": true,
+          "reason": "adversarial boundary row has a frozen theorem-scope prediction and falsifier"
+        },
+        "G4_B05_SUPERVISOR_COMPARATOR": {
+          "applicable": true,
+          "reason": "B05 comparator row has a frozen structural/permissiveness prediction and falsifier"
+        },
+        "G4_CRP_OUTSIDE_S4PR": {
+          "applicable": true,
+          "reason": "outside-S4PR row has a frozen refusal-boundary prediction and falsifier"
+        },
+        "G4_CRP_S4PR_AGREE": {
+          "applicable": true,
+          "reason": "S4PR agreement row has a frozen agreement prediction and falsifier"
+        },
+        "G4_CRP_UNREACHABLE_CANDIDATE": {
+          "applicable": true,
+          "reason": "unreachable-candidate row has a frozen refusal prediction and falsifier"
+        },
+        "G4_IMS_PARAMETER_GRID": {
+          "applicable": true,
+          "reason": "parameter-grid row has frozen theorem-scope predictions and falsifiers"
+        },
+        "G4_L30_RESOURCE_BASELINE": {
+          "applicable": true,
+          "reason": "L30 row has a frozen sufficient/conservative comparator prediction and falsifier"
+        },
+        "G4_MEDIUM_ISLAND_REBUILD": {
+          "applicable": true,
+          "reason": "medium rebuild row has frozen theorem-scope predictions and falsifiers"
+        },
+        "G4_RECORDER_TARGET_QUANTIFICATION": {
+          "applicable": true,
+          "reason": "recorder row has a frozen fixed-target quantification prediction and falsifier"
+        }
+      },
+      "definition": "Whether the frozen prediction sheet's theorem-scope class agrees with the post-freeze admissible evidence for the same case.",
+      "denominator": "all nine frozen G4 cases",
+      "metric_id": "theorem_prediction_correctness",
+      "unit": "boolean per case"
+    }
+  ],
+  "schema_version": "ims-deadlock/g4-metrics/v1"
+}

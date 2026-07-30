@@ -1,0 +1,150 @@
+{
+  "schema_version": "ims-deadlock/confirmation-case/v1",
+  "case_id": "G4_B05_SUPERVISOR_COMPARATOR",
+  "family": "G4",
+  "held_out": true,
+  "status": "PREREGISTERED",
+  "protocol": "g4_confirmation_freeze_v1",
+  "contamination": {
+    "derived_from_discovery_case": false,
+    "excluded_discovery_case_ids": [
+      "C0",
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C5_DAG"
+    ],
+    "excluded_discovery_family_ids": [
+      "BIX1-SAT",
+      "BIX2-PERSIST"
+    ],
+    "provenance": "independent_preregistration"
+  },
+  "input_payload": {
+    "schema_version": "ims-deadlock/g4-protocol-input/v1",
+    "g4_family": "G4-B05-SUPERVISOR-COMPARATOR",
+    "protocol_kind": "adapted_candidate_monitor_cover",
+    "protocol_input": {
+      "finite_lts": {
+        "states": [
+          "l0",
+          "l1",
+          "l2",
+          "l3",
+          "l_done",
+          "b1",
+          "b2",
+          "b3"
+        ],
+        "initial_state": "l0",
+        "marked_states": [
+          "l_done"
+        ],
+        "transitions": [
+          {
+            "source": "l0",
+            "event": "start",
+            "target": "l1",
+            "controllable": true
+          },
+          {
+            "source": "l1",
+            "event": "route_left",
+            "target": "l2",
+            "controllable": true
+          },
+          {
+            "source": "l1",
+            "event": "route_right",
+            "target": "l3",
+            "controllable": true
+          },
+          {
+            "source": "l2",
+            "event": "finish_left",
+            "target": "l_done",
+            "controllable": false
+          },
+          {
+            "source": "l3",
+            "event": "finish_right",
+            "target": "l_done",
+            "controllable": false
+          },
+          {
+            "source": "l2",
+            "event": "overlap_a",
+            "target": "b1",
+            "controllable": true
+          },
+          {
+            "source": "l3",
+            "event": "overlap_b",
+            "target": "b2",
+            "controllable": true
+          },
+          {
+            "source": "l2",
+            "event": "late_reserve",
+            "target": "b3",
+            "controllable": true
+          }
+        ]
+      },
+      "state_bound": 64,
+      "legal_states": [
+        "l0",
+        "l1",
+        "l2",
+        "l3",
+        "l_done"
+      ],
+      "first_met_bad_states": [
+        "b1",
+        "b2",
+        "b3"
+      ],
+      "candidate_monitors": [
+        {
+          "monitor_id": "m_alpha",
+          "covered_bad_states": [
+            "b1",
+            "b2"
+          ],
+          "excluded_legal_states": []
+        },
+        {
+          "monitor_id": "m_beta",
+          "covered_bad_states": [
+            "b2",
+            "b3"
+          ],
+          "excluded_legal_states": []
+        },
+        {
+          "monitor_id": "m_gamma",
+          "covered_bad_states": [
+            "b1",
+            "b3"
+          ],
+          "excluded_legal_states": [
+            "l3"
+          ]
+        }
+      ]
+    }
+  },
+  "expected_outputs_schema": {
+    "type": "object",
+    "required_fields": [
+      "classification",
+      "selected_monitor_ids",
+      "minimum_cardinality",
+      "exact_supervisor_baseline",
+      "source_algorithm_reproduced",
+      "optimality_scope"
+    ]
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "schema_version": "ims-deadlock/g4-case-manifest/v1",
+  "cases": [
+    {
+      "case_id": "G4_ADVERSARIAL_BOUNDARY",
+      "family": "G4-ADVERSARIAL-BOUNDARY",
+      "path": "cases/G4_ADVERSARIAL_BOUNDARY.json",
+      "hash_mode": "canonical_json",
+      "sha256": "97e1e7e1e2c39d095dd144a490d7b11f85805d3684cb2f564c985045122bc86d"
+    },
+    {
+      "case_id": "G4_B05_SUPERVISOR_COMPARATOR",
+      "family": "G4-B05-SUPERVISOR-COMPARATOR",
+      "path": "cases/G4_B05_SUPERVISOR_COMPARATOR.json",
+      "hash_mode": "canonical_json",
+      "sha256": "4cc0ed4458250838c7814fbe29537b8a3a12d18ad1283da4b101e2ca42d584c9"
+    },
+    {
+      "case_id": "G4_CRP_OUTSIDE_S4PR",
+      "family": "G4-CRP-OUTSIDE-S4PR",
+      "path": "cases/G4_CRP_OUTSIDE_S4PR.json",
+      "hash_mode": "canonical_json",
+      "sha256": "a034ce93a1630230db520102d556354dda3ed4754f72d46f47cfe83620bbaf2b"
+    },
+    {
+      "case_id": "G4_CRP_S4PR_AGREE",
+      "family": "G4-CRP-S4PR-AGREE",
+      "path": "cases/G4_CRP_S4PR_AGREE.json",
+      "hash_mode": "canonical_json",
+      "sha256": "c4f056fe2d952e1e8fbe516472e4ad77973812d4ba8965af345b054afedbaed1"
+    },
+    {
+      "case_id": "G4_CRP_UNREACHABLE_CANDIDATE",
+      "family": "G4-CRP-UNREACHABLE-CANDIDATE",
+      "path": "cases/G4_CRP_UNREACHABLE_CANDIDATE.json",
+      "hash_mode": "canonical_json",
+      "sha256": "43f1e55b522267a50b9ca06f4ae1a85f5d9fbc04c9b49b5aac598a24500840ba"
+    },
+    {
+      "case_id": "G4_IMS_PARAMETER_GRID",
+      "family": "G4-IMS-PARAMETER-GRID",
+      "path": "cases/G4_IMS_PARAMETER_GRID.json",
+      "hash_mode": "canonical_json",
+      "sha256": "3a4486a9796ffbd2156a6d9358c1b3699eb55c2d812c1974c0bcf3ad75f03e44"
+    },
+    {
+      "case_id": "G4_L30_RESOURCE_BASELINE",
+      "family": "G4-L30-RESOURCE-BASELINE",
+      "path": "cases/G4_L30_RESOURCE_BASELINE.json",
+      "hash_mode": "canonical_json",
+      "sha256": "d65e9c435f43b79158f465e01647435a05c46eb2306f112cb9a55c88d1d345b9"
+    },
+    {
+      "case_id": "G4_MEDIUM_ISLAND_REBUILD",
+      "family": "G4-MEDIUM-ISLAND-REBUILD",
+      "path": "cases/G4_MEDIUM_ISLAND_REBUILD.json",
+      "hash_mode": "canonical_json",
+      "sha256": "dac6fc9f19acb0aff162af78be4ba8501ae6dc613234cb4f89f653fe0dccee34"
+    },
+    {
+      "case_id": "G4_RECORDER_TARGET_QUANTIFICATION",
+      "family": "G4-RECORDER-TARGET-QUANTIFICATION",
+      "path": "cases/G4_RECORDER_TARGET_QUANTIFICATION.json",
+      "hash_mode": "canonical_json",
+      "sha256": "1ea77498befbfdabbe6d84d97a68c2d0ff2451115e14bb75176ab3d008712712"
+    }
+  ]
+}

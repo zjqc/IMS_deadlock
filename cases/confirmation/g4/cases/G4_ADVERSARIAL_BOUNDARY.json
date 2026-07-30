@@ -1,0 +1,48 @@
+{
+  "schema_version": "ims-deadlock/confirmation-case/v1",
+  "case_id": "G4_ADVERSARIAL_BOUNDARY",
+  "family": "G4",
+  "held_out": true,
+  "status": "PREREGISTERED",
+  "protocol": "g4_confirmation_freeze_v1",
+  "contamination": {
+    "derived_from_discovery_case": false,
+    "excluded_discovery_case_ids": [
+      "C0",
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C5_DAG"
+    ],
+    "excluded_discovery_family_ids": [
+      "BIX1-SAT",
+      "BIX2-PERSIST"
+    ],
+    "provenance": "independent_preregistration"
+  },
+  "input_payload": {
+    "schema_version": "ims-deadlock/g4-protocol-input/v1",
+    "g4_family": "G4-ADVERSARIAL-BOUNDARY",
+    "protocol_kind": "adversarial_snapshot",
+    "protocol_input": {
+      "generator_id": "or_and_reservation_v1",
+      "parameters": {
+        "instance_id": "A01_OR_AND_RESERVATION",
+        "fixture_capacity": 2,
+        "cart_capacity": 1,
+        "reservation_capacity": 1,
+        "decision_rate": 0.55,
+        "state_bound": 128
+      }
+    }
+  },
+  "expected_outputs_schema": {
+    "type": "object",
+    "required_fields": [
+      "classification",
+      "analysis"
+    ]
+  }
+}

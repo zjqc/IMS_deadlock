@@ -1,0 +1,40 @@
+{
+  "discovery_reuse_rules": [
+    "C0-C5 and C5_DAG are discovery-only case identifiers and must not be copied, renamed, parameter-shifted, or used as held-out G4 inputs",
+    "BIX1-SAT and BIX2-PERSIST are discovery-only family mechanisms and may appear only as excluded provenance controls, not as confirmation rows",
+    "After any post-freeze outcome is inspected, no G4 case JSON, prediction, baseline decision, metric applicability decision, random-stream policy, theory hash, or experiment-script hash may be replaced to improve agreement",
+    "Negative, inapplicable, unreachable, and boundary outcomes must remain reportable; they cannot be removed from the bundle after execution"
+  ],
+  "excluded_discovery_case_ids": [
+    "C0",
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5",
+    "C5_DAG"
+  ],
+  "excluded_discovery_family_ids": [
+    "BIX1-SAT",
+    "BIX2-PERSIST"
+  ],
+  "forbidden_result_keys": [
+    "confirmation_result",
+    "estimate",
+    "fail",
+    "match",
+    "measured",
+    "mismatch_count",
+    "observed_result",
+    "pass",
+    "result"
+  ],
+  "post_freeze_rules": [
+    "Run the freeze checker before any scientific confirmation command and archive its artifact hashes",
+    "Execute scientific commands only after FREEZE_ENTRY.json seals the bundle and only with the runtime and command lock recorded here",
+    "Do not inspect, summarize, or backfill outputs before the seal is committed",
+    "If a command cannot run in the locked runtime, report it as a frozen-protocol execution failure rather than editing preregistered inputs",
+    "Report every inapplicable metric or baseline with its freeze-time reason"
+  ],
+  "schema_version": "ims-deadlock/g4-exclusions/v1"
+}

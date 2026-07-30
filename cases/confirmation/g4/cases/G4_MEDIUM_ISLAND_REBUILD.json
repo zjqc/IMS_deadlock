@@ -1,0 +1,57 @@
+{
+  "schema_version": "ims-deadlock/confirmation-case/v1",
+  "case_id": "G4_MEDIUM_ISLAND_REBUILD",
+  "family": "G4",
+  "held_out": true,
+  "status": "PREREGISTERED",
+  "protocol": "g4_confirmation_freeze_v1",
+  "contamination": {
+    "derived_from_discovery_case": false,
+    "excluded_discovery_case_ids": [
+      "C0",
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C5_DAG"
+    ],
+    "excluded_discovery_family_ids": [
+      "BIX1-SAT",
+      "BIX2-PERSIST"
+    ],
+    "provenance": "independent_preregistration"
+  },
+  "input_payload": {
+    "schema_version": "ims-deadlock/g4-protocol-input/v1",
+    "g4_family": "G4-MEDIUM-ISLAND-REBUILD",
+    "protocol_kind": "medium_island_rebuild",
+    "protocol_input": {
+      "generator_id": "three_island_bas_v1",
+      "parameters": {
+        "instance_id": "M01_TRI_ISLAND",
+        "machine_capacity": 1,
+        "buffer_capacity": 1,
+        "agv_count": 1,
+        "route_wip": {
+          "ABG": 1,
+          "AG": 1,
+          "BAG": 1
+        },
+        "service_rate": 0.95,
+        "transfer_rate": 0.6,
+        "release_rate": 0.45,
+        "state_bound": 32768
+      }
+    }
+  },
+  "expected_outputs_schema": {
+    "type": "object",
+    "required_fields": [
+      "classification",
+      "analysis",
+      "ctmc_initial_state",
+      "quantitative"
+    ]
+  }
+}

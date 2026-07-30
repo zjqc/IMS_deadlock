@@ -1,0 +1,131 @@
+{
+  "schema_version": "ims-deadlock/g4-experiment-scripts/v1",
+  "files": [
+    {
+      "path": "src/ims_deadlock/g4_protocol.py",
+      "hash_mode": "file_bytes",
+      "file_bytes": 44506,
+      "sha256": "c658cf4c22f9c5f18f476c45aded90cd48e8043bf9033b7814e4a8407c962365"
+    },
+    {
+      "path": "src/ims_deadlock/g4_instances.py",
+      "hash_mode": "file_bytes",
+      "file_bytes": 23986,
+      "sha256": "bbbaff9955d639fe08c9c71cecbc3309304a4250ac3cae1bd1e77fb700ee4cdd"
+    },
+    {
+      "path": "src/ims_deadlock/g4_freeze.py",
+      "hash_mode": "file_bytes",
+      "file_bytes": 38395,
+      "sha256": "591d4359ad64eb2efcc31832ed3896bd81bdc419df5282275fe0f02740f83058"
+    },
+    {
+      "path": "src/ims_deadlock/g4_comparators.py",
+      "hash_mode": "file_bytes",
+      "file_bytes": 21887,
+      "sha256": "b2f56b8b70afa805169cf4f1924c32b5415c07c7ca2d4922778a765f50b00a32"
+    },
+    {
+      "path": "src/ims_deadlock/analysis.py",
+      "hash_mode": "file_bytes",
+      "file_bytes": 30646,
+      "sha256": "a5dac26ed15bcb98328b6d267fe844aa4329c66157d9e304dc685fb970a4a518"
+    },
+    {
+      "path": "src/ims_deadlock/certificates.py",
+      "hash_mode": "file_bytes",
+      "file_bytes": 11122,
+      "sha256": "1210269ae52f7db9b5576066790bf799169ea81989695af2e0f73d02e4e574a7"
+    },
+    {
+      "path": "src/ims_deadlock/engine.py",
+      "hash_mode": "file_bytes",
+      "file_bytes": 25291,
+      "sha256": "5d27df9ebdbfe9d66f64eabc2c25fe4b51fcd224bb0b9d6d3590aced95604a6f"
+    },
+    {
+      "path": "src/ims_deadlock/ctmc.py",
+      "hash_mode": "file_bytes",
+      "file_bytes": 19344,
+      "sha256": "312330dac1024df625dc5bf5f284bbaa48d92af18aa2e75861a7ae3a3752669a"
+    },
+    {
+      "path": "src/ims_deadlock/stochastic.py",
+      "hash_mode": "file_bytes",
+      "file_bytes": 4921,
+      "sha256": "135fa2fdf1ebedbff5c66ec088c77c183c76414bd7ed33771c0888f78e009433"
+    },
+    {
+      "path": "src/ims_deadlock/cases.py",
+      "hash_mode": "file_bytes",
+      "file_bytes": 17024,
+      "sha256": "6245d35f5ec0b23b7b73925b73b4c71ff5bc6867c4143a927967955500ee8609"
+    },
+    {
+      "path": "src/ims_deadlock/confirmation.py",
+      "hash_mode": "file_bytes",
+      "file_bytes": 7709,
+      "sha256": "b1c9fcbc534632f727f0d9c8b22229ce29167682bd6584c55c8ec34f1e6f4ed7"
+    },
+    {
+      "path": "src/ims_deadlock/model.py",
+      "hash_mode": "file_bytes",
+      "file_bytes": 15573,
+      "sha256": "001ad172872ea1783506d8aae954ff86ca59cde7111ab4034936412383b52ac7"
+    }
+  ],
+  "entrypoints": [
+    {
+      "protocol": "structural_freeze_integrity_check",
+      "callable": "ims_deadlock.g4_freeze:check_g4_freeze"
+    },
+    {
+      "protocol": "structural_protocol_validation",
+      "callable": "ims_deadlock.g4_protocol:validate_bundle_protocols"
+    },
+    {
+      "protocol": "post_freeze_locked_dispatch",
+      "callable": "ims_deadlock.g4_protocol:run_after_freeze"
+    },
+    {
+      "protocol": "post_freeze_crp_evidence_profile",
+      "callable": "ims_deadlock.g4_comparators:audit_crp_evidence"
+    },
+    {
+      "protocol": "post_freeze_recorder_target_quantification",
+      "callable": "ims_deadlock.g4_comparators:fixed_recorder_target_reachability"
+    },
+    {
+      "protocol": "post_freeze_l30_supplied_inequality_check",
+      "callable": "ims_deadlock.g4_comparators:evaluate_supplied_l30_inequalities"
+    },
+    {
+      "protocol": "post_freeze_b05_monitor_cover_comparator",
+      "callable": "ims_deadlock.g4_comparators:adapted_candidate_monitor_cover"
+    },
+    {
+      "protocol": "post_freeze_finite_lts_oracle",
+      "callable": "ims_deadlock.analysis:enumerate_stable_lts"
+    },
+    {
+      "protocol": "post_freeze_case_analysis",
+      "callable": "ims_deadlock.analysis:analyze_case"
+    },
+    {
+      "protocol": "post_freeze_deadlock_certificate",
+      "callable": "ims_deadlock.certificates:find_deadlock_certificate"
+    },
+    {
+      "protocol": "post_freeze_exact_supervisor_baseline",
+      "callable": "ims_deadlock.engine:exact_max_nonblocking_supervisor"
+    },
+    {
+      "protocol": "post_freeze_case_derived_ctmc",
+      "callable": "ims_deadlock.g4_instances:derive_absorbing_ctmc"
+    },
+    {
+      "protocol": "post_freeze_fixed_stream_des",
+      "callable": "ims_deadlock.stochastic:estimate_competing_absorption"
+    }
+  ]
+}

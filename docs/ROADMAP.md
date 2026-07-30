@@ -11,7 +11,7 @@
 | G1 文献门 | PASS（scope-bounded） | 六条文献链、43 项审计矩阵、20 个全文/全文审计锚点、迁移卡；L30-L35 与 B05 七篇审计已纳入比较边界；R7/R8 类别饱和保持 | 不支持首创性、系统综述或一般 IMS/Petri 等价；G4 必须检验 CRP、recorder、SBA、L30/B05 comparator 边界 |
 | G2 理论门 | PASS（严格受限主链） | P1 有限 LTS/reachability-net；P2 capacity-mediated 封闭核 iff；P2c `IMS-SIP^1` 诊断虹吸双向桥；P3 偏序充分条件；P3d `BIX1-SAT` 可达阈值；P3e `BIX2-PERSIST` 三资源 ring 精确阈值与同语义 DAG 修复；P4 CTMC；P5 supervisor；P6 复杂性边界 | plant-level structured Petri/S3PR 桥、替代/AND/AGV/预约/多 persistent-buffer 一般岛阈值、一般紧凑 IMS 精确复杂性和 risk-budget 控制仍开放 |
 | G3 算法门 | PASS（严格小有限模型 + P2c/P3d/P3e） | Dell 干净集成 worktree、项目 Python 3.13.9：123 tests、Ruff check/format、strict mypy；C0 exact Petri bridge、拒绝边界、BIX1-SAT 144 点小网格及 BIX2-PERSIST 32 点预注册发现网格通过；BIX2 为 0 mismatch、0 truncation、ring 4/4 正例、DAG 0 deadlock 且 16/16 completion reachable | 一般 plant/S3PR、结构案例物理速率、一般 persistent-buffer/AGV 阈值和风险预算/Pareto 算法仍开放 |
-| G4 案例冻结门 | NEXT HARD GATE / NOT FROZEN | C0-C5 与 BIX2-PERSIST 发现集、反例账本、冻结协议、`G4_CASE_PREREGISTRATION.md` 草案已建立；CRP triad、recorder target-quantification obligation、L30/B05 comparator 已进入设计 | 未参与推导的确认模型、参数范围、哈希、指标与基线尚未冻结；BIX2 不得回收为确认集，不得报告确认结果 |
+| G4 案例冻结门 | B 预注册候选 / 待 C seal | final implementation lock `2a89fe1409d5000225e22499878454e964c01363`；`cases/confirmation/g4/` 已有九个 held-out case JSON、`case_manifest.json`、九条预测、十格 grid 布尔预测、基线/指标适用性、随机流、runtime lock、script/theory manifests 与 exclusions；结构验证边界为 no-result parsing/hash/schema checks | `FREEZE_ENTRY.json` 尚不存在；不得运行 held-out 科学后端、不得报告确认结果；所有 supervisor cost、conditioned path mass、rare-event efficiency 当前均不适用，CTMC/DES 仅 grid/medium |
 | G5 论文门 | NOT STARTED | 研究定位、定理梯和证据边界已建立 | 需 G3/G4 后进行精确分析与独立 DES 一致性、负例/代价/边界报告和论文成稿 |
 
 ## G0 仓库门
@@ -105,21 +105,33 @@ exact threshold”或“一般紧凑 IMS 最大许可 supervisor”表述。
 
 ## G4 案例冻结门
 
-冻结前：
+当前 B 预注册候选：
 
 - C0-C5 与 BIX2-PERSIST 仅是发现集，允许因反例修正定义和假设，但每次
   修改进入账本；BIX2 参与过 P3e 推导，不得进入确认集；
 - C4 必须保留“完整运输模型有证书、机器投影漏检”的成对结果；
 - C5 必须保留“双向回流阻塞、删除回流 DAG 修复”的成对模型；
-- 确认集参数族、中型独立重建和对抗案例必须未参与主命题拟合。
-- 下一硬门必须按 `docs/cases/G4_CASE_PREREGISTRATION.md` 冻结至少三组
-  文献知情案例：S4PR CRP agreement / unreachable structural candidate /
-  BAS-AGV-AND outside-S4PR refusal triad；recorder target-quantification
-  obligation；`L30` sufficient-resource 与 `B05` full-RG
-  compressed-supervisor baselines。
+- 当前候选确认集参数族、中型独立重建和对抗案例记录为
+  `independent_preregistration`，不得从 C0-C5、BIX1-SAT 或 BIX2-PERSIST
+  复制、改名或参数平移；
+- 当前候选包含九个 case：S4PR CRP agreement、unreachable structural
+  candidate、BAS/AGV/AND outside-S4PR refusal、recorder fixed-target
+  quantification、`L30` supplied sufficient inequalities、`B05` adapted
+  monitor cover、ten-cell IMS parameter grid、medium island rebuild、adversarial
+  OR-of-AND/reservation boundary；
+- 十格 grid 预测固定为 `G01=false`、`G02=false`、`G03-G10=true`；
+- supervisor throughput/makespan/WIP/due-date-risk cost、conditioned path
+  mass、rare-event efficiency 在当前 G4 中全部不适用；exact CTMC probability、
+  mean absorption time 与 DES confidence interval 仅适用于 grid 和 medium。
 
-冻结动作必须一次性提交参数范围、指标、基线、随机流方案和内容哈希。
-字段为空、哈希未提交或理论门未关闭时，状态只能是 `NOT FROZEN`。
+结构验证只允许读取、解析、哈希和 schema/checker 测试。C seal 之前不得运行
+`verify-case`、`quantify`、`simulate`、supervisor synthesis、CTMC solve、DES
+或 rare-event 后端；不得检查、汇总或回填 held-out 输出。
+
+冻结动作必须一次性提交 `FREEZE_ENTRY.json`、参数范围、
+指标、基线、随机流方案和内容哈希。字段为空、哈希未提交、C seal 缺失或
+理论门未关闭时，状态只能是 `B 预注册候选 / 待 C seal`，不能写成
+`FROZEN` 或 `PASS`。
 
 ## G5 论文门
 

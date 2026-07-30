@@ -1,0 +1,113 @@
+{
+  "schema_version": "ims-deadlock/g4-theory-manifest/v1",
+  "files": [
+    {
+      "path": "docs/cases/G4_CASE_PREREGISTRATION.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 10904,
+      "sha256": "f73ca477d89caf9e0d7997e251f73d974ed364408102110d8a80cceac0393d26"
+    },
+    {
+      "path": "docs/cases/CONFIRMATION_PREREGISTRATION.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 5598,
+      "sha256": "e061fad67c2c484b58bb998a665be8ebd6b685595d7e7da74bf9c767541d420f"
+    },
+    {
+      "path": "docs/cases/BASELINES_AND_METRICS.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 5949,
+      "sha256": "b9421eb9042dfbcf88b1f92861936e65950c3acef8fccd3647fa40f2214264c0"
+    },
+    {
+      "path": "docs/cases/FREEZE_PROTOCOL.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 2135,
+      "sha256": "f5a4b472e7c61c4971fc3294e69c5eb07596b16664acd8197500dacd35b58910"
+    },
+    {
+      "path": "docs/cases/G4_EXECUTION_PROTOCOL.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 5885,
+      "sha256": "6cddf67410cb507714b70e278a08aaea551637b9500f22c06d623b1d15515d80"
+    },
+    {
+      "path": "docs/cases/CASE_CATALOG.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 6071,
+      "sha256": "2cd628971b4f87b95042d5f0de5b0482e65f5f94a31a9398a4f6eff8c1ff89fd"
+    },
+    {
+      "path": "docs/theory/ASSUMPTION_REGISTER.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 15346,
+      "sha256": "6511e607c913aa766f209879e57d7ebf46444cb9babfc732d5286ce674af8801"
+    },
+    {
+      "path": "docs/theory/PROOF_OBLIGATIONS.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 14247,
+      "sha256": "f51da39329a8a57a9350654042d0cb25340ee121d1d64a6816ccb00016f6b95e"
+    },
+    {
+      "path": "docs/theory/THEOREM_LADDER.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 17557,
+      "sha256": "91df9e0e676616522326ec5919fd5dd92c84ac9c22512ce8cf829f5be8d9cccc"
+    },
+    {
+      "path": "docs/theory/CORE_THEOREMS_AND_PROOFS.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 49669,
+      "sha256": "e93f0cfe54c4571540bd00a62af1e9712fd0c0460dad6ada738b7c41691d4868"
+    },
+    {
+      "path": "docs/theory/FORMAL_SEMANTICS.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 5667,
+      "sha256": "3575ce31f20030877d168e07bb2f5ae1e99bdea2883e41978d9d6bcfbccc4e32"
+    },
+    {
+      "path": "docs/theory/PETRI_BRIDGE.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 8034,
+      "sha256": "88ef5d88cc1750076bb685eee9c92502a5a3981f8c632226668b78a3c117a3a6"
+    },
+    {
+      "path": "docs/theory/PROBABILITY_LAYER.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 5642,
+      "sha256": "e8dd1faad8102bbec72cd39833649b5b45d1c1903a94ade93e11d098152f938d"
+    },
+    {
+      "path": "docs/theory/CONTROL_LAYER.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 4193,
+      "sha256": "9c8e3f7b4211b0685a94c3cb6ea4363f037db3321d7376a29e8fdbf8c43a64ea"
+    },
+    {
+      "path": "docs/theory/COUNTEREXAMPLE_LEDGER.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 6963,
+      "sha256": "710a1005c5d0c8ec9c77cd3c9be4c59d5f53754a128b3b0af61e2b7293ed50ec"
+    },
+    {
+      "path": "docs/literature/FULLTEXT_AUDIT_L30_L35_B05.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 19263,
+      "sha256": "35e7fc4a0f1744bcbcb83c371afdb51826e085bcba059c1fd88161cff4200b6c"
+    },
+    {
+      "path": "docs/literature/ADAPTATION_AND_ATTRIBUTION_PROTOCOL.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 4402,
+      "sha256": "aa5b0cf4b305f0143183b981d56f3a3475b3407b45a14f73e40e0e5564bda621"
+    },
+    {
+      "path": "docs/literature/MIGRATION_CARDS.md",
+      "hash_mode": "file_bytes",
+      "file_bytes": 23135,
+      "sha256": "edb9861ee6b2fc89b8f0607775fd9f8bd87d499c1d0d5ee8bb16582f45bad98a"
+    }
+  ]
+}

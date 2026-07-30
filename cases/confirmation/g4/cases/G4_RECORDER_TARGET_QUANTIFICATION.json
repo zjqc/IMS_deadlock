@@ -1,0 +1,113 @@
+{
+  "schema_version": "ims-deadlock/confirmation-case/v1",
+  "case_id": "G4_RECORDER_TARGET_QUANTIFICATION",
+  "family": "G4",
+  "held_out": true,
+  "status": "PREREGISTERED",
+  "protocol": "g4_confirmation_freeze_v1",
+  "contamination": {
+    "derived_from_discovery_case": false,
+    "excluded_discovery_case_ids": [
+      "C0",
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C5_DAG"
+    ],
+    "excluded_discovery_family_ids": [
+      "BIX1-SAT",
+      "BIX2-PERSIST"
+    ],
+    "provenance": "independent_preregistration"
+  },
+  "input_payload": {
+    "schema_version": "ims-deadlock/g4-protocol-input/v1",
+    "g4_family": "G4-RECORDER-TARGET-QUANTIFICATION",
+    "protocol_kind": "fixed_recorder_target",
+    "protocol_input": {
+      "finite_lts": {
+        "states": [
+          "r0",
+          "r1",
+          "r2",
+          "r3",
+          "r4",
+          "r5",
+          "r_done"
+        ],
+        "initial_state": "r0",
+        "marked_states": [
+          "r_done"
+        ],
+        "transitions": [
+          {
+            "source": "r0",
+            "event": "start_A",
+            "target": "r1",
+            "controllable": true
+          },
+          {
+            "source": "r1",
+            "event": "load_A",
+            "target": "r2",
+            "controllable": false
+          },
+          {
+            "source": "r2",
+            "event": "start_B",
+            "target": "r3",
+            "controllable": true
+          },
+          {
+            "source": "r3",
+            "event": "load_B",
+            "target": "r4",
+            "controllable": false
+          },
+          {
+            "source": "r4",
+            "event": "inspect",
+            "target": "r5",
+            "controllable": false
+          },
+          {
+            "source": "r5",
+            "event": "release",
+            "target": "r_done",
+            "controllable": false
+          },
+          {
+            "source": "r2",
+            "event": "bypass",
+            "target": "r5",
+            "controllable": true
+          }
+        ]
+      },
+      "state_bound": 64,
+      "target_state": "r_done",
+      "recorder_events": [
+        "load_A",
+        "load_B",
+        "release"
+      ],
+      "fixed_counts": {
+        "load_A": 1,
+        "load_B": 1,
+        "release": 1
+      }
+    }
+  },
+  "expected_outputs_schema": {
+    "type": "object",
+    "required_fields": [
+      "classification",
+      "original_target_reachable",
+      "fixed_target_reachable",
+      "shortest_original_witness",
+      "shortest_fixed_witness"
+    ]
+  }
+}

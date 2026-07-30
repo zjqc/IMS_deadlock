@@ -1,0 +1,53 @@
+{
+  "schema_version": "ims-deadlock/g4-random-streams/v1",
+  "streams_by_case": {
+    "G4_ADVERSARIAL_BOUNDARY": {
+      "applicable": false,
+      "reason": "the adversarial row is a static blocked snapshot without a transient CTMC initial state"
+    },
+    "G4_B05_SUPERVISOR_COMPARATOR": {
+      "applicable": false,
+      "reason": "exact finite reachability-graph and supervisor-comparator row; DES sampling is not part of the frozen B05 comparison"
+    },
+    "G4_CRP_OUTSIDE_S4PR": {
+      "applicable": false,
+      "reason": "exact semantic-refusal boundary row; random streams would not affect the S4PR applicability decision"
+    },
+    "G4_CRP_S4PR_AGREE": {
+      "applicable": false,
+      "reason": "exact S4PR/IMS embedding and finite-prefix row; random sampling is not an evidence source"
+    },
+    "G4_CRP_UNREACHABLE_CANDIDATE": {
+      "applicable": false,
+      "reason": "exact finite reachability/refusal row; random sampling cannot prove nonreachability"
+    },
+    "G4_IMS_PARAMETER_GRID": {
+      "applicable": true,
+      "derivation": "sha256(master_seed:replication_index)",
+      "master_seeds": [
+        740091623,
+        740091624,
+        740091625
+      ],
+      "replicates": 2000
+    },
+    "G4_L30_RESOURCE_BASELINE": {
+      "applicable": false,
+      "reason": "exact supplied-inequality comparator row; stochastic metrics are outside the L30 sufficient-configuration question"
+    },
+    "G4_MEDIUM_ISLAND_REBUILD": {
+      "applicable": true,
+      "derivation": "sha256(master_seed:replication_index)",
+      "master_seeds": [
+        1778454307,
+        1778454308,
+        1778454309
+      ],
+      "replicates": 4000
+    },
+    "G4_RECORDER_TARGET_QUANTIFICATION": {
+      "applicable": false,
+      "reason": "exact fixed-recorder-target quantification row; stochastic simulation would not decide the target-mapping obligation"
+    }
+  }
+}

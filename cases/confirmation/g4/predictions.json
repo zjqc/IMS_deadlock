@@ -1,0 +1,163 @@
+{
+  "schema_version": "ims-deadlock/g4-predictions/v1",
+  "predictions": [
+    {
+      "case_id": "G4_CRP_S4PR_AGREE",
+      "prediction_class": "partial_deadlock_bridge_agreement",
+      "theory_scope": "Restricted S4PR overlap only: finite-LTS prefix agreement plus exact equality between the mapped CRP resource set and the independently generated IMS closed blocking core.",
+      "required_evidence": [
+        "valid hash-bound S4PR embedding",
+        "complete finite-LTS reachability audit within the frozen bound",
+        "IMS closed-blocking-kernel certificate on the frozen target snapshot",
+        "exact mapped resource-set comparison"
+      ],
+      "falsifier": "The target is unreachable, the external prefix claim disagrees with complete BFS, no IMS certificate is generated, or the mapped CRP and IMS resource sets differ.",
+      "scoring_rule": "Score true exactly when all four required-evidence checks succeed and the mapped CRP resource set equals the IMS core resource set; otherwise score false."
+    },
+    {
+      "case_id": "G4_CRP_UNREACHABLE_CANDIDATE",
+      "prediction_class": "unreachable_candidate",
+      "theory_scope": "A supplied S4PR/CRP-shaped structural candidate is retained, but no IMS deadlock or supervisor benefit is claimed without a legal executable prefix.",
+      "required_evidence": [
+        "valid hash-bound S4PR embedding",
+        "candidate target present in the frozen state universe",
+        "complete finite-LTS BFS within the frozen bound",
+        "explicit false external-prefix claim"
+      ],
+      "falsifier": "Complete BFS reaches the candidate target, the candidate is absent from the frozen state set, or the supplied evidence profile is incomplete.",
+      "scoring_rule": "Score true exactly when the candidate is present in the declared state universe, complete bounded BFS does not reach it, and the external-prefix claim is false; otherwise score false."
+    },
+    {
+      "case_id": "G4_CRP_OUTSIDE_S4PR",
+      "prediction_class": "not_applicable",
+      "theory_scope": "The CRP comparator must refuse an exact OR-of-AND, multi-capacity, AGV and hard-reservation generator unless a separate S4PR embedding is supplied.",
+      "required_evidence": [
+        "exact versioned boundary generator",
+        "explicit AGV and reservation resources",
+        "OR alternatives containing conjunctive resource demands",
+        "absence of a supplied S4PR embedding"
+      ],
+      "falsifier": "The generated boundary lacks any declared non-S4PR feature or a complete S4PR embedding is supplied and verified.",
+      "scoring_rule": "Score true exactly when the generator materializes every declared boundary feature and the CRP comparator returns not_applicable without an embedding; otherwise score false."
+    },
+    {
+      "case_id": "G4_RECORDER_TARGET_QUANTIFICATION",
+      "prediction_class": "ordinary_and_fixed_target_reachable_with_distinct_shortest_witnesses",
+      "theory_scope": "The fixed output-counter oracle is exact only for the frozen finite LTS, target and count vector; it does not reproduce the source paper's full algorithm or complexity claim.",
+      "required_evidence": [
+        "ordinary target BFS",
+        "bounded augmented-state BFS",
+        "fixed recorder count equality at the target",
+        "separate shortest ordinary and fixed-count witnesses"
+      ],
+      "falsifier": "The ordinary target is unreachable, the fixed count target is unreachable, or the two quantifiers are not reported separately.",
+      "scoring_rule": "Score true exactly when ordinary and fixed-count reachability are both true and their independently reconstructed shortest witnesses are both reported; otherwise score false."
+    },
+    {
+      "case_id": "G4_L30_RESOURCE_BASELINE",
+      "prediction_class": "sufficient_conditions_satisfied",
+      "theory_scope": "Only the three externally supplied SMS-derived integer inequalities are evaluated; no SMS enumeration, minimal marking, IMS necessity, or iff threshold is claimed.",
+      "required_evidence": [
+        "finite-capacity S3PR or ENS3PR applicability declaration",
+        "external SMS-derived provenance",
+        "exact integer evaluation of all three inequalities"
+      ],
+      "falsifier": "Any supplied inequality is violated, its capacity variable is absent, or the declared applicability/provenance gate fails.",
+      "scoring_rule": "Score true exactly when the applicability and provenance gates pass and all three frozen integer inequalities evaluate true; otherwise score false."
+    },
+    {
+      "case_id": "G4_B05_SUPERVISOR_COMPARATOR",
+      "prediction_class": "two_monitor_legal_preserving_cover",
+      "theory_scope": "Optimality is restricted to the supplied candidate monitors; the independent exact finite-LTS supervisor is reported as a baseline without claiming B05 P-semiflow or MCPP reproduction.",
+      "required_evidence": [
+        "complete frozen finite LTS",
+        "disjoint legal and first-met bad state sets",
+        "exhaustive subset search over exactly three supplied candidates",
+        "independent greatest-nonblocking finite-LTS supervisor"
+      ],
+      "falsifier": "A one-monitor legal-preserving cover exists, the lexicographic optimum is not m_alpha plus m_beta, or the candidate set cannot cover every first-met bad state.",
+      "scoring_rule": "Score true exactly when exhaustive subset search selects m_alpha and m_beta as the unique lexicographically tie-broken minimum legal-preserving cover and the independent supervisor baseline completes; otherwise score false."
+    },
+    {
+      "case_id": "G4_IMS_PARAMETER_GRID",
+      "prediction_class": "acyclic_controls_safe_and_bidirectional_cells_structurally_exposed",
+      "theory_scope": "Ten exact generator cells jointly test directionality, capacity, AGV count, WIP, route mix and rates; reachability is decided only after freeze by complete enumeration.",
+      "required_evidence": [
+        "deterministic materialization of all ten cells",
+        "complete stable-LTS enumeration at each frozen bound",
+        "case-derived absorbing CTMC for every nontruncated cell",
+        "reported refusal rather than extrapolation for any truncated cell"
+      ],
+      "cell_predictions": {
+        "G01_FWD_DAG": {
+          "expected_reachable_closed_core": false,
+          "rationale": "one-direction resource acquisition is acyclic"
+        },
+        "G02_REV_DAG": {
+          "expected_reachable_closed_core": false,
+          "rationale": "the reversed one-direction resource acquisition is also acyclic"
+        },
+        "G03_BALANCED_TIGHT": {
+          "expected_reachable_closed_core": true,
+          "rationale": "opposed routes can retain an AGV-buffer bundle while waiting for an occupied destination machine"
+        },
+        "G04_BALANCED_AGV2": {
+          "expected_reachable_closed_core": true,
+          "rationale": "two opposed transfers can consume both AGVs while retaining their destination waits"
+        },
+        "G05_BALANCED_BUFFER2": {
+          "expected_reachable_closed_core": true,
+          "rationale": "the blocking witness needs one unit of each directional buffer, so capacity two does not remove it"
+        },
+        "G06_BALANCED_MACHINE2": {
+          "expected_reachable_closed_core": true,
+          "rationale": "two jobs per direction can saturate the two-unit destination machine while an AGV-bearing transfer waits"
+        },
+        "G07_BALANCED_LOW_WIP": {
+          "expected_reachable_closed_core": true,
+          "rationale": "one job per direction suffices for the opposed BAS hold-and-request witness"
+        },
+        "G08_FORWARD_SKEW": {
+          "expected_reachable_closed_core": true,
+          "rationale": "one reverse job remains sufficient to close the asymmetric forward-heavy witness"
+        },
+        "G09_FAST_RELEASE": {
+          "expected_reachable_closed_core": true,
+          "rationale": "release rate changes probability but not the support of the stable transition graph"
+        },
+        "G10_SLOW_TRANSFER": {
+          "expected_reachable_closed_core": true,
+          "rationale": "transfer rate changes probability but not the support of the stable transition graph"
+        }
+      },
+      "falsifier": "Any complete nontruncated cell enumeration disagrees with its expected_reachable_closed_core boolean, or generator/rate materialization differs from the frozen cell.",
+      "scoring_rule": "Score the case true only if all ten cell booleans agree with complete nontruncated enumeration; report the ten-cell agreement count separately and score false if any cell truncates or disagrees."
+    },
+    {
+      "case_id": "G4_MEDIUM_ISLAND_REBUILD",
+      "prediction_class": "transport_inclusive_closed_core_exposure",
+      "theory_scope": "An independently named three-island BAS model with three route classes tests whether AGV and finite output buffers are indispensable to the certificate and quantitative risk.",
+      "required_evidence": [
+        "deterministic materialization of ABG, BAG and AG work orders",
+        "complete stable-LTS enumeration within 32768 states",
+        "certificate retaining every indispensable transport resource",
+        "case-derived absorbing CTMC with frozen event rates"
+      ],
+      "falsifier": "The generator omits a declared route/resource, the LTS truncates, no transport-inclusive core is reachable, or the quantitative generator is not derived from the enumerated case.",
+      "scoring_rule": "Score true exactly when materialization is exact, complete enumeration is nontruncated, at least one reachable minimal core contains AGV or finite-buffer resources, and the CTMC provenance binds to that LTS; otherwise score false."
+    },
+    {
+      "case_id": "G4_ADVERSARIAL_BOUNDARY",
+      "prediction_class": "closed_core_snapshot_with_nontransferable_or_and_semantics",
+      "theory_scope": "The exact generated target attacks simple-cycle and S4PR reductions with OR-of-AND alternatives, multi-capacity fixtures, AGVs and persistent reservation resources; it is a snapshot claim, not a reachability claim.",
+      "required_evidence": [
+        "deterministic generator materialization",
+        "capacity-aware closed-blocking-kernel certificate",
+        "preservation of both OR alternatives and each AND clause",
+        "explicit refusal of unsupported S4PR or simple-cycle equivalence"
+      ],
+      "falsifier": "The target has an enabled request alternative, lacks a capacity-aware closed core, or a claimed reduction removes AGV/reservation semantics without changing the classification.",
+      "scoring_rule": "Score true exactly when the generated snapshot has no enabled request alternative, yields a capacity-aware closed core, preserves every OR-of-AND clause, and unsupported reductions are explicitly refused; otherwise score false."
+    }
+  ]
+}
