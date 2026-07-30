@@ -38,28 +38,37 @@ deadlock handling. Accordingly, the paper must not claim that siphon control,
 resource configuration, state-space reduction, AGV deadlock, or probability
 of deadlock is generically new.
 
-Two current comparators now delimit the structural claim especially sharply.
-Lu et al. (`L29`) already characterize partial-deadlock markings through a
-modified resource-requirement graph and PDDP constraints and synthesize a
-liveness-enforcing Petri-net controller. Su et al. (`L31`) officially claim
-reachable partial-deadlock detection through critical resource-limit-pair
-linear equations without constructing a reachability tree; because only the
-abstract has been verified, both its exact reachability meaning and its proof
-boundary remain open. Until that full-text audit is complete, this project
-must not claim to be the first reachable structural certificate or the first
-reachability-free detector. Pang et al. (`L30`) similarly blocks a broad
-"first finite-capacity threshold" claim until its equivalent-S3PR assumptions
-are read in full.
+Current comparators now delimit the structural claim especially sharply. Lu et
+al. (`L29`) already characterize partial-deadlock markings through a modified
+resource-requirement graph and PDDP constraints and synthesize a
+liveness-enforcing Petri-net controller. Su et al. (`L31`) define S4PR CRPs
+and give a CRP iff partial-deadlock theorem at a marking; detected candidates
+are still checked with SBA for reachability. Therefore this project must not
+claim to be the first reachable structural certificate or the first
+reachability-tree-free detector. Pang et al. (`L30`) blocks a broad "first
+finite-capacity threshold" claim, but its result is sufficient
+finite-capacity S3PR/ENS3PR resource configuration, not an exact IMS iff
+threshold.
 
-Rounds 6-8 added a second reachability boundary. Su et al. (`L32-L33`)
-officially claim Petri-net structure modifications intended to preserve modeled
-functionality while making reachability decidable or polynomial-time
-analyzable. The exact net classes and preservation relations remain unread in
-full. Therefore IMS_deadlock must not claim that reachability-decidable
-modeling, single-NIS state equations, or polynomial reachability after model
-transformation are new. The state-equation/legal-firing-sequence lineage
-(`L34-L35`) also requires every algebraic screen to retain an executable
-reachability witness or an explicit relaxation label.
+Rounds 6-8 added a second reachability boundary. Su et al. (`L32-L33`) provide
+Petri-net structure modifications intended to preserve modeled functionality
+while making reachability decidable or polynomial-time analyzable in the
+modified model. The audit treats the main transfer as transformed-model trace
+lift/counter-state preservation. It does not automatically settle the IMS
+operational-to-plant bridge or the quantification over recorder counts for a
+fixed original target; projected bisimulation or completeness must be proved,
+not assumed or denied. Therefore IMS_deadlock must not claim that
+reachability-decidable modeling, single-NIS state equations, or polynomial
+reachability after model transformation are new. The state-equation/legal-
+firing-sequence lineage (`L34-L35`) also requires every algebraic screen to
+retain an executable reachability witness or an explicit relaxation label; its
+`O(n*n1*(c*m+n^2))` bounds do not establish a standard compact-input
+bit-polynomial theorem.
+
+Chen and Li (`B05`) also supplies a full-text maximally permissive monitor
+supervisor benchmark through full reachability-graph data and an NP-hard MCPP,
+but only when the desired supervisor is expressible by the paper's monitor /
+P-semiflow construction.
 
 The defensible gap is narrower:
 
@@ -111,11 +120,16 @@ Not allowed:
 - "Doob-h explains deadlock paths" without verified CTMC equations and source
   locators.
 - "First reachable partial-deadlock certificate" or "first
-  reachability-free detector" before the `L31` full-text comparison.
+  reachability-free detector"; `L31` is now a full-text comparator.
 - "First finite-capacity deadlock threshold" from the restricted `BIX1-SAT`
   theorem.
 - "First polynomial/reachability-decidable Petri-net modeling method" while
-  `L32-L33` exist and remain unread in full.
+  `L32-L33` are full-text comparators.
+- "General Petri-net reachability is bit-polynomial" from `L32-L35`; their
+  modeling/transformation and BA/SBA complexity assumptions must remain
+  visible.
+- "Any IMS maximally permissive supervisor has a compact monitor form" from
+  `B05`.
 - Any novelty claim based only on renamed variables, reordered proof steps, or
   concealed source lineage.
 

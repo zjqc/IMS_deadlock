@@ -68,3 +68,21 @@ leaving `M -> D -> Q` plus explicit terminal release. The preregistered grid
 tests the exact threshold and each one-dimension-below facet for singleton and
 asymmetric multi-capacity triples. This is a discovery theorem attack and
 cannot be reused as a held-out confirmation case.
+
+## G4 Literature-Informed Confirmation Design
+
+The next hard gate is described in `G4_CASE_PREREGISTRATION.md`. It uses the
+completed seven-paper audit to design held-out cases, but it is not frozen and
+does not report results.
+
+Discovery influence rules:
+
+- `BIX2-PERSIST` may motivate exact-vs-sufficient threshold checks, but no
+  BIX2 row may be reused as confirmation evidence.
+- `C4` and `C5` may motivate BAS/AGV/AND refusal cases, but the final G4 cases
+  must be independently parameterized and hashed.
+- S4PR CRP overlap cases must be regenerated from a preregistered embedding,
+  not copied from the discovery Petri bridge examples.
+- Recorder cases test preservation and fixed-target quantification obligations;
+  they may pass as comparator agreement if proved, and must not be designed as
+  presumed negative examples.

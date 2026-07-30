@@ -31,6 +31,13 @@ These rows exactly match `FULLTEXT-THEOREM` in `LITERATURE_MATRIX.md`.
 | L25 | Cerou and Guyader 2007, https://doi.org/10.1080/07362990601139628 | Author full text inspected; journal p422 (PDF p7) Hypothesis H and Theorem 1; journal p425 (PDF p10) Theorem 2. | Almost-sure consistency and asymptotic normality of the paper's one-dimensional adaptive splitting estimator; IMS transfer requires a valid score and the paper's Markov/continuity assumptions. |
 | L28 | Corstanje and van der Meulen 2025, https://doi.org/10.1007/s11203-025-09326-9 | Public full text inspected; Section 3.1, Eq. 3.1, Eq. 3.3, Appendix D. | Doob-style change of measure and conditioned CT jump-process generator baseline. |
 | L29 | Lu, Chen, Hadjicostis, and Li 2026, https://doi.org/10.1016/j.automatica.2025.112631 | Publisher full text inspected; Definition 3 constructs the modified resource requirement graph, Definition 4 defines safe operation places, Theorem 1 characterizes partial-deadlock markings by the PDDP, Algorithm 1 iteratively inserts control places, and Theorem 2 establishes liveness of the resulting controlled net. | Current strongest structural holder/request-graph and iterative control-place comparator. It does not establish an IMS operational bridge, a maximally permissive supervisor, or the probability/control interface. Polynomial ILP dimensions are not a polynomial-time guarantee. |
+| L30 | Pang et al. 2025, https://doi.org/10.1177/01423312251369553 | Supplied full text inspected; PDF p3 Definition 1 S3PR, p4 Definitions 2-3 finite-capacity S3PR/ENS3PR, p5 Definitions 4-6 and Theorems 1-3, p6 Algorithm 1, pp7-8 complexity. SHA/page manifest in `FULLTEXT_AUDIT_L30_L35_B05.md`. | Sufficient finite-capacity S3PR/ENS3PR liveness/resource-configuration comparator only. It is not an exact IMS iff threshold and does not cover BAS, AGV, reservations, OR-of-AND requests, closure, or probability/control layers. |
+| L31 | Su et al. 2026, https://doi.org/10.1109/TASE.2026.3689269 | Supplied full text and author supplement inspected; PDF p4 Definitions 5-6 S4PR/partial deadlock, p5 Definitions 7-8 and Theorem 1, p6 Definition 10 and Theorems 2-4, p7 SBA and Algorithm S3 discussion; supplement pp1-10 with proofs and Algorithms S1-S4. | Direct comparator for S4PR CRP partial-deadlock detection. CRP equations characterize marking-level partial deadlocks, but reachable candidates are still checked with SBA; no direct IMS operational bridge. |
+| L32 | Su et al. 2025, https://doi.org/10.1109/TSMC.2024.3473851 | Supplied full text inspected; PDF p3 Theorems 1-2, pp4-5 Algorithm 1 and Theorem 3, pp5-7 Theorems 4-8 and Algorithm 2, p8 Algorithm 3 and Theorem 11. | Reachability-decidable transformed-PN modeling comparator. Algorithm 3 is authorized only after the paper's USPN transformation. Trace lift/counter-state preservation does not replace an IMS operational/plant bridge or fixed-target recorder-count proof. |
+| L33 | Su et al. 2025, https://doi.org/10.1109/TASE.2025.3588429 | Supplied full text and author supplement inspected; PDF p3 Theorems 1-2, p4 Theorems 3-4, p5 Algorithm 1 and Theorems 5-6, pp6-7 Theorems 7-10 and Algorithm 2; supplement p1. | AMS PN structure-modification comparator. Preservation covers reachability/liveness/persistence/repetitiveness and original siphon/trap structure; boundedness may change. Algorithm 2 invokes SBA with numeric/circuit parameters, and the supplement's circuit-count bound is not used here as a general bit-polynomial proof. It does not automatically provide an IMS plant bisimulation or projected completeness theorem. |
+| L34 | Su et al. 2023, https://doi.org/10.1109/TSMC.2023.3241101 | Supplied full text inspected; PDF pp3-5 Theorems 1-6, pp5-8 Algorithms 1-5, pp7-8 complexity `O(n*n1*(c*m+n^2))`. | State-equation-to-legal-firing-sequence baseline for a given NIS. The bound depends on `c` and numeric `n1`, so a standard compact-input bit-polynomial claim is not established. |
+| L35 | Su et al. 2023, https://doi.org/10.1109/LRA.2023.3246384 | Supplied full text inspected; PDF pp2-3 Theorems 1-5, pp4-6 Algorithms 1-5, p6 complexity `O(n*n1*(c*m+n^2))`, p7 conclusion. | Ordinary-PN BA baseline and state-equation false-positive boundary. No IMS reachability/deadlock transfer without a semantic encoding. |
+| B05 | Chen and Li 2011, https://doi.org/10.1016/j.automatica.2011.01.070 | Supplied full text inspected; PDF p3 Definitions 1-3, p4 MCPP formulation and Algorithm 1, p5 Theorem 1 and complexity limitations. | Maximally permissive monitor supervisor benchmark only when the full RG legal/forbidden partition exists, selected controls are P-semiflow/monitor-expressible, and MCPP has an optimal solution. Full RG enumeration is exponential and MCPP is NP-hard. |
 
 ## Verified Context Sources
 
@@ -55,44 +62,26 @@ These rows exactly match `FULLTEXT-THEOREM` in `LITERATURE_MATRIX.md`.
 - L20: https://doi.org/10.1049/itr2.12168
 - L24: https://doi.org/10.1080/17442508.2022.2150081
 - L26: https://doi.org/10.1023/A:1007937925728
-- L30: https://doi.org/10.1177/01423312251369553
-- L31: https://doi.org/10.1109/TASE.2026.3689269
-- L32: https://doi.org/10.1109/TSMC.2024.3473851
-- L33: https://doi.org/10.1109/TASE.2025.3588429
-- L34: https://doi.org/10.1109/TSMC.2023.3241101
-- L35: https://doi.org/10.1109/LRA.2023.3246384
+## Supplied Full-text Freshness Audit
 
-## Closed-access Freshness Audit
+The previous closed-access audit is superseded for `L30-L35` and `B05` by
+`FULLTEXT_AUDIT_L30_L35_B05.md`. The supplied PDFs and supplements were kept
+outside Git, their SHA-256/page manifest was verified, and exact locators were
+extracted. This upgrades the current full-text theorem-located anchor count to
+20 and sets G1 to `PASS (scope-bounded)`.
 
-- `L30`, `10.1177/01423312251369553`:
-  - SAGE article and DOI metadata verified;
-  - official abstract describes an equivalent finite-capacity S3PR net,
-    minimum initial resource-place markings, and an ILP configuration method;
-  - SAGE full text is restricted and OpenAlex reports no repository full text;
-  - no theorem, equation, proof, or complexity locator is authorized.
-- `L31`, `10.1109/TASE.2026.3689269`:
-  - IEEE and institutional metadata verified; the University of Zielona Góra
-    record's shorter DOI string is a typo and is not used;
-  - official abstract describes CRP/linear-equation detection of reachable
-    partial deadlocks without reachability-tree traversal;
-  - no legal full text or accepted manuscript was located;
-  - no theorem, equation, proof, or complexity locator is authorized.
-- `L32`, `10.1109/TSMC.2024.3473851`:
-  - IEEE document `10736656`, Crossref, and NJIT metadata verified;
-  - official abstract describes a structure modification with at most one NIS,
-    preserved modeled functionality, and polynomial-time reachability;
-  - Crossref's IEEE staging PDF endpoint returned HTTP 418 and no legal
-    institutional manuscript was located;
-  - no theorem, equation, preservation, or complexity locator is authorized.
-- `L33`, `10.1109/TASE.2025.3588429`:
-  - IEEE document `11078878`, Crossref, and NJIT metadata verified;
-  - official abstract gives the AMS-specific structure-modification claim;
-  - Crossref's IEEE staging PDF endpoint returned HTTP 418 and no legal
-    institutional manuscript was located;
-  - no theorem, equation, preservation, or complexity locator is authorized.
+The upgrade is not a priority proof. It narrows claim language:
 
-The human-readable acquisition queue and required extraction fields are in
-`FULLTEXT_REQUEST_LIST.md`. Downloaded PDFs remain outside Git.
+- `L30` is sufficient finite-capacity S3PR/ENS3PR resource configuration, not
+  an exact IMS iff result.
+- `L31` CRP candidates are still checked with SBA for reachability.
+- `L32-L33` mainly authorize transformed-model trace/counter preservation, not
+  an automatic IMS operational-to-plant bridge or fixed-target recorder-count
+  completeness theorem.
+- `L34-L35` are LFS algorithms for a given NIS; their complexity bounds depend
+  on `c` and numeric `n1`.
+- `B05` depends on full RG data, monitor/P-semiflow expressibility, and NP-hard
+  MCPP.
 
 ## Corrections
 
@@ -111,10 +100,10 @@ The human-readable acquisition queue and required extraction fields are in
    source. P2c must still prove the IMS-SIP1 bridge independently.
 2. L16 is closed for its historical absorbing-DTMC/embedded-chain equations.
    It does not source the project's CTMC sensitivity or Doob-h theorem.
-3. L22 is closed as full-text historical context. B05 remains closed-access
-   and theorem-level use is blocked; B04 supplies the theorem-located
-   Petri-net maximum-permissiveness benchmark, with its P-semiflow assumptions,
-   monitor-existence proviso, and published correction.
+3. L22 is closed as full-text historical context. B04 and B05 now jointly
+   supply theorem-located Petri-net maximum-permissiveness benchmarks, with
+   P-semiflow/monitor-expressibility assumptions, full-RG dependence, MCPP
+   optimality/NP-hardness, and published-correction caveats where applicable.
 4. L28 supplies the conditioned CT jump-process generator baseline, so
    the primary Doob-h source is fixed for the first paper. L23 remains TPT for
    ergodic Markov jump processes rather than an IMS absorption theorem, and
@@ -122,11 +111,7 @@ The human-readable acquisition queue and required extraction fields are in
 5. L25 now supplies consistency and asymptotic-normality locators for one
    adaptive splitting construction, but an IMS-specific reaction coordinate,
    finite-sample protocol, and assumption check remain open before deployment.
-6. L29 must be an explicit algorithm/control comparator. L30's finite-capacity
-   S3PR minimum-resource configuration, L31's claimed reachable
-   partial-deadlock detection without reachability-tree traversal, and
-   L32-L33's reachability-decidable structure-modification claims are the
-   highest-priority freshness threats. All remain abstract-level here and
-   cannot be used as theorem sources until their full proofs and subclasses are
-   audited. The exact manual acquisition list is
-   `FULLTEXT_REQUEST_LIST.md`.
+6. L29-L35 and B05 are now explicit algorithm/control/reachability
+   comparators. They close the current full-text theorem-locator audit but do
+   not authorize broad-first, general PN bit-polynomial, or generic IMS
+   priority claims.

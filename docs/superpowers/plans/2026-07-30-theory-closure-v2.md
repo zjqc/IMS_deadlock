@@ -423,6 +423,8 @@ and GitHub main.
 - [ ] **Step 7: Update gates honestly**
 
 `G2` may be strengthened to include `P2c/P3d` only if proofs and enumerations
-pass. `G1` remains `PARTIAL` while B05 lacks a full theorem read. `G4` remains
-`NOT FROZEN` until the medium C5 model has physical-rate provenance and the
-confirmation set is preregistered.
+pass. Subsequent implementation and the 2026-07-30 supplied-full-text audit
+supersede the original G1 condition: `ROADMAP.md` now records
+`PASS (scope-bounded)` after L30-L35 and B05 were read in full. `G4` remains
+`NOT FROZEN` until the held-out cases, predictions, baselines, runtime,
+metrics, and hashes in `G4_CASE_PREREGISTRATION.md` are committed.

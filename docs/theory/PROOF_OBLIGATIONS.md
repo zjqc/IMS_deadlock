@@ -54,6 +54,15 @@
   wait-snapshot diagnostic net 与经典 S3PR plant net 的对象差异。
 - `PO-T3-6` 若后续要使用经典 S3PR monitor theorem，仍需独立构造
   plant-level S3PR 子类映射；不得由 P2c 自动推出。
+- `PO-T3-7` 若使用 `L32/L33` recorder-place/USPN/UniPN transformation，
+  必须先独立证明原 IMS operational 到 source plant Petri 的语义桥；
+  recorder transformation 不能替代此前置义务。随后还要记录原 trace 到
+  instrumented counter state 的保存方向、固定原目标映射到 recorder
+  target 时的 existential/fixed-count 量化、完成/死锁谓词投影，以及
+  BAS/AGV/预约/OR/AND/闭包语义是否已进入 source plant model。
+- `PO-T3-8` 若使用 `L31` CRP，必须先限定到 S4PR overlap，并把 CRP
+  marking-level iff 与 IMS closed blocking core 的对象差异写清楚；候选
+  marking 没有 executable prefix 时必须作为 unreachable candidate 拒绝。
 
 计算验证：
 
@@ -62,6 +71,9 @@
   OR 替代和多容量状态断言 bridge 非适用且不生成 `corresponding_siphon`。
 - 对 AGV/硬预约 token 仅在普通单位资源语义下允许进入 wait-snapshot net；
   soft reservation 保持非适用。
+- G4 必须包含 recorder-preservation/target-quantification obligation：
+  若 recorder case 可证明保存所需目标，则承认为 comparator agreement；
+  若只能证明单向保存或量化不匹配，则记录为未迁移边界，而不是硬造负例。
 
 ## T4 结构充分条件与阈值
 
@@ -95,6 +107,14 @@ persistent-D 三资源环及其删回流修复。一般操作死锁、多容量/
 - `[closed in P6] PO-T4-7` 用 SU-RAS identity reduction 证明无
   buffer/AGV/reservation/BAS 的无环单单位 IMS 子类安全性为 NP-complete；
   对一般紧凑 IMS 只声称至少 NP-hard，不猜测更强完备类。
+- `PO-T4-8` `L30` finite-capacity S3PR/ENS3PR 只能迁移为保守充分
+  resource-configuration baseline；若声称 exact reachable iff threshold，
+  必须另外证明候选死锁 marking 的 reachability、阈值必要性和 IMS 语义
+  覆盖，不能由 liveness-sufficient initial marking theorem 推出。
+- `PO-T4-9` `L34/L35` BA/SBA 给定 NIS 的 legal-firing-sequence 判定只能
+  作为比较过滤器；项目正向可达结论仍须保存显式合法 firing/event
+  sequence，小确认模型的不可达结论须由完整有限 LTS/BFS 穷举独立关闭。
+  复杂性报告必须区分参数/伪多项式界与标准 bit-polynomial bound。
 
 计算验证：
 
@@ -107,6 +127,8 @@ persistent-D 三资源环及其删回流修复。一般操作死锁、多容量/
 - 对 `BIX2-PERSIST` 的预注册 32 行 threshold/one-below ring/DAG
   发现网格逐点核验 P3e；截断、DAG 无完成路径或任一 mismatch 都是失败
   证据。
+- G4 CRP triad 必须同时含：S4PR overlap agreement、unreachable
+  structural/algebraic candidate、以及 BAS/AGV/AND outside-S4PR refusal。
 
 ## T5 概率层
 
@@ -139,6 +161,9 @@ L28 已全文核验，竞争吸收 IMS 适配由 P4 独立证明。
 - `PO-T6-4` 结构干预 hitting set 需要 core 全集完备。
 - `PO-T6-5` 若干预产生新 core，必须迭代反例生成。
 - `PO-T6-6` 概率控制给出风险预算递归可行性或保守界。
+- `PO-T6-7` `B05` compressed maximally permissive supervisor 只能在完整
+  RG、legal/FBM covering 和 MCPP 求解已明确的小 PN overlap 中作为
+  comparator；不得作为紧凑 IMS 的多项式或一般最大许可控制定理。
 
 计算验证：
 

@@ -10,6 +10,11 @@
 | siphon control | Petri-net bridge benchmark | valid only after explicit IMS-to-Petri assumptions are satisfied. |
 | exact maximally permissive supervisor | finite-state gold standard | state explosion; benchmark only for small and medium finite models. |
 | delete-backflow route repair | manufacturing-island practical repair | can sacrifice throughput and may overfit one route family. |
+| `L30` S3PR/ENS3PR resource configuration | finite-capacity Petri resource baseline | sufficient/conservative liveness configuration only; not an IMS exact reachable iff threshold. |
+| `L31` CRP/SBA detector | S4PR partial-deadlock overlap comparator | CRP is marking-level; small confirmation cases require an explicit prefix and complete BFS/LTS oracle, with SBA reported separately; the overall source method remains computationally hard. |
+| `L32/L33` recorder transformation | reachability-decidable Petri modeling comparator | output-only recorder places do not change original transition enabling; fixed-target recorder quantification still must be reported. |
+| `L34/L35` BA/SBA filter | legal firing sequence check for a given NIS | parameter/pseudopolynomial bound; not a standard bit-polynomial IMS reachability theorem. |
+| `B05` compressed supervisor | maximally permissive PN/RG comparator | requires full RG, legal/FBM covering, and NP-hard MCPP; inapplicable to large compact IMS by default. |
 
 ## Metrics
 

@@ -144,6 +144,85 @@ polynomial time. It does not provide the IMS operational/Petri/probability
 interface, but it rules out novelty claims based merely on a holder/request
 graph, an ILP deadlock candidate, or iterative control places.
 
+Pang et al. (2025). Deadlock prevention in flexible manufacturing systems: A
+verification-free resource configuration approach for liveness of
+finite-capacity S3PR. https://doi.org/10.1177/01423312251369553
+
+Authorized use: DIRECT comparator for finite-capacity S3PR/ENS3PR resource
+configuration; ADAPTED only after an IMS subclass is encoded as the paper's
+finite-capacity S3PR/ENS3PR; NONTRANSFERABLE to general IMS BAS, AGV,
+reservation, closure, OR-of-AND, or probability/control semantics. Recorded
+locators: PDF p3 Definition 1, p4 Definitions 2-3, p5 Definitions 4-6 and
+Theorems 1-3, p6 Algorithm 1, and pp7-8 complexity. The result is sufficient
+resource configuration, not an exact IMS iff threshold.
+
+Su et al. (2026). A Novel Petri Net-Based Deadlock Detection Method for
+Automated Manufacturing Systems. https://doi.org/10.1109/TASE.2026.3689269
+
+Authorized use: DIRECT comparator for S4PR CRP partial-deadlock detection;
+ADAPTED to IMS only through an explicit IMS-to-S4PR semantic map and reachable
+prefix proof; NONTRANSFERABLE to IMS operational certificates without that
+bridge. Recorded locators: PDF p4 Definitions 5-6, p5 Definitions 7-8 and
+Theorem 1, p6 Definition 10 and Theorems 2-4, p7 SBA/Algorithm S3 discussion,
+and supplement pp1-10 with proofs and Algorithms S1-S4. CRP equations generate
+candidate partial deadlocks; reachability is still checked with SBA.
+
+Su, Zhou, Qi, & Wisniewski (2025). A Reachability-Decidable Petri Net Modeling
+Method for Discrete Event Systems. https://doi.org/10.1109/TSMC.2024.3473851
+
+Authorized use: DIRECT comparator for reachability-decidable transformed-PN
+modeling; ADAPTED only as a transparent baseline after the IMS-to-PN semantics
+and recorder-count target quantification are fixed; NONTRANSFERABLE as an
+automatic IMS operational-to-plant bridge. Recorded locators: PDF p3 Theorems
+1-2, pp4-5 Algorithm 1 and Theorem 3, pp5-7 Theorems 4-8 and Algorithm 2, and
+p8 Algorithm 3 and Theorem 11. The audit treats the main preservation as
+trace lift/counter-state preservation for the transformed model.
+
+Su, Zhou, Qi, Albeshri, & Abusorrah (2025). A Structure-Modification-Based
+Petri Net Modeling and Reachability Analysis Method for Automated
+Manufacturing Systems. https://doi.org/10.1109/TASE.2025.3588429
+
+Authorized use: DIRECT AMS PN structure-modification comparator; ADAPTED only
+after an IMS plant-to-PN map and projected completeness theorem are supplied;
+NONTRANSFERABLE as a general IMS bisimulation. Recorded locators: PDF p3
+Theorems 1-2, p4 Theorems 3-4, p5 Algorithm 1 and Theorems 5-6, pp6-7
+Theorems 7-10 and Algorithm 2, plus supplement p1. The preservation set covers
+reachability/liveness/persistence/repetitiveness and original siphon/trap
+structure; boundedness may change after modification. Algorithm 2 uses SBA
+with `O(n*n1*(c*m+n^2))`, so compact-input bit-polynomial claims remain
+prohibited.
+
+Su et al. (2023). A State-Equation-Based Backward Approach to a Legal Firing
+Sequence Existence Problem in Petri Nets.
+https://doi.org/10.1109/TSMC.2023.3241101
+
+Authorized use: DIRECT source for the NIS-to-LFS false-positive boundary and
+SBA baseline for a given NIS; ADAPTED only after IMS events are encoded as PN
+firings; NONTRANSFERABLE to general IMS reachability. Recorded locators: PDF
+pp3-5 Theorems 1-6, pp5-8 Algorithms 1-5, and pp7-8 complexity
+`O(n*n1*(c*m+n^2))`, with explicit `c` and numeric `n1` caveats.
+
+Su et al. (2023). A Backward Algorithm to Determine the Existence of Legal
+Firing Sequences in Ordinary Petri Nets.
+https://doi.org/10.1109/LRA.2023.3246384
+
+Authorized use: DIRECT ordinary-PN BA baseline and necessary-not-sufficient
+state-equation boundary; ADAPTED only after ordinary-PN encoding; NONTRANSFERABLE
+as an IMS deadlock theorem. Recorded locators: PDF pp2-3 Theorems 1-5,
+pp4-6 Algorithms 1-5, p6 complexity `O(n*n1*(c*m+n^2))`, and p7 conclusion.
+
+Chen, Y. F., & Li, Z. W. (2011). Design of a maximally permissive
+liveness-enforcing supervisor with a compressed supervisory structure for
+flexible manufacturing systems. *Automatica, 47*(5), 1028-1034.
+https://doi.org/10.1016/j.automatica.2011.01.070
+
+Authorized use: DIRECT maximum-permissiveness and monitor-compression
+benchmark for Petri-encodable FMS instances; ADAPTED only after full RG
+legal/forbidden partition and monitor/P-semiflow expressibility are fixed;
+NONTRANSFERABLE as a scalable IMS supervisor theorem. Recorded locators: PDF
+p3 Definitions 1-3, p4 MCPP and Algorithm 1, p5 Theorem 1 and complexity
+limitations. The paper depends on full RG data and an NP-hard MCPP.
+
 ## Verified Context Sources
 
 Li, Z. W., & Zhou, M. C. (2004). Elementary siphons of Petri nets and their
@@ -187,17 +266,6 @@ found, so it is not used as a siphon theorem or an IMS equivalence source.
 
 The remaining DOI-verified rows in `LITERATURE_MATRIX.md` are backlog or
 metadata candidates. They should not appear in theorem statements until their
-full-text assumptions and locators are recorded.
-
-Two freshness candidates have priority over older backlog:
-
-- Pang et al. (2025),
-  https://doi.org/10.1177/01423312251369553, claim an equivalent
-  finite-capacity S3PR construction and ILP minimum-resource initial marking
-  that guarantees liveness without a posteriori verification. Current evidence
-  is abstract-level.
-- Su et al. (2026), https://doi.org/10.1109/TASE.2026.3689269, claim critical
-  resource-limit pairs and linear equations for reachable partial-deadlock
-  detection without reachability-tree traversal. Current evidence is the
-  official peer-reviewed publication record and abstract; this is the
-  highest-priority full-read novelty threat.
+full-text assumptions and locators are recorded. The former L30-L35/B05
+candidate batch has been upgraded by `FULLTEXT_AUDIT_L30_L35_B05.md`; it is no
+longer an abstract-only request set.

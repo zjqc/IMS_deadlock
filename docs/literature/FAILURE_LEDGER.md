@@ -40,14 +40,17 @@ post-hoc theory edits.
 - Consequence: IMS formal state must include transport occupancy and
   reservations from the start.
 
-## F05. Taxonomy Saturation Is Bounded, Full-text Gate Still Open
+## F05. Taxonomy Saturation Is Bounded, Not a Priority Proof
 
 - Claim to reject: bounded OpenAlex taxonomy saturation means the systematic
   literature review and full-text theorem verification are complete.
 - Evidence: `CITATION_TRACE_LOG.md` records scope-bounded taxonomy saturation in
-  R2/R3, while several DOI-verified entries remain metadata/context only.
-- Consequence: G1 can support G2 formalization, but final theorem claims still
-  require exact full-text locators.
+  R2/R3 and R7/R8. The later L30-L35/B05 batch closes the current
+  theorem-locator queue, but other DOI-verified entries remain
+  metadata/context only and OpenAlex is not complete.
+- Consequence: G1 is `PASS (scope-bounded)`, not a systematic-review,
+  exhaustiveness, or scientific-priority certificate. Every theorem actually
+  used still requires its recorded full-text locator and migration boundary.
 
 ## F06. Viswanadham 1990 Conference and Journal Records Were Mixed
 
@@ -69,8 +72,9 @@ post-hoc theory edits.
   then upgraded on 2026-07-30 only after Sections 3, 3.1, 3.2, and 4 were
   inspected and `F=(I-T)^-1` / `G=FC` were located.
 - Consequence: both are now theorem/equation anchors only for the exact scopes
-  recorded in `SOURCE_VERIFICATION.md`; the earlier evidence restriction was
-  correct and remains the rule for B05.
+  recorded in `SOURCE_VERIFICATION.md`; the same restriction was applied to
+  B05 before its supplied full text was inspected and remains the rule for all
+  future sources.
 
 ## F08. Tool Combination Is Not a Novelty Claim
 
@@ -87,20 +91,18 @@ post-hoc theory edits.
   built on the same absorbing certificate semantics. Every interface must
   retain its counterexample outside the declared subclass.
 
-## F09. Fresh Reachability Literature Reopens the Saturation Stop Rule
+## F09. Fresh Reachability Literature Narrows G1 To Scope-bounded PASS
 
-- Claim to reject: the two bounded no-new-category rounds completed on
-  2026-07-29 permanently close the novelty search.
-- Evidence: the 2026 freshness audit found `L31`, whose official abstract
-  claims critical resource-limit-pair equations that detect reachable partial
-  deadlocks without a reachability tree. `L29` also supplies a current
-  MR2G/PDDP partial-deadlock characterization and iterative liveness-enforcing
-  control baseline, while `L30` directly addresses finite-capacity S3PR
-  minimum-resource configuration.
-- Consequence: Rounds 2-3 remain an auditable historical search result, but
-  the stop counter resets. `L29-L31` must seed new bounded forward/backward
-  rounds, and `L30-L31` require full-text assumption and proof extraction
-  before any broad priority claim.
+- Claim to reject: bounded taxonomy saturation or full-text extraction proves
+  scientific priority.
+- Evidence: the 2026 freshness audit and later supplied full texts located
+  `L29-L35` and `B05`: MR2G/PDDP control, finite-capacity S3PR resource
+  configuration, S4PR CRP partial-deadlock detection, reachability-decidable
+  PN structure modification, BA/SBA legal-firing-sequence checks, and
+  maximally permissive monitor supervision.
+- Consequence: Rounds 7-8 and the full-text batch close G1 only as
+  `PASS (scope-bounded)`. They do not authorize first, broad, general IMS, or
+  general Petri-net bit-polynomial claims.
 - Claim repair: the current contribution is only a candidate IMS-specific
   interface package. Its defensible unit is the joint operational semantics,
   capacity-auditable certificate/refusal boundary, restricted diagnostic
@@ -114,15 +116,16 @@ post-hoc theory edits.
   is sufficient to establish a legal firing sequence or an executable IMS
   deadlock prefix.
 - Evidence: the official abstracts for `L34-L35` explicitly identify the
-  necessary-but-not-sufficient gap and introduce backward legal-firing-sequence
-  methods; `L31-L33` make this boundary directly relevant to current
-  reachability claims.
+  necessary-but-not-sufficient gap and the full texts give BA/SBA methods for
+  a given NIS; `L31` uses SBA to check CRP candidates, and `L32-L33` invoke
+  BA/SBA-style reachability procedures after structure modification.
 - Consequence: any algebraic detector used by IMS_deadlock must either provide
   a proved legal-event correspondence and a concrete reachable prefix, or be
   labeled a relaxation with measured false positives.
 - Claim repair: `BIX1-SAT` and later parameterized families retain an exact
   finite-LTS witness; a future linear-equation baseline is compared against
-  that witness rather than substituted for it.
+  that witness rather than substituted for it. Any polynomial claim must handle
+  `c` and numeric `n1`, not hide them.
 
 ## F11. Concealed Adaptation Is Not Scientific Novelty
 
@@ -137,3 +140,45 @@ post-hoc theory edits.
 - Claim repair: novelty is assessed after inherited components are removed. If
   no substantive IMS-specific theorem, counterexample, or interface remains,
   the project stops and reformulates.
+
+## F12. Transformed Petri Nets Are Not Automatic IMS Plant Bridges
+
+- Claim to reject: a recorder-place or structure-modified PN reachability
+  result automatically proves an IMS operational-to-plant equivalence.
+- Evidence: `L32-L33` give transformed-model trace lift/counter-state
+  preservation and reachability procedures. The sink-recorder construction
+  does not by itself answer how fixed original targets quantify over recorder
+  counts, nor does it directly encode BAS, AGV occupancy, hard reservations,
+  zero-time closure, OR-of-AND requests, or absorbing probability semantics.
+- Consequence: the project must not claim reachability-decidable modeling is
+  new, but it also must not assume the published transformations fail. Any
+  projected bisimulation, completeness, or IMS preservation theorem must be
+  separately stated and proved.
+- Claim repair: use `L32-L33` as transparent transformed-PN baselines and test
+  the exact IMS semantic bridge as an explicit proof obligation.
+
+## F13. Parameter-polynomial Is Not Compact-input Bit-polynomial
+
+- Claim to reject: `O(n*n1*(c*m+n^2))` proves polynomial-time reachability in
+  the ordinary binary encoding of an arbitrary PN or compact IMS model.
+- Evidence: `L34-L35` treat `c`, the directed-circuit count, and `n1`, the
+  numeric sum of the fixed NIS entries, as parameters. `L32-L33` inherit that
+  subroutine after structure modification. The L33 supplement's short
+  circuit-count argument is not accepted here as a proof that every
+  transformed instance has polynomially many directed circuits.
+- Consequence: report BA/SBA as a given-NIS, parameter/pseudopolynomial
+  baseline. Any standard bit-complexity theorem requires a separate input
+  encoding, output convention, and bound on `c` and numeric `n1`.
+
+## F14. Sufficient Resource Configuration Is Not an Exact Reachable Threshold
+
+- Claim to reject: a liveness-guaranteeing minimum initial resource marking is
+  automatically a necessary-and-sufficient WIP/capacity threshold for
+  reachable IMS deadlock.
+- Evidence: `L30` derives sufficient ENS3PR/SMS conditions and solves an ILP
+  resource-configuration problem; its algorithm retains exponential SMS/ILP
+  terms. It does not prove necessity of its configuration for the IMS
+  operational semantics.
+- Consequence: use L30 as a conservative comparator only. P3d/P3e exact iff
+  thresholds remain family-specific and must retain both reachability
+  witnesses above threshold and exclusion proofs below threshold.

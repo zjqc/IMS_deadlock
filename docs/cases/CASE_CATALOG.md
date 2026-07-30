@@ -21,6 +21,20 @@
 | `C5-md-dag-repair` | `DISCOVERY` | Removes the `D -> M` reverse route from the C5 pair and leaves an enabled forward release/progress path. | no closed blocking kernel; marked completion reachable in bounded LTS. |
 | `BIX2-PERSIST` | `DISCOVERY` | Makes persistent buffer `D` a necessary member of a reachable `M -> D -> Q -> M` capacity kernel and pairs it with deletion of the `Q -> M` return. | ring: exact `{M,D,Q}` kernel; DAG: no kernel and marked completion reachable on the preregistered discovery domain. |
 
+## G4 Draft Confirmation Design
+
+`G4_CASE_PREREGISTRATION.md` defines the next hard gate design. It is
+`DRAFT-NOT-FROZEN`, not a result document. Its planned held-out families are:
+
+| Family | Status | Purpose | Expected classification |
+| --- | --- | --- | --- |
+| `G4-CRP-S4PR-AGREE` | `DRAFT` | S4PR overlap where `L31` CRP, IMS core, and executable prefix should agree. | agreement only inside the hashed S4PR embedding. |
+| `G4-CRP-UNREACHABLE-CANDIDATE` | `DRAFT` | Structural/algebraic CRP or siphon candidate without a legal firing sequence. | unreachable candidate; no IMS deadlock claim. |
+| `G4-CRP-OUTSIDE-S4PR` | `DRAFT` | BAS/AGV/AND IMS semantics outside S4PR assumptions. | explicit not-applicable/refusal boundary. |
+| `G4-RECORDER-TARGET-QUANTIFICATION` | `DRAFT` | Tests whether `L32/L33` recorder transformations close fixed-target quantification obligations. | comparator agreement if proved, otherwise non-migration boundary. |
+| `G4-L30-RESOURCE-BASELINE` | `DRAFT` | Finite-capacity S3PR/ENS3PR resource configuration comparator. | sufficient/conservative baseline, not exact IMS threshold. |
+| `G4-B05-SUPERVISOR-COMPARATOR` | `DRAFT` | Small full-RG compressed supervisor comparator. | permissiveness/structure comparator or inapplicable. |
+
 ## Provisional Witnesses
 
 `C5-independent-witness-v1` is only a minimal discovery witness. Its

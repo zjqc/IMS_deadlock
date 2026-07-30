@@ -213,56 +213,100 @@ or cosmetic rewriting never count as an IMS contribution.
 
 ## M17. Su et al. Reachable Partial-Deadlock Threat
 
-- Evidence type: `ABSTRACT`, migration blocked pending full read.
-- 原主张: the official 2026 T-ASE abstract claims critical
-  resource-limit pairs and linear equations detect reachable partial
-  deadlocks for a useful Petri-net class without reachability-tree traversal.
-- 原假设: not yet extracted from the full paper.
-- IMS映射: potentially overlaps the project's reachability-certified local
-  blocking core and must be compared before any general novelty claim.
-- 缺失假设: full PN subclass, CRP construction, reachability proof,
-  completeness, and complexity locators are not yet available in this library.
-- 适配命题/反例: no theorem migration is authorized. Until full read, the
-  project may claim neither first reachable structural certificate nor first
-  avoidance of reachability-graph traversal.
+- Evidence type: `FULLTEXT-THEOREM`, direct comparator with IMS bridge pending.
+- 原主张: Su et al. (2026) define S4PR partial deadlocks and a critical set of
+  resource-limit pairs (`CRP`). Theorem 3 states that a marking is a partial
+  deadlock iff there is a CRP at that marking; Theorem 4 supports the CRP
+  detection equations.
+- 原假设: S4PR structure, the paper's activity/resource-place semantics, and
+  the paper's partial-deadlock definition. Reachability of detected candidate
+  partial deadlocks is still checked by SBA.
+- IMS映射: direct comparator for any IMS claim about reachable local blocking
+  cores or reachability-tree-free partial-deadlock detection.
+- 缺失假设: IMS BAS blocked-unload, AGV occupancy, hard reservations,
+  zero-time closure, OR-of-AND acquisition, and probability/control interfaces
+  are not encoded by the source theorem.
+- 适配命题/反例: compare CRP candidates against IMS operational certificates.
+  A linear-equation candidate without an IMS reachable prefix remains a
+  false-positive boundary.
 - 对应案例: future restricted PN overlap benchmark; `BIX1-SAT` remains a
   family-specific exact threshold rather than a scalable general detector.
 
 ## M18. Reachability-Decidable Structure-Modification Threat
 
-- Evidence type: `ABSTRACT`, migration blocked pending full read.
-- 原主张: `L32` officially claims a Petri-net structure modification that
-  preserves modeled functionality while making the state equation admit no
-  more than one nonnegative integer solution and reachability decidable in
-  polynomial time. `L33` states an AMS-specific structure-modification version
-  with the same high-level objective.
-- 原假设: exact net class, transformation, preservation relation, and
-  complexity model have not been extracted from full text.
-- IMS映射: the approach could become a restricted Petri-modeling baseline after
-  a plant-level IMS-to-Petri semantic map exists.
+- Evidence type: `FULLTEXT-THEOREM`, transformed-model comparator.
+- 原主张: `L32` gives ordinary-PN structure-modification algorithms and
+  reachability determination for the modified model; `L33` gives an AMS
+  version with UniPN-style modification and Algorithm 2 reachability
+  determination. The audited preservation content is primarily trace
+  lift/counter-state preservation between the source PN model and modified PN.
+- 原假设: source PN/AMS PN model, recorder/place modification construction,
+  and the paper's state-equation plus BA/SBA reachability setting.
+- IMS映射: restricted Petri-modeling baseline after a plant-level IMS-to-Petri
+  semantic map exists and after the target query specifies how recorder counts
+  are quantified.
 - 缺失假设: BAS hold-after-completion, finite persistent buffers, AGV
   occupancy, hard reservations, zero-time closure, OR-of-AND acquisition, and
-  the relation between the modified net and the original IMS behavior.
-- 适配命题/反例: no theorem migration is authorized. The project must not claim
-  that reachability-decidable model transformation is new. If later used, it
-  must be evaluated as a transparent baseline and audited for preservation of
-  IMS deadlock and completion behavior.
+  the IMS operational-to-plant bridge are not automatic consequences of the
+  source transformation.
+- 适配命题/反例: do not claim reachability-decidable model transformation is new.
+  Also do not assume the construction fails: any projected bisimulation,
+  completeness, or fixed-original-target theorem must be separately stated and
+  proved.
 - 对应案例: future restricted-Petri overlap model plus `C4/C5` preservation
   attacks.
 
 ## M19. State Equation to Legal Firing Sequence Boundary
 
-- Evidence type: `ABSTRACT`, boundary/context only pending full read.
-- 原主张: `L34-L35` state that a nonnegative integer solution of a Petri-net
-  state equation is necessary but not sufficient for a legal firing sequence;
-  their backward methods address the firing-sequence existence problem.
-- 原假设: exact ordinary-net restrictions, circuit handling, completeness, and
-  complexity locators remain unavailable without full text.
+- Evidence type: `FULLTEXT-THEOREM`, boundary and algorithm baseline.
+- 原主张: `L34` SBA and `L35` BA decide whether a given nonnegative integer
+  solution of a Petri-net state equation has a corresponding legal firing
+  sequence, using directed-circuit blockers and backward firing processes.
+- 原假设: PN/ordinary PN as stated, fixed initial/destination markings, and a
+  fixed NIS `X`.
 - IMS映射: any linear-equation deadlock screen must be followed by a proved
   legal-event/reachability bridge or labeled as a relaxation.
 - 缺失假设: an IMS state equation, zero-time closure correspondence, and proof
   that every algebraic solution is an executable IMS event sequence.
-- 适配命题/反例: use the necessary-not-sufficient gap as an adversarial
-  requirement, not as a theorem donor. A state-equation candidate without a
-  reachable IMS prefix is a false-positive boundary.
+- 适配命题/反例: use the necessary-not-sufficient gap and BA/SBA as adversarial
+  requirements. The recorded complexity `O(n*n1*(c*m+n^2))` depends on circuit
+  count `c` and numeric `n1`, so a compact-input bit-polynomial IMS claim must
+  be proved separately.
 - 对应案例: `C1`, `BIX1-SAT`, and future restricted-Petri overlap benchmark.
+
+## M20. Pang Finite-Capacity S3PR Configuration
+
+- Evidence type: `FULLTEXT-THEOREM`, sufficient-condition comparator.
+- 原定理: Pang et al. (2025) transform a finite-capacity S3PR into ENS3PR,
+  prove sufficient liveness conditions through Theorems 1-3, and give
+  Algorithm 1 for minimum initial resource markings.
+- 原假设: finite-capacity S3PR/ENS3PR, acceptable initial marking, SMS and
+  complementary-set conditions, and ILP resource-configuration setting.
+- IMS映射: compare against restricted IMS families that can be encoded as the
+  paper's finite-capacity S3PR/ENS3PR.
+- 缺失假设: exact iff threshold, BAS blocked-unload, AGV reservations,
+  OR-of-AND acquisition, zero-time closure, and shared probability/control
+  semantics.
+- 适配命题/反例: L30 is sufficient not exact iff. It blocks broad finite-capacity
+  novelty, but it does not replace family-specific exact IMS threshold proofs.
+- 对应案例: `BIX1-SAT`, future restricted finite-capacity Petri overlap models.
+
+## M21. Chen-Li Compressed Maximally Permissive Supervisor
+
+- Evidence type: `FULLTEXT-THEOREM`, benchmark with expressibility caveat.
+- 原定理: Chen and Li (2011), Theorem 1, state that Algorithm 1 obtains a
+  maximally permissive supervisor with the minimal number of control places iff
+  MCPP has an optimal solution, assuming each control place is associated with
+  a P-semiflow.
+- 原假设: full reachability graph, legal/forbidden marking partition, minimal
+  covered FBM/legal-marking sets, monitor/P-semiflow expressibility, and MCPP
+  optimality.
+- IMS映射: compare small exact IMS finite-state supervisors to monitor-based
+  Petri supervisors only after a valid Petri representation and monitor class
+  are fixed.
+- 缺失假设: scalable synthesis, arbitrary IMS monitor expressibility,
+  BAS/AGV/reservation/closure semantics, and probability-layer coupling.
+- 适配命题/反例: maximum permissiveness is a benchmark, not a generic IMS
+  theorem. Full RG enumeration and NP-hard MCPP must remain visible.
+- 对应案例: future Petri-encodable restricted confirmation models and P5 exact
+  finite supervisor checks.

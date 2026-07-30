@@ -104,7 +104,44 @@ P2c 不是一般 Petri/S3PR 桥：
 - control-only、approval-only 或 soft-reservation place 可以形成 Petri
   siphon，但没有可审计的工件持有-请求证据，因此不能反向恢复 IMS 核。
 
-## 5. 枚举实现
+## 5. 七篇全文审计后的 Petri 边界
+
+G1 全文审计把 `L30-L35` 与 `B05` 纳入比较器，但不改变本项目定理真值。
+
+- `L30` 的 finite-capacity S3PR/ENS3PR resource-configuration 结论只能作为
+  liveness-preserving 初始资源标识的保守充分基线。它不授权把本项目的
+  BIX/P3e 阈值改写成一般 finite-capacity S3PR 的 exact reachable iff
+  threshold，也不替代 IMS 可达前缀证据。
+- `L31` 的 S4PR CRP 给出 marking-level partial-deadlock iff certificate；
+  但 CRP 候选 marking 的可达性仍由 SBA/合法 firing-sequence 层检查，且
+  复杂性为 NP-hard。对 IMS 的使用必须先证明 S4PR overlap map，再把
+  unreachable structural/algebraic candidate 作为拒绝边界保留。
+- `L32/L33` 的 USPN/UniPN recorder-place transformations 不改变原
+  transition enabling，并可把原网 trace 嵌入到 instrumented counter
+  state；但这不自动给出 IMS operational/Petri plant 证明，也不自动关闭
+  固定原 IMS 目标到 recorder target 时的 existential/fixed-count 量化。
+- `L34/L35` 的 BA/SBA 法检查给定 NIS `X` 是否存在 legal firing sequence。
+  `O(n*n1*(c*m+n^2))` 是依赖 firing-count/marking 参数的伪多项式或
+  参数化界，不得写成标准 bit-polynomial reachability algorithm for IMS。
+- `B05` 的 compressed maximally permissive supervisor 依赖完整 reachability
+  graph、legal/first-met-bad marking covering 与 NP-hard MCPP，只能作为小
+  显式状态/PN overlap 的 permissiveness comparator；不能作为紧凑 IMS 的
+  可扩展控制定理。
+
+由此，任何后续 Petri 比较必须同时记录四类 refusal/obligation boundary：
+
+1. 原 IMS operational 到 source plant Petri 的语义证明是否先独立完成；
+   recorder transformation 不能替代这一步，还须另证原目标固定后
+   recorder count 的存在量化和固定计数量化是否一致；
+2. CRP 与本项目 closed blocking core 的重叠是否已经限制到 S4PR marking
+   语义，且候选 marking 是否有 executable prefix；
+3. structural/algebraic candidate 与 reachable IMS deadlock 的差距是否被
+   显式合法 firing/event witness 关闭；小确认模型以完整 BFS/LTS 穷举为
+   独立基准，SBA 仅作比较器；
+4. resource-configuration theorem 是 exact iff threshold、sufficient
+   liveness condition，还是 comparator-only baseline。
+
+## 6. 枚举实现
 
 `ims_deadlock.petri` 实现：
 

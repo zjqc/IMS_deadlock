@@ -15,9 +15,9 @@ Conclusion:
 > category, and Rounds 7-8 then completed two consecutive bounded rounds
 > without another new first-paper category.
 
-The taxonomy stop rule is satisfied again as a bounded OpenAlex result. It does
-not close full-text verification: `L30-L33` remain priority comparators whose
-theorems and assumptions have not been inspected.
+The taxonomy stop rule is satisfied again as a bounded OpenAlex result. The
+later user-supplied full-text audit closes the current theorem-locator gate as
+`PASS (scope-bounded)`, while leaving priority unproved.
 
 ## Method Limits
 
@@ -160,15 +160,14 @@ enter theorem statements only through `SOURCE_VERIFICATION.md` and
   - retained as `FULLTEXT-CONTEXT` because the methods paper has no numbered
     theorem/proposition/lemma chain for migration.
 - `B05`, Chen and Li (2011):
-  - DOI and publisher metadata remain stable;
-  - no auditable full theorem text was recovered;
-  - remains blocked for theorem-level use; B04 is the theorem-located
-    maximum-permissiveness benchmark.
+  - DOI and publisher metadata were stable at this stage;
+  - no auditable full theorem text had been recovered in Round 2;
+  - this was later superseded by the supplied full-text audit recorded below.
 
 These audits close the targeted L04/L16/L22 locator questions with
-scope-specific classifications. B05 remains open by design. No source's
-complexity, liveness, or convergence result transfers to IMS without the
-assumption mapping in `MIGRATION_CARDS.md`.
+scope-specific classifications. No source's complexity, liveness, or
+convergence result transfers to IMS without the assumption mapping in
+`MIGRATION_CARDS.md`.
 
 ## Round 4: Current-work Freshness Audit
 
@@ -182,12 +181,14 @@ assumption mapping in `MIGRATION_CARDS.md`.
     iterative control-place insertion, and controlled-net liveness theorem
     make it the mandatory structural/control baseline.
   - `L30`, Pang et al. (2025), officially describes minimum resource
-    configuration for an equivalent finite-capacity S3PR net. It remains
-    abstract-only and therefore cannot yet support a theorem comparison.
+    configuration for an equivalent finite-capacity S3PR net. At this stage it
+    remained abstract-only; this was later superseded by the supplied full-text
+    audit below.
   - `L31`, Su et al. (2026), officially describes critical
     resource-limit-pair linear equations for detecting reachable partial
-    deadlocks without a reachability tree. It remains abstract-only and is the
-    highest-priority full-text threat audit.
+    deadlocks without a reachability tree. At this stage it remained
+    abstract-only; this was later superseded by the supplied full-text audit
+    below.
 - New category found:
   - `L31` adds a direct reachable-partial-deadlock/no-reachability-tree claim,
     which is materially closer to the proposed structural certificate than
@@ -201,7 +202,8 @@ assumption mapping in `MIGRATION_CARDS.md`.
     stop rule is satisfied again;
   - no manuscript may claim the first reachable structural certificate,
     the first reachability-free partial-deadlock detector, or general
-    finite-capacity threshold novelty while `L30-L31` remain unread in full.
+    finite-capacity threshold novelty. The later full-text audit narrows these
+    bans but does not remove them.
 
 ## Round 5: L29-L31 Reseed
 
@@ -310,10 +312,50 @@ assumption mapping in `MIGRATION_CARDS.md`.
   - second consecutive bounded round without a new in-scope category after the
     latest reset.
 
+## Supplied Full-text Audit: L30-L35 and B05
+
+- Date: 2026-07-30.
+- Inputs:
+  - seven user-supplied full texts for `L30-L35` and `B05`;
+  - L31 author supplement repository `Supplementary-File-of-T-ASE-2025-4089`,
+    commit `f05b4b884480ba9ce217470ab52cdb865afedc66`;
+  - L33 author supplement repository `S.F.TASE.2025.3588429`, commit
+    `c54223b9a68a1b16758f2d90cdef7a486b5a588c`.
+- Manifest:
+  - `L30`: SHA-256 `8d2c2a43a4ec5570ec519e4280a32b88a74fc76a77795da500476342044ca6ea`, 11 pages;
+  - `L31`: SHA-256 `b1abf149e95916a1d2afa4f6cadf6ddf1c11dbb4c4ff063ca711271b3ab04ddc`, 12 pages;
+  - `L32`: SHA-256 `d4c41b67f716b278d2c14f15bbca49e69e3a81ff9cff0c9301bb1b56e5d5d19b`, 12 pages;
+  - `L33`: SHA-256 `08ac32d4db03bc5ed8c203de8fe10d5544dd9018381bd492579e06ecc137fe4e`, 12 pages;
+  - `L34`: SHA-256 `fb6d8c25fdbe5d63a26da64161b195d17dbf8c4f768e485354eb60c247d6f76f`, 12 pages;
+  - `L35`: SHA-256 `5f984ac8cf78a8fb744b9da40d8c80df2537a1bc57a1af20f3f06c367473c5a5`, 8 pages;
+  - `B05`: SHA-256 `d0c73000b702a22079f316bf0830d1452342f04d581c28b5ad6f06856f76b7f4`, 7 pages;
+  - L31 supplement: SHA-256 `6ffee05ae4f21e14802c2d6547f2e3d1ac9d1a41ce7beb9045b590fa13397088`, 10 pages;
+  - L33 supplement: SHA-256 `50e00f06c8d927b8c7a33d3b47dbbeb639a0768c01bed75da969440f60b482ed`, 1 page.
+- Extraction result:
+  - `L30`: finite-capacity S3PR/ENS3PR definitions, Theorems 1-3, Algorithm 1,
+    and exponential SMS/ILP complexity terms located. It is sufficient
+    resource configuration, not an exact IMS iff result.
+  - `L31`: S4PR definition, partial-deadlock definition, CRP Theorems 1-4,
+    and supplement proofs/Algorithms S1-S4 located. CRP candidates are still
+    checked with SBA for reachability.
+  - `L32-L33`: structure-modification and reachability algorithms located.
+    Their main transferable content is transformed-model trace lift/counter-
+    state preservation; they do not automatically prove an IMS operational
+    bridge or fixed-target recorder-count completeness.
+  - `L34-L35`: BA/SBA theorem and algorithm locators extracted. Complexity is
+    `O(n*n1*(c*m+n^2))`, with `c` and numeric `n1` preventing a compact-input
+    bit-polynomial claim in this audit.
+  - `B05`: full-RG, MCPP, Algorithm 1, and Theorem 1 located. The method is
+    maximally permissive only under monitor/P-semiflow expressibility and MCPP
+    optimality; RG enumeration is exponential and MCPP is NP-hard.
+
 ## Current Gate Interpretation
 
-Rounds 7-8 close only the bounded taxonomy-saturation sub-gate. They do not
-make OpenAlex complete, do not prove priority, and do not authorize theorem
-claims from abstracts. `L30-L33` remain the manual full-text request set and
-keep G1 at `PARTIAL` until their exact subclasses, assumptions, proofs,
-complexity models, and counterexamples are compared with IMS-RAS.
+Rounds 7-8 close the bounded taxonomy-saturation sub-gate. The supplied
+full-text audit closes the current theorem-locator sub-gate. Together they set
+G1 to `PASS (scope-bounded)`.
+
+This does not make OpenAlex complete, does not prove priority, and does not
+authorize broad-first or general PN bit-polynomial claims. L30-L35 and B05 are
+now full-text comparators whose assumptions, limitations, and nontransferable
+IMS boundaries must remain visible in all G2 and manuscript claims.

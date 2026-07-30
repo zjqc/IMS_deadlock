@@ -116,6 +116,14 @@ closed blocking core 与 state-induced wait-snapshot diagnostic net 中
   下保持。
 - `[open]` 对 plant-level structured Petri/S3PR 给出独立语义等价或
   明确更窄子类；不得由诊断快照自动推出。
+- `[open/obligation]` recorder-place USPN/UniPN transformation 之前必须
+  先独立证明原 IMS operational 到 source plant Petri 的语义桥；recorder
+  构造不能替代该前置义务。原 trace 到 instrumented counter state 的保存
+  也不自动关闭固定原目标与 recorder target 之间的
+  existential/fixed-count 量化。
+- `[open/refusal]` S4PR CRP 可作为 marking-level partial-deadlock
+  certificate overlap，但候选 marking reachability 必须由 SBA/BFS/witness
+  单独关闭。
 
 ### Failure modes
 
@@ -127,7 +135,9 @@ closed blocking core 与 state-induced wait-snapshot diagnostic net 中
 ### Evidence status
 
 P2c 项目内证明、`ims_deadlock.petri` 最小 siphon 枚举和 C0/C5/OR/
-multi-capacity/control-only 回归。一般 plant/S3PR bridge 仍开放。
+multi-capacity/control-only 回归。七篇全文审计把 `L31` CRP 与
+`L32/L33` recorder transformations 固定为 G4 比较器/义务边界；一般
+plant/S3PR bridge 仍开放。
 
 ### Case mapping
 
@@ -190,6 +200,13 @@ supervisor 初始可行性至少 NP-hard，完整状态策略可能具有指数�
   marked completion 路径；只满足前者不得算 repair match。
 - 含替代路线、AGV/预约、外部 drain、多个 persistent buffers 或优先级
   的双向岛族仍需推导或证伪容量/WIP/AGV 分段阈值，不得预置公式。
+- `L30` finite-capacity S3PR/ENS3PR resource configuration 只能作为
+  sufficient liveness/resource baseline；不得把它升级为 IMS exact
+  reachable iff threshold。
+- `L34/L35` BA/SBA 是给定 NIS 的 legal firing sequence filter；任何
+  algebraic candidate 都必须保留显式 executable-prefix obligation，小
+  确认模型以完整 BFS/LTS 为独立基准，复杂性不得误报为标准
+  bit-polynomial IMS 判定。
 
 ### Failure modes
 
@@ -206,9 +223,11 @@ P3 chain-decomposable strict-precedence 子类无 capacity-mediated 操作
 `BIX1-SAT` 从空状态可达的 WIP/机器/AGV 双向饱和阈值；P3e 闭合
 `BIX2-PERSIST` 的显式 persistent-D 三资源 ring/DAG 边界；
 P6 给出 `IMS-SU^A` NP-complete、显式 LTS 多项式 fixed point 和紧凑
-输入至少 NP-hard 的边界。一般操作死锁、永久非资源 guard、多容量/
-聚合预约、一般紧凑 IMS 的精确复杂性分类和更丰富 persistent-buffer/
-AGV 制造岛容量/WIP/AGV 阈值仍是 conjecture family 或边界。
+输入至少 NP-hard 的边界。`L30` 是保守资源配置基线，`L31` 是 S4PR
+CRP/SBA overlap comparator，`L34/L35` 是 executable-prefix 过滤边界。
+一般操作死锁、永久非资源 guard、多容量/聚合预约、一般紧凑 IMS 的精确
+复杂性分类和更丰富 persistent-buffer/AGV 制造岛容量/WIP/AGV 阈值仍是
+conjecture family 或边界。
 
 ### Case mapping
 
@@ -299,6 +318,9 @@ sensitivity 或 Doob-h 的来源。
 ### Evidence status
 
 P5 有限全观测 state-based supervisor 基准已项目内证明；若 `x0 notin Y*`，必须报告 initial-state infeasible。Ramadge-Wonham 语言学精确基线仍作为文献基线。结构干预 hitting set、风险预算递归可行性和 Pareto 边界仍拟证明 + 计算验证。
+`B05` compressed maximally permissive supervisor 是小 PN/RG comparator：
+依赖 full RG、legal/FBM covering、P-semiflow control-place assumption 与
+NP-hard MCPP，不迁移为紧凑 IMS 的一般控制定理。
 
 ### Case mapping
 

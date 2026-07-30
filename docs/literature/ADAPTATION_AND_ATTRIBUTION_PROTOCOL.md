@@ -89,6 +89,10 @@ The audit outcome is one of:
   decidable or polynomial-time analyzable.
 - `L34-L35`: legal-firing-sequence methods that expose the gap between a state
   equation's nonnegative integer solution and actual reachability.
+- `B05`: compressed maximally permissive monitor supervisor via full RG and
+  NP-hard MCPP.
 
-Until the full texts of `L30-L33` are inspected, they are novelty threats and
-navigation sources only, not theorem donors.
+After the 2026-07-30 supplied full-text audit, `L30-L35` and `B05` are
+full-text theorem-located comparators under their recorded assumptions and
+nontransferable IMS boundaries. They are not priority proofs, general IMS
+theorems, or generic Petri-net bit-polynomial reachability results.
