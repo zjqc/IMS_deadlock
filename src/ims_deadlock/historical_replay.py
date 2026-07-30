@@ -20,6 +20,12 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, cast
 
+from ims_deadlock.ctmc import (
+    PROBABILITY_ABSOLUTE_TOLERANCE,
+    linear_residual_is_numerically_valid,
+    probability_bounds_match_values,
+    probability_interval_is_numerically_valid,
+)
 from ims_deadlock.g4_freeze import check_g4_freeze
 from ims_deadlock.g5_scoring import G5_CAPTURE_SCHEMA, ScoringError, score_case
 
@@ -941,6 +947,7 @@ def _mechanism_check(
             else "FAIL",
             "execution_complete": complete,
             "probability_bounds_valid": bounds_ok,
+            "probability_absolute_tolerance": PROBABILITY_ABSOLUTE_TOLERANCE,
             "terminal_d_local_verified": terminal_visible,
             "estimand_ids": estimands,
             "stdout_canonical_json_sha256": record.get("stdout_canonical_json_sha256"),
@@ -1005,38 +1012,44 @@ def _probability_bounds_valid(result: Mapping[str, object]) -> bool:
             return False
         return all(
             isinstance(cell, Mapping)
-            and _bounds_mapping_valid(
-                _mapping(
-                    _mapping(cell.get("quantitative"), "quantitative").get(
-                        "probability_bounds"
-                    ),
-                    "probability_bounds",
-                )
+            and _quantitative_probability_integrity_valid(
+                _mapping(cell.get("quantitative"), "quantitative")
             )
-            and _mapping(cell.get("quantitative"), "quantitative").get(
-                "probability_bounds_valid"
-            )
-            is True
             for cell in cells
         )
     quantitative = _mapping(result.get("quantitative"), "quantitative")
+    return _quantitative_probability_integrity_valid(quantitative)
+
+
+def _quantitative_probability_integrity_valid(
+    quantitative: Mapping[str, object],
+) -> bool:
+    probabilities = quantitative.get("deadlock_probability")
+    bounds = quantitative.get("probability_bounds")
+    if not isinstance(probabilities, Mapping) or not probabilities:
+        return False
+    if not isinstance(bounds, Mapping):
+        return False
     return (
-        _bounds_mapping_valid(
-            _mapping(quantitative.get("probability_bounds"), "probability_bounds")
+        quantitative.get("probability_bounds_valid") is True
+        and probability_bounds_match_values(
+            probabilities.values(),
+            bounds.get("min"),
+            bounds.get("max"),
         )
-        and quantitative.get("probability_bounds_valid") is True
+        and linear_residual_is_numerically_valid(
+            quantitative.get("committor_residual_inf_norm")
+        )
+        and linear_residual_is_numerically_valid(
+            quantitative.get("mean_time_residual_inf_norm")
+        )
     )
 
 
 def _bounds_mapping_valid(bounds: Mapping[str, object]) -> bool:
-    lower = bounds.get("min")
-    upper = bounds.get("max")
-    if not isinstance(lower, int | float) or not isinstance(upper, int | float):
-        return False
-    return (
-        not isinstance(lower, bool)
-        and not isinstance(upper, bool)
-        and 0 <= lower <= upper <= 1
+    return probability_interval_is_numerically_valid(
+        bounds.get("min"),
+        bounds.get("max"),
     )
 
 
