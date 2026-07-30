@@ -2,6 +2,8 @@
 
 IMS Deadlock 是面向 IMS-RAS 的结构-概率-控制理论闭环项目。目标是在离散事件系统、资源分配系统、随机扰动和控制策略之间建立可证明的概念边界、判据和验证路径，而不是先堆叠大规模仿真结果。
 
+下一 Codex 进程的完整交接入口见 `PROJECT_HANDOFF.md`。
+
 当前已经形成一条严格受限但闭合的主链：
 
 `IMS-RAS^CW 稳定语义`
@@ -60,7 +62,8 @@ wait-snapshot siphon，对不满足条件的案例返回精确拒绝原因。没
 PYTHONDONTWRITEBYTECODE=1 python -m pytest -p no:cacheprovider -q
 PYTHONDONTWRITEBYTECODE=1 python -m ruff check --no-cache src tests
 PYTHONDONTWRITEBYTECODE=1 python -m ruff format --check src tests
-PYTHONDONTWRITEBYTECODE=1 python -m mypy --no-incremental src tests
+PYTHONDONTWRITEBYTECODE=1 python -m mypy --no-incremental --strict src
+PYTHONDONTWRITEBYTECODE=1 python -m mypy --no-incremental --strict --explicit-package-bases src tests
 ```
 
 ## G5 确认证据
