@@ -63,7 +63,10 @@ Repository-relative audit anchors:
 | Evidence | Path |
 | --- | --- |
 | R1/R2 preserved failure ledger | `evidence/g6/G6_HISTORICAL_REPLAY_FAILURE_LEDGER.json` |
+| R1 preregistration | `docs/cases/G6_HISTORICAL_REPLAY_PREREGISTRATION.md` |
+| R1 execution lock | `evidence/g6/G6_HISTORICAL_REPLAY_LOCK.json` |
 | R2 preregistration and scheduler diagnosis | `docs/cases/G6_HISTORICAL_REPLAY_R2_PREREGISTRATION.md` |
+| R2 execution lock | `evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R2.json` |
 | R3 preregistration and quantitative repair boundary | `docs/cases/G6_HISTORICAL_REPLAY_R3_PREREGISTRATION.md` |
 | R3 execution lock | `evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json` |
 | Historical replay implementation | `src/ims_deadlock/historical_replay.py` |
