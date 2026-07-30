@@ -5,6 +5,8 @@ from typing import Any, cast
 
 import pytest
 
+import ims_deadlock.g5_scoring as g5_scoring
+from ims_deadlock.g4_freeze import FreezeCheckResult, check_g4_freeze
 from ims_deadlock.g5_scoring import (
     _MAX_JSON_BYTES,
     ExecutionStatus,
@@ -16,6 +18,31 @@ from ims_deadlock.g5_scoring import (
 )
 
 BUNDLE_ROOT = Path("cases/confirmation/g4")
+
+
+@pytest.fixture
+def real_check_g4_freeze() -> None:
+    """Opt out of the unit-test freeze mock for production integration checks."""
+
+
+@pytest.fixture(autouse=True)
+def _mock_g4_freeze_for_scorer_units(
+    request: pytest.FixtureRequest,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    if "real_check_g4_freeze" in request.fixturenames:
+        return
+
+    def frozen_check(_root: Path) -> FreezeCheckResult:
+        return FreezeCheckResult(
+            status="FROZEN",
+            errors=(),
+            case_ids=tuple(_supported_results()),
+            artifact_hashes={},
+            confirmation_results_inspected=False,
+        )
+
+    monkeypatch.setattr(g5_scoring, "check_g4_freeze", frozen_check)
 
 
 def _canonical_hash(payload: object) -> str:
@@ -120,6 +147,20 @@ def _write_run(
 def _score_by_case(summary: dict[str, object], case_id: str) -> dict[str, Any]:
     scores = cast("list[dict[str, Any]]", summary["scores"])
     return next(score for score in scores if score["case_id"] == case_id)
+
+
+def _evidence_fingerprints() -> dict[Path, str | None]:
+    paths = sorted(Path("evidence/g5").glob("*.json"))
+    for canonical in (
+        Path("evidence/g5/G5_RESULT_SUMMARY.json"),
+        Path("evidence/g5/G5_RAW_HASH_MANIFEST.json"),
+    ):
+        if canonical not in paths:
+            paths.append(canonical)
+    return {
+        path: hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
+        for path in paths
+    }
 
 
 def _base(case_id: str, family: str, classification: str) -> dict[str, Any]:
@@ -300,6 +341,24 @@ def _supported_results() -> dict[str, dict[str, Any]]:
             )
         },
     }
+
+
+def test_production_rejects_current_not_frozen_g4_bundle(
+    tmp_path: Path,
+    real_check_g4_freeze: None,
+) -> None:
+    real_freeze = check_g4_freeze(BUNDLE_ROOT)
+    assert real_freeze.status == "NOT_FROZEN"
+
+    result = _supported_results()["G4_CRP_S4PR_AGREE"]
+    with pytest.raises(ScoringError, match="FROZEN G4 bundle"):
+        score_case(BUNDLE_ROOT, result, _record("G4_CRP_S4PR_AGREE", result, "primary"))
+
+    capture_root = tmp_path / "capture"
+    for case_id, payload in _supported_results().items():
+        _write_run(capture_root, case_id, payload)
+    with pytest.raises(ScoringError, match="FROZEN G4 bundle"):
+        score_run(BUNDLE_ROOT, capture_root)
 
 
 def _grid_cell(cell_id: str, *, available: bool) -> dict[str, Any]:
@@ -544,6 +603,43 @@ def test_adversarial_static_missing_or_and_edges_falsifies() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    ("case_id", "analysis_path"),
+    [
+        ("G4_ADVERSARIAL_BOUNDARY", ("analysis",)),
+        ("G4_CRP_OUTSIDE_S4PR", ("outside_scope_boundary", "analysis")),
+    ],
+)
+def test_boundary_nonminimal_certificate_fails_metric_not_theorem(
+    case_id: str,
+    analysis_path: tuple[str, ...],
+) -> None:
+    result = json.loads(json.dumps(_supported_results()[case_id]))
+    analysis = result
+    for key in analysis_path:
+        analysis = analysis[key]
+    analysis["certificate"]["certificate"]["is_minimal"] = False
+
+    score = score_case(BUNDLE_ROOT, result, _record(case_id, result, "primary"))
+    payload = score.to_json_dict()
+
+    assert score.scientific_status is ScientificStatus.SUPPORTED
+    assert score.supported is True
+    assert payload["scientific_status"] == "SUPPORTED"
+    assert payload["supported"] is True
+    assert payload["theorem_prediction_status"] == "SUPPORTED"
+    assert payload["theorem_supported"] is True
+    metric_results = cast("dict[str, Any]", payload["metric_results"])
+    assert metric_results["certificate_minimality"] == {
+        "applicable": True,
+        "status": "FAIL",
+        "value": False,
+        "evidence_field": ".".join(
+            (*analysis_path, "certificate", "certificate", "is_minimal")
+        ),
+    }
+
+
 def test_score_case_nested_schema_error_is_invalid_not_exception() -> None:
     result = _supported_results()["G4_CRP_UNREACHABLE_CANDIDATE"]
     bad = result | {
@@ -623,6 +719,31 @@ def test_score_run_requires_all_nine_cases_and_matching_capture_hashes(
     assert bad_score["reproducibility"]["canonical_json_match"] is False
 
 
+def test_score_run_preserves_boundary_nonminimal_metric_failures(
+    tmp_path: Path,
+) -> None:
+    capture_root = tmp_path / "capture"
+    for case_id, result in _supported_results().items():
+        payload = json.loads(json.dumps(result))
+        if case_id == "G4_ADVERSARIAL_BOUNDARY":
+            payload["analysis"]["certificate"]["certificate"]["is_minimal"] = False
+        elif case_id == "G4_CRP_OUTSIDE_S4PR":
+            payload["outside_scope_boundary"]["analysis"]["certificate"]["certificate"][
+                "is_minimal"
+            ] = False
+        _write_run(capture_root, case_id, payload)
+
+    summary = score_run(BUNDLE_ROOT, capture_root)
+
+    assert summary["scientific_status_counts"] == {"SUPPORTED": 9}
+    for case_id in ("G4_ADVERSARIAL_BOUNDARY", "G4_CRP_OUTSIDE_S4PR"):
+        score = _score_by_case(summary, case_id)
+        assert score["scientific_status"] == "SUPPORTED"
+        metric_results = cast("dict[str, Any]", score["metric_results"])
+        assert metric_results["certificate_minimality"]["status"] == "FAIL"
+        assert metric_results["certificate_minimality"]["value"] is False
+
+
 def test_score_run_preserves_timeout_and_nonzero_without_stdout_json(
     tmp_path: Path,
 ) -> None:
@@ -663,6 +784,43 @@ def test_score_run_preserves_timeout_and_nonzero_without_stdout_json(
     assert timeout_score["raw_stdout_sha256"]["primary"]
 
 
+@pytest.mark.parametrize(
+    ("primary_patch", "expected_status"),
+    [
+        ({"timed_out": True, "exit_code": None}, "TIMED_OUT"),
+        ({"exit_code": 2}, "NONZERO_EXIT"),
+    ],
+)
+def test_score_run_primary_failure_records_execution_mismatch(
+    tmp_path: Path,
+    primary_patch: dict[str, object],
+    expected_status: str,
+) -> None:
+    capture_root = tmp_path / "capture"
+    for case_id, result in _supported_results().items():
+        _write_run(
+            capture_root,
+            case_id,
+            None if case_id == "G4_CRP_UNREACHABLE_CANDIDATE" else result,
+            primary_record_patch=(
+                primary_patch if case_id == "G4_CRP_UNREACHABLE_CANDIDATE" else None
+            ),
+        )
+
+    score = _score_by_case(
+        score_run(BUNDLE_ROOT, capture_root),
+        "G4_CRP_UNREACHABLE_CANDIDATE",
+    )
+
+    assert score["execution_status"] == expected_status
+    assert score["reproducibility"]["execution_status_match"] is False
+    assert score["reproducibility"]["match"] is False
+    assert any(
+        "primary execution status" in reason and "repro execution status" in reason
+        for reason in score["reasons"]
+    )
+
+
 def test_score_run_reports_raw_stdout_and_stderr_mismatch_per_case(
     tmp_path: Path,
 ) -> None:
@@ -700,6 +858,41 @@ def test_score_run_reports_raw_stdout_and_stderr_mismatch_per_case(
     assert raw_score["reproducibility"]["canonical_json_match"] is True
     assert stderr_score["reproducibility"]["stderr_match"] is False
     assert stderr_score["execution_status"] == "INVALID_RESULT"
+
+
+@pytest.mark.parametrize(
+    ("case_id", "primary_patch", "expected_status"),
+    [
+        ("G4_CRP_S4PR_AGREE", None, "INVALID_RESULT"),
+        ("G4_CRP_UNREACHABLE_CANDIDATE", {"exit_code": 2}, "NONZERO_EXIT"),
+    ],
+)
+def test_score_run_rejects_ambiguous_stdout_json_and_bin(
+    tmp_path: Path,
+    case_id: str,
+    primary_patch: dict[str, object] | None,
+    expected_status: str,
+) -> None:
+    capture_root = tmp_path / "capture"
+    for supported_case_id, result in _supported_results().items():
+        _write_run(
+            capture_root,
+            supported_case_id,
+            result,
+            primary_record_patch=(
+                primary_patch if supported_case_id == case_id else None
+            ),
+        )
+    primary_dir = capture_root / "cases" / case_id / "primary"
+    (primary_dir / "stdout.bin").write_bytes(b"ambiguous raw stdout")
+
+    score = _score_by_case(score_run(BUNDLE_ROOT, capture_root), case_id)
+
+    assert score["execution_status"] == expected_status
+    assert score["scientific_status"] == "INCONCLUSIVE"
+    assert any(
+        "both stdout.json and stdout.bin" in reason for reason in score["reasons"]
+    )
 
 
 @pytest.mark.parametrize(
@@ -866,49 +1059,43 @@ def test_cli_writes_summary_and_hash_manifest_without_overwrite(tmp_path: Path) 
     capture_root = tmp_path / "capture"
     for case_id, result in _supported_results().items():
         _write_run(capture_root, case_id, result)
-    output = Path("evidence/g5/test-summary-overwrite.json")
-    hash_output = Path("evidence/g5/test-hashes-overwrite.json")
-    output.unlink(missing_ok=True)
-    hash_output.unlink(missing_ok=True)
+    output = tmp_path / "outputs" / "test-summary-overwrite.json"
+    hash_output = tmp_path / "outputs" / "test-hashes-overwrite.json"
 
-    try:
-        assert (
-            main(
-                [
-                    "--root",
-                    str(BUNDLE_ROOT),
-                    "--capture-root",
-                    str(capture_root),
-                    "--output",
-                    str(output),
-                    "--hash-output",
-                    str(hash_output),
-                    "--compact",
-                ]
-            )
-            == 0
+    assert (
+        main(
+            [
+                "--root",
+                str(BUNDLE_ROOT),
+                "--capture-root",
+                str(capture_root),
+                "--output",
+                str(output),
+                "--hash-output",
+                str(hash_output),
+                "--compact",
+            ]
         )
+        == 0
+    )
 
-        summary = json.loads(output.read_text(encoding="utf-8"))
-        manifest = json.loads(hash_output.read_text(encoding="utf-8"))
-        assert summary["schema_version"] == "ims-deadlock/g5-scoring-run/v1"
-        assert manifest["schema_version"] == "ims-deadlock/g5-raw-hash-manifest/v1"
-        assert manifest["case_count"] == 9
-        assert "\n" not in output.read_text(encoding="utf-8").strip()
-        with pytest.raises(ScoringError, match="already exists"):
-            main(
-                [
-                    "--root",
-                    str(BUNDLE_ROOT),
-                    "--capture-root",
-                    str(capture_root),
-                    "--output",
-                    str(output),
-                ]
-            )
-    finally:
-        output.unlink(missing_ok=True)
-        hash_output.unlink(missing_ok=True)
+    summary = json.loads(output.read_text(encoding="utf-8"))
+    manifest = json.loads(hash_output.read_text(encoding="utf-8"))
+    assert summary["schema_version"] == "ims-deadlock/g5-scoring-run/v1"
+    assert manifest["schema_version"] == "ims-deadlock/g5-raw-hash-manifest/v1"
+    assert manifest["case_count"] == 9
+    assert "\n" not in output.read_text(encoding="utf-8").strip()
+    with pytest.raises(ScoringError, match="already exists"):
+        main(
+            [
+                "--root",
+                str(BUNDLE_ROOT),
+                "--capture-root",
+                str(capture_root),
+                "--output",
+                str(output),
+            ]
+        )
 
 
 def test_cli_preflights_summary_and_hash_outputs_before_writing(
@@ -917,31 +1104,26 @@ def test_cli_preflights_summary_and_hash_outputs_before_writing(
     capture_root = tmp_path / "capture"
     for case_id, result in _supported_results().items():
         _write_run(capture_root, case_id, result)
-    output = Path("evidence/g5/test-summary-preflight.json")
-    hash_output = Path("evidence/g5/test-hashes-preflight.json")
-    output.unlink(missing_ok=True)
+    output = tmp_path / "outputs" / "test-summary-preflight.json"
+    hash_output = tmp_path / "outputs" / "test-hashes-preflight.json"
     hash_output.parent.mkdir(parents=True, exist_ok=True)
     hash_output.write_text("existing", encoding="utf-8")
 
-    try:
-        with pytest.raises(ScoringError, match="already exists"):
-            main(
-                [
-                    "--root",
-                    str(BUNDLE_ROOT),
-                    "--capture-root",
-                    str(capture_root),
-                    "--output",
-                    str(output),
-                    "--hash-output",
-                    str(hash_output),
-                ]
-            )
-        assert not output.exists()
-        assert hash_output.read_text(encoding="utf-8") == "existing"
-    finally:
-        output.unlink(missing_ok=True)
-        hash_output.unlink(missing_ok=True)
+    with pytest.raises(ScoringError, match="already exists"):
+        main(
+            [
+                "--root",
+                str(BUNDLE_ROOT),
+                "--capture-root",
+                str(capture_root),
+                "--output",
+                str(output),
+                "--hash-output",
+                str(hash_output),
+            ]
+        )
+    assert not output.exists()
+    assert hash_output.read_text(encoding="utf-8") == "existing"
 
 
 def test_cli_hash_write_failure_leaves_no_new_summary(
@@ -951,10 +1133,8 @@ def test_cli_hash_write_failure_leaves_no_new_summary(
     capture_root = tmp_path / "capture"
     for case_id, result in _supported_results().items():
         _write_run(capture_root, case_id, result)
-    output = Path("evidence/g5/test-summary-atomic.json")
-    hash_output = Path("evidence/g5/test-hashes-atomic.json")
-    output.unlink(missing_ok=True)
-    hash_output.unlink(missing_ok=True)
+    output = tmp_path / "outputs" / "test-summary-atomic.json"
+    hash_output = tmp_path / "outputs" / "test-hashes-atomic.json"
 
     original_replace = Path.replace
 
@@ -965,57 +1145,51 @@ def test_cli_hash_write_failure_leaves_no_new_summary(
 
     monkeypatch.setattr(Path, "replace", fail_hash_replace)
 
-    try:
-        with pytest.raises(ScoringError, match="cannot write output"):
-            main(
-                [
-                    "--root",
-                    str(BUNDLE_ROOT),
-                    "--capture-root",
-                    str(capture_root),
-                    "--output",
-                    str(output),
-                    "--hash-output",
-                    str(hash_output),
-                ]
-            )
-        assert not output.exists()
-        assert not hash_output.exists()
-    finally:
-        output.unlink(missing_ok=True)
-        hash_output.unlink(missing_ok=True)
+    with pytest.raises(ScoringError, match="cannot write output"):
+        main(
+            [
+                "--root",
+                str(BUNDLE_ROOT),
+                "--capture-root",
+                str(capture_root),
+                "--output",
+                str(output),
+                "--hash-output",
+                str(hash_output),
+            ]
+        )
+    assert not output.exists()
+    assert not hash_output.exists()
 
 
-def test_cli_writes_tracked_repo_evidence_outside_raw_capture(tmp_path: Path) -> None:
+def test_cli_does_not_touch_tracked_repo_evidence_paths(tmp_path: Path) -> None:
     capture_root = tmp_path / "raw-capture"
     for case_id, result in _supported_results().items():
         _write_run(capture_root, case_id, result)
-    output = Path("evidence/g5/G5_RESULT_SUMMARY.json")
-    hash_output = Path("evidence/g5/G5_RAW_HASH_MANIFEST.json")
-    output.unlink(missing_ok=True)
-    hash_output.unlink(missing_ok=True)
+    before = _evidence_fingerprints()
+    output_dir = tmp_path / "outputs"
+    output = output_dir / "G5_RESULT_SUMMARY.json"
+    hash_output = output_dir / "G5_RAW_HASH_MANIFEST.json"
 
-    try:
-        assert (
-            main(
-                [
-                    "--root",
-                    str(BUNDLE_ROOT),
-                    "--capture-root",
-                    str(capture_root),
-                    "--output",
-                    str(output),
-                    "--hash-output",
-                    str(hash_output),
-                ]
-            )
-            == 0
+    assert (
+        main(
+            [
+                "--root",
+                str(BUNDLE_ROOT),
+                "--capture-root",
+                str(capture_root),
+                "--output",
+                str(output),
+                "--hash-output",
+                str(hash_output),
+            ]
         )
-        assert output.is_file()
-        assert hash_output.is_file()
-    finally:
-        output.unlink(missing_ok=True)
-        hash_output.unlink(missing_ok=True)
+        == 0
+    )
+
+    assert output.is_file()
+    assert hash_output.is_file()
+    assert _evidence_fingerprints() == before
 
 
 def test_nan_stdout_json_is_invalid_result_not_uncaught(tmp_path: Path) -> None:
@@ -1044,12 +1218,12 @@ def test_nan_stdout_json_is_invalid_result_not_uncaught(tmp_path: Path) -> None:
     assert score["scientific_status"] == "INCONCLUSIVE"
 
 
-def test_cli_rejects_output_escape_and_frozen_bundle_output(tmp_path: Path) -> None:
+def test_cli_rejects_traversal_and_frozen_bundle_output(tmp_path: Path) -> None:
     capture_root = tmp_path / "capture"
     for case_id, result in _supported_results().items():
         _write_run(capture_root, case_id, result)
 
-    with pytest.raises(ScoringError, match="escapes repository root"):
+    with pytest.raises(ScoringError, match="path traversal"):
         main(
             [
                 "--root",
@@ -1057,7 +1231,7 @@ def test_cli_rejects_output_escape_and_frozen_bundle_output(tmp_path: Path) -> N
                 "--capture-root",
                 str(capture_root),
                 "--output",
-                str(tmp_path / "outside.json"),
+                "../outside.json",
             ]
         )
     with pytest.raises(ScoringError, match="frozen bundle"):
