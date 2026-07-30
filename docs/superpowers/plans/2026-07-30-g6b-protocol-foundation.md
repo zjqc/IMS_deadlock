@@ -69,7 +69,7 @@ evidence.
 - Create: `cases/discovery/g6b/negative_controls.json`
 - Create: `cases/discovery/g6b/failure_ledger.json`
 
-- [ ] **Step 1: Correct the stale G6-R sequence without rewriting history**
+- [x] **Step 1: Correct the stale G6-R sequence without rewriting history**
 
 Replace the recovery-plan status with:
 
@@ -91,7 +91,7 @@ Change the G6-R commit-topology heading to
 `G6-R — Historical G4 Replay (completed historical-only)` and retain all
 no-confirmation-use language.
 
-- [ ] **Step 2: Write the human-readable protocol**
+- [x] **Step 2: Write the human-readable protocol**
 
 The document must state all of the following in normative language:
 
@@ -134,7 +134,7 @@ NC_AGV_RESERVATION_BOUNDARY
 NC_DGLOBAL_ONLY_WITH_DLOCAL
 ```
 
-- [ ] **Step 3: Create the five-file JSON bundle plus human protocol document**
+- [x] **Step 3: Create the five-file JSON bundle plus human protocol document**
 
 Use these schema versions:
 
@@ -177,7 +177,7 @@ the theorem status unless the frozen falsifier explicitly references it.
 `append_only=true`, and state that empty means “no discovery attempt has been
 admitted,” not “no failures exist.”
 
-- [ ] **Step 4: Validate the documents mechanically**
+- [x] **Step 4: Validate the documents mechanically**
 
 Run:
 
@@ -194,7 +194,7 @@ rg -n "D_local.*terminal SCC|confirmation_use.*allowed|scientific_execution_auth
 Expected: all JSON parses; the fixed-string boundary scan finds only explicit
 prohibitions or refusal examples.
 
-- [ ] **Step 5: Commit the document foundation**
+- [x] **Step 5: Commit the document foundation**
 
 ```bash
 git add docs/superpowers/plans/2026-07-30-g6-local-core-terminal-class-recovery.md \
@@ -209,7 +209,7 @@ git commit -m "docs: define G6-B discovery protocol foundation"
 - Create: `src/ims_deadlock/g6b_protocol.py`
 - Create: `tests/test_g6b_protocol.py`
 
-- [ ] **Step 1: Write the first RED test for the canonical bundle**
+- [x] **Step 1: Write the first RED test for the canonical bundle**
 
 ```python
 from pathlib import Path
@@ -227,7 +227,7 @@ def test_repository_g6b_protocol_bundle_is_valid_and_execution_disabled() -> Non
     assert result.adversarial_review_status == "PENDING"
 ```
 
-- [ ] **Step 2: Run the test and confirm RED**
+- [x] **Step 2: Run the test and confirm RED**
 
 Run:
 
@@ -238,7 +238,7 @@ python -m pytest -p no:cacheprovider -q \
 
 Expected: collection fails because `ims_deadlock.g6b_protocol` does not exist.
 
-- [ ] **Step 3: Implement the minimal public result and loader**
+- [x] **Step 3: Implement the minimal public result and loader**
 
 ```python
 import hashlib
@@ -318,13 +318,13 @@ The loader must use
 keys, require exactly the expected filenames, and compute each canonical JSON
 SHA-256 using sorted keys and compact separators.
 
-- [ ] **Step 4: Run the canonical-bundle test and confirm GREEN**
+- [x] **Step 4: Run the canonical-bundle test and confirm GREEN**
 
 Run the Step 2 command.
 
 Expected: `1 passed`.
 
-- [ ] **Step 5: Add RED tests for strict cross-document boundaries**
+- [x] **Step 5: Add RED tests for strict cross-document boundaries**
 
 Add parametrized mutations that require these error codes or stable substrings:
 
@@ -344,7 +344,7 @@ failure ledger must be append-only
 Each mutation must copy the repository bundle into `tmp_path`, change only one
 field, run the validator, and assert `valid is False` plus the expected error.
 
-- [ ] **Step 6: Run the strict tests and confirm RED**
+- [x] **Step 6: Run the strict tests and confirm RED**
 
 Run:
 
@@ -355,7 +355,7 @@ python -m pytest -p no:cacheprovider -q tests/test_g6b_protocol.py
 Expected: the new mutation tests fail because the cross-document checks are not
 implemented.
 
-- [ ] **Step 7: Implement the minimal strict checks**
+- [x] **Step 7: Implement the minimal strict checks**
 
 Use exact-key helpers and constants:
 
@@ -371,7 +371,7 @@ The module must remain data-only. Its imports may include only standard-library
 modules and local value-free helpers; it must not import `analysis`, `ctmc`,
 `stochastic`, `g4_protocol`, `g4_instances`, or `historical_replay`.
 
-- [ ] **Step 8: Run targeted and adjacent tests**
+- [x] **Step 8: Run targeted and adjacent tests**
 
 Run:
 
@@ -383,7 +383,7 @@ python -m pytest -p no:cacheprovider -q \
 
 Expected: all selected tests pass.
 
-- [ ] **Step 9: Run static checks for the new module**
+- [x] **Step 9: Run static checks for the new module**
 
 ```bash
 python -m ruff check --no-cache src/ims_deadlock/g6b_protocol.py \
@@ -396,7 +396,7 @@ python -m mypy --no-incremental --strict src/ims_deadlock/g6b_protocol.py \
 
 Expected: all checks pass.
 
-- [ ] **Step 10: Commit the validator**
+- [x] **Step 10: Commit the validator**
 
 ```bash
 git add src/ims_deadlock/g6b_protocol.py tests/test_g6b_protocol.py
@@ -411,7 +411,7 @@ git commit -m "feat: validate G6-B discovery protocol bundle"
 - Modify: `docs/ROADMAP.md`
 - Modify: `PROJECT_HANDOFF.md`
 
-- [ ] **Step 1: Record the batch without upgrading G6-B**
+- [x] **Step 1: Record the batch without upgrading G6-B**
 
 Add a ledger entry that records:
 
@@ -424,7 +424,7 @@ G6-C/D/E status = NOT STARTED
 historical evidence changed = false
 ```
 
-- [ ] **Step 2: Update roadmap and handoff source-of-truth paths**
+- [x] **Step 2: Update roadmap and handoff source-of-truth paths**
 
 Add the protocol bundle and validator paths to the G6-B sections. Retain:
 
@@ -434,7 +434,7 @@ G6-R = PASS historical replay only
 no new scientific output inspected
 ```
 
-- [ ] **Step 3: Run full repository verification**
+- [x] **Step 3: Run full repository verification**
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 python -m pytest -p no:cacheprovider -q
@@ -449,7 +449,13 @@ git diff --check
 Expected: full pytest, Ruff check/format, both strict mypy commands, and diff
 check pass.
 
-- [ ] **Step 4: Run protocol-specific integrity checks**
+Evidence: locked worktree `D:\worktree\IMS_deadlock-g6b-discovery` at HEAD
+`4c24f39` before state-doc commit passed full pytest `393 passed in 47.22s`;
+Ruff check passed; Ruff format reported 41 files already formatted; strict mypy
+`src` passed on 22 source files; strict mypy `src+tests` passed on 41 source
+files; `git diff --check` passed.
+
+- [x] **Step 4: Run protocol-specific integrity checks**
 
 ```bash
 python -m json.tool cases/discovery/g6b/protocol.json >/dev/null
@@ -461,6 +467,9 @@ python -m pytest -p no:cacheprovider -q tests/test_g6b_protocol.py
 ```
 
 Expected: all JSON and protocol tests pass.
+
+Evidence: five protocol JSON parse checks passed; targeted protocol tests
+`52 passed in 2.48s`.
 
 - [ ] **Step 5: Commit the state integration**
 

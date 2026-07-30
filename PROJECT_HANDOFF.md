@@ -20,9 +20,14 @@
 - `G5 = FAIL（evidence closed）`；
 - `G6-A = PASS`；
 - `G6-R = PASS（historical replay only）`；
-- `G6-B = NEXT HARD GATE`；
+- `G6-B = NEXT HARD GATE / OPEN`；
 - `G6-C/D/E = 均未开始，均未通过`；
 - 尚无完整论文主文件，也不能声称达到投稿或顶刊就绪状态。
+
+G6-B protocol foundation 和 data-only validator 已在 feature branch 上完成，
+但它只建立 execution-disabled/PENDING 的协议基础：没有创建 discovery case，
+没有运行 enumeration、CTMC 或 DES，没有检查任何新科学输出，不能把 G6-B
+改为 PASS。
 
 ## 2. 权威目标与版本锁
 
@@ -42,6 +47,20 @@
 - 交接编写前 tree：
   `9ffa5974ced053e3ffd9943f34e163c4606eddf2`
 - 交接编写前状态：clean，`HEAD...origin/main = 0/0`
+- G6-B protocol foundation feature-branch pre-integration evidence:
+  worktree `D:\worktree\IMS_deadlock-g6b-discovery`, branch
+  `codex/g6b-discovery-estimand-lock`, base
+  `main@9c707ce3d990541847aee745bec211bb55c74f6b`, plan commit
+  `c3b739c53befc93ff246637e1686d4a0867d44ed`, protocol foundation commit
+  `73cbbbc52be59fa6a14fcd2a4cf647ea5dc8f811`, validator commit
+  `4c24f39dfd1b47fee874a2315ee77759b51311cb`.
+- Feature-branch validation evidence before this local documentation update:
+  locked worktree `D:\worktree\IMS_deadlock-g6b-discovery` at HEAD `4c24f39`
+  before state-doc commit passed full pytest `393 passed in 47.22s`; Ruff check
+  passed; Ruff format reported 41 files already formatted; strict mypy `src`
+  passed on 22 source files; strict mypy `src+tests` passed on 41 source files;
+  five protocol JSON parse checks passed; targeted protocol tests
+  `52 passed in 2.48s`; `git diff --check` passed.
 
 若本文件已发布到 `main`，包含它的提交会是上述 source baseline 的后继。
 下一进程不得把交接前 SHA 当作当前 SHA，必须重新运行锁定命令。实际包含
@@ -152,7 +171,7 @@ IMS-RAS^CW 稳定语义
 | G3 算法门 | PASS | 稳定 LTS、证书、Petri/refusal、阈值、CTMC、监督器、G4/G5/G6 审计；全库 341 tests | 枚举只核验证明，不替代证明 |
 | G4 案例冻结门 | PASS（历史 seal） | 九个 held-out 案例在结果检查前冻结，并在 G5 原样执行 | 该面板已退役，不能再次作为 held-out |
 | G5 论文门 | FAIL（evidence closed） | 9/9 primary/repro 精确一致，失败、反例和 inconclusive 已固定 | 不得补跑、改 sealed input、重调参或宣称通过 |
-| G6 恢复门 | IN PROGRESS | G6-A 和 G6-R 通过 | G6-B 为下一硬门；G6-C/D/E 未通过 |
+| G6 恢复门 | IN PROGRESS | G6-A 和 G6-R 通过；G6-B protocol foundation + validator 在 feature branch 完成且 execution disabled/PENDING；locked worktree `D:\worktree\IMS_deadlock-g6b-discovery` at HEAD `4c24f39` 已通过 full pytest 393、Ruff、format check、strict mypy、five JSON parse checks、52 protocol tests 和 `git diff --check` | G6-B 仍 OPEN；independent foundation review、actual overlap report、runtime lock 和 discovery outcomes 仍开放；G6-C/D/E 未通过 |
 
 状态源：`docs/ROADMAP.md`。
 
@@ -227,8 +246,10 @@ P3e 不覆盖替代路线、AND 请求、AGV/预约、多个 persistent buffers�
 - global certificate 与 all-minimal local kernel family 分层；
 - CRP partial bridge 只消费声明的 local-kernel family；
 - `D_global`、`D_local`、`F`、`R_livelock`、`R_terminal` 分类；
-- local candidate 必须满足 request-closed 假设，或在完整 LTS 上通过
-  completion-nonreachability audit；
+- `K_local`/local candidates 只有通过 accepted A2b proof 建立 declared
+  finite semantics 下的 structural irreversibility，或通过 complete-LTS
+  completion-nonreachability audit 后，才可进入 `D_local`；否则必须保留为
+  candidate/refusal，不能进入 selected bad evidence；
 - `theta_G=P(T_G<T_F)` 和
   `theta_L=P(T_L<T_F)` 是不同版本化 estimand；
 - 同一过程和 completion 集下有 `theta_G <= theta_L`；
@@ -241,6 +262,10 @@ P3e 不覆盖替代路线、AND 请求、AGV/预约、多个 persistent buffers�
 - `docs/theory/G6_LOCAL_FIRST_HIT_AND_STOPPING_THEOREMS.md`
 - `src/ims_deadlock/terminal_classes.py`
 - `tests/test_terminal_classes.py`
+- `docs/cases/G6_B_DISCOVERY_PROTOCOL.md`
+- `cases/discovery/g6b/`
+- `src/ims_deadlock/g6b_protocol.py`
+- `tests/test_g6b_protocol.py`
 
 ## 7. 文献工程状态
 
@@ -530,8 +555,27 @@ git log -1 --format=%H -- PROJECT_HANDOFF.md
 
 ## 13. 下一硬门：G6-B
 
-下一进程不要继续重放 G4/G5，也不要先写成投稿稿件。第一科学任务是建立
-独立 G6 discovery set，并通过 G6-B 审计。
+下一进程不要继续重放 G4/G5，也不要先写成投稿稿件。第一未完成工作是
+independent foundation review；通过后才可另写 row-family
+discovery-model/execution plan 并做 adversarial review。该审查和后续计划
+审查完成前，不得把下一步描述为科学案例构造或执行。
+
+G6-B protocol foundation 已在 feature branch
+`codex/g6b-discovery-estimand-lock` 的 pre-integration commits
+`73cbbbc52be59fa6a14fcd2a4cf647ea5dc8f811` 和
+`4c24f39dfd1b47fee874a2315ee77759b51311cb` 中完成协议文档、五个 JSON
+文件和 strict data-only validator。其状态仍是
+`scientific_execution_authorized=false`、`adversarial_review_status=PENDING`；
+G6-B 仍为 `OPEN`，G6-C/D/E 仍未开始。该批次没有创建 discovery case，
+没有运行 enumeration、CTMC 或 DES，没有改变 G4/G5/R1/R2/R3 历史证据。
+Task2 targeted+adjacent 验证为 52 validator tests + 59 adjacent = 111
+passed；随后 locked worktree `D:\worktree\IMS_deadlock-g6b-discovery` at HEAD
+`4c24f39` 在 state-doc commit 前通过 full pytest `393 passed in 47.22s`、
+Ruff check、Ruff format 41 files already formatted、strict mypy `src`
+22 source files、strict mypy `src+tests` 41 source files、five protocol JSON
+parse checks、targeted protocol tests `52 passed in 2.48s` 和
+`git diff --check`。这些验证不改变 `OPEN/PENDING` 状态，也不表示执行了
+science、创建了 cases 或检查了 outcomes。
 
 ### 13.1 G6-B 必须冻结前定义的内容
 
@@ -549,18 +593,38 @@ git log -1 --format=%H -- PROJECT_HANDOFF.md
 
 ### 13.2 独立性要求
 
-G6 discovery set 不得复用 G4/G5 的：
+退役证据范围包括 retired G4、retired G5 和 G6-R historical replay。G6-B
+discovery rows 相对这些退役证据必须在以下八个 canonical dimensions 上
+全部 zero overlap：
 
-- case content hash；
-- state snapshot；
-- route signature；
-- parameter tuple；
-- random-stream manifest；
-- 输出目录；
-- sealed prediction 或 metric hash。
+- `case_content_sha256`
+- `state_snapshot_sha256`
+- `route_signature_sha256`
+- `parameter_tuple_sha256`
+- `random_stream_manifest_sha256`
+- `output_root`
+- `sealed_prediction_sha256`
+- `metric_schema_sha256`
+
+未来 G6-C/D/E confirmation rows 相对 retired G4/G5/G6-R 和 G6-B discovery
+rows 必须在七个 canonical identity/provenance dimensions 上 zero overlap：
+
+- `case_content_sha256`
+- `state_snapshot_sha256`
+- `route_signature_sha256`
+- `parameter_tuple_sha256`
+- `random_stream_manifest_sha256`
+- `output_root`
+- `sealed_prediction_sha256`
+
+`metric_schema_sha256` 不属于 future confirmation 的强制 zero-overlap 维度；
+metric schema reuse 只允许在预注册中明确用于 same-target comparability，且
+不得由 discovery outcome 派生。该规则不声明 discovery rows 内部必须彼此在
+八个维度上无条件 zero overlap；discovery-internal family/row 独立性必须由
+后续 row-family discovery-model/execution plan 单独定义并接受审查。
 
 “改名”“参数平移”或从退役案例复制后轻微修改不构成独立。必须生成
-机器可审计的 overlap report，逐项证明上述维度不重合。
+机器可审计的 overlap report，按上述适用范围逐项证明不重合。
 
 ### 13.3 建议的发现维度
 
@@ -682,18 +746,25 @@ G6-B 推进期间可以建立诚实的 working manuscript skeleton，但必须�
 可逆的分支—编辑—测试步骤不需要反复询问。若会话仅获本地或只读权限，则
 必须停在相应边界，不得把本文件中的命令当作 standing authorization：
 
-1. 从本地操作契约读取并实时锁定 `<REMOTE_PROJECT_PATH>`。
-2. 从最新 `main` 建立专用 G6-B 分支/worktree。
-3. 阅读本文件、`docs/ROADMAP.md`、
+1. 原始步骤 1 已在 feature branch 中完成：从本地操作契约读取并实时锁定
+   `<REMOTE_PROJECT_PATH>`，目标 worktree 为
+   `D:\worktree\IMS_deadlock-g6b-discovery`。
+2. 原始步骤 2 已在 feature branch 中完成：专用分支为
+   `codex/g6b-discovery-estimand-lock`，base 为
+   `main@9c707ce3d990541847aee745bec211bb55c74f6b`。
+3. 原始步骤 3 已在 feature branch 中完成：阅读本文件、`docs/ROADMAP.md`、
    `docs/theory/G6_LOCAL_FIRST_HIT_AND_STOPPING_THEOREMS.md`、
    `docs/verification/G6_HARD_PROBLEM_ROOT_CAUSE_AND_R3_REPAIR.md` 和
    G6 recovery plan。
-4. 先写 `G6_B_DISCOVERY_PROTOCOL.md`、独立性 schema、estimand schema、
-   negative-control table 和 failure ledger。
-5. 在任何新科学实验前做 adversarial protocol review。
-6. 只运行小规模结构发现/枚举；根据可用 CPU 核数按案例并行，但同案例、
-   同输出根和嵌套科学并行必须遵守锁。
-7. 发现阶段允许修理论和案例，但每次修正进入 change ledger。
+4. 原始步骤 4 已在 feature branch 中完成：写入
+   `docs/cases/G6_B_DISCOVERY_PROTOCOL.md`、独立性 schema、estimand
+   schema、negative-control table、failure ledger 和 validator。
+5. 下一未完成工作：做 independent foundation review；通过前不得把 G6-B
+   标为 PASS。
+6. 通过 full verification 和 independent foundation review 后，另写
+   row-family discovery-model/execution plan，并对该计划做 adversarial review。
+7. 只有独立审查通过且新计划明确授权后，才可进入 discovery science；actual
+   overlap report、runtime lock 和 discovery outcomes 目前仍开放。
 8. 达到 G6-B 通过条件后，独立复核并冻结结论；否则保留失败并继续修正。
 
 ## 17. 科学与工程停止条件
@@ -705,7 +776,7 @@ G6-B 推进期间可以建立诚实的 working manuscript skeleton，但必须�
 - CRP bridge 仍偷用 global certificate；
 - 有 reachable closed class 未分类；
 - exact/DES stopping target 不一致；
-- G4/G5 与新案例独立性无法证明；
+- G4/G5/G6-R 与新案例独立性无法证明；
 - 负控被删除或改名绕过；
 - 程序枚举被用作数学证明替代品；
 - 结果只剩已有 Petri、RAS、CTMC 和仿真工具的工程拼装；
@@ -722,6 +793,7 @@ G6-B 推进期间可以建立诚实的 working manuscript skeleton，但必须�
 - `README.md`
 - `docs/ROADMAP.md`
 - `docs/superpowers/plans/2026-07-30-g6-local-core-terminal-class-recovery.md`
+- `docs/superpowers/plans/2026-07-30-g6b-protocol-foundation.md`
 
 ### 理论
 
@@ -745,7 +817,9 @@ G6-B 推进期间可以建立诚实的 working manuscript skeleton，但必须�
 - `docs/cases/CASE_CHANGE_LEDGER.md`
 - `docs/cases/G4_CASE_PREREGISTRATION.md`
 - `docs/cases/G4_EXECUTION_PROTOCOL.md`
+- `docs/cases/G6_B_DISCOVERY_PROTOCOL.md`
 - `docs/cases/G6_HISTORICAL_REPLAY_R3_PREREGISTRATION.md`
+- `cases/discovery/g6b/`
 - `cases/confirmation/g4/`
 
 旧 G4 preregistration/catalog 文档只作为历史输入与协议来源。当前状态判断
@@ -761,6 +835,8 @@ verification reports，不得用早期 B-stage 语气覆盖后来的 freeze、�
 - `docs/verification/G6_HARD_PROBLEM_ROOT_CAUSE_AND_R3_REPAIR.md`
 - `evidence/g5/`
 - `evidence/g6/`
+- `src/ims_deadlock/g6b_protocol.py`
+- `tests/test_g6b_protocol.py`
 
 ### 远程操作
 
