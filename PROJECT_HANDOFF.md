@@ -29,11 +29,13 @@
 ### 2.1 权威仓库
 
 - 本地协调目录：
-  `/Users/mac_ma/Desktop/wzc-proj/IMS_deadlock`
+  `<LOCAL_COORDINATION_DIR>`，即启动任务时包含本地 `AGENTS.md` 和
+  `REMOTE_PROJECT_OPERATIONS.md` 的目录
 - 本地材料化快照：
-  `/Users/mac_ma/Desktop/wzc-proj/IMS_deadlock/bootstrap_source`
-- SSH alias：`friend-win`
-- 远程权威主工作区：`D:\py_pro\IMS_deadlock`
+  `<LOCAL_COORDINATION_DIR>/bootstrap_source`
+- SSH alias 和远程权威主工作区：从本地
+  `REMOTE_PROJECT_OPERATIONS.md` 读取并在每个会话重新核验；不要把本机
+  用户名、私有网络地址或个人 SSH 配置复制进 Git
 - GitHub：`git@github.com:zjqc/IMS_deadlock.git`
 - 交接编写前实时锁定：
   `main@235b69a189a869578d9760fcc5585fbfe21a7808`
@@ -86,12 +88,15 @@ protocol 可解析九个案例且返回 `valid=true`，但本地 `g4_freeze chec
 建议的只读锁定命令：
 
 ```bash
-tailscale ping --timeout=5s --c 1 100.115.133.102
-ssh -o BatchMode=yes -o ConnectTimeout=10 friend-win \
+# <SSH_ALIAS> 和 <REMOTE_PROJECT_PATH> 必须取自本地操作契约。
+ssh -o BatchMode=yes -o ConnectTimeout=10 <SSH_ALIAS> \
   "echo SSH_OK && hostname && whoami"
-ssh -o BatchMode=yes -o ConnectTimeout=10 friend-win \
-  "cd /d D:\py_pro\IMS_deadlock && git rev-parse --show-toplevel && git branch --show-current && git rev-parse HEAD && git status --short && git remote get-url origin && git rev-list --left-right --count HEAD...origin/main && git worktree list --porcelain"
+ssh -o BatchMode=yes -o ConnectTimeout=10 <SSH_ALIAS> \
+  "cd /d <REMOTE_PROJECT_PATH> && git rev-parse --show-toplevel && git branch --show-current && git rev-parse HEAD && git status --short && git remote get-url origin && git rev-list --left-right --count HEAD...origin/main && git worktree list --porcelain"
 ```
+
+若本地契约要求单独的 Tailscale 连通性检查，按契约中的当前目标执行；不要
+把私有网络地址复制进仓库文档。
 
 任何结论中都应记录：
 
@@ -677,7 +682,7 @@ G6-B 推进期间可以建立诚实的 working manuscript skeleton，但必须�
 可逆的分支—编辑—测试步骤不需要反复询问。若会话仅获本地或只读权限，则
 必须停在相应边界，不得把本文件中的命令当作 standing authorization：
 
-1. 实时锁定 `D:\py_pro\IMS_deadlock`。
+1. 从本地操作契约读取并实时锁定 `<REMOTE_PROJECT_PATH>`。
 2. 从最新 `main` 建立专用 G6-B 分支/worktree。
 3. 阅读本文件、`docs/ROADMAP.md`、
    `docs/theory/G6_LOCAL_FIRST_HIT_AND_STOPPING_THEOREMS.md`、
