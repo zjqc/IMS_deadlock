@@ -10,9 +10,10 @@
 | G0 仓库门 | PASS | Dell 目标路径、GitHub SSH、干净集成 worktree 和项目专用 Python 3.13.9 已核验；污染历史保持隔离；最终源状态在该 worktree 验证后前推 `origin/main` | 无 |
 | G1 文献门 | PASS（scope-bounded） | 六条文献链、43 项审计矩阵、20 个全文/全文审计锚点、迁移卡；L30-L35 与 B05 七篇审计已纳入比较边界；R7/R8 类别饱和保持 | 不支持首创性、系统综述或一般 IMS/Petri 等价；G4 必须检验 CRP、recorder、SBA、L30/B05 comparator 边界 |
 | G2 理论门 | PASS（严格受限主链） | P1 有限 LTS/reachability-net；P2 capacity-mediated 封闭核 iff；P2c `IMS-SIP^1` 诊断虹吸双向桥；P3 偏序充分条件；P3d `BIX1-SAT` 可达阈值；P3e `BIX2-PERSIST` 三资源 ring 精确阈值与同语义 DAG 修复；P4 CTMC；P5 supervisor；P6 复杂性边界 | plant-level structured Petri/S3PR 桥、替代/AND/AGV/预约/多 persistent-buffer 一般岛阈值、一般紧凑 IMS 精确复杂性和 risk-budget 控制仍开放 |
-| G3 算法门 | PASS（严格小有限模型 + P2c/P3d/P3e） | Dell 干净集成 worktree、项目 Python 3.13.9：123 tests、Ruff check/format、strict mypy；C0 exact Petri bridge、拒绝边界、BIX1-SAT 144 点小网格及 BIX2-PERSIST 32 点预注册发现网格通过；BIX2 为 0 mismatch、0 truncation、ring 4/4 正例、DAG 0 deadlock 且 16/16 completion reachable | 一般 plant/S3PR、结构案例物理速率、一般 persistent-buffer/AGV 阈值和风险预算/Pareto 算法仍开放 |
-| G4 案例冻结门 | PASS（C-sealed / scientifically uninspected） | A=`f9b9a5a5652c7a49053e7ef26d08911bd757f465`，B2=`58bbd4ab7da8c2c1d0bcdea4a12f2ae7c020d09a`，C=`e91be4d6d7511c76918093899269de4b78e69fd8`；freeze checker 为 `FROZEN`、`errors=[]`、`confirmation_results_inspected=false`；九个 held-out case、十格 grid 预测、九个 artifact hash、九个 case hash 和发现集 exclusions 已封存 | 尚未运行 held-out 科学后端；所有 supervisor cost、conditioned path mass、rare-event efficiency 当前仍不适用，CTMC/DES 仅 grid/medium；任何后续缺陷必须走显式 successor freeze/bug ledger |
-| G5 论文门 | NEXT HARD GATE / NOT STARTED | 研究定位、定理梯、G1-G3 证据边界及 G4 C-sealed confirmation protocol 已建立 | 按冻结命令执行九个确认案例；核验精确分析与独立 DES、保留负例/代价/边界并形成论文证据包 |
+| G3 算法门 | PASS（严格小有限模型 + P2c/P3d/P3e） | 原 G3 证据为 123 tests；加入 G4/G5 协议、capture/scoring 基础设施后，Dell 项目 Python 3.13.9 全库 242 tests、Ruff check/format、strict mypy 通过；原 C0、BIX1/BIX2 结果不变 | 一般 plant/S3PR、结构案例物理速率、一般 persistent-buffer/AGV 阈值和风险预算/Pareto 算法仍开放 |
+| G4 案例冻结门 | PASS（historical C seal；已在 G5 原样执行） | A=`f9b9a5a5652c7a49053e7ef26d08911bd757f465`，B2=`58bbd4ab7da8c2c1d0bcdea4a12f2ae7c020d09a`，C=`e91be4d6d7511c76918093899269de4b78e69fd8`；封存时 checker 为 `FROZEN`、`errors=[]`、`confirmation_results_inspected=false`；随后只在 G5-B execution lock 下执行一次 primary 和一次 repro | G4/G5 九行已退役为历史 discovery/regression，不能再次充当 held-out；后续缺陷必须进入独立 successor freeze |
+| G5 论文门 | FAIL（evidence closed） | G5-A=`b5e5dc0494b23a54c78c420bbca50a3639de8bff`，G5-B=`8aa752804b885b79e5371c98e7961087c540f2a8`，G5-C=`ff281481068a2325cb0bde00e85fd7b753ba854a`；9/9 案例完成 primary/repro，raw/canonical/stderr hash 一致；锁定 scorer 为 `4/3/2`，透明 theorem audit 为 `6/1/2` 并另保留两项 minimality failure | CRP local bridge 预测失败；grid/medium 因 `D/F` 未穷尽 terminal classes 而确定性拒绝；不能形成完整 exact/DES 证据链或宣称论文门通过 |
+| G6 局部核—终端类恢复门 | NEXT HARD GATE / PRE-IMPLEMENTATION | G5 负结果、评分 category error 和复现证据已定位；恢复义务已进入反例账本、证书、概率层和证明义务 | 先完成 theorem/metric 分离、all-minimal local kernels、CRP local bridge、closed-class taxonomy 与 synthetic regressions；再创建独立 discovery/confirmation set 并重新封存，封存前不得运行新 held-out |
 
 ## G0 仓库门
 
@@ -105,7 +106,7 @@ exact threshold”或“一般紧凑 IMS 最大许可 supervisor”表述。
 
 ## G4 案例冻结门
 
-当前 C-sealed 确认集：
+历史 C-sealed 确认集：
 
 - C0-C5 与 BIX2-PERSIST 仅是发现集，允许因反例修正定义和假设，但每次
   修改进入账本；BIX2 参与过 P3e 推导，不得进入确认集；
@@ -131,7 +132,9 @@ exact threshold”或“一般紧凑 IMS 最大许可 supervisor”表述。
 冻结动作已由 A/B2/C 三提交闭合。`FREEZE_ENTRY.json` 锁定参数范围、指标、
 基线、随机流方案、九个 artifact hash 与九个 case hash；提交后的 Dell
 checker 返回 `FROZEN`、`errors=[]`、`confirmation_results_inspected=false`。
-该 PASS 只表示确认协议已冻结，不表示任何确认预测已经得到实验支持。
+该 PASS 只表示确认协议在结果检查前已冻结，不表示任何确认预测得到支持。
+G5 随后按锁定命令执行九行各一次 primary/repro；该面板现在已退役，不能
+再次作为 held-out 或通过修复后重跑来改变其证据状态。
 
 ## G5 论文门
 
@@ -141,6 +144,44 @@ checker 返回 `FROZEN`、`errors=[]`、`confirmation_results_inspected=false`�
 - 报告 false positive/false negative、失败命题、监督性能代价和适用边界；
 - 不删除冻结后的失败案例，不事后更换指标；
 - 论文主张能逐项回链到定理、原假设、迁移卡、案例哈希和机器验证。
+
+实际结论：`FAIL（evidence closed）`。
+
+- 九个案例均只有一次 primary 和一次 repro；七例 exit 0，grid/medium
+  都以相同非零 exit、空 stdout 和相同 stderr hash 确定性拒绝，没有 retry
+  或第三次运行。
+- 锁定 scorer 的原始 `4 SUPPORTED / 3 FALSIFIED / 2 INCONCLUSIVE`
+  作为不可变证据保留。
+- 事后规则审计发现 scorer 把两个独立
+  `certificate_minimality=FAIL` 错并入 theorem falsifier；透明、非覆盖式
+  审计为 `6 SUPPORTED / 1 FALSIFIED / 2 INCONCLUSIVE`，原始输出不删除。
+- `G4_CRP_S4PR_AGREE` 仍是冻结预测失败：target reachability agreement
+  没有关闭 local certificate 与 mapped-resource equality。
+- grid/medium 保持 `INCONCLUSIVE`：在求解前发现 reachable non-`D/F`
+  state 不能到达声明吸收类，因此没有 exact probability、mean time 或同目标
+  DES 证据。
+
+完整报告见 `docs/verification/G5_CONFIRMATION_REPORT.md`、
+`G5_REPRODUCIBILITY_AUDIT.md` 和 `G5_CLAIM_EVIDENCE_TABLE.md`；评分勘误
+见 `evidence/g5/G5_SCORING_ERRATUM.json`。
+
+## G6 局部核—终端类恢复门
+
+G6 是新科学门，不是 G5 repair rerun。通过顺序：
+
+1. theorem prediction 与 ancillary metric 独立计分，execution status 不得
+   被任一者覆盖；
+2. global certificate、all-minimal local kernels 与 minimality evidence
+   使用显式 scope；
+3. CRP partial bridge 只消费声明的 local-kernel family，并冻结多核匹配量词；
+4. CTMC 在 estimand 之前完成
+   `D_global,D_local,F,R_livelock,R_terminal` closed-class decomposition；
+5. 用未复用 G4 参数或状态的 synthetic regressions 关闭已知机制；
+6. 建立新的 discovery set 与独立 confirmation set，预注册、hash lock、
+   C seal 后才允许一次 primary/repro。
+
+详细执行契约见
+`docs/superpowers/plans/2026-07-30-g6-local-core-terminal-class-recovery.md`。
 
 ## 科学停止条件
 

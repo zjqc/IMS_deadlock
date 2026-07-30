@@ -1,0 +1,144 @@
+{
+  "schema_version": "ims-deadlock/g5-scoring-erratum/v1",
+  "erratum_id": "G5-SCORING-ERRATUM-20260730-CATEGORY-SEPARATION",
+  "documented_on": "2026-07-30",
+  "scope": "Post-execution rule audit for G5 scorer category separation. This erratum does not alter raw captures, frozen G4 inputs, frozen commands, hashes, or the original locked scorer output.",
+  "freeze_id": "G4-FREEZE-C-20260730T051210Z",
+  "locked_runtime_and_execution": {
+    "target_worktree": "D:\\worktree\\IMS_deadlock-g5-confirmation",
+    "branch": "codex/g5-confirmation-execution",
+    "g5_a_tooling_commit": "b5e5dc0494b23a54c78c420bbca50a3639de8bff",
+    "g5_b_execution_lock_commit": "8aa752804b885b79e5371c98e7961087c540f2a8",
+        "post_execution_evidence_commit": {
+            "abbrev": "ff28148",
+            "full": "ff281481068a2325cb0bde00e85fd7b753ba854a",
+            "source": "verified on the authoritative Dell G5 worktree before G5-D"
+    },
+    "canonical_python_executable": "D:\\worktree\\IMS_deadlock-final-integration\\.venv\\Scripts\\python.exe",
+    "python_version": "3.13.9"
+  },
+  "locked_hashes": {
+    "original_scorer_sha256": "10fe19c835b958cf3ccdf8116a527eab159543ba642590489584230875121a48",
+    "original_generated_summary_sha256": "db36cce977015890618c93b8872a33d70ff158c4f69ad5277fc1eaee33f29815",
+    "raw_manifest_sha256": "c1940b5f421d5a22621d36a69fb055672d809277ccb8739d7ca2304b81397cf4",
+    "prediction_sheet_sha256": "644bc94a188b1de06fa6d841b5a50a293c831943a8f51bafcd46ebedb5a2f3bd",
+    "metric_schema_sha256": "5ce58b7ffec2fe09166de8d41b69371990bddebae724f47cf350feb7fe41aeb6"
+  },
+  "original_locked_scorer_result": {
+    "source": "evidence/g5/G5_RESULT_SUMMARY.json",
+    "case_count": 9,
+    "execution_status_counts": {
+      "COMPLETED": 7,
+      "NONZERO_EXIT": 2
+    },
+    "scientific_status_counts": {
+      "SUPPORTED": 4,
+      "FALSIFIED": 3,
+      "INCONCLUSIVE": 2
+    },
+    "supported": false
+  },
+  "confirmed_category_error": {
+    "description": "The original scorer treated certificate_minimality failures as theorem-prediction falsifiers for two rows whose frozen theorem scoring rules do not require certificate minimality.",
+    "category_separation": {
+      "theorem_prediction_correctness": "status of the frozen case prediction under cases/confirmation/g4/predictions.json",
+      "certificate_minimality": "separate metric under cases/confirmation/g4/metrics_schema.json"
+    },
+    "raw_execution_changed": false,
+    "sealed_input_changed": false,
+    "rerun_or_retune_performed": false
+  },
+  "affected_cases": [
+    {
+      "case_id": "G4_ADVERSARIAL_BOUNDARY",
+      "family": "G4-ADVERSARIAL-BOUNDARY",
+      "original_scientific_status": "FALSIFIED",
+      "original_reasons": [
+        "adversarial certificate is not minimal"
+      ],
+      "corrected_theorem_prediction_status": "SUPPORTED",
+      "metric_failures": [
+        {
+          "metric_id": "certificate_minimality",
+          "status": "FAIL",
+          "raw_field": "analysis.certificate.certificate.is_minimal",
+          "raw_value": false
+        }
+      ],
+      "theorem_evidence_fields": [
+        "classification",
+        "analysis.certificate",
+        "analysis.petri_bridge",
+        "observations.frozen_request_transition_enabled"
+      ]
+    },
+    {
+      "case_id": "G4_CRP_OUTSIDE_S4PR",
+      "family": "G4-CRP-OUTSIDE-S4PR",
+      "original_scientific_status": "FALSIFIED",
+      "original_reasons": [
+        "outside boundary certificate is not minimal"
+      ],
+      "corrected_theorem_prediction_status": "SUPPORTED",
+      "metric_failures": [
+        {
+          "metric_id": "certificate_minimality",
+          "status": "FAIL",
+          "raw_field": "outside_scope_boundary.analysis.certificate.certificate.is_minimal",
+          "raw_value": false
+        }
+      ],
+      "theorem_evidence_fields": [
+        "classification",
+        "evidence_profile_audit.classification",
+        "outside_scope_boundary.analysis.certificate",
+        "outside_scope_boundary.analysis.petri_bridge"
+      ]
+    }
+  ],
+  "unchanged_falsified_cases": [
+    {
+      "case_id": "G4_CRP_S4PR_AGREE",
+      "original_scientific_status": "FALSIFIED",
+      "corrected_theorem_prediction_status": "FALSIFIED",
+      "reasons": [
+        "classification is not 'partial_deadlock_bridge_agreement'",
+        "partial bridge certificate is unavailable",
+        "partial bridge certificate payload is absent",
+        "partial bridge does not agree",
+        "certificate resources differ from mapped CRP resources"
+      ]
+    }
+  ],
+  "unchanged_inconclusive_cases": [
+    {
+      "case_id": "G4_MEDIUM_ISLAND_REBUILD",
+      "execution_status": "NONZERO_EXIT",
+      "corrected_theorem_prediction_status": "INCONCLUSIVE",
+      "stderr_last_error": "ValueError: state 's79' must have reachable absorbing transition"
+    },
+    {
+      "case_id": "G4_IMS_PARAMETER_GRID",
+      "execution_status": "NONZERO_EXIT",
+      "corrected_theorem_prediction_status": "INCONCLUSIVE",
+      "stderr_last_error": "ValueError: state 's5' must have reachable absorbing transition"
+    }
+  ],
+  "corrected_rule_audit_theorem_counts": {
+    "SUPPORTED": 6,
+    "FALSIFIED": 1,
+    "INCONCLUSIVE": 2
+  },
+  "paper_gate": {
+    "status": "FAIL",
+    "reasons": [
+      "original locked scorer summary is not paper-pass due to 4/3/2 scientific status counts",
+      "two stochastic cases exited nonzero and remain inconclusive",
+      "the scorer category error requires a successor fix and regenerated scored summary before manuscript use"
+    ]
+  },
+  "successor_requirement": {
+    "required": true,
+    "description": "Implement a successor scorer/report schema that separates theorem_prediction_correctness from certificate_minimality and other metric statuses, preserves this erratum, and regenerates compact scored evidence from the unchanged raw captures without reruns or retuning."
+  }
+}
