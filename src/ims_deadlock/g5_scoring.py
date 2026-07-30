@@ -83,6 +83,7 @@ class CaseScore:
     reproducibility: Mapping[str, object]
     observations: Mapping[str, object]
     frozen_metric_applicability: Mapping[str, object]
+    metric_results: Mapping[str, object]
     freeze_id: str | None
 
     def to_json_dict(self) -> dict[str, object]:
@@ -95,6 +96,8 @@ class CaseScore:
             "execution_status": self.execution_status.value,
             "scientific_status": self.scientific_status.value,
             "supported": self.supported,
+            "theorem_prediction_status": self.scientific_status.value,
+            "theorem_supported": self.supported,
             "failure_categories": list(self.failure_categories),
             "reasons": list(self.reasons),
             "raw_stdout_sha256": dict(sorted(self.raw_stdout_sha256.items())),
@@ -105,6 +108,7 @@ class CaseScore:
             "frozen_metric_applicability": _stable_json_value(
                 self.frozen_metric_applicability
             ),
+            "metric_results": _stable_json_value(self.metric_results),
             "freeze_id": self.freeze_id,
         }
 
@@ -116,6 +120,7 @@ class RunFiles:
     stderr_raw_sha256: str | None
     stdout_json_present: bool
     stdout_bin_present: bool
+    stdout_ambiguous: bool
 
 
 def score_case(
@@ -174,6 +179,13 @@ def score_case(
     try:
         reasons = _scientific_reasons(bundle, case_id, family, result)
         observations = _observations(bundle, case_id, family, result)
+        metric_results = _metric_results(
+            bundle,
+            case_id,
+            family,
+            result,
+            ScientificStatus.FALSIFIED if reasons else ScientificStatus.SUPPORTED,
+        )
     except ScoringError as exc:
         if exc.category != "result_schema":
             raise
@@ -207,6 +219,7 @@ def score_case(
             observations,
             _metric_applicability(bundle, case_id),
             freeze_id,
+            metric_results,
         )
     return _case_score(
         case_id,
@@ -222,6 +235,7 @@ def score_case(
         observations,
         _metric_applicability(bundle, case_id),
         freeze_id,
+        metric_results,
     )
 
 
@@ -267,6 +281,13 @@ def score_run(bundle_root: Path, capture_root: Path) -> dict[str, object]:
             expected_freeze_id=_freeze_id(bundle),
         )
         if primary_execution is not ExecutionStatus.COMPLETED:
+            execution_match = primary_execution is repro_execution
+            primary_reasons = list(pair_reasons)
+            if not execution_match:
+                primary_reasons.append(
+                    f"primary execution status is {primary_execution.value}; "
+                    f"repro execution status is {repro_execution.value}"
+                )
             scores.append(
                 _case_score(
                     case_id,
@@ -274,14 +295,18 @@ def score_run(bundle_root: Path, capture_root: Path) -> dict[str, object]:
                     primary_execution,
                     ScientificStatus.INCONCLUSIVE,
                     ("execution",),
-                    tuple(pair_reasons),
+                    tuple(primary_reasons),
                     _pair_hashes(primary_files, repro_files, "stdout_raw_sha256"),
                     _pair_hashes(
                         primary_files, repro_files, "stdout_canonical_json_sha256"
                     ),
                     _pair_hashes(primary_files, repro_files, "stderr_raw_sha256"),
                     _reproducibility(
-                        primary_record, repro_record, primary_files, repro_files
+                        primary_record,
+                        repro_record,
+                        primary_files,
+                        repro_files,
+                        execution_match=execution_match,
                     ),
                     {},
                     _metric_applicability(bundle, case_id),
@@ -392,6 +417,7 @@ def score_run(bundle_root: Path, capture_root: Path) -> dict[str, object]:
                 score.observations,
                 score.frozen_metric_applicability,
                 score.freeze_id,
+                score.metric_results,
             )
         scores.append(score)
 
@@ -424,16 +450,18 @@ def _case_score(
     observations: Mapping[str, object],
     frozen_metric_applicability: Mapping[str, object],
     freeze_id: str | None,
+    metric_results: Mapping[str, object] | None = None,
 ) -> CaseScore:
+    theorem_supported = (
+        execution_status is ExecutionStatus.COMPLETED
+        and scientific_status is ScientificStatus.SUPPORTED
+    )
     return CaseScore(
         case_id=case_id,
         family=family,
         execution_status=execution_status,
         scientific_status=scientific_status,
-        supported=(
-            execution_status is ExecutionStatus.COMPLETED
-            and scientific_status is ScientificStatus.SUPPORTED
-        ),
+        supported=theorem_supported,
         failure_categories=categories,
         reasons=reasons,
         raw_stdout_sha256=raw_stdout_sha256,
@@ -442,6 +470,11 @@ def _case_score(
         reproducibility=reproducibility,
         observations=observations,
         frozen_metric_applicability=frozen_metric_applicability,
+        metric_results=(
+            metric_results
+            if metric_results is not None
+            else _empty_metric_results(frozen_metric_applicability)
+        ),
         freeze_id=freeze_id,
     )
 
@@ -673,8 +706,6 @@ def _score_crp_outside(
         reasons.append("outside-S4PR frozen input supplies an embedding")
     outside = _mapping_or_empty(result.get("outside_scope_boundary"))
     analysis = _mapping_or_empty(outside.get("analysis"))
-    if _certificate_minimal(analysis) is not True:
-        reasons.append("outside boundary certificate is not minimal")
     built = _built_outside(bundle, case_id)
     enabled = [
         transition.name
@@ -840,8 +871,6 @@ def _score_adversarial(bundle: Path, result: Mapping[str, object]) -> list[str]:
     analysis = _mapping_or_empty(result.get("analysis"))
     if _certificate_available(analysis) is not True:
         reasons.append("adversarial certificate is unavailable")
-    if _certificate_minimal(analysis) is not True:
-        reasons.append("adversarial certificate is not minimal")
     built = _built_adversarial(bundle, "G4_ADVERSARIAL_BOUNDARY")
     enabled = [
         transition.name
@@ -1205,6 +1234,146 @@ def _metric_applicability(bundle: Path, case_id: str) -> Mapping[str, object]:
     return result
 
 
+def _empty_metric_results(
+    frozen_metric_applicability: Mapping[str, object],
+) -> Mapping[str, object]:
+    results: dict[str, object] = {}
+    for metric_id, applicability_obj in frozen_metric_applicability.items():
+        applicability = _mapping_or_empty(applicability_obj)
+        applicable = applicability.get("applicable") is True
+        results[str(metric_id)] = _metric_result(
+            applicable=applicable,
+            status="UNAVAILABLE" if applicable else "NOT_APPLICABLE",
+            value=None,
+            evidence_field=None,
+        )
+    return results
+
+
+def _metric_results(
+    bundle: Path,
+    case_id: str,
+    family: str,
+    result: Mapping[str, object],
+    theorem_status: ScientificStatus,
+) -> Mapping[str, object]:
+    applicability = _metric_applicability(bundle, case_id)
+    metric_results = dict(_empty_metric_results(applicability))
+    if "certificate_minimality" in metric_results:
+        metric_results["certificate_minimality"] = _certificate_minimality_metric(
+            family,
+            result,
+            _mapping_or_empty(applicability.get("certificate_minimality")).get(
+                "applicable"
+            )
+            is True,
+        )
+    if "theorem_prediction_correctness" in metric_results:
+        theorem_supported = theorem_status is ScientificStatus.SUPPORTED
+        metric_results["theorem_prediction_correctness"] = _metric_result(
+            applicable=True,
+            status="PASS" if theorem_supported else "FAIL",
+            value=theorem_supported,
+            evidence_field="theorem_prediction_status",
+        )
+    return metric_results
+
+
+def _certificate_minimality_metric(
+    family: str,
+    result: Mapping[str, object],
+    applicable: bool,
+) -> Mapping[str, object]:
+    evidence_field, value = _certificate_minimality_value(family, result)
+    if not applicable:
+        return _metric_result(
+            applicable=False,
+            status="NOT_APPLICABLE",
+            value=value,
+            evidence_field=evidence_field,
+        )
+    if value is True:
+        status = "PASS"
+    elif value is False:
+        status = "FAIL"
+    else:
+        status = "UNAVAILABLE"
+    return _metric_result(
+        applicable=True,
+        status=status,
+        value=value,
+        evidence_field=evidence_field,
+    )
+
+
+def _certificate_minimality_value(
+    family: str,
+    result: Mapping[str, object],
+) -> tuple[str | None, bool | None]:
+    if family == "G4-CRP-S4PR-AGREE":
+        evidence_field = "partial_deadlock_bridge.certificate.is_minimal"
+        certificate = _mapping_or_empty(
+            _mapping_or_empty(result.get("partial_deadlock_bridge")).get("certificate")
+        )
+        value = certificate.get("is_minimal")
+        return evidence_field, value if isinstance(value, bool) else None
+    if family == "G4-CRP-OUTSIDE-S4PR":
+        evidence_field = (
+            "outside_scope_boundary.analysis.certificate.certificate.is_minimal"
+        )
+        analysis = _mapping_or_empty(
+            _mapping_or_empty(result.get("outside_scope_boundary")).get("analysis")
+        )
+        return evidence_field, _certificate_minimal_value_from_analysis(analysis)
+    if family == "G4-ADVERSARIAL-BOUNDARY":
+        evidence_field = "analysis.certificate.certificate.is_minimal"
+        analysis = _mapping_or_empty(result.get("analysis"))
+        return evidence_field, _certificate_minimal_value_from_analysis(analysis)
+    if family == "G4-MEDIUM-ISLAND-REBUILD":
+        evidence_field = "analysis.certificate.certificate.is_minimal"
+        analysis = _mapping_or_empty(result.get("analysis"))
+        return evidence_field, _certificate_minimal_value_from_analysis(analysis)
+    if family == "G4-IMS-PARAMETER-GRID":
+        cells = _list(result.get("cells"), "cells")
+        values = [
+            _certificate_minimal(
+                _mapping_or_empty(_mapping_or_empty(cell).get("analysis"))
+            )
+            for cell in cells
+            if _certificate_available(
+                _mapping_or_empty(_mapping_or_empty(cell).get("analysis"))
+            )
+        ]
+        return "cells[].analysis.certificate.certificate.is_minimal", (
+            all(values) if values else None
+        )
+    return None, None
+
+
+def _certificate_minimal_value_from_analysis(
+    analysis: Mapping[str, object],
+) -> bool | None:
+    certificate = _mapping_or_empty(analysis.get("certificate"))
+    payload = _mapping_or_empty(certificate.get("certificate"))
+    value = payload.get("is_minimal")
+    return value if isinstance(value, bool) else None
+
+
+def _metric_result(
+    *,
+    applicable: bool,
+    status: str,
+    value: object,
+    evidence_field: str | None,
+) -> Mapping[str, object]:
+    return {
+        "applicable": applicable,
+        "status": status,
+        "value": value,
+        "evidence_field": evidence_field,
+    }
+
+
 def _stream_plan(bundle: Path, case_id: str) -> tuple[tuple[int, ...], int, str]:
     payload = _load_json_object(bundle / "random_stream_manifest.json")
     row = _mapping(
@@ -1294,10 +1463,11 @@ def _freeze_id(bundle: Path) -> str | None:
 def _run_files(run_dir: Path, execution_status: ExecutionStatus) -> RunFiles:
     stdout_json = run_dir / "stdout.json"
     stdout_bin = run_dir / "stdout.bin"
+    stdout_ambiguous = stdout_json.exists() and stdout_bin.exists()
     stdout_path = stdout_json if stdout_json.exists() else stdout_bin
     raw_hash: str | None = None
     canonical_hash: str | None = None
-    if stdout_path.exists():
+    if stdout_path.exists() and not stdout_ambiguous:
         stdout_bytes = _read_limited_bytes(stdout_path)
         raw_hash = hashlib.sha256(stdout_bytes).hexdigest()
         if stdout_json.exists():
@@ -1322,6 +1492,7 @@ def _run_files(run_dir: Path, execution_status: ExecutionStatus) -> RunFiles:
         stderr_raw_sha256=stderr_hash,
         stdout_json_present=stdout_json.exists(),
         stdout_bin_present=stdout_bin.exists(),
+        stdout_ambiguous=stdout_ambiguous,
     )
 
 
@@ -1412,6 +1583,8 @@ def _capture_pair_reasons(
             value = record.get(field)
             if value in (None, "", []):
                 reasons.append(f"{label} record {field} is empty")
+        if files.stdout_ambiguous:
+            reasons.append(f"{label} run contains both stdout.json and stdout.bin")
         if record.get("stdout_raw_sha256") != files.stdout_raw_sha256:
             reasons.append(f"{label} stdout_raw_sha256 disagrees with stdout bytes")
         if (
@@ -1729,7 +1902,6 @@ def _safe_output_path(path: Path, *, capture_root: Path, bundle_root: Path) -> P
         raise ScoringError("protocol_integrity", "output path traversal is not allowed")
     capture = capture_root.resolve()
     bundle = bundle_root.resolve()
-    repository = _repository_root_from_bundle(bundle)
     target = path.resolve()
     if target == bundle or bundle in target.parents:
         raise ScoringError(
@@ -1739,15 +1911,7 @@ def _safe_output_path(path: Path, *, capture_root: Path, bundle_root: Path) -> P
         raise ScoringError(
             "protocol_integrity", "output path must not enter raw capture root"
         )
-    if target != repository and repository not in target.parents:
-        raise ScoringError("protocol_integrity", "output path escapes repository root")
     return target
-
-
-def _repository_root_from_bundle(bundle: Path) -> Path:
-    if len(bundle.parents) < 3:
-        raise ScoringError("protocol_integrity", "cannot locate repository root")
-    return bundle.parents[2]
 
 
 if __name__ == "__main__":
