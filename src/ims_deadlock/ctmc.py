@@ -2,8 +2,83 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from math import isfinite
+
+PROBABILITY_ABSOLUTE_TOLERANCE = 1e-10
+LINEAR_RESIDUAL_ABSOLUTE_TOLERANCE = 1e-10
+
+
+def probability_interval_is_numerically_valid(
+    lower: object,
+    upper: object,
+) -> bool:
+    """Return whether a computed probability interval is valid up to roundoff.
+
+    The tolerance is an acceptance bound for numerical linear algebra only. It
+    does not clamp or rewrite the reported committor values.
+    """
+
+    if (
+        isinstance(lower, bool)
+        or isinstance(upper, bool)
+        or not isinstance(lower, int | float)
+        or not isinstance(upper, int | float)
+    ):
+        return False
+    lower_value = float(lower)
+    upper_value = float(upper)
+    return (
+        isfinite(lower_value)
+        and isfinite(upper_value)
+        and lower_value <= upper_value
+        and lower_value >= -PROBABILITY_ABSOLUTE_TOLERANCE
+        and upper_value <= 1.0 + PROBABILITY_ABSOLUTE_TOLERANCE
+    )
+
+
+def probability_values_are_numerically_valid(values: Iterable[object]) -> bool:
+    """Validate every scalar committor value without altering its value."""
+
+    normalized = tuple(values)
+    return bool(normalized) and all(
+        probability_interval_is_numerically_valid(value, value) for value in normalized
+    )
+
+
+def probability_bounds_match_values(
+    values: Iterable[object],
+    lower: object,
+    upper: object,
+) -> bool:
+    """Validate reported min/max against the complete scalar committor vector."""
+
+    normalized = tuple(values)
+    if not probability_values_are_numerically_valid(normalized):
+        return False
+    if not probability_interval_is_numerically_valid(lower, upper):
+        return False
+    assert isinstance(lower, int | float) and not isinstance(lower, bool)
+    assert isinstance(upper, int | float) and not isinstance(upper, bool)
+    numeric_values: list[float] = []
+    for value in normalized:
+        if isinstance(value, bool) or not isinstance(value, int | float):
+            return False
+        numeric_values.append(float(value))
+    return (
+        abs(float(lower) - min(numeric_values)) <= PROBABILITY_ABSOLUTE_TOLERANCE
+        and abs(float(upper) - max(numeric_values)) <= PROBABILITY_ABSOLUTE_TOLERANCE
+    )
+
+
+def linear_residual_is_numerically_valid(value: object) -> bool:
+    """Validate an absolute linear-system residual for the locked CTMC scale."""
+
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        return False
+    numeric = float(value)
+    return isfinite(numeric) and 0.0 <= numeric <= LINEAR_RESIDUAL_ABSOLUTE_TOLERANCE
 
 
 @dataclass(frozen=True)
@@ -111,9 +186,10 @@ class AbsorbingCTMC:
                 time_rhs,
             ),
             probability_bounds=probability_bounds,
-            probability_bounds_valid=(
-                probability_bounds["min"] >= -1e-10
-                and probability_bounds["max"] <= 1.0 + 1e-10
+            probability_bounds_valid=probability_bounds_match_values(
+                probabilities,
+                probability_bounds["min"],
+                probability_bounds["max"],
             ),
         )
 
