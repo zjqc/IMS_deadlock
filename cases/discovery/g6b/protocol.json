@@ -1,0 +1,46 @@
+{
+  "schema_version": "ims-deadlock/g6b-discovery-protocol/v1",
+  "protocol_id": "G6-B-DISCOVERY-PROTOCOL-FOUNDATION",
+  "study_role": "discovery_only",
+  "confirmation_use": "prohibited",
+  "scientific_execution_authorized": false,
+  "adversarial_review_status": "PENDING",
+  "artifact_paths": [
+    "docs/cases/G6_B_DISCOVERY_PROTOCOL.md",
+    "cases/discovery/g6b/estimand_schema.json",
+    "cases/discovery/g6b/independence_schema.json",
+    "cases/discovery/g6b/negative_controls.json",
+    "cases/discovery/g6b/failure_ledger.json"
+  ],
+  "tracked_historical_authorities": [
+    "cases/confirmation/g4/FREEZE_ENTRY.json",
+    "cases/confirmation/g4/case_manifest.json",
+    "cases/confirmation/g4/random_stream_manifest.json",
+    "cases/confirmation/g4/predictions.json",
+    "cases/confirmation/g4/metrics_schema.json",
+    "evidence/g5/G5_EXECUTION_LOCK.json",
+    "evidence/g5/G5_RAW_HASH_MANIFEST.json",
+    "evidence/g5/G5_RESULT_SUMMARY.json",
+    "evidence/g5/G5_SCORING_ERRATUM.json",
+    "evidence/g6/G6_HISTORICAL_REPLAY_FAILURE_LEDGER.json",
+    "evidence/g6/G6_HISTORICAL_REPLAY_R3_REPORT.json"
+  ],
+  "execution_boundary": {
+    "creates_cases": false,
+    "authorizes_enumeration": false,
+    "authorizes_ctmc_solve": false,
+    "authorizes_des_run": false,
+    "requires_adversarial_review_before_scientific_execution": true
+  },
+  "orthogonal_scoring_layers": {
+    "required_layers": [
+      "theorem_prediction_status",
+      "metric_applicability",
+      "metric_observations",
+      "execution_status",
+      "reproducibility_status"
+    ],
+    "metric_failure_changes_theorem_status": false,
+    "exception": "only_if_frozen_falsifier_explicitly_references_metric"
+  }
+}

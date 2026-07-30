@@ -8,10 +8,11 @@
 protocol foundation before any new scientific enumeration, CTMC solve, or DES
 run.
 
-**Architecture:** Add a strict six-document JSON bundle under
-`cases/discovery/g6b/`, a validator that performs data-only parsing and
-cross-document consistency checks, and a human-readable protocol that fixes the
-scientific ontology and stop conditions. The validator must reject duplicate
+**Architecture:** Add a strict five-file JSON bundle under
+`cases/discovery/g6b/` plus a human protocol document, a validator that performs
+data-only parsing and cross-document consistency checks, and a human-readable
+protocol that fixes the scientific ontology and stop conditions. The validator
+must reject duplicate
 keys, unknown keys, historical-case reuse, incomplete independence dimensions,
 ambiguous `D_local` terminology, exact/DES target drift, missing negative
 controls, and any attempt to authorize scientific execution before the
@@ -36,7 +37,8 @@ evidence.
 - `cases/discovery/g6b/estimand_schema.json`: objective class ontology and the
   exact fields that every future estimand instance must freeze.
 - `cases/discovery/g6b/independence_schema.json`: canonical fingerprint
-  dimensions and zero-overlap rule against retired G4/G5 evidence.
+  dimensions and scoped zero-overlap rules against retired G4/G5/G6-R evidence,
+  discovery rows, and future confirmation rows.
 - `cases/discovery/g6b/negative_controls.json`: mandatory refusal/classification
   controls that must exist before a discovery run can be admitted.
 - `cases/discovery/g6b/failure_ledger.json`: append-only discovery failure
@@ -100,7 +102,10 @@ D_local = verified first-hit bad set, not a plant terminal SCC
 local candidate admission = A2b proof OR complete-LTS completion
 nonreachability audit
 exact/DES = same selected bad/success labels and the same versioned target
-independence = zero overlap on eight canonical dimensions
+independence = G6-B discovery has zero overlap with retired G4/G5/G6-R on eight
+canonical dimensions; future confirmation has case identity/provenance
+independence from retired and discovery rows, with metric-schema reuse allowed
+only by preregistered same-target comparability and never outcome-derived
 scientific execution = disabled until adversarial review passes
 ```
 
@@ -129,7 +134,7 @@ NC_AGV_RESERVATION_BOUNDARY
 NC_DGLOBAL_ONLY_WITH_DLOCAL
 ```
 
-- [ ] **Step 3: Create the six-document JSON bundle**
+- [ ] **Step 3: Create the five-file JSON bundle plus human protocol document**
 
 Use these schema versions:
 
@@ -143,7 +148,8 @@ Use these schema versions:
 }
 ```
 
-`protocol.json` must list the other five artifact filenames, declare
+`protocol.json` must list the human protocol document plus the other four JSON
+artifact paths, declare
 `scientific_execution_authorized=false`, declare
 `adversarial_review_status="PENDING"`, and reference only tracked historical
 authorities:
@@ -155,10 +161,17 @@ cases/confirmation/g4/random_stream_manifest.json
 cases/confirmation/g4/predictions.json
 cases/confirmation/g4/metrics_schema.json
 evidence/g5/G5_EXECUTION_LOCK.json
+evidence/g5/G5_RAW_HASH_MANIFEST.json
+evidence/g5/G5_RESULT_SUMMARY.json
 evidence/g5/G5_SCORING_ERRATUM.json
 evidence/g6/G6_HISTORICAL_REPLAY_FAILURE_LEDGER.json
 evidence/g6/G6_HISTORICAL_REPLAY_R3_REPORT.json
 ```
+
+The protocol must also preserve orthogonal scoring layers:
+`theorem_prediction_status`, `metric_applicability`, `metric_observations`,
+`execution_status`, and `reproducibility_status`. A metric failure cannot change
+the theorem status unless the frozen falsifier explicitly references it.
 
 `failure_ledger.json` must use an empty `entries` list, set
 `append_only=true`, and state that empty means “no discovery attempt has been

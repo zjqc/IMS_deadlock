@@ -1,0 +1,9 @@
+{
+  "schema_version": "ims-deadlock/g6b-failure-ledger/v1",
+  "study_role": "discovery_only",
+  "confirmation_use": "prohibited",
+  "scientific_execution_authorized": false,
+  "append_only": true,
+  "entries": [],
+  "empty_entries_meaning": "no discovery attempt has been admitted under this protocol; this does not mean no failures exist"
+}

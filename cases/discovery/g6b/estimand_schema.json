@@ -1,0 +1,45 @@
+{
+  "schema_version": "ims-deadlock/g6b-estimand-schema/v1",
+  "study_role": "discovery_only",
+  "confirmation_use": "prohibited",
+  "scientific_execution_authorized": false,
+  "future_required_hashes": [
+    "state_space_hash",
+    "partition_hash",
+    "rate_manifest_hash",
+    "stopping_rule_hash",
+    "des_stopping_rule_hash",
+    "estimand_id"
+  ],
+  "ontology": {
+    "objective_classes": [
+      "D_global",
+      "D_local",
+      "F",
+      "R_livelock",
+      "R_terminal",
+      "P_policy",
+      "S_T"
+    ],
+    "D_local": {
+      "ontology": "first_hit_bad_set_not_terminal_scc",
+      "definition": "verified first-hit bad set selected by the G6-B estimand, not a plant terminal SCC",
+      "admission": [
+        "A2b_proof",
+        "complete_LTS_completion_nonreachability_audit"
+      ]
+    },
+    "success_class": "F",
+    "selected_bad_classes": [
+      "D_global",
+      "D_local"
+    ],
+    "selected_success_class": "F"
+  },
+  "exact_des_consistency": {
+    "same_target_required": true,
+    "same_selected_bad_labels_required": true,
+    "same_selected_success_label_required": true,
+    "same_versioned_target_required": true
+  }
+}
