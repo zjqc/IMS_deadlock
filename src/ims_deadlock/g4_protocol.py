@@ -15,7 +15,7 @@ import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypeAlias
+from typing import Any, TypeAlias, cast
 
 from ims_deadlock.cases import CaseSpec, case_spec_from_json
 from ims_deadlock.confirmation import (
@@ -883,7 +883,7 @@ def _execute_protocol(
     stream_plan: FrozenStreamPlan | None,
 ) -> dict[str, object]:
     from ims_deadlock.analysis import analyze_case
-    from ims_deadlock.certificates import find_deadlock_certificate
+    from ims_deadlock.certificates import enumerate_local_blocking_certificates
     from ims_deadlock.engine import exact_max_nonblocking_supervisor
     from ims_deadlock.g4_comparators import (
         adapted_candidate_monitor_cover,
@@ -907,7 +907,7 @@ def _execute_protocol(
         classification = audit.classification
         if protocol.bridge is not None:
             bridge = protocol.bridge
-            certificate = find_deadlock_certificate(
+            certificate_family = enumerate_local_blocking_certificates(
                 bridge.target_snapshot.model,
                 bridge.target_snapshot.initial_state,
                 bridge.target_snapshot.transitions,
@@ -915,13 +915,19 @@ def _execute_protocol(
             mapped_resources = {
                 target for _source, target in bridge.crp_resource_to_ims_resource
             }
-            certificate_resources = (
-                set(certificate.kernel_resources) if certificate is not None else set()
+            matching_kernels = tuple(
+                certificate
+                for certificate in certificate_family
+                if set(certificate.kernel_resources) == mapped_resources
+            )
+            selected_kernel = matching_kernels[0] if matching_kernels else None
+            selected_resources = (
+                set(selected_kernel.kernel_resources)
+                if selected_kernel is not None
+                else set()
             )
             bridge_agrees = (
-                audit.classification == "agreement"
-                and certificate is not None
-                and certificate_resources == mapped_resources
+                audit.classification == "agreement" and selected_kernel is not None
             )
             classification = (
                 "partial_deadlock_bridge_agreement"
@@ -930,12 +936,24 @@ def _execute_protocol(
             )
             payload["partial_deadlock_bridge"] = {
                 "comparison_rule": bridge.comparison_rule,
-                "certificate_available": certificate is not None,
+                "certificate_available": bool(certificate_family),
                 "certificate": (
-                    certificate.to_json_dict() if certificate is not None else None
+                    selected_kernel.to_json_dict()
+                    if selected_kernel is not None
+                    else None
                 ),
-                "certificate_resources": sorted(certificate_resources),
+                "certificate_resources": sorted(selected_resources),
                 "mapped_crp_resources": sorted(mapped_resources),
+                "certificate_family": [
+                    _certificate_family_summary(certificate)
+                    for certificate in certificate_family
+                ],
+                "matching_kernel_count": len(matching_kernels),
+                "selected_matching_kernel": (
+                    _certificate_family_summary(selected_kernel)
+                    if selected_kernel is not None
+                    else None
+                ),
                 "agrees": bridge_agrees,
             }
         if protocol.outside_scope_parameters is not None:
@@ -1002,6 +1020,10 @@ def _execute_protocol(
                         max_states=built.state_bound,
                     ),
                     "ctmc_initial_state": derived.initial_state,
+                    "terminal_classification": _terminal_classification_payload(
+                        derived
+                    ),
+                    "estimand": derived.estimand,
                     "quantitative": derived.ctmc.solve().to_json_dict(),
                     "des_crosscheck": _des_crosscheck(
                         derived.ctmc,
@@ -1020,6 +1042,8 @@ def _execute_protocol(
         payload = {
             "analysis": analyze_case(built.spec, max_states=built.state_bound),
             "ctmc_initial_state": derived.initial_state,
+            "terminal_classification": _terminal_classification_payload(derived),
+            "estimand": derived.estimand,
             "quantitative": derived.ctmc.solve().to_json_dict(),
             "des_crosscheck": _des_crosscheck(
                 derived.ctmc,
@@ -1045,6 +1069,20 @@ def _execute_protocol(
         "family": protocol.family,
         "classification": classification,
         **payload,
+    }
+
+
+def _terminal_classification_payload(derived: Any) -> dict[str, object]:
+    partition = derived.terminal_classification
+    if partition is None:
+        raise ValueError("derived G4 CTMC is missing terminal classification")
+    return cast("dict[str, object]", partition.to_json_dict())
+
+
+def _certificate_family_summary(certificate: Any) -> dict[str, object]:
+    return {
+        "kernel_jobs": sorted(certificate.kernel_jobs),
+        "kernel_resources": sorted(certificate.kernel_resources),
     }
 
 
