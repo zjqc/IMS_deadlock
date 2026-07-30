@@ -51,6 +51,16 @@ reachability-free detector. Pang et al. (`L30`) similarly blocks a broad
 "first finite-capacity threshold" claim until its equivalent-S3PR assumptions
 are read in full.
 
+Rounds 6-8 added a second reachability boundary. Su et al. (`L32-L33`)
+officially claim Petri-net structure modifications intended to preserve modeled
+functionality while making reachability decidable or polynomial-time
+analyzable. The exact net classes and preservation relations remain unread in
+full. Therefore IMS_deadlock must not claim that reachability-decidable
+modeling, single-NIS state equations, or polynomial reachability after model
+transformation are new. The state-equation/legal-firing-sequence lineage
+(`L34-L35`) also requires every algebraic screen to retain an executable
+reachability witness or an explicit relaxation label.
+
 The defensible gap is narrower:
 
 - existing structural candidates need not be reachable under the declared IMS
@@ -66,6 +76,15 @@ The present `BIX1-SAT` result is therefore only a family-specific exact
 reachability threshold under its explicit start/completion/drain semantics. It
 is not evidence for a general IMS threshold and is not a priority claim over
 finite-capacity S3PR configuration.
+
+A later `BIX2-PERSIST` or other persistent-buffer result must be an
+independently proved IMS family and a boundary case, not a renamed version of a
+published finite-capacity or state-equation theorem.
+
+All source use follows `ADAPTATION_AND_ATTRIBUTION_PROTOCOL.md`. Mature proof
+devices and algorithms may be adapted aggressively when useful, but the source
+statement, assumptions, locator, semantic map, and non-transferable boundary
+must remain visible. Cosmetic rewriting is neither independence nor novelty.
 
 ## Target Venues
 
@@ -95,6 +114,10 @@ Not allowed:
   reachability-free detector" before the `L31` full-text comparison.
 - "First finite-capacity deadlock threshold" from the restricted `BIX1-SAT`
   theorem.
+- "First polynomial/reachability-decidable Petri-net modeling method" while
+  `L32-L33` exist and remain unread in full.
+- Any novelty claim based only on renamed variables, reordered proof steps, or
+  concealed source lineage.
 
 ## Stop Condition
 

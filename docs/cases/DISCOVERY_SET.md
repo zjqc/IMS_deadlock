@@ -56,3 +56,15 @@ The target phenomenon is blocked completion or blocked unload caused by finite
 buffers plus route-direction interaction. The final C5b must include a genuine
 AGV `blocked_unload` state and a hard-reservation control comparison.
 
+## BIX2-PERSIST: Persistent-buffer Ring and DAG Repair
+
+The parameterized executable family is defined in
+`BIX2_DISCOVERY_PROTOCOL.md`. It addresses the precise boundary left open by
+`BIX1-SAT`: successful transfers may occupy `D`, so buffer capacity must enter
+the blocking kernel.
+
+The ring uses `M -> D -> Q -> M`; the paired repair deletes only `Q -> M`,
+leaving `M -> D -> Q` plus explicit terminal release. The preregistered grid
+tests the exact threshold and each one-dimension-below facet for singleton and
+asymmetric multi-capacity triples. This is a discovery theorem attack and
+cannot be reused as a held-out confirmation case.

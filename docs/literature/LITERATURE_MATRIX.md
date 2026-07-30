@@ -61,21 +61,26 @@ clear non-use decision is recorded.
 | L26 | Design/FMS | Design guidelines for deadlock handling 1997 | FMS deadlock-handling design framework candidate; guideline is not a theorem unless read | https://doi.org/10.1023/A:1007937925728 | METADATA | full-read for case-design context only |
 | L30 | Petri/S3PR | Pang et al. 2025 finite-capacity S3PR resource configuration | equivalent finite-capacity S3PR net, minimum resource-place initial markings, and verification-free liveness configuration directly threaten broad capacity-threshold novelty | https://doi.org/10.1177/01423312251369553 | ABSTRACT | full-read theorem assumptions before comparison with IMS-SIP1/BIX1 |
 | L31 | Petri/RAS | Su et al. 2026 reachable partial-deadlock detection | official abstract claims critical resource-limit pairs and linear equations detect reachable partial deadlocks without reachability-tree traversal, directly attacking any broad reachability-certificate novelty claim | https://doi.org/10.1109/TASE.2026.3689269 | ABSTRACT | highest-priority full-read; compare PN subclass, CRP exactness, reachability proof, complexity, and IMS mapping |
+| L32 | Petri/reachability | Su et al. 2024/2025 reachability-decidable modeling | official abstract claims a functionality-preserving structure modification with at most one state-equation NIS and polynomial-time reachability | https://doi.org/10.1109/TSMC.2024.3473851 | ABSTRACT | full-read transformation, preservation relation, proof, and complexity model |
+| L33 | Petri/AMS reachability | Su et al. 2025 AMS structure modification | official abstract claims AMS Petri-net structure modification, at most one NIS, preserved functionality, and polynomial-time reachability | https://doi.org/10.1109/TASE.2025.3588429 | ABSTRACT | full-read AMS subclass, transformation, preservation theorem, and reachability proof |
+| L34 | Petri/reachability | Su et al. 2023 state-equation backward LFS approach | official abstract states NIS is necessary but not sufficient for a legal firing sequence and proposes a backward existence method | https://doi.org/10.1109/TSMC.2023.3241101 | ABSTRACT | full-read ordinary-net assumptions, completeness, circuit boundary, and complexity before algorithm use |
+| L35 | Petri/reachability | Su et al. 2023 backward LFS algorithm | official abstract states state-equation solutions can be spurious and proposes a backward legal-firing-sequence algorithm | https://doi.org/10.1109/LRA.2023.3246384 | ABSTRACT | full-read assumptions and exact relation to L34 before algorithm use |
 
 ## Coverage and Gate Status
 
-Total tracked items: 39 (`23` core rows plus `16` backlog rows). The six chains
+Total tracked items: 43 (`23` core rows plus `20` backlog rows). The six chains
 are covered, but unevenly: Petri/S3PR, DES/RAS, queueing, CTMC, and rare-event
 estimation have theorem anchors; AGV has one theorem source and one
 provenance-limited example. The rare-event theorem remains an assumption-heavy
 estimator benchmark rather than an IMS-specific result.
 
 G1 taxonomy/proof status: the historical six-chain organization remains
-useful, but the 2025-2026 freshness attack added three high-impact comparators
-and `L31` adds a direct reachable-partial-deadlock theorem category. The prior
-two-round stop counter is therefore reset. L04/L16/L22 and L29 are now
-scope-located; B05, L30, and especially L31 remain blocked for theorem
-migration. No paper claim may treat scalable reachable partial-deadlock
-detection, finite-capacity resource configuration, or MR2G/PDDP control as
-absent prior art. Only `FULLTEXT-THEOREM` rows with exact locators may support
-migrated theorem claims.
+useful. Round 6 added the reachability-decidable structure-modification category
+(`L32-L33`) and reset the counter; Rounds 7-8 then supplied two consecutive
+bounded rounds with no new first-paper category. Taxonomy saturation is again
+scope-bounded complete. L04/L16/L22 and L29 are scope-located; B05 and
+especially L30-L33 remain blocked for theorem migration and priority
+comparison. No paper claim may treat scalable reachable partial-deadlock
+detection, reachability-decidable model transformation, finite-capacity
+resource configuration, or MR2G/PDDP control as absent prior art. Only
+`FULLTEXT-THEOREM` rows with exact locators may support migrated theorem claims.

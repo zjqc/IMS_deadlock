@@ -67,8 +67,9 @@
 
 状态：P3 chain-decomposable strict-precedence 子类排除 capacity-mediated
 deadlock 已证明；P3c 的 `BIX0` 是候选态前置命题；P3d 的
-`BIX1-SAT` 启动/完成饱和族有精确可达阈值。一般操作死锁、
-多容量/聚合预约和含 persistent-D 的制造岛阈值仍拟证明。
+`BIX1-SAT` 启动/完成饱和族有精确可达阈值；P3e 关闭一个显式
+persistent-D 三资源环及其删回流修复。一般操作死锁、多容量/聚合预约和
+更一般 persistent-buffer/AGV 制造岛阈值仍拟证明。
 
 - `[closed in P3] PO-T4-1` 定义获取偏序覆盖所有关键资源。
 - `[closed in P3] PO-T4-2` 定义 chain-decomposable certificate 并证明证书到资源链选择引理。
@@ -83,8 +84,14 @@ deadlock 已证明；P3c 的 `BIX0` 是候选态前置命题；P3d 的
   事件链、reservation token `V` 和空初态 BFS 观察器。
 - `[closed in P3d] PO-T4-6b` 证明 `BIX1-SAT` 可达 deadlock iff
   `n_A>=c_M` 且 `n_B>=c_G`；若 BFS 截断，不计入 match 或证据。
-- `PO-T4-6c` 为 persistent-D、替代路线与强制时序的更一般制造岛族
-  寻找分段阈值或最小反例。
+- `[closed in P3e] PO-T4-6c` 为显式 `M->D->Q->M` persistent-buffer
+  ring 证明可达 deadlock iff
+  `n_A>=c_M,n_B>=c_D,n_C>=c_Q`。
+- `[closed in P3e] PO-T4-6d` 删除 `Q->M` 后证明无
+  capacity-mediated global deadlock，并构造串行 marked completion
+  路径；DAG 行只有同时满足两项才计为 match。
+- `PO-T4-6e` 为替代路线、AGV/预约、外部 drain、多个 persistent
+  buffers 与强制时序的更一般制造岛族寻找分段阈值或最小反例。
 - `[closed in P6] PO-T4-7` 用 SU-RAS identity reduction 证明无
   buffer/AGV/reservation/BAS 的无环单单位 IMS 子类安全性为 NP-complete；
   对一般紧凑 IMS 只声称至少 NP-hard，不猜测更强完备类。
@@ -97,6 +104,9 @@ deadlock 已证明；P3c 的 `BIX0` 是候选态前置命题；P3d 的
 - 对 `BIX1-SAT` 小网格逐点核验 P3d 可达阈值；`c_D,c_V` 不变性只因
   witness prefix 没有成功 transfer。不得把 CE-BIXD1/persistent-D
   计为 P3d theorem mismatch。
+- 对 `BIX2-PERSIST` 的预注册 32 行 threshold/one-below ring/DAG
+  发现网格逐点核验 P3e；截断、DAG 无完成路径或任一 mismatch 都是失败
+  证据。
 
 ## T5 概率层
 

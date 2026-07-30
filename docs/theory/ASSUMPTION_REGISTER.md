@@ -208,3 +208,25 @@ siphon 的受限双向对应；`certificate.bridge_status` 的精确/拒绝分�
 one-place-per-state reachability net、经典 plant/S3PR、control-only 或
 approval-only place、C4/C5 conjunctive request、OR 替代和多容量 residual
 均不能由 P2c 自动获得双向等价。
+
+## A17 `BIX2-PERSIST` persistent-buffer 三资源族
+
+状态：项目内已证明并有预注册发现网格程序审计。
+
+模型从空持有状态出发，三个容量 `c_M,c_D,c_Q>=1`。A、B、C 在 ring
+模式分别执行 `M->D`、`D->Q`、`Q->M`；每条链包含 controllable start、
+uncontrollable completion-to-request、controllable atomic handoff 和
+uncontrollable target-resource release。D 是可被 A handoff 持有、也可
+被 B start 持有的 persistent finite buffer。所有 acquire、request 与
+handoff 均为单位需求，每个未完成工件至多持有一单位当前资源。完成工件
+不保留资源，没有
+替代路线、AND 请求、AGV/预约、外部 drain、隐藏 release 或强制优先级。
+dag 模式只删除 C 的 `Q->M` 请求并让 C 显式释放 Q 完成。
+
+用途：P3e ring 可达 deadlock 阈值
+`n_A>=c_M and n_B>=c_D and n_C>=c_Q`，以及同事件语义下的删回流 DAG
+修复。
+
+失败后果：增加可选 drain 不能自动证明结构无死锁；增加替代路线、
+AGV/预约、多个 persistent buffers 或外部/日历释放时，P3e 必须停止适用
+并进入新的迁移卡、反例和发现协议。

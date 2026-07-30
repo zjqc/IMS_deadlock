@@ -128,6 +128,29 @@ buffer-full/calendar/外部-drain 终端边界，不属于 P2 capacity-mediated
 属于 persistent-D 边界，不是 BIX1-SAT theorem mismatch。删除回流只
 消除 M-G 双向封闭核，不能独自保证有限 D 无终端阻塞。
 
+后续闭环：P3e 的 `BIX2-PERSIST` 不把缺失 external drain 的 terminal
+block 冒充容量死锁，而是显式加入下游资源 Q 和每次 handoff 后的 release，
+在 `M->D->Q->M` 子族中得到 D 进入最小核的精确阈值，并用删除 `Q->M`
+构造同语义 DAG 修复。它关闭的是 CE-BIXD1 的一个可证明子类，不是一般
+persistent-buffer 结论。
+
+## CE-BIXD2 Optional Drain Is Not a Structural Repair
+
+状态：反例候选/待实例化。
+
+目标击穿命题：给 ring 增加一条可选 controllable drain，就能推出结构
+deadlock-free。
+
+构造要点：
+
+- 保留 `M->D->Q->M` 的原 ring 路径；
+- 添加一个可控 alternate drain，但不强制其在进入饱和前发生；
+- 调度仍可选择原 ring 的饱和前缀。
+
+预期结论：存在可选安全动作只说明 supervisor 可能规避死锁，不消除坏
+可达前缀。P3e-b 的修复必须真正删除 `Q->M` 或施加等价的不可绕过结构
+顺序；可选 drain 属于 P5 控制问题。
+
 ## CE-NB1 Nonblocking 不等于所有随机路径完成
 
 状态：反例候选/待实例化。

@@ -1,17 +1,27 @@
+from typing import Any, cast
+
 import pytest
 
 from ims_deadlock.families import (
+    BIX2_FAMILY_ID,
+    BIX2_REPORT_VERSION,
     BIX0Parameters,
     BIX0ReportRow,
     BIX1Parameters,
     BIX1ReportRow,
+    BIX2Observation,
+    BIX2Parameters,
+    BIX2ReportRow,
     bix0_grid_report,
     bix0_report_row,
     bix1_persistent_d_boundary_record,
     bix1_sat_grid_report,
     bix1_sat_report_row,
+    bix2_persist_boundary_grid_report,
+    bix2_persist_report_row,
     build_bix0_candidate,
     build_bix1_sat_instance,
+    build_bix2_persist_instance,
 )
 from ims_deadlock.model import RequestAlternative
 
@@ -270,6 +280,239 @@ def test_bix1_persistent_d_boundary_is_classified_outside_sat_theorem() -> None:
     assert boundary.case_id == "CE-BIXD1"
     assert boundary.classification == "outside_bix1_sat"
     assert boundary.to_json_dict()["classification"] == "outside_bix1_sat"
+
+
+def test_bix2_persist_minimal_ring_reaches_m_d_q_deadlock_with_prefix() -> None:
+    row = bix2_persist_report_row(
+        BIX2Parameters(c_M=1, c_D=1, c_Q=1, n_A=1, n_B=1, n_C=1),
+        max_states=256,
+    )
+
+    assert row.predicted_reachable_closed_kernel is True
+    assert row.observed.reachable_closed_kernel is True
+    assert row.observed.certificate_resources == ("D", "M", "Q")
+    assert row.observed.shortest_reachable_prefix
+    assert row.observed.truncated is False
+    assert row.match is True
+
+
+def test_bix2_persist_single_dimension_below_threshold_has_no_deadlock() -> None:
+    for parameters in (
+        BIX2Parameters(c_M=2, c_D=1, c_Q=1, n_A=1, n_B=1, n_C=1),
+        BIX2Parameters(c_M=1, c_D=2, c_Q=1, n_A=1, n_B=1, n_C=1),
+        BIX2Parameters(c_M=1, c_D=1, c_Q=2, n_A=1, n_B=1, n_C=1),
+    ):
+        row = bix2_persist_report_row(parameters, max_states=1024)
+
+        assert row.predicted_reachable_closed_kernel is False
+        assert row.observed.reachable_closed_kernel is False
+        assert row.observed.truncated is False
+        assert row.match is True
+
+
+def test_bix2_persist_asymmetric_saturated_ring_reaches_deadlock() -> None:
+    row = bix2_persist_report_row(
+        BIX2Parameters(c_M=2, c_D=1, c_Q=1, n_A=2, n_B=1, n_C=1),
+        max_states=4096,
+    )
+
+    assert row.predicted_reachable_closed_kernel is True
+    assert row.observed.reachable_closed_kernel is True
+    assert row.observed.certificate_resources == ("D", "M", "Q")
+    assert row.match is True
+
+
+def test_bix2_persist_initial_state_has_no_holds_and_start_requests() -> None:
+    instance = build_bix2_persist_instance(
+        BIX2Parameters(c_M=2, c_D=1, c_Q=3, n_A=3, n_B=2, n_C=4)
+    )
+
+    assert instance.initial_state.holds == ()
+    assert _request_resources(instance.initial_state.requests["A1"]) == ("M",)
+    assert _request_resources(instance.initial_state.requests["B1"]) == ("D",)
+    assert _request_resources(instance.initial_state.requests["C1"]) == ("Q",)
+    assert instance.initial_state.event_calendar_empty is True
+
+
+def test_bix2_persist_dag_repair_has_no_deadlock_and_completes() -> None:
+    row = bix2_persist_report_row(
+        BIX2Parameters(
+            c_M=1,
+            c_D=1,
+            c_Q=1,
+            n_A=1,
+            n_B=1,
+            n_C=1,
+            repair_mode="dag",
+        ),
+        max_states=512,
+    )
+
+    assert row.predicted_reachable_closed_kernel is False
+    assert row.observed.reachable_closed_kernel is False
+    assert row.observed.completion_reachable is True
+    assert row.observed.truncated is False
+    assert row.match is True
+
+
+def test_bix2_persist_dag_row_rejects_missing_completion_as_match() -> None:
+    parameters = BIX2Parameters(
+        c_M=1,
+        c_D=1,
+        c_Q=1,
+        n_A=1,
+        n_B=1,
+        n_C=1,
+        repair_mode="dag",
+    )
+    observation = BIX2Observation(
+        classification="not_reachable_closed_kernel",
+        reachable_closed_kernel=False,
+        completion_reachable=False,
+        certificate_resources=(),
+        shortest_reachable_prefix=(),
+        state_count=1,
+        truncated=False,
+        certificate=None,
+        validation_issues=(),
+    )
+
+    with pytest.raises(ValueError, match="completion reachability"):
+        BIX2ReportRow(
+            version=BIX2_REPORT_VERSION,
+            family=BIX2_FAMILY_ID,
+            parameters=parameters,
+            predicted_reachable_closed_kernel=False,
+            observed=observation,
+            match=True,
+            note="invalid DAG evidence",
+        )
+
+
+def test_bix2_persist_invalid_instance_is_not_reported_as_match() -> None:
+    parameters = BIX2Parameters(
+        c_M=1,
+        c_D=1,
+        c_Q=1,
+        n_A=0,
+        n_B=0,
+        n_C=0,
+    )
+    observation = BIX2Observation(
+        classification="invalid_instance",
+        reachable_closed_kernel=False,
+        completion_reachable=False,
+        certificate_resources=(),
+        shortest_reachable_prefix=(),
+        state_count=0,
+        truncated=False,
+        certificate=None,
+        validation_issues=("invalid_fixture",),
+    )
+
+    with pytest.raises(ValueError, match="invalid instance"):
+        BIX2ReportRow(
+            version=BIX2_REPORT_VERSION,
+            family=BIX2_FAMILY_ID,
+            parameters=parameters,
+            predicted_reachable_closed_kernel=False,
+            observed=observation,
+            match=True,
+            note="invalid evidence",
+        )
+
+
+def test_bix2_persist_truncated_search_is_not_reported_as_evidence_or_match() -> None:
+    row = bix2_persist_report_row(
+        BIX2Parameters(c_M=1, c_D=1, c_Q=1, n_A=1, n_B=1, n_C=1),
+        max_states=1,
+    )
+
+    assert row.observed.truncated is True
+    assert row.observed.reachable_closed_kernel is False
+    assert row.observed.shortest_reachable_prefix == ()
+    assert row.match is False
+
+
+def test_bix2_persist_report_json_round_trips_with_strict_schema() -> None:
+    row = bix2_persist_report_row(
+        BIX2Parameters(c_M=1, c_D=2, c_Q=1, n_A=1, n_B=2, n_C=1),
+        max_states=1024,
+    )
+    payload = row.to_json_dict()
+
+    assert BIX2ReportRow.from_json_dict(payload).to_json_dict() == payload
+
+    payload_with_extra = dict(payload)
+    payload_with_extra["extra"] = "not allowed"
+    with pytest.raises(ValueError, match="row keys mismatch"):
+        BIX2ReportRow.from_json_dict(payload_with_extra)
+
+    bad_parameters = dict(payload)
+    bad_parameters["parameters"] = {
+        "c_M": 1,
+        "c_D": 2,
+        "c_Q": True,
+        "n_A": 1,
+        "n_B": 2,
+        "n_C": 1,
+        "repair_mode": "ring",
+    }
+    with pytest.raises(TypeError, match="c_Q must be an integer"):
+        BIX2ReportRow.from_json_dict(bad_parameters)
+
+    bad_observed = dict(payload)
+    bad_observed["observed"] = {
+        "classification": "reachable_closed_kernel",
+        "reachable_closed_kernel": False,
+        "completion_reachable": False,
+        "certificate_resources": ["D", "M", "Q"],
+        "shortest_reachable_prefix": ["A1-start-M"],
+        "state_count": 4,
+        "truncated": False,
+        "validation_issues": [],
+    }
+    with pytest.raises(ValueError, match="reachable_closed_kernel disagrees"):
+        BIX2ReportRow.from_json_dict(bad_observed)
+
+
+def test_bix2_persist_parameters_reject_invalid_domains() -> None:
+    with pytest.raises(ValueError, match="capacities"):
+        BIX2Parameters(c_M=0, c_D=1, c_Q=1, n_A=0, n_B=0, n_C=0)
+    with pytest.raises(ValueError, match="job counts"):
+        BIX2Parameters(c_M=1, c_D=1, c_Q=1, n_A=-1, n_B=0, n_C=0)
+    with pytest.raises(ValueError, match="repair_mode"):
+        BIX2Parameters(
+            c_M=1,
+            c_D=1,
+            c_Q=1,
+            n_A=0,
+            n_B=0,
+            n_C=0,
+            repair_mode=cast(Any, "drain"),
+        )
+
+
+def test_bix2_persist_boundary_grid_uses_preregistered_small_facets() -> None:
+    report = bix2_persist_boundary_grid_report(
+        max_capacity=2,
+        max_total_capacity=4,
+        max_states=4096,
+    )
+
+    assert len(report.rows) == 32
+    assert report.mismatches == ()
+    assert all(not row.observed.truncated for row in report.rows)
+    assert {row.parameters.repair_mode for row in report.rows} == {"ring", "dag"}
+    assert {
+        (row.parameters.c_M, row.parameters.c_D, row.parameters.c_Q)
+        for row in report.rows
+    } == {(1, 1, 1), (2, 1, 1), (1, 2, 1), (1, 1, 2)}
+
+
+def test_bix2_persist_boundary_grid_rejects_explosive_bounds() -> None:
+    with pytest.raises(ValueError, match="max_total_capacity"):
+        bix2_persist_boundary_grid_report(max_capacity=2, max_total_capacity=3)
 
 
 def _request_resources(alternatives: tuple[RequestAlternative, ...]) -> tuple[str, ...]:

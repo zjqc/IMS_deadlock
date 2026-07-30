@@ -57,6 +57,42 @@ These rows exactly match `FULLTEXT-THEOREM` in `LITERATURE_MATRIX.md`.
 - L26: https://doi.org/10.1023/A:1007937925728
 - L30: https://doi.org/10.1177/01423312251369553
 - L31: https://doi.org/10.1109/TASE.2026.3689269
+- L32: https://doi.org/10.1109/TSMC.2024.3473851
+- L33: https://doi.org/10.1109/TASE.2025.3588429
+- L34: https://doi.org/10.1109/TSMC.2023.3241101
+- L35: https://doi.org/10.1109/LRA.2023.3246384
+
+## Closed-access Freshness Audit
+
+- `L30`, `10.1177/01423312251369553`:
+  - SAGE article and DOI metadata verified;
+  - official abstract describes an equivalent finite-capacity S3PR net,
+    minimum initial resource-place markings, and an ILP configuration method;
+  - SAGE full text is restricted and OpenAlex reports no repository full text;
+  - no theorem, equation, proof, or complexity locator is authorized.
+- `L31`, `10.1109/TASE.2026.3689269`:
+  - IEEE and institutional metadata verified; the University of Zielona Góra
+    record's shorter DOI string is a typo and is not used;
+  - official abstract describes CRP/linear-equation detection of reachable
+    partial deadlocks without reachability-tree traversal;
+  - no legal full text or accepted manuscript was located;
+  - no theorem, equation, proof, or complexity locator is authorized.
+- `L32`, `10.1109/TSMC.2024.3473851`:
+  - IEEE document `10736656`, Crossref, and NJIT metadata verified;
+  - official abstract describes a structure modification with at most one NIS,
+    preserved modeled functionality, and polynomial-time reachability;
+  - Crossref's IEEE staging PDF endpoint returned HTTP 418 and no legal
+    institutional manuscript was located;
+  - no theorem, equation, preservation, or complexity locator is authorized.
+- `L33`, `10.1109/TASE.2025.3588429`:
+  - IEEE document `11078878`, Crossref, and NJIT metadata verified;
+  - official abstract gives the AMS-specific structure-modification claim;
+  - Crossref's IEEE staging PDF endpoint returned HTTP 418 and no legal
+    institutional manuscript was located;
+  - no theorem, equation, preservation, or complexity locator is authorized.
+
+The human-readable acquisition queue and required extraction fields are in
+`FULLTEXT_REQUEST_LIST.md`. Downloaded PDFs remain outside Git.
 
 ## Corrections
 
@@ -87,8 +123,10 @@ These rows exactly match `FULLTEXT-THEOREM` in `LITERATURE_MATRIX.md`.
    adaptive splitting construction, but an IMS-specific reaction coordinate,
    finite-sample protocol, and assumption check remain open before deployment.
 6. L29 must be an explicit algorithm/control comparator. L30's finite-capacity
-   S3PR minimum-resource configuration and L31's claimed reachable
-   partial-deadlock detection without reachability-tree traversal are the
-   highest-priority freshness threats; both remain abstract-level here and
+   S3PR minimum-resource configuration, L31's claimed reachable
+   partial-deadlock detection without reachability-tree traversal, and
+   L32-L33's reachability-decidable structure-modification claims are the
+   highest-priority freshness threats. All remain abstract-level here and
    cannot be used as theorem sources until their full proofs and subclasses are
-   audited.
+   audited. The exact manual acquisition list is
+   `FULLTEXT_REQUEST_LIST.md`.

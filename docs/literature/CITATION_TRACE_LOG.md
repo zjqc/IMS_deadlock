@@ -10,12 +10,14 @@ appearing.
 
 Conclusion:
 
-> R2/R3 reached historical scope-bounded saturation, but Round 4 found a new
-> reachable-partial-deadlock theorem category and reset the stop counter.
+> R2/R3 reached historical scope-bounded saturation. Round 4 reopened the
+> search, Round 6 found the reachability-decidable structure-modification
+> category, and Rounds 7-8 then completed two consecutive bounded rounds
+> without another new first-paper category.
 
-The historical result was enough to begin G2 formalization. It no longer
-satisfies the current stop rule: `L29-L31` must seed new bounded rounds, and
-`L30-L31` require full-text verification.
+The taxonomy stop rule is satisfied again as a bounded OpenAlex result. It does
+not close full-text verification: `L30-L33` remain priority comparators whose
+theorems and assumptions have not been inspected.
 
 ## Method Limits
 
@@ -200,3 +202,118 @@ assumption mapping in `MIGRATION_CARDS.md`.
   - no manuscript may claim the first reachable structural certificate,
     the first reachability-free partial-deadlock detector, or general
     finite-capacity threshold novelty while `L30-L31` remain unread in full.
+
+## Round 5: L29-L31 Reseed
+
+- Date: 2026-07-30.
+- Seeds:
+  - `L29`, OpenAlex `W4414887684`: 28 indexed references, no indexed forward
+    citation at query time;
+  - `L30`, OpenAlex `W4414375876`: 41 indexed references and one indexed
+    forward citation;
+  - `L31`, OpenAlex `W7160189276`: no indexed reference edges at query time.
+    Crossref supplied 47 reference records, 46 with DOI; all 46 DOI records
+    resolved to OpenAlex works.
+- Bound:
+  - backward and forward records sorted by `cited_by_count:desc`;
+  - top eight per direction where available;
+  - Crossref DOI references substituted only for L31's missing OpenAlex
+    backward edges.
+- In-scope result:
+  - repeated finite-capacity S3PR initial-marking/resource-configuration,
+    siphon control, FMS/RAS supervision, and holder/request-graph categories;
+  - `10.1109/TSMC.2023.3241101` and
+    `10.1109/LRA.2023.3246384` exposed the state-equation-to-legal-firing-
+    sequence gap. This is recorded as a proof-mechanism and false-positive
+    boundary inside the reopened reachable-partial-deadlock category, not as
+    another top-level IMS model category.
+- Forward result:
+  - L30's sole indexed forward record,
+    `10.1109/ICATEI67676.2025.11405088`, stayed in S4PR/controller-deadlock
+    design and did not add a new first-paper category.
+- Reseed reason:
+  - no new top-level category in this round, but one more layer of current
+    legal-firing-sequence citations was required.
+
+## Round 6: Legal-Firing-Sequence and Capacity Lineage
+
+- Date: 2026-07-30.
+- Anchors:
+  - `10.1080/00207543.2011.560204`;
+  - `10.1093/imamci/dnv016`;
+  - `10.1016/j.ins.2024.121623`;
+  - `10.1016/j.automatica.2024.111625`;
+  - `10.1109/TSMC.2025.3548655`;
+  - `10.1109/TSMC.2023.3241101`;
+  - `10.1109/LRA.2023.3246384`;
+  - `10.1109/TASE.2021.3138169`.
+- Bound: top eight forward records and top eight of the first 50 indexed
+  backward references for each anchor, sorted by cited count.
+- Screened set: 85 unique OpenAlex works after deduplication.
+- New in-scope category:
+  - `L32`, `10.1109/TSMC.2024.3473851`, officially claims a
+    functionality-preserving Petri-net structure modification with no more
+    than one state-equation NIS and polynomial-time reachability;
+  - `L33`, `10.1109/TASE.2025.3588429`, presents an AMS-specific
+    structure-modification/reachability-analysis method with the same
+    high-level objective.
+- Repeated in-scope categories:
+  - reduced/step reachability graphs, S3PR/S4PR supervision, flexible
+    acquisition/assembly, siphon/GMEC control, and minimum initial marking.
+- Excluded first-paper branches:
+  - unreliable resources and unobservable events;
+  - partial-observation/labeled-net minimum marking;
+  - generic heuristic marking search.
+- Reseed reason:
+  - reachability-decidable structure modification is a distinct modeling and
+    complexity category. The two-round stop counter reset again.
+
+## Round 7: L32-L33 Reseed
+
+- Date: 2026-07-30.
+- Seeds and live OpenAlex counts:
+  - `L32`, `W4403826990`: 50 indexed references, 22 indexed citations;
+  - `L33`, `W4412352793`: 61 indexed references, 2 indexed citations.
+- Bound:
+  - top eight backward references by cited count for each seed;
+  - top eight forward citations for L32 and all two indexed citations for L33.
+- In-scope result:
+  - backward records returned classical PN foundations, linear/state-equation
+    analysis, resource-transition circuits, and manufacturing-modeling
+    references;
+  - forward records returned applications, S4PR supervisor synthesis, and
+    controller/design optimization papers;
+  - no new first-paper model class, theorem type, complexity boundary, or
+    counterexample category.
+- Stop counter: first consecutive no-new-category round after the Round 6
+  reset.
+
+## Round 8: Relevant R7 Forward Branches
+
+- Date: 2026-07-30.
+- Anchor selection rule: retain every R7 forward record whose title/metadata
+  directly concerned FMS/AMS deadlock, liveness, or S4PR supervision; exclude
+  unrelated application records before querying.
+- Anchors and live OpenAlex counts:
+  - `10.1109/CICN63059.2024.10847497`: 37 references, 4 citations;
+  - `10.1109/ICATEI67676.2025.11405229`: 38 references, 2 citations;
+  - `10.1109/ICATEI67676.2025.11405088`: 36 references, 2 citations.
+- Bound: top eight backward references and up to eight forward citations per
+  anchor.
+- In-scope result:
+  - all branches repeated optimal/maximally-permissive PN supervision,
+    transition-based recovery, siphon control, S3PR/S4PR, flexible
+    routes/assembly, or unreliable-resource extensions;
+  - no new first-paper model class, theorem type, complexity boundary, or
+    counterexample category.
+- Stop reason:
+  - second consecutive bounded round without a new in-scope category after the
+    latest reset.
+
+## Current Gate Interpretation
+
+Rounds 7-8 close only the bounded taxonomy-saturation sub-gate. They do not
+make OpenAlex complete, do not prove priority, and do not authorize theorem
+claims from abstracts. `L30-L33` remain the manual full-text request set and
+keep G1 at `PARTIAL` until their exact subclasses, assumptions, proofs,
+complexity models, and counterexamples are compared with IMS-RAS.

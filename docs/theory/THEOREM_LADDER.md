@@ -141,9 +141,9 @@ multi-capacity/control-only 回归。一般 plant/S3PR bridge 仍开放。
 ## T4 结构充分条件与阈值族
 
 状态：chain-decomposable strict-precedence 子类、`BIX0` 候选态阈值、
-`BIX1-SAT` 可达启动/完成饱和阈值和表示敏感复杂性下界已证明；一般
-多容量/聚合预约、persistent-buffer 制造岛阈值和一般紧凑 IMS 的精确
-复杂性类别仍拟证明。
+`BIX1-SAT` 可达启动/完成饱和阈值、`BIX2-PERSIST` 三资源 ring/DAG
+边界和表示敏感复杂性下界已证明；一般多容量/聚合预约、更丰富
+persistent-buffer/AGV 制造岛阈值和一般紧凑 IMS 的精确复杂性类别仍拟证明。
 
 ### Statement
 
@@ -155,8 +155,11 @@ transfer、unload 和 drain 的 `BIX1-SAT`，P3d 给出精确可达性阈值：
 capacity-mediated global deadlock reachable iff
 `n_A>=c_M` 且 `n_B>=c_G`。该式只说明存在死锁前缀，不说明死锁必然
 发生；`c_D,c_V` 只因见证前缀没有成功 transfer 且完成 drain 已显式建模
-而消失。persistent-D、替代路线、外部 drain 或额外优先级的更一般族
-仍开放。
+而消失。P3e 对显式 `M->D->Q->M` persistent-buffer ring 给出
+deadlock reachable iff
+`n_A>=c_M,n_B>=c_D,n_C>=c_Q`，并证明删除 `Q->M` 后该族无
+capacity-mediated global deadlock 且存在完成路径。替代路线、AGV/预约、
+外部 drain、多个 persistent buffers 或额外优先级的更一般族仍开放。
 
 复杂性边界：无 buffer/AGV/reservation/BAS、有限无环路线、原子单单位
 acquire-release 的 `IMS-SU^A` 子类，其 `IMS-SU-SAFE` 由 SU-SAFE
@@ -181,8 +184,12 @@ supervisor 初始可行性至少 NP-hard，完整状态策略可能具有指数�
 - 调用窄化 T2：无 covering closed blocking kernel 推出无 capacity-mediated operational deadlock；不得跳过 T2 的覆盖、capacity-ready 和证书条件。
 - `[closed in P3d]` 对 `BIX1-SAT` 从空持有状态构造充分性前缀，并利用
   enabled drain/completion 排除阈值以下的全局死锁。
-- `BIX1-SAT` 之外、含 persistent-D、替代路线、外部 drain 或优先级的
-  双向岛族仍需推导或证伪容量/WIP/AGV 分段阈值，不得预置公式。
+- `[closed in P3e]` 对 `BIX2-PERSIST` ring 构造三资源饱和前缀，并用
+  deadlock-mode/holder identity 排除任一 one-below threshold。
+- `[closed in P3e]` 对删 `Q->M` 修复同时证明无可达容量闭核和存在
+  marked completion 路径；只满足前者不得算 repair match。
+- 含替代路线、AGV/预约、外部 drain、多个 persistent buffers 或优先级
+  的双向岛族仍需推导或证伪容量/WIP/AGV 分段阈值，不得预置公式。
 
 ### Failure modes
 
@@ -196,19 +203,24 @@ supervisor 初始可行性至少 NP-hard，完整状态策略可能具有指数�
 
 P3 chain-decomposable strict-precedence 子类无 capacity-mediated 操作
 死锁已项目内证明；P3c 闭合 `BIX0` 候选态阈值；P3d 闭合
-`BIX1-SAT` 从空状态可达的 WIP/机器/AGV 双向饱和阈值；
+`BIX1-SAT` 从空状态可达的 WIP/机器/AGV 双向饱和阈值；P3e 闭合
+`BIX2-PERSIST` 的显式 persistent-D 三资源 ring/DAG 边界；
 P6 给出 `IMS-SU^A` NP-complete、显式 LTS 多项式 fixed point 和紧凑
 输入至少 NP-hard 的边界。一般操作死锁、永久非资源 guard、多容量/
-聚合预约、一般紧凑 IMS 的精确复杂性分类和 persistent-buffer 一般
-制造岛容量/WIP/AGV 阈值仍是 conjecture family 或边界。
+聚合预约、一般紧凑 IMS 的精确复杂性分类和更丰富 persistent-buffer/
+AGV 制造岛容量/WIP/AGV 阈值仍是 conjecture family 或边界。
 
 ### Case mapping
 
-`C2` 对应偏序无环正例；`C5` 对比 M-D 双向回流与删除回流 DAG 版本。
+`C2` 对应偏序无环正例；`BIX2-PERSIST` 对比三资源 ring 与删回流
+DAG；`C5` 保留更接近原制造岛的 M-D/AGV 工程机制。
 
 ### Enumeration assertion
 
-穷举小参数网格，先检查偏序条件与封闭核 chain-decomposable 条件；在二者同时满足时断言无覆盖封闭核。对双向岛族记录第一个可达死锁参数点、最小证书以及是否属于 P3 外聚合边界。
+穷举小参数网格，先检查偏序条件与封闭核 chain-decomposable 条件；在
+二者同时满足时断言无覆盖封闭核。`BIX2-PERSIST` 只执行预注册的 32 行
+threshold/one-below ring/DAG 发现网格；截断、DAG 无完成路径或 mismatch
+均保留为失败证据。
 
 ## T5 概率桥接定理
 

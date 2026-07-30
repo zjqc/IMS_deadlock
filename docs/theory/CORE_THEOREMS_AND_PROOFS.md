@@ -379,6 +379,92 @@ release/unload，会破坏上述 `M-G` 封闭核。它只消除这个双向饱�
 若 D 可持续积累且无 drain，仍不能据此推出一般 deadlock-free 或
 nonblocking。
 
+### P3e persistent-buffer 三资源族 `BIX2-PERSIST`
+
+定义
+`BIX2-PERSIST(c_M,c_D,c_Q,n_A,n_B,n_C,mode)`，其中三个容量均至少为
+1，所有工件数非负，初态没有持有。每个 successful handoff 后都有一个
+显式 uncontrollable release，故完成工件不保留资源。每次 start、
+request 和 handoff 的需求都恰为一单位；每个未完成工件在本族中至多持有
+一单位当前资源，因此容量由不同的单位 holders 饱和。
+
+- A 链为 `M -> D -> release(D)`；
+- B 链为 `D -> Q -> release(Q)`；
+- `ring` 模式的 C 链为 `Q -> M -> release(M)`；
+- `dag` 模式删除 C 的 `Q -> M` 请求；C 在 Q 上完成后直接释放 Q。
+
+每条 `X -> Y` 链都由四个事件组成：controllable start 获取 X；
+uncontrollable completion 保持 X 并请求 Y；controllable handoff 原子
+获取 Y、释放 X；uncontrollable release 释放 Y 并完成。所有事件均为
+显式非零时 `TransitionSpec`，零时闭包平凡。
+
+**定理 P3e-a（ring 精确可达阈值）。** `ring` 模式存在可达的
+capacity-mediated global operational deadlock，当且仅当
+
+`n_A >= c_M, n_B >= c_D, n_C >= c_Q`.
+
+在最小 `1/1/1` 实例中，最小封闭核资源恰为 `{M,D,Q}`。
+
+**充分性。** 选取 `c_M` 个 A、`c_D` 个 B 和 `c_Q` 个 C 工件。对每个
+被选 A 先执行 start-M 再执行 complete-request-D；对 B、C 分别执行
+对应的 start/complete。该有限前缀没有 successful handoff，故 A、B、C
+分别持满 M、D、Q 并请求下一资源。未启动工件的 start 也分别被满容量
+阻断；没有工件处在有 enabled completion 或 release 的 mode。三类工件
+及 `{M,D,Q}` 构成覆盖所有未完成活动的封闭容量核，由 P2 得到全局
+capacity-mediated deadlock；该调用严格限于 P2 的 capacity-mediated
+子域。
+
+**必要性。** 考虑任一该族的全局 capacity-mediated deadlock。处于
+`in_service` 的工件有 uncontrollable completion enabled，处于
+successful-handoff 后 `on_target` 的工件有 uncontrollable release
+enabled，所以这两类 mode 都不能出现。于是任何未完成工件只能是 idle
+或 blocked-before-handoff；在死锁中，M、D、Q 只能分别由 blocked A、
+blocked B、blocked C 持有。
+
+记 `I_A,I_B,I_C` 为 idle 工件集合，`K_A,K_B,K_C` 为
+blocked-before-handoff 工件集合。由上一步，
+`H_M=K_A,H_D=K_B,H_Q=K_C`。此外：
+
+- `res(M)>0` 推出 `I_A=emptyset` 且 `K_C=emptyset`，否则 start-M 或
+  C handoff enabled；
+- `res(D)>0` 推出 `I_B=emptyset` 且 `K_A=emptyset`；
+- `res(Q)>0` 推出 `I_C=emptyset` 且 `K_B=emptyset`。
+
+若 `n_A<c_M`，因死锁中 M 只能由 `K_A` 的单位持有，必有
+`res(M)>0`，故 `I_A=K_C=emptyset`。于是 Q 没有 holder，
+`res(Q)>0`，故 `I_C=K_B=emptyset`。于是 D 没有 holder，
+`res(D)>0`，故 `I_B=K_A=emptyset`。所有未完成工件允许的 mode 均为空，
+只能是全完成状态，与假设的 global deadlock 矛盾。对
+`n_B<c_D` 和 `n_C<c_Q` 循环置换同一论证。故必有
+`n_A>=c_M,n_B>=c_D,n_C>=c_Q`。
+
+**定理 P3e-b（删回流修复）。** `dag` 模式不存在可达的
+capacity-mediated global operational deadlock；若批次非空，则从空初态
+存在 marked completion 路径。
+
+**证明。** 删除 `Q -> M` 后，持有后请求严格遵循 `M < D < Q`。更直接
+地，在假设的死锁中仍先排除所有 `in_service` 和 `on_target` mode。C
+没有 blocked-before-handoff mode；若有 idle C，Q 不可能由无 enabled
+release 的工件持满，故 start-Q enabled。于是死锁中没有未完成 C，且 Q
+为空。随后任何 blocked B 可 handoff 到 Q，排除后 D 为空；任何 blocked
+A 可 handoff 到 D，排除后 M 为空；剩余 idle 工件均可 start。故只有
+complete 状态能没有 enabled 事件，矛盾。
+
+完成路径由串行执行构造：每次只启动一个工件，并依次触发其 completion、
+handoff（若有）和 release，资源容量至少为 1，因此所有有限工件可逐一
+完成。
+
+**边界与原创性。** 三资源 circular wait 和删除一条回流边本身是经典
+结构，不作为新图论贡献。P3e 的作用是关闭 P3d 的一个明确边界：把
+persistent D 作为可达、容量可审计核的一部分，并在相同 IMS 事件语义下
+给出精确成对修复。替代路线、AND 请求、AGV/预约、外部 drain、强制优先级
+或多个 persistent buffers 不属于 P3e。
+
+**机器审计。** `BIX2_DISCOVERY_PROTOCOL.md` 预先固定 singleton 与三个
+非对称多容量 triple 的 threshold/one-below facets，并同时检查 ring 和
+dag。任何截断、ring mismatch、DAG 闭核或 DAG 无完成路径都不得计为
+证据。枚举只审计证明，不替代上述论证。
+
 ## 4. P4 有限竞争吸收 CTMC 定理
 
 ### 定理 P4

@@ -43,12 +43,13 @@ For each seed source, record:
 
 The search may declare taxonomy saturation only after two consecutive bounded
 tracking rounds produce no new in-scope model category, theorem category, or
-critical counterexample. Current status: **R2/R3 reached historical
-scope-bounded saturation, but the 2026-07-30 freshness audit found the `L31`
-reachable-partial-deadlock/no-reachability-tree theorem category and reset the
-stop counter**. `L29-L31` must seed at least two new no-category rounds. This
-is not a completed systematic review and does not claim exhaustive citation
-saturation.
+critical counterexample. Current status: **Round 6 found the
+reachability-decidable structure-modification category (`L32-L33`) and reset
+the counter; Rounds 7-8 then produced two consecutive bounded no-new-category
+results**. The taxonomy stop condition is satisfied again within the recorded
+OpenAlex bounds. This is not a completed systematic review and does not claim
+exhaustive citation saturation; `L30-L33` still require legal full-text
+comparison before G1 or broad priority claims can close.
 
 ## Theorem-use Rule
 
@@ -63,6 +64,10 @@ theorem claims.
 PDFs, cached publisher pages, private datasets, credentials, and old simulation
 outputs are not part of this repository. Bibliographic records should cite DOI
 links, author pages, or publisher pages only.
+
+Reuse of proof devices, algorithms, or case patterns must also follow
+`ADAPTATION_AND_ATTRIBUTION_PROTOCOL.md`; a notation or wording change never
+converts a source result into an original contribution.
 
 ## Audit Queries
 

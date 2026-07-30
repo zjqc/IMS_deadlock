@@ -19,6 +19,7 @@
 | `C4-agv-required` | `DISCOVERY` | Machine projection is live/nondeadlocked, but adding AGV/reservation resources creates deadlock. | kernel contains AGV edge; projection-only certificate fails. |
 | `C5-md-bidirectional-rebuild` | `DISCOVERY` | Independently reconstructs the M-D bidirectional manufacturing-island mechanism and pairs it with a backflow-deleted DAG variant. | blocked-complete/blocked-unload plus reservation-aware kernel. |
 | `C5-md-dag-repair` | `DISCOVERY` | Removes the `D -> M` reverse route from the C5 pair and leaves an enabled forward release/progress path. | no closed blocking kernel; marked completion reachable in bounded LTS. |
+| `BIX2-PERSIST` | `DISCOVERY` | Makes persistent buffer `D` a necessary member of a reachable `M -> D -> Q -> M` capacity kernel and pairs it with deletion of the `Q -> M` return. | ring: exact `{M,D,Q}` kernel; DAG: no kernel and marked completion reachable on the preregistered discovery domain. |
 
 ## Provisional Witnesses
 

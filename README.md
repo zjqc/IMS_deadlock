@@ -8,7 +8,7 @@ IMS Deadlock 是面向 IMS-RAS 的结构-概率-控制理论闭环项目。目�
 `-> 有限 LTS/reachability net`
 `-> capacity-mediated closed blocking core`
 `-> IMS-SIP^1 wait-snapshot 精确诊断双向桥或机器可读拒绝`
-`-> 受限结构无死锁条件与 BIX1-SAT 可达精确阈值`
+`-> 受限结构无死锁条件、BIX1-SAT 阈值与 BIX2-PERSIST 精确 ring/DAG 边界`
 `-> competing-absorption CTMC`
 `-> exact finite nonblocking supervisor`.
 
@@ -67,6 +67,8 @@ PYTHONDONTWRITEBYTECODE=1 python -m mypy --no-incremental src tests
 - 只有 `FULLTEXT-THEOREM` 且带精确定位的文献可支撑定理迁移。
 - `C0/C1` 的内建 CTMC 是 `fixture_unverified`，不是从结构案例速率推导的确认结果。
 - P2c 只关闭 state-induced `IMS-SIP^1` diagnostic net，不是一般
-  structured plant/S3PR 等价；一般制造岛阈值、风险预算控制与 Pareto
-  定理仍开放。
+  structured plant/S3PR 等价；P3e 只关闭显式单位需求、单当前持有、
+  三资源 persistent-buffer ring 及其删回流 DAG 修复，不覆盖替代路线、
+  AND 请求、AGV/预约或多个 persistent buffers。一般制造岛阈值、
+  风险预算控制与 Pareto 定理仍开放。
 - 被隔离的历史提交或外部项目产物不得直接转入本项目证据链。

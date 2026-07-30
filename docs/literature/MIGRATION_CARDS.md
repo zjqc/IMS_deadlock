@@ -6,6 +6,8 @@ Each card follows:
 
 Only cards backed by `FULLTEXT-THEOREM` sources can support theorem statements.
 Other cards are explicitly marked as context or pending.
+Every card also obeys `ADAPTATION_AND_ATTRIBUTION_PROTOCOL.md`; notation changes
+or cosmetic rewriting never count as an IMS contribution.
 
 ## M1. Palmer Knot Certificate
 
@@ -225,3 +227,42 @@ Other cards are explicitly marked as context or pending.
   avoidance of reachability-graph traversal.
 - 对应案例: future restricted PN overlap benchmark; `BIX1-SAT` remains a
   family-specific exact threshold rather than a scalable general detector.
+
+## M18. Reachability-Decidable Structure-Modification Threat
+
+- Evidence type: `ABSTRACT`, migration blocked pending full read.
+- 原主张: `L32` officially claims a Petri-net structure modification that
+  preserves modeled functionality while making the state equation admit no
+  more than one nonnegative integer solution and reachability decidable in
+  polynomial time. `L33` states an AMS-specific structure-modification version
+  with the same high-level objective.
+- 原假设: exact net class, transformation, preservation relation, and
+  complexity model have not been extracted from full text.
+- IMS映射: the approach could become a restricted Petri-modeling baseline after
+  a plant-level IMS-to-Petri semantic map exists.
+- 缺失假设: BAS hold-after-completion, finite persistent buffers, AGV
+  occupancy, hard reservations, zero-time closure, OR-of-AND acquisition, and
+  the relation between the modified net and the original IMS behavior.
+- 适配命题/反例: no theorem migration is authorized. The project must not claim
+  that reachability-decidable model transformation is new. If later used, it
+  must be evaluated as a transparent baseline and audited for preservation of
+  IMS deadlock and completion behavior.
+- 对应案例: future restricted-Petri overlap model plus `C4/C5` preservation
+  attacks.
+
+## M19. State Equation to Legal Firing Sequence Boundary
+
+- Evidence type: `ABSTRACT`, boundary/context only pending full read.
+- 原主张: `L34-L35` state that a nonnegative integer solution of a Petri-net
+  state equation is necessary but not sufficient for a legal firing sequence;
+  their backward methods address the firing-sequence existence problem.
+- 原假设: exact ordinary-net restrictions, circuit handling, completeness, and
+  complexity locators remain unavailable without full text.
+- IMS映射: any linear-equation deadlock screen must be followed by a proved
+  legal-event/reachability bridge or labeled as a relaxation.
+- 缺失假设: an IMS state equation, zero-time closure correspondence, and proof
+  that every algebraic solution is an executable IMS event sequence.
+- 适配命题/反例: use the necessary-not-sufficient gap as an adversarial
+  requirement, not as a theorem donor. A state-equation candidate without a
+  reachable IMS prefix is a false-positive boundary.
+- 对应案例: `C1`, `BIX1-SAT`, and future restricted-Petri overlap benchmark.

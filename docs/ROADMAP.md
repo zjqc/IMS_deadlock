@@ -8,10 +8,10 @@
 | Gate | 状态 | 当前证据 | 未关闭项 |
 | --- | --- | --- | --- |
 | G0 仓库门 | PASS | Dell 目标路径、GitHub SSH、干净集成 worktree 和项目专用 Python 3.13.9 已核验；污染历史保持隔离；最终源状态在该 worktree 验证后前推 `origin/main` | 无 |
-| G1 文献门 | PARTIAL | 六条文献链、39 项审计矩阵、13 个全文定理锚点、迁移卡；L04/L16/L22/L29 已完成范围定位 | `L31` 新增可达部分死锁类别并重置饱和计数；L30/L31 需全文；需以 L29-L31 为种子再完成连续两轮无新类别追踪 |
-| G2 理论门 | PASS（严格受限主链） | P1 有限 LTS/reachability-net；P2 capacity-mediated 封闭核 iff；P2c `IMS-SIP^1` 诊断虹吸双向桥；P3 偏序充分条件；P3d `BIX1-SAT` 可达阈值；P4 CTMC；P5 supervisor；P6 复杂性边界 | plant-level structured Petri/S3PR 桥、persistent-buffer 一般岛阈值、一般紧凑 IMS 精确复杂性和 risk-budget 控制仍开放 |
-| G3 算法门 | PASS（严格小有限模型 + P2c/P3d） | Dell 干净集成 worktree、项目 Python 3.13.9：111 tests、Ruff check/format、strict mypy；C0 exact Petri bridge、拒绝边界、BIX1-SAT 144 点小网格和双重复核通过 | 一般 plant/S3PR、结构案例物理速率、persistent-buffer 一般阈值和风险预算/Pareto 算法仍开放 |
-| G4 案例冻结门 | NOT FROZEN | C0-C5 发现集、反例账本、预注册模板和冻结协议已建立 | 确认模型、参数范围、哈希、指标与基线尚未冻结；不得报告确认结果 |
+| G1 文献门 | PARTIAL（分类饱和子门已关闭） | 六条文献链、43 项审计矩阵、13 个全文定理锚点、迁移卡；R7/R8 在最近一次类别重置后连续两轮无新类别 | L30-L33 需合法全文才能完成定理/假设/复杂性与优先权比较；人工获取清单已固化 |
+| G2 理论门 | PASS（严格受限主链） | P1 有限 LTS/reachability-net；P2 capacity-mediated 封闭核 iff；P2c `IMS-SIP^1` 诊断虹吸双向桥；P3 偏序充分条件；P3d `BIX1-SAT` 可达阈值；P3e `BIX2-PERSIST` 三资源 ring 精确阈值与同语义 DAG 修复；P4 CTMC；P5 supervisor；P6 复杂性边界 | plant-level structured Petri/S3PR 桥、替代/AND/AGV/预约/多 persistent-buffer 一般岛阈值、一般紧凑 IMS 精确复杂性和 risk-budget 控制仍开放 |
+| G3 算法门 | PASS（严格小有限模型 + P2c/P3d/P3e） | Dell 干净集成 worktree、项目 Python 3.13.9：123 tests、Ruff check/format、strict mypy；C0 exact Petri bridge、拒绝边界、BIX1-SAT 144 点小网格及 BIX2-PERSIST 32 点预注册发现网格通过；BIX2 为 0 mismatch、0 truncation、ring 4/4 正例、DAG 0 deadlock 且 16/16 completion reachable | 一般 plant/S3PR、结构案例物理速率、一般 persistent-buffer/AGV 阈值和风险预算/Pareto 算法仍开放 |
+| G4 案例冻结门 | NOT FROZEN | C0-C5 与 BIX2-PERSIST 发现集、反例账本、预注册模板和冻结协议已建立；BIX2 的 32 点结果保留为 discovery evidence | 未参与推导的确认模型、参数范围、哈希、指标与基线尚未冻结；BIX2 不得回收为确认集，不得报告确认结果 |
 | G5 论文门 | NOT STARTED | 研究定位、定理梯和证据边界已建立 | 需 G3/G4 后进行精确分析与独立 DES 一致性、负例/代价/边界报告和论文成稿 |
 
 ## G0 仓库门
@@ -36,8 +36,10 @@
 - metadata/abstract/context 只能用于导航或历史说明。
 
 当前 `PARTIAL` 不阻止受限 P1-P6 的项目内证明，因为这些证明所用的外部
-锚点已核验；它阻止任何“首个可达/无需 reachability tree 的结构检测”
-或“一般有限容量阈值”优先权表述，也阻止把 L30/L31 摘要写成定理依据。
+锚点已核验；它阻止任何“首个可达/无需 reachability tree 的结构检测”、
+“首次使 Petri 可达性可判定/多项式化”或“一般有限容量阈值”优先权表述，
+也阻止把 L30-L33 摘要写成定理依据。分类饱和已由 R7/R8 恢复；剩余硬阻塞
+是 `docs/literature/FULLTEXT_REQUEST_LIST.md` 的 Priority A 全文审计。
 
 ## G2 理论门
 
@@ -49,6 +51,7 @@
 `-> IMS-SIP^1 state-induced wait-snapshot minimal empty siphon dual`
 `-> strict-precedence restricted sufficient condition`
 `-> BIX1-SAT reachable saturation threshold`
+`-> BIX2-PERSIST exact three-resource ring threshold and paired DAG repair`
 `-> finite competing-absorption CTMC`
 `-> exact finite full-observation supervisor`
 `-> representation-sensitive complexity boundary`.
@@ -57,7 +60,8 @@
 
 - 一般 IMS 与 plant-level structured Petri/S3PR 的同构；
 - `IMS-SIP^1` 之外最小封闭核与最小致死虹吸的双向最小性；
-- persistent-buffer、替代路线或外部 drain 下的一般双向岛精确阈值；
+- P3e 明确三资源子类之外的 persistent-buffer、替代/AND 请求、AGV/预约
+  或外部 drain 一般双向岛精确阈值；
 - 一般紧凑 IMS 在 NP-hard 下界之上的完备复杂性；
 - risk-budget 控制的递归可行性/Pareto 最优性。
 
@@ -72,6 +76,9 @@
   evidence fidelity、minimal empty siphon，并对 OR/AND、多容量和
   control-only 边界给出机器可读拒绝；
 - 对 `BIX1-SAT` 从空状态穷举小网格，截断行不得计作理论证据；
+- 对 `BIX2-PERSIST` 按预注册 discovery grid 穷举 ring 阈值及同语义 DAG
+  修复；截断、invalid instance、DAG 无完成路径或任一 mismatch 均不得
+  计作证据；
 - exact supervisor 检查不可控闭合、marked coaccessibility 与初始可行性；
 - CTMC 报告 committor、平均吸收时间、线性残差、灵敏度、Doob-h 行和和
   生成元来源；
@@ -85,7 +92,8 @@
 
 冻结前：
 
-- C0-C5 仅是发现集，允许因反例修正定义和假设，但每次修改进入账本；
+- C0-C5 与 BIX2-PERSIST 仅是发现集，允许因反例修正定义和假设，但每次
+  修改进入账本；BIX2 参与过 P3e 推导，不得进入确认集；
 - C4 必须保留“完整运输模型有证书、机器投影漏检”的成对结果；
 - C5 必须保留“双向回流阻塞、删除回流 DAG 修复”的成对模型；
 - 确认集参数族、中型独立重建和对抗案例必须未参与主命题拟合。

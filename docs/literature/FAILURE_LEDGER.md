@@ -107,3 +107,33 @@ post-hoc theory edits.
   dual, and shared probability/supervision interface—not generic reachable
   deadlock detection, generic graph equations, or generic capacity
   configuration.
+
+## F10. A State-equation Solution Is Not an IMS Reachability Witness
+
+- Claim to reject: a nonnegative integer solution of a Petri-net state equation
+  is sufficient to establish a legal firing sequence or an executable IMS
+  deadlock prefix.
+- Evidence: the official abstracts for `L34-L35` explicitly identify the
+  necessary-but-not-sufficient gap and introduce backward legal-firing-sequence
+  methods; `L31-L33` make this boundary directly relevant to current
+  reachability claims.
+- Consequence: any algebraic detector used by IMS_deadlock must either provide
+  a proved legal-event correspondence and a concrete reachable prefix, or be
+  labeled a relaxation with measured false positives.
+- Claim repair: `BIX1-SAT` and later parameterized families retain an exact
+  finite-LTS witness; a future linear-equation baseline is compared against
+  that witness rather than substituted for it.
+
+## F11. Concealed Adaptation Is Not Scientific Novelty
+
+- Claim to reject: changing notation, wording, proof order, or examples makes a
+  published theorem or algorithm an original IMS result.
+- Evidence: the relevant literature already supplies knots, siphons, state
+  equations, legal-firing-sequence methods, finite-capacity resource
+  configuration, supervisor synthesis, and absorbing-chain analysis.
+- Consequence: every reused result follows
+  `ADAPTATION_AND_ATTRIBUTION_PROTOCOL.md`; close structural following is cited
+  at the statement/proof, not hidden in a distant bibliography entry.
+- Claim repair: novelty is assessed after inherited components are removed. If
+  no substantive IMS-specific theorem, counterexample, or interface remains,
+  the project stops and reformulates.
