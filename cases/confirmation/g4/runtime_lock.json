@@ -1,6 +1,6 @@
 {
   "schema_version": "ims-deadlock/g4-runtime-lock/v1",
-  "implementation_commit": "2a89fe1409d5000225e22499878454e964c01363",
+  "implementation_commit": "f9b9a5a5652c7a49053e7ef26d08911bd757f465",
   "platform": "Windows-11-10.0.26200-SP0",
   "python": {
     "executable": "D:\\worktree\\IMS_deadlock-final-integration\\.venv\\Scripts\\python.exe",

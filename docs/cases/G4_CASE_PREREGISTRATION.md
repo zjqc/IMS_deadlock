@@ -4,7 +4,7 @@ Status: `B-PREREGISTRATION-CANDIDATE-PENDING-C-SEAL`.
 
 This document records the B-stage G4 preregistration candidate after the
 seven-paper audit and final implementation lock
-`2a89fe1409d5000225e22499878454e964c01363`. The held-out JSON inputs,
+`f9b9a5a5652c7a49053e7ef26d08911bd757f465`. The held-out JSON inputs,
 predictions, baseline applicability, metric applicability, random streams,
 runtime lock, script manifest, theory manifest, and exclusions currently live
 under `cases/confirmation/g4/`.

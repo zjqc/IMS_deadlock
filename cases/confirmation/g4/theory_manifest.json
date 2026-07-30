@@ -5,13 +5,13 @@
       "path": "docs/cases/G4_CASE_PREREGISTRATION.md",
       "hash_mode": "file_bytes",
       "file_bytes": 10904,
-      "sha256": "f73ca477d89caf9e0d7997e251f73d974ed364408102110d8a80cceac0393d26"
+      "sha256": "a1ac0a0d9896db8bc65d98e0c1b7d1bc9b30eb4e1e527acf659c7ccffac51c98"
     },
     {
       "path": "docs/cases/CONFIRMATION_PREREGISTRATION.md",
       "hash_mode": "file_bytes",
       "file_bytes": 5598,
-      "sha256": "e061fad67c2c484b58bb998a665be8ebd6b685595d7e7da74bf9c767541d420f"
+      "sha256": "c7550c5022e53b5c7fdb599a7b10b5b2a3637a3243d4d5eb80246a89e0ddba12"
     },
     {
       "path": "docs/cases/BASELINES_AND_METRICS.md",

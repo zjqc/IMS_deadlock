@@ -16,8 +16,8 @@
     {
       "path": "src/ims_deadlock/g4_freeze.py",
       "hash_mode": "file_bytes",
-      "file_bytes": 38395,
-      "sha256": "591d4359ad64eb2efcc31832ed3896bd81bdc419df5282275fe0f02740f83058"
+      "file_bytes": 38546,
+      "sha256": "c94e836d72da019d572f32c15d53e56f93f2f0edc3147cefd029757a442d505c"
     },
     {
       "path": "src/ims_deadlock/g4_comparators.py",

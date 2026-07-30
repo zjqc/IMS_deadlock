@@ -10,7 +10,7 @@ predictions, baseline applicability, metric applicability, random streams,
 runtime lock, experiment-script manifest, theory manifest, exclusions, and
 `case_manifest.json`. It does not contain `FREEZE_ENTRY.json`, so it is not a
 C-sealed frozen bundle. The final implementation-lock reference for this stage is
-`2a89fe1409d5000225e22499878454e964c01363`.
+`f9b9a5a5652c7a49053e7ef26d08911bd757f465`.
 
 ## Candidate Case Families
 

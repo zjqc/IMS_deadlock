@@ -11,7 +11,7 @@ after the prerequisite commit and every canonical artifact hash are recorded in
 
 - Branch: `codex/g4-confirmation-freeze`.
 - Implementation commit:
-  `2a89fe1409d5000225e22499878454e964c01363`.
+  `f9b9a5a5652c7a49053e7ef26d08911bd757f465`.
 - Runtime authority:
   `D:\worktree\IMS_deadlock-final-integration\.venv\Scripts\python.exe`.
 - Structural parser:
@@ -25,6 +25,13 @@ The implementation commit precedes the held-out preregistration commit. It
 contains the protocol decoder, deterministic case generators, CTMC derivation,
 freeze checker, development fixtures, proof obligations, regression tests, and
 LF normalization needed for checkout-stable file-byte hashes.
+
+The earlier preregistration candidate
+`a71f623ec0b6c597ec7339a335137c78ed336cb7` is retained as `B1-SUPERSEDED`.
+An adversarial pre-seal review showed that its prospective seal checker did not
+enforce the contents of `excluded_cases`. No C seal or held-out execution was
+committed. The implementation above closes that gap; the next preregistration
+commit is B2 and must refresh every implementation-dependent hash.
 
 ## Candidate Bundle
 
