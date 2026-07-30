@@ -1,0 +1,785 @@
+{
+  "case_count": 9,
+  "execution_status_counts": {
+    "COMPLETED": 7,
+    "NONZERO_EXIT": 2
+  },
+  "freeze_id": "G4-FREEZE-C-20260730T051210Z",
+  "schema_version": "ims-deadlock/g5-scoring-run/v1",
+  "scientific_status_counts": {
+    "FALSIFIED": 3,
+    "INCONCLUSIVE": 2,
+    "SUPPORTED": 4
+  },
+  "scores": [
+    {
+      "canonical_json_sha256": {
+        "primary": "6e5f9f05b92ddd604555c79ca086344f6cb22cc1bc5e7ee1a3d9db3cde5abb9f",
+        "repro": "6e5f9f05b92ddd604555c79ca086344f6cb22cc1bc5e7ee1a3d9db3cde5abb9f"
+      },
+      "case_id": "G4_ADVERSARIAL_BOUNDARY",
+      "execution_status": "COMPLETED",
+      "failure_categories": [
+        "scientific_falsification"
+      ],
+      "family": "G4-ADVERSARIAL-BOUNDARY",
+      "freeze_id": "G4-FREEZE-C-20260730T051210Z",
+      "frozen_metric_applicability": {
+        "certificate_minimality": {
+          "applicable": true,
+          "reason": "adversarial row preregisters a finite blocking-kernel certificate and proper-subkernel check"
+        },
+        "conditioned_path_mass": {
+          "applicable": false,
+          "reason": "the adversarial row is a static boundary snapshot and no conditioned path-mass estimator is implemented"
+        },
+        "des_confidence_interval": {
+          "applicable": false,
+          "reason": "the adversarial target is a static snapshot without a transient CTMC initial state"
+        },
+        "exact_deadlock_probability": {
+          "applicable": false,
+          "reason": "the adversarial target is an already blocked static snapshot, not a competing-absorption CTMC"
+        },
+        "mean_absorption_time": {
+          "applicable": false,
+          "reason": "the adversarial target is a static snapshot and has no transient CTMC clock"
+        },
+        "rare_event_efficiency": {
+          "applicable": false,
+          "reason": "no rare-event estimator or transient stochastic model is implemented for the static boundary snapshot"
+        },
+        "supervisor_due_date_risk_change": {
+          "applicable": false,
+          "reason": "adversarial boundary row does not preregister a repair policy or due-date schedule comparison"
+        },
+        "supervisor_makespan_loss": {
+          "applicable": false,
+          "reason": "adversarial boundary row does not preregister a repair policy or makespan comparison"
+        },
+        "supervisor_throughput_loss": {
+          "applicable": false,
+          "reason": "adversarial boundary row does not preregister a repair policy or throughput comparison"
+        },
+        "supervisor_wip_change": {
+          "applicable": false,
+          "reason": "adversarial boundary row does not preregister a repair policy or WIP comparison"
+        },
+        "theorem_prediction_correctness": {
+          "applicable": true,
+          "reason": "adversarial boundary row has a frozen theorem-scope prediction and falsifier"
+        }
+      },
+      "observations": {
+        "frozen_request_transition_enabled": [
+          {
+            "enabled": false,
+            "transition": "gate:release_reservations"
+          },
+          {
+            "enabled": false,
+            "transition": "left:choose_cross"
+          },
+          {
+            "enabled": false,
+            "transition": "left:choose_inspection"
+          },
+          {
+            "enabled": false,
+            "transition": "right:choose_cross"
+          },
+          {
+            "enabled": false,
+            "transition": "right:choose_inspection"
+          }
+        ]
+      },
+      "raw_stdout_sha256": {
+        "primary": "cececd6efa166bc528091aaed10c08971916279b75c0389db92fe284f88974ca",
+        "repro": "cececd6efa166bc528091aaed10c08971916279b75c0389db92fe284f88974ca"
+      },
+      "reasons": [
+        "adversarial certificate is not minimal"
+      ],
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "schema_version": "ims-deadlock/g5-case-score/v1",
+      "scientific_status": "FALSIFIED",
+      "stderr_raw_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "supported": false
+    },
+    {
+      "canonical_json_sha256": {
+        "primary": "3fb14993c25fdbd6da87737cd21ed43c6b8c374772095dfd22ac2e0dcb131cce",
+        "repro": "3fb14993c25fdbd6da87737cd21ed43c6b8c374772095dfd22ac2e0dcb131cce"
+      },
+      "case_id": "G4_B05_SUPERVISOR_COMPARATOR",
+      "execution_status": "COMPLETED",
+      "failure_categories": [],
+      "family": "G4-B05-SUPERVISOR-COMPARATOR",
+      "freeze_id": "G4-FREEZE-C-20260730T051210Z",
+      "frozen_metric_applicability": {
+        "certificate_minimality": {
+          "applicable": false,
+          "reason": "B05 row compares monitor-cover/supervisor structure and does not claim a project deadlock-certificate minimality score"
+        },
+        "conditioned_path_mass": {
+          "applicable": false,
+          "reason": "B05 exact comparator row has no stochastic path-mass estimand"
+        },
+        "des_confidence_interval": {
+          "applicable": false,
+          "reason": "B05 row is exact-only; DES sampling is not part of the frozen comparator"
+        },
+        "exact_deadlock_probability": {
+          "applicable": false,
+          "reason": "B05 row compares supervisor structure, not absorbing deadlock probability"
+        },
+        "mean_absorption_time": {
+          "applicable": false,
+          "reason": "B05 exact comparator row has no frozen CTMC timing model"
+        },
+        "rare_event_efficiency": {
+          "applicable": false,
+          "reason": "B05 row is exact-only and has no rare-event simulation design"
+        },
+        "supervisor_due_date_risk_change": {
+          "applicable": false,
+          "reason": "B05 exact comparator row must not claim performance savings from supervisor structure"
+        },
+        "supervisor_makespan_loss": {
+          "applicable": false,
+          "reason": "B05 exact comparator row must not report performance loss from monitor-cover structure"
+        },
+        "supervisor_throughput_loss": {
+          "applicable": false,
+          "reason": "B05 exact comparator row must not convert structural compression into a throughput claim"
+        },
+        "supervisor_wip_change": {
+          "applicable": false,
+          "reason": "B05 exact comparator row must not claim WIP change from monitor-cover structure"
+        },
+        "theorem_prediction_correctness": {
+          "applicable": true,
+          "reason": "B05 comparator row has a frozen structural/permissiveness prediction and falsifier"
+        }
+      },
+      "observations": {},
+      "raw_stdout_sha256": {
+        "primary": "8bb8023659ad89075e1b33fd8f36998470939236c9dceb4089c6469cf39a6924",
+        "repro": "8bb8023659ad89075e1b33fd8f36998470939236c9dceb4089c6469cf39a6924"
+      },
+      "reasons": [],
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "schema_version": "ims-deadlock/g5-case-score/v1",
+      "scientific_status": "SUPPORTED",
+      "stderr_raw_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "supported": true
+    },
+    {
+      "canonical_json_sha256": {
+        "primary": "a74a7b66a9258eae7e5ac866446dc5681dc06c26ff247000d4c980b6fea9bb65",
+        "repro": "a74a7b66a9258eae7e5ac866446dc5681dc06c26ff247000d4c980b6fea9bb65"
+      },
+      "case_id": "G4_CRP_OUTSIDE_S4PR",
+      "execution_status": "COMPLETED",
+      "failure_categories": [
+        "scientific_falsification"
+      ],
+      "family": "G4-CRP-OUTSIDE-S4PR",
+      "freeze_id": "G4-FREEZE-C-20260730T051210Z",
+      "frozen_metric_applicability": {
+        "certificate_minimality": {
+          "applicable": true,
+          "reason": "outside-S4PR row still has an IMS boundary certificate whose minimality is checked independently of CRP applicability"
+        },
+        "conditioned_path_mass": {
+          "applicable": false,
+          "reason": "outside-S4PR refusal row is exact semantic applicability, not a stochastic path-mass question"
+        },
+        "des_confidence_interval": {
+          "applicable": false,
+          "reason": "outside-S4PR row is exact-only; DES sampling cannot decide the bridge refusal"
+        },
+        "exact_deadlock_probability": {
+          "applicable": false,
+          "reason": "outside-S4PR row asks for a semantic refusal boundary rather than a probability"
+        },
+        "mean_absorption_time": {
+          "applicable": false,
+          "reason": "outside-S4PR refusal row has no frozen CTMC timing model"
+        },
+        "rare_event_efficiency": {
+          "applicable": false,
+          "reason": "outside-S4PR refusal row is exact-only and has no rare-event simulation design"
+        },
+        "supervisor_due_date_risk_change": {
+          "applicable": false,
+          "reason": "outside-S4PR refusal row has no supervisor policy or due-date schedule comparison"
+        },
+        "supervisor_makespan_loss": {
+          "applicable": false,
+          "reason": "outside-S4PR refusal row has no supervisor makespan comparison"
+        },
+        "supervisor_throughput_loss": {
+          "applicable": false,
+          "reason": "outside-S4PR refusal row has no supervisor throughput comparison"
+        },
+        "supervisor_wip_change": {
+          "applicable": false,
+          "reason": "outside-S4PR refusal row has no supervisor WIP comparison"
+        },
+        "theorem_prediction_correctness": {
+          "applicable": true,
+          "reason": "outside-S4PR row has a frozen refusal-boundary prediction and falsifier"
+        }
+      },
+      "observations": {
+        "frozen_request_transition_enabled": [
+          {
+            "enabled": false,
+            "transition": "gate:release_reservations"
+          },
+          {
+            "enabled": false,
+            "transition": "left:choose_cross"
+          },
+          {
+            "enabled": false,
+            "transition": "left:choose_inspection"
+          },
+          {
+            "enabled": false,
+            "transition": "right:choose_cross"
+          },
+          {
+            "enabled": false,
+            "transition": "right:choose_inspection"
+          }
+        ]
+      },
+      "raw_stdout_sha256": {
+        "primary": "a62edb7ecb1c5c773dde172ab39bb3ff3b616ed4af67d0ef538926a0b0bcd062",
+        "repro": "a62edb7ecb1c5c773dde172ab39bb3ff3b616ed4af67d0ef538926a0b0bcd062"
+      },
+      "reasons": [
+        "outside boundary certificate is not minimal"
+      ],
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "schema_version": "ims-deadlock/g5-case-score/v1",
+      "scientific_status": "FALSIFIED",
+      "stderr_raw_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "supported": false
+    },
+    {
+      "canonical_json_sha256": {
+        "primary": "c90679797526034b5f89435850ecf23da2e640c88a9a471508429605703d54e4",
+        "repro": "c90679797526034b5f89435850ecf23da2e640c88a9a471508429605703d54e4"
+      },
+      "case_id": "G4_CRP_S4PR_AGREE",
+      "execution_status": "COMPLETED",
+      "failure_categories": [
+        "scientific_falsification"
+      ],
+      "family": "G4-CRP-S4PR-AGREE",
+      "freeze_id": "G4-FREEZE-C-20260730T051210Z",
+      "frozen_metric_applicability": {
+        "certificate_minimality": {
+          "applicable": true,
+          "reason": "agreement row preregisters the IMS closed blocking core and proper-subkernel minimality check"
+        },
+        "conditioned_path_mass": {
+          "applicable": false,
+          "reason": "S4PR agreement row is exact finite reachability and does not preregister CTMC path-mass accounting"
+        },
+        "des_confidence_interval": {
+          "applicable": false,
+          "reason": "S4PR agreement row is exact-only; DES sampling is not evidence for CRP/IMS equivalence"
+        },
+        "exact_deadlock_probability": {
+          "applicable": false,
+          "reason": "S4PR agreement row asks for exact structural/reachability agreement rather than a probability"
+        },
+        "mean_absorption_time": {
+          "applicable": false,
+          "reason": "S4PR agreement row has no frozen CTMC timing model"
+        },
+        "rare_event_efficiency": {
+          "applicable": false,
+          "reason": "S4PR agreement row is exact-only and has no rare-event simulation design"
+        },
+        "supervisor_due_date_risk_change": {
+          "applicable": false,
+          "reason": "S4PR agreement row is exact-only and does not preregister supervisor performance"
+        },
+        "supervisor_makespan_loss": {
+          "applicable": false,
+          "reason": "S4PR agreement row is exact-only and has no supervisor makespan comparison"
+        },
+        "supervisor_throughput_loss": {
+          "applicable": false,
+          "reason": "S4PR agreement row is exact-only and has no supervisor throughput comparison"
+        },
+        "supervisor_wip_change": {
+          "applicable": false,
+          "reason": "S4PR agreement row is exact-only and has no supervisor WIP comparison"
+        },
+        "theorem_prediction_correctness": {
+          "applicable": true,
+          "reason": "S4PR agreement row has a frozen agreement prediction and falsifier"
+        }
+      },
+      "observations": {},
+      "raw_stdout_sha256": {
+        "primary": "e4264a549be56c4790be2692c07ee4f3ea1e8ef0e94657aec5faac0177b3d67c",
+        "repro": "e4264a549be56c4790be2692c07ee4f3ea1e8ef0e94657aec5faac0177b3d67c"
+      },
+      "reasons": [
+        "classification is not 'partial_deadlock_bridge_agreement'",
+        "partial bridge certificate is unavailable",
+        "partial bridge certificate payload is absent",
+        "partial bridge does not agree",
+        "certificate resources differ from mapped CRP resources"
+      ],
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "schema_version": "ims-deadlock/g5-case-score/v1",
+      "scientific_status": "FALSIFIED",
+      "stderr_raw_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "supported": false
+    },
+    {
+      "canonical_json_sha256": {
+        "primary": "3b2c4318fc0557a8b0f94c444851b714b2015c8135e441d93d2649df2c409c38",
+        "repro": "3b2c4318fc0557a8b0f94c444851b714b2015c8135e441d93d2649df2c409c38"
+      },
+      "case_id": "G4_CRP_UNREACHABLE_CANDIDATE",
+      "execution_status": "COMPLETED",
+      "failure_categories": [],
+      "family": "G4-CRP-UNREACHABLE-CANDIDATE",
+      "freeze_id": "G4-FREEZE-C-20260730T051210Z",
+      "frozen_metric_applicability": {
+        "certificate_minimality": {
+          "applicable": false,
+          "reason": "unreachable-candidate row has no reachable IMS blocking certificate to minimize"
+        },
+        "conditioned_path_mass": {
+          "applicable": false,
+          "reason": "unreachable-candidate row is exact nonreachability; conditioned path mass is undefined"
+        },
+        "des_confidence_interval": {
+          "applicable": false,
+          "reason": "unreachable-candidate row is exact-only; DES sampling cannot prove absence of a legal prefix"
+        },
+        "exact_deadlock_probability": {
+          "applicable": false,
+          "reason": "unreachable-candidate row has no reachable deadlock event for CTMC absorption"
+        },
+        "mean_absorption_time": {
+          "applicable": false,
+          "reason": "unreachable-candidate row has no frozen CTMC timing model"
+        },
+        "rare_event_efficiency": {
+          "applicable": false,
+          "reason": "unreachable-candidate row is exact-only and has no rare-event simulation design"
+        },
+        "supervisor_due_date_risk_change": {
+          "applicable": false,
+          "reason": "unreachable-candidate row must not credit supervisor cost for an unreachable marking"
+        },
+        "supervisor_makespan_loss": {
+          "applicable": false,
+          "reason": "unreachable-candidate row has no reachable target for supervisor makespan comparison"
+        },
+        "supervisor_throughput_loss": {
+          "applicable": false,
+          "reason": "unreachable-candidate row has no reachable target for supervisor throughput comparison"
+        },
+        "supervisor_wip_change": {
+          "applicable": false,
+          "reason": "unreachable-candidate row has no reachable target for supervisor WIP comparison"
+        },
+        "theorem_prediction_correctness": {
+          "applicable": true,
+          "reason": "unreachable-candidate row has a frozen refusal prediction and falsifier"
+        }
+      },
+      "observations": {},
+      "raw_stdout_sha256": {
+        "primary": "726721b11e88b7024dd662359c86c7380ad3ad533bea44c16235961414bea3ed",
+        "repro": "726721b11e88b7024dd662359c86c7380ad3ad533bea44c16235961414bea3ed"
+      },
+      "reasons": [],
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "schema_version": "ims-deadlock/g5-case-score/v1",
+      "scientific_status": "SUPPORTED",
+      "stderr_raw_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "supported": true
+    },
+    {
+      "canonical_json_sha256": {
+        "primary": null,
+        "repro": null
+      },
+      "case_id": "G4_IMS_PARAMETER_GRID",
+      "execution_status": "NONZERO_EXIT",
+      "failure_categories": [
+        "execution"
+      ],
+      "family": "G4-IMS-PARAMETER-GRID",
+      "freeze_id": "G4-FREEZE-C-20260730T051210Z",
+      "frozen_metric_applicability": {
+        "certificate_minimality": {
+          "applicable": true,
+          "reason": "grid row preregisters exact certificate extraction and subset minimality across frozen grid points"
+        },
+        "conditioned_path_mass": {
+          "applicable": false,
+          "reason": "the locked implementation derives a Doob generator but does not yet define or compute conditioned path mass"
+        },
+        "des_confidence_interval": {
+          "applicable": true,
+          "reason": "parameter-grid row preregisters DES confidence intervals with fixed seeds and replicate count"
+        },
+        "exact_deadlock_probability": {
+          "applicable": true,
+          "reason": "parameter-grid row preregisters exact absorbing deadlock probability where the frozen CTMC is finite"
+        },
+        "mean_absorption_time": {
+          "applicable": true,
+          "reason": "parameter-grid row preregisters mean absorption time for finite CTMC grid points"
+        },
+        "rare_event_efficiency": {
+          "applicable": false,
+          "reason": "only direct Gillespie cross-checks are implemented; no importance sampler or rare-event efficiency comparator is frozen"
+        },
+        "supervisor_due_date_risk_change": {
+          "applicable": false,
+          "reason": "no due-date model or policy-conditioned stochastic generator is frozen for the grid"
+        },
+        "supervisor_makespan_loss": {
+          "applicable": false,
+          "reason": "the exact supervisor is structural; no policy-conditioned makespan estimand is frozen"
+        },
+        "supervisor_throughput_loss": {
+          "applicable": false,
+          "reason": "finite-batch completion is modeled, but no regenerative throughput estimand is frozen"
+        },
+        "supervisor_wip_change": {
+          "applicable": false,
+          "reason": "WIP is a frozen input and no policy-dependent WIP response model is implemented"
+        },
+        "theorem_prediction_correctness": {
+          "applicable": true,
+          "reason": "parameter-grid row has frozen theorem-scope predictions and falsifiers"
+        }
+      },
+      "observations": {},
+      "raw_stdout_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "reasons": [],
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "schema_version": "ims-deadlock/g5-case-score/v1",
+      "scientific_status": "INCONCLUSIVE",
+      "stderr_raw_sha256": {
+        "primary": "204424d2898042bf3864bff1249a5eedfead10675d0674d831d678a8cf28f98a",
+        "repro": "204424d2898042bf3864bff1249a5eedfead10675d0674d831d678a8cf28f98a"
+      },
+      "supported": false
+    },
+    {
+      "canonical_json_sha256": {
+        "primary": "a330084a5db13ab80e05ad5b335aaaec43f479f15fa685bd16a40ed75e6cd6d2",
+        "repro": "a330084a5db13ab80e05ad5b335aaaec43f479f15fa685bd16a40ed75e6cd6d2"
+      },
+      "case_id": "G4_L30_RESOURCE_BASELINE",
+      "execution_status": "COMPLETED",
+      "failure_categories": [],
+      "family": "G4-L30-RESOURCE-BASELINE",
+      "freeze_id": "G4-FREEZE-C-20260730T051210Z",
+      "frozen_metric_applicability": {
+        "certificate_minimality": {
+          "applicable": false,
+          "reason": "L30 row is a supplied sufficient-inequality comparator, not a project certificate-minimality claim"
+        },
+        "conditioned_path_mass": {
+          "applicable": false,
+          "reason": "L30 sufficient-inequality comparator has no CTMC path-mass estimand"
+        },
+        "des_confidence_interval": {
+          "applicable": false,
+          "reason": "L30 row is exact-only; DES sampling is outside the sufficient-inequality comparison"
+        },
+        "exact_deadlock_probability": {
+          "applicable": false,
+          "reason": "L30 row is a sufficient-resource comparator and does not define an absorbing probability"
+        },
+        "mean_absorption_time": {
+          "applicable": false,
+          "reason": "L30 comparator row has no frozen CTMC timing model"
+        },
+        "rare_event_efficiency": {
+          "applicable": false,
+          "reason": "L30 row is exact-only and has no rare-event simulation design"
+        },
+        "supervisor_due_date_risk_change": {
+          "applicable": false,
+          "reason": "L30 resource baseline row has no supervisor policy or due-date schedule comparison"
+        },
+        "supervisor_makespan_loss": {
+          "applicable": false,
+          "reason": "L30 resource baseline row has no supervisor makespan comparison"
+        },
+        "supervisor_throughput_loss": {
+          "applicable": false,
+          "reason": "L30 resource baseline row has no supervisor throughput comparison"
+        },
+        "supervisor_wip_change": {
+          "applicable": false,
+          "reason": "L30 resource baseline row has no supervisor WIP comparison"
+        },
+        "theorem_prediction_correctness": {
+          "applicable": true,
+          "reason": "L30 row has a frozen sufficient/conservative comparator prediction and falsifier"
+        }
+      },
+      "observations": {},
+      "raw_stdout_sha256": {
+        "primary": "009c16cd63742b838a32d0c7309ddc5fe9f17d692e7bf9cbef7792d08b054a4d",
+        "repro": "009c16cd63742b838a32d0c7309ddc5fe9f17d692e7bf9cbef7792d08b054a4d"
+      },
+      "reasons": [],
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "schema_version": "ims-deadlock/g5-case-score/v1",
+      "scientific_status": "SUPPORTED",
+      "stderr_raw_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "supported": true
+    },
+    {
+      "canonical_json_sha256": {
+        "primary": null,
+        "repro": null
+      },
+      "case_id": "G4_MEDIUM_ISLAND_REBUILD",
+      "execution_status": "NONZERO_EXIT",
+      "failure_categories": [
+        "execution"
+      ],
+      "family": "G4-MEDIUM-ISLAND-REBUILD",
+      "freeze_id": "G4-FREEZE-C-20260730T051210Z",
+      "frozen_metric_applicability": {
+        "certificate_minimality": {
+          "applicable": true,
+          "reason": "medium rebuild row preregisters finite certificate extraction and subset minimality for the held-out island model"
+        },
+        "conditioned_path_mass": {
+          "applicable": false,
+          "reason": "the locked implementation derives a Doob generator but does not yet define or compute conditioned path mass"
+        },
+        "des_confidence_interval": {
+          "applicable": true,
+          "reason": "medium rebuild row preregisters DES confidence intervals with fixed seeds and replicate count"
+        },
+        "exact_deadlock_probability": {
+          "applicable": true,
+          "reason": "medium rebuild row preregisters exact absorbing deadlock probability for the frozen finite CTMC"
+        },
+        "mean_absorption_time": {
+          "applicable": true,
+          "reason": "medium rebuild row preregisters mean absorption time for the frozen finite CTMC"
+        },
+        "rare_event_efficiency": {
+          "applicable": false,
+          "reason": "only direct Gillespie cross-checks are implemented; no importance sampler or rare-event efficiency comparator is frozen"
+        },
+        "supervisor_due_date_risk_change": {
+          "applicable": false,
+          "reason": "no due-date model or policy-conditioned stochastic generator is frozen for the medium case"
+        },
+        "supervisor_makespan_loss": {
+          "applicable": false,
+          "reason": "the exact supervisor is structural; no policy-conditioned makespan estimand is frozen"
+        },
+        "supervisor_throughput_loss": {
+          "applicable": false,
+          "reason": "finite-batch completion is modeled, but no regenerative throughput estimand is frozen"
+        },
+        "supervisor_wip_change": {
+          "applicable": false,
+          "reason": "WIP is a frozen input and no policy-dependent WIP response model is implemented"
+        },
+        "theorem_prediction_correctness": {
+          "applicable": true,
+          "reason": "medium rebuild row has frozen theorem-scope predictions and falsifiers"
+        }
+      },
+      "observations": {},
+      "raw_stdout_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "reasons": [],
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "schema_version": "ims-deadlock/g5-case-score/v1",
+      "scientific_status": "INCONCLUSIVE",
+      "stderr_raw_sha256": {
+        "primary": "aa842fb3deafc390c137455d8a45d162db88200e315f488f277345c07c57452a",
+        "repro": "aa842fb3deafc390c137455d8a45d162db88200e315f488f277345c07c57452a"
+      },
+      "supported": false
+    },
+    {
+      "canonical_json_sha256": {
+        "primary": "3fc8dd50549863c718f3369191d7e63a6f8ed427d71cb7b44853616cfd960f6c",
+        "repro": "3fc8dd50549863c718f3369191d7e63a6f8ed427d71cb7b44853616cfd960f6c"
+      },
+      "case_id": "G4_RECORDER_TARGET_QUANTIFICATION",
+      "execution_status": "COMPLETED",
+      "failure_categories": [],
+      "family": "G4-RECORDER-TARGET-QUANTIFICATION",
+      "freeze_id": "G4-FREEZE-C-20260730T051210Z",
+      "frozen_metric_applicability": {
+        "certificate_minimality": {
+          "applicable": false,
+          "reason": "recorder row evaluates fixed-target quantification rather than a minimal deadlock certificate"
+        },
+        "conditioned_path_mass": {
+          "applicable": false,
+          "reason": "recorder fixed-target row is an exact reachability-mapping obligation, not a CTMC path-mass metric"
+        },
+        "des_confidence_interval": {
+          "applicable": false,
+          "reason": "recorder row is exact-only; DES sampling cannot settle the fixed target quantifier"
+        },
+        "exact_deadlock_probability": {
+          "applicable": false,
+          "reason": "recorder row evaluates fixed-target reachability rather than stochastic absorption"
+        },
+        "mean_absorption_time": {
+          "applicable": false,
+          "reason": "recorder row has no frozen CTMC timing model"
+        },
+        "rare_event_efficiency": {
+          "applicable": false,
+          "reason": "recorder row is exact-only and has no rare-event simulation design"
+        },
+        "supervisor_due_date_risk_change": {
+          "applicable": false,
+          "reason": "recorder row has no supervisor policy or due-date schedule comparison"
+        },
+        "supervisor_makespan_loss": {
+          "applicable": false,
+          "reason": "recorder row has no supervisor makespan comparison"
+        },
+        "supervisor_throughput_loss": {
+          "applicable": false,
+          "reason": "recorder row has no supervisor throughput comparison"
+        },
+        "supervisor_wip_change": {
+          "applicable": false,
+          "reason": "recorder row has no supervisor WIP comparison"
+        },
+        "theorem_prediction_correctness": {
+          "applicable": true,
+          "reason": "recorder row has a frozen fixed-target quantification prediction and falsifier"
+        }
+      },
+      "observations": {},
+      "raw_stdout_sha256": {
+        "primary": "aa192e9926a01f1495c49a4da70b4c026f52c29a894417b87550c4d488858aad",
+        "repro": "aa192e9926a01f1495c49a4da70b4c026f52c29a894417b87550c4d488858aad"
+      },
+      "reasons": [],
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "schema_version": "ims-deadlock/g5-case-score/v1",
+      "scientific_status": "SUPPORTED",
+      "stderr_raw_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "supported": true
+    }
+  ],
+  "supported": false
+}
