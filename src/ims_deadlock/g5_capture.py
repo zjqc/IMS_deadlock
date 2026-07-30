@@ -163,14 +163,9 @@ def compare_capture_hashes(
     primary_valid = _validate_record_for_compare(primary)
     repro_valid = _validate_record_for_compare(repro)
     records_valid = primary_valid and repro_valid
-    raw_match = primary.get("stdout_raw_sha256") == repro.get("stdout_raw_sha256")
-    primary_canonical = primary.get("stdout_canonical_json_sha256")
-    repro_canonical = repro.get("stdout_canonical_json_sha256")
-    canonical_present = isinstance(primary_canonical, str) and isinstance(
-        repro_canonical, str
-    )
-    canonical_match = canonical_present and primary_canonical == repro_canonical
-    stderr_match = primary.get("stderr_raw_sha256") == repro.get("stderr_raw_sha256")
+    raw_match = _hashes_match(primary, repro, "stdout_raw_sha256")
+    canonical_match = _hashes_match(primary, repro, "stdout_canonical_json_sha256")
+    stderr_match = _hashes_match(primary, repro, "stderr_raw_sha256")
     case_id_match = primary.get("case_id") == repro.get("case_id")
     argv_match = primary.get("argv") == repro.get("argv")
     freeze_id_match = primary.get("freeze_id") == repro.get("freeze_id")
@@ -200,8 +195,8 @@ def compare_capture_hashes(
         "stdout_canonical_json_sha256_match": canonical_match,
         "stderr_raw_sha256_match": stderr_match,
         "stdout_raw_sha256": {
-            "primary": primary["stdout_raw_sha256"],
-            "repro": repro["stdout_raw_sha256"],
+            "primary": primary.get("stdout_raw_sha256"),
+            "repro": repro.get("stdout_raw_sha256"),
             "match": raw_match,
         },
         "stdout_canonical_json_sha256": {
@@ -396,6 +391,18 @@ def _validate_record_for_compare(record: dict[str, Any]) -> bool:
         return False
     argv = record.get("argv")
     return isinstance(argv, list) and all(isinstance(token, str) for token in argv)
+
+
+def _hashes_match(primary: dict[str, Any], repro: dict[str, Any], field: str) -> bool:
+    primary_value = primary.get(field)
+    repro_value = repro.get(field)
+    return (
+        isinstance(primary_value, str)
+        and primary_value != ""
+        and isinstance(repro_value, str)
+        and repro_value != ""
+        and primary_value == repro_value
+    )
 
 
 def _validate_safe_label(value: str, label: str) -> str:
