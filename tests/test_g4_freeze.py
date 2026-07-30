@@ -460,7 +460,10 @@ def _complete_bundle(tmp_path: Path, *, include_freeze_entry: bool = True) -> Pa
             "owner": "development-test",
             "confirmation_results_inspected": False,
             "included_cases": case_ids,
-            "excluded_cases": [],
+            "excluded_cases": [
+                *G4_DISCOVERY_CASE_IDS,
+                *G4_DISCOVERY_FAMILY_IDS,
+            ],
             "artifact_hashes": {
                 "case_manifest_sha256": _canonical_sha(case_manifest),
                 "prediction_sheet_sha256": _canonical_sha(predictions),
@@ -651,6 +654,45 @@ def test_freeze_check_requires_distinct_implementation_and_preregistration_commi
 
     assert result.status == "NOT_FROZEN"
     assert any("must be distinct" in error for error in result.errors)
+
+
+@pytest.mark.parametrize(
+    "excluded_cases",
+    [
+        [],
+        [
+            *G4_DISCOVERY_CASE_IDS,
+            *G4_DISCOVERY_FAMILY_IDS,
+            G4_DISCOVERY_CASE_IDS[0],
+        ],
+        [
+            *G4_DISCOVERY_CASE_IDS,
+            *G4_DISCOVERY_FAMILY_IDS,
+            "UNDECLARED-EXCLUSION",
+        ],
+        None,
+    ],
+)
+def test_freeze_check_requires_exact_unique_discovery_exclusions_in_seal(
+    tmp_path: Path,
+    excluded_cases: object,
+) -> None:
+    root = _complete_bundle(tmp_path)
+    entry_path = root / "FREEZE_ENTRY.json"
+    entry = json.loads(entry_path.read_text(encoding="utf-8"))
+    if excluded_cases is None:
+        entry.pop("excluded_cases")
+    else:
+        entry["excluded_cases"] = excluded_cases
+    _write_json(entry_path, entry)
+
+    result = check_g4_freeze(root)
+
+    assert result.status == "NOT_FROZEN"
+    assert any(
+        "excluded_cases must exactly match discovery exclusions" in error
+        for error in result.errors
+    )
 
 
 def test_freeze_check_rejects_duplicate_json_keys(tmp_path: Path) -> None:

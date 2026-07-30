@@ -25,6 +25,7 @@ G4_DISCOVERY_FAMILY_IDS = (
     "BIX1-SAT",
     "BIX2-PERSIST",
 )
+G4_REQUIRED_EXCLUDED_IDS = G4_DISCOVERY_CASE_IDS + G4_DISCOVERY_FAMILY_IDS
 G4_REQUIRED_FAMILIES = (
     "G4-ADVERSARIAL-BOUNDARY",
     "G4-B05-SUPERVISOR-COMPARATOR",
@@ -850,8 +851,10 @@ def _validate_freeze_entry(
     if not isinstance(included, list) or set(included) != set(case_ids):
         errors.append("freeze entry included_cases must equal frozen case IDs")
     excluded = payload.get("excluded_cases")
-    if not isinstance(excluded, list):
-        errors.append("freeze entry excluded_cases must be a list")
+    if not _matches_string_set(excluded, G4_REQUIRED_EXCLUDED_IDS):
+        errors.append(
+            "freeze entry excluded_cases must exactly match discovery exclusions"
+        )
 
     declared_hashes = payload.get("artifact_hashes")
     if not isinstance(declared_hashes, dict):

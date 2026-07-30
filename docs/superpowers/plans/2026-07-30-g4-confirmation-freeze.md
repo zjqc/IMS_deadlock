@@ -39,6 +39,16 @@ protocol adapters, versioned exact generators, a case-derived CTMC path, and
 honest metric refusals. The `implementation_commit` recorded by Commit B is
 the final repair commit, not the earlier comparator-only commit.
 
+**2026-07-30 seal-hardening note:** A post-B1 adversarial review found that the
+candidate `FREEZE_ENTRY.excluded_cases` value was correct but the checker only
+enforced its JSON type. The uncommitted C candidate was discarded before any
+remote authority write and before any held-out execution. The repair adds RED
+tests for empty, missing, duplicate, and extra exclusions, then requires the
+seal set to equal the hashed discovery case/family exclusions exactly. B1 is
+retained in history as a superseded preregistration candidate; the final B2
+must record the later implementation commit and refreshed script/runtime
+hashes before a new C seal is created.
+
 **Tech Stack:** Python 3.13, frozen dataclasses, deterministic finite-state
 BFS, exhaustive subset search for small candidate covers, canonical JSON,
 SHA-256, pytest, Ruff, strict mypy, Markdown ledgers, and direct Dell
