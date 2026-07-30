@@ -289,6 +289,11 @@ RED tests:
 
 - a local-core closed class outside `D_global/F` is identified before generator
   solve;
+- a current local-kernel candidate whose job later uses a request-disconnected
+  bypass after an outside-resource release is rejected with a shortest
+  completion counterexample; structural irreversibility is claimed only for a
+  request-closed subclass, while the generic finite implementation requires a
+  complete-LTS completion-nonreachability audit;
 - a genuine livelock SCC and a calendar-empty terminal state are distinguished;
 - an unclassified closed class triggers structured refusal;
 - `_validate_absorption_reachability` remains strict;
@@ -298,7 +303,8 @@ RED tests:
 - seed derivation and repeated output remain deterministic.
 
 Do not weaken the validator. Repair the upstream partition and require an
-explicit analysis target.
+explicit analysis target. `K_local` (current structural candidate) and
+`D_local` (verified bad first-hit set) must not be conflated.
 
 ## Task 5: Close The Restricted Proof Chain
 
