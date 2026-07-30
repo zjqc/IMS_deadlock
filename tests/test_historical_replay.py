@@ -1,8 +1,12 @@
 import hashlib
 import json
+import os
 import platform
+import socket
 import subprocess
 import sys
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from types import SimpleNamespace
@@ -1066,6 +1070,7 @@ def test_capture_rejects_schedule_concurrency_and_existing_global_lock(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _patch_valid_environment(monkeypatch)
+    monkeypatch.setattr(replay, "SCHEDULE_LOCK_CONTENTION_WAIT_SECONDS", 0.05)
     lock = _base_lock(tmp_path)
     lock_path = _write_lock(tmp_path, lock)
     _write_schedule_state(
@@ -1095,6 +1100,436 @@ def test_capture_rejects_schedule_concurrency_and_existing_global_lock(
     ):
         replay.capture(lock_path, BUNDLE_ROOT, CASE_IDS[0], "primary", "HEAD1", "TREE1")
     assert state_lock.read_text(encoding="utf-8") == "manual incident"
+
+
+def test_schedule_slot_waits_through_legal_transient_lock_contention(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _patch_valid_environment(monkeypatch)
+    monkeypatch.setattr(replay, "SCHEDULE_LOCK_CONTENTION_WAIT_SECONDS", 1.0)
+    lock = _base_lock(tmp_path)
+    lock_path = _write_lock(tmp_path, lock)
+    lock["_lock_path"] = str(lock_path.resolve())
+    output_root = Path(lock["output_root"])
+    state_lock = output_root / ".schedule.lock"
+    state_lock.parent.mkdir(parents=True)
+    state_lock.write_text(
+        json.dumps(
+            {
+                "pid": 12345,
+                "hostname": "other-host",
+                "started_at": time.time(),
+                "case_id": "G4_CRP_S4PR_AGREE",
+                "run_label": "primary",
+            }
+        ),
+        encoding="utf-8",
+    )
+    release_gate = threading.Event()
+
+    def admit(case_id: str) -> str:
+        release_gate.wait()
+        try:
+            replay._acquire_schedule_slot(
+                lock,
+                case_id=case_id,
+                run_label="primary",
+                published_head="HEAD1",
+                published_tree="TREE1",
+            )
+        except replay.ReplayError as exc:
+            return str(exc)
+        return "admitted"
+
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        futures = [
+            pool.submit(admit, case_id)
+            for case_id in [
+                "G4_CRP_S4PR_AGREE",
+                "G4_CRP_OUTSIDE_S4PR",
+                "G4_ADVERSARIAL_BOUNDARY",
+            ]
+        ]
+        release_gate.set()
+        time.sleep(0.35)
+        state_lock.unlink()
+        results = [future.result(timeout=5.0) for future in futures]
+
+    assert results == ["admitted", "admitted", "admitted"]
+    state = json.loads(_schedule_state_path(lock).read_text(encoding="utf-8"))
+    assert {
+        (entry["run_label"], entry["case_id"])
+        for entry in cast(list[dict[str, Any]], state["active"])
+    } == {
+        ("primary", "G4_CRP_S4PR_AGREE"),
+        ("primary", "G4_CRP_OUTSIDE_S4PR"),
+        ("primary", "G4_ADVERSARIAL_BOUNDARY"),
+    }
+    assert not list(output_root.glob(".schedule.lock.incident-*.json"))
+
+
+def test_capture_three_p1_cases_under_schedule_lock_contention(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _patch_valid_environment(monkeypatch)
+    monkeypatch.setattr(replay, "SCHEDULE_LOCK_CONTENTION_WAIT_SECONDS", 2.0)
+    lock = _base_lock(tmp_path)
+    lock_path = _write_lock(tmp_path, lock)
+    output_root = Path(lock["output_root"])
+    launch_counts: dict[str, int] = {}
+    popen_gate = threading.Barrier(3)
+
+    def fake_popen(
+        argv: list[str],
+        *,
+        cwd: str,
+        stdout: int,
+        stderr: int,
+        shell: bool,
+    ) -> _CompletedProcess:
+        case_id = argv[-1]
+        launch_counts[case_id] = launch_counts.get(case_id, 0) + 1
+        popen_gate.wait(timeout=5.0)
+        return _CompletedProcess(json.dumps(_valid_result(case_id)).encode("utf-8"))
+
+    monkeypatch.setattr("ims_deadlock.historical_replay.subprocess.Popen", fake_popen)
+
+    def run_capture(case_id: str) -> dict[str, object]:
+        return replay.capture(
+            lock_path,
+            BUNDLE_ROOT,
+            case_id,
+            "primary",
+            "HEAD1",
+            "TREE1",
+        )
+
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        records = list(pool.map(run_capture, CASE_IDS[:3]))
+
+    assert {record["case_id"] for record in records} == set(CASE_IDS[:3])
+    assert launch_counts == {case_id: 1 for case_id in CASE_IDS[:3]}
+    state = json.loads(_schedule_state_path(lock).read_text(encoding="utf-8"))
+    assert state["active"] == []
+    assert state["incidents"] == []
+    assert {
+        (entry["run_label"], entry["case_id"])
+        for entry in cast(list[dict[str, Any]], state["completed"])
+    } == {("primary", case_id) for case_id in CASE_IDS[:3]}
+    assert not (output_root / ".schedule.lock").exists()
+    assert not list(output_root.glob(".schedule.lock.incident-*.json"))
+
+
+def test_capture_three_p1_cases_under_windows_lock_contention_without_sentinel_reads(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _patch_valid_environment(monkeypatch)
+    monkeypatch.setattr(sys, "platform", "win32")
+    monkeypatch.setattr(replay, "SCHEDULE_LOCK_CONTENTION_WAIT_SECONDS", 2.0)
+    original_load_json_object = replay._load_json_object
+
+    def no_schedule_lock_read(path: Path) -> dict[str, Any]:
+        if path.name == ".schedule.lock":
+            raise AssertionError("Windows contention must not read .schedule.lock")
+        return original_load_json_object(path)
+
+    monkeypatch.setattr(replay, "_load_json_object", no_schedule_lock_read)
+    monkeypatch.setattr(
+        "ims_deadlock.historical_replay.os.kill",
+        lambda pid, sig: pytest.fail(
+            "Windows schedule contention must not use os.kill"
+        ),
+    )
+    lock = _base_lock(tmp_path)
+    lock_path = _write_lock(tmp_path, lock)
+    output_root = Path(lock["output_root"])
+    launch_counts: dict[str, int] = {}
+    popen_gate = threading.Barrier(3)
+
+    def fake_popen(
+        argv: list[str],
+        *,
+        cwd: str,
+        stdout: int,
+        stderr: int,
+        shell: bool,
+    ) -> _CompletedProcess:
+        case_id = argv[-1]
+        launch_counts[case_id] = launch_counts.get(case_id, 0) + 1
+        popen_gate.wait(timeout=5.0)
+        return _CompletedProcess(json.dumps(_valid_result(case_id)).encode("utf-8"))
+
+    monkeypatch.setattr("ims_deadlock.historical_replay.subprocess.Popen", fake_popen)
+
+    def run_capture(case_id: str) -> dict[str, object]:
+        return replay.capture(
+            lock_path,
+            BUNDLE_ROOT,
+            case_id,
+            "primary",
+            "HEAD1",
+            "TREE1",
+        )
+
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        records = list(pool.map(run_capture, CASE_IDS[:3]))
+
+    assert {record["case_id"] for record in records} == set(CASE_IDS[:3])
+    assert launch_counts == {case_id: 1 for case_id in CASE_IDS[:3]}
+    state = json.loads(_schedule_state_path(lock).read_text(encoding="utf-8"))
+    assert state["active"] == []
+    assert state["incidents"] == []
+    assert {
+        (entry["run_label"], entry["case_id"])
+        for entry in cast(list[dict[str, Any]], state["completed"])
+    } == {("primary", case_id) for case_id in CASE_IDS[:3]}
+    assert not (output_root / ".schedule.lock").exists()
+
+
+@pytest.mark.parametrize(
+    ("lease_payload", "classification"),
+    [
+        ("manual incident", "unclassifiable_schedule_lease"),
+        (
+            {
+                "pid": 12345,
+                "hostname": "old-host",
+                "started_at": 1.0,
+                "case_id": "G4_CRP_S4PR_AGREE",
+                "run_label": "primary",
+            },
+            "unknown_schedule_lease_age_exceeded",
+        ),
+    ],
+)
+def test_stale_schedule_lock_fails_closed_with_durable_audit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    lease_payload: object,
+    classification: str,
+) -> None:
+    _patch_valid_environment(monkeypatch)
+    monkeypatch.setattr(sys, "platform", "linux")
+    monkeypatch.setattr(replay, "SCHEDULE_LOCK_CONTENTION_WAIT_SECONDS", 0.05)
+    lock = _base_lock(tmp_path)
+    lock_path = _write_lock(tmp_path, lock)
+    output_root = Path(lock["output_root"])
+    state_lock = output_root / ".schedule.lock"
+    state_lock.parent.mkdir(parents=True)
+    if isinstance(lease_payload, str):
+        state_lock.write_text(lease_payload, encoding="utf-8")
+        os.utime(state_lock, (1.0, 1.0))
+    else:
+        state_lock.write_text(json.dumps(lease_payload), encoding="utf-8")
+    monkeypatch.setattr(
+        "ims_deadlock.historical_replay.subprocess.Popen",
+        lambda *args, **kwargs: pytest.fail("stale schedule lock must block launch"),
+    )
+
+    with pytest.raises(
+        replay.ReplayError,
+        match=(
+            "existing schedule lease requires manual incident classification; "
+            "automatic recovery is forbidden"
+        ),
+    ):
+        replay.capture(lock_path, BUNDLE_ROOT, CASE_IDS[0], "primary", "HEAD1", "TREE1")
+
+    assert state_lock.exists()
+    audits = list(output_root.glob(".schedule.lock.incident-*.json"))
+    assert len(audits) == 1
+    audit = json.loads(audits[0].read_text(encoding="utf-8"))
+    assert audit["classification"] == classification
+    assert audit["action"] == "fail_closed_no_auto_reap"
+    assert audit["case_id"] == CASE_IDS[0]
+    assert audit["run_label"] == "primary"
+    assert not _schedule_state_path(lock).exists()
+
+
+def test_windows_schedule_lock_timeout_never_reads_sentinel_or_launches_child(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _patch_valid_environment(monkeypatch)
+    monkeypatch.setattr(sys, "platform", "win32")
+    monkeypatch.setattr(replay, "SCHEDULE_LOCK_CONTENTION_WAIT_SECONDS", 0.02)
+    lock = _base_lock(tmp_path)
+    lock_path = _write_lock(tmp_path, lock)
+    output_root = Path(lock["output_root"])
+    state_lock = output_root / ".schedule.lock"
+    state_lock.parent.mkdir(parents=True)
+    state_lock.write_text(
+        json.dumps(
+            {
+                "pid": 12345,
+                "hostname": socket.gethostname(),
+                "started_at": 1.0,
+                "case_id": "G4_CRP_S4PR_AGREE",
+                "run_label": "primary",
+            }
+        ),
+        encoding="utf-8",
+    )
+    original_load_json_object = replay._load_json_object
+
+    def no_schedule_lock_read(path: Path) -> dict[str, Any]:
+        if path.name == ".schedule.lock":
+            raise AssertionError("Windows timeout must not read .schedule.lock")
+        return original_load_json_object(path)
+
+    child_launches = 0
+    monkeypatch.setattr(replay, "_load_json_object", no_schedule_lock_read)
+    monkeypatch.setattr(
+        "ims_deadlock.historical_replay.os.kill",
+        lambda pid, sig: pytest.fail("Windows schedule timeout must not use os.kill"),
+    )
+
+    def fail_popen(*args: object, **kwargs: object) -> _CompletedProcess:
+        nonlocal child_launches
+        child_launches += 1
+        pytest.fail("Windows schedule timeout must block child launch")
+
+    monkeypatch.setattr("ims_deadlock.historical_replay.subprocess.Popen", fail_popen)
+
+    with pytest.raises(
+        replay.ReplayError,
+        match=(
+            "existing schedule lease requires manual incident classification; "
+            "automatic recovery is forbidden"
+        ),
+    ):
+        replay.capture(lock_path, BUNDLE_ROOT, CASE_IDS[0], "primary", "HEAD1", "TREE1")
+
+    assert child_launches == 0
+    assert state_lock.exists()
+    audits = list(output_root.glob(".schedule.lock.incident-*.json"))
+    assert len(audits) == 1
+    audit = json.loads(audits[0].read_text(encoding="utf-8"))
+    assert audit["classification"] == "windows_schedule_lease_contention_timeout"
+    assert audit["owner_liveness"] == "unknown"
+    assert audit["lease_metadata"] is None
+
+
+def test_windows_schedule_owner_liveness_never_calls_os_kill(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(sys, "platform", "win32")
+    monkeypatch.setattr(
+        "ims_deadlock.historical_replay.socket.gethostname", lambda: "same-host"
+    )
+    monkeypatch.setattr(
+        "ims_deadlock.historical_replay.os.kill",
+        lambda pid, sig: pytest.fail("Windows schedule liveness must not call os.kill"),
+    )
+
+    assert replay._schedule_lock_owner_liveness(12345, "same-host") == "unknown"
+
+
+@pytest.mark.parametrize(
+    (
+        "owner_state",
+        "lease_hostname",
+        "started_at",
+        "expected_classification",
+    ),
+    [
+        ("dead", socket.gethostname(), 1.0, "dead_schedule_lease_owner"),
+        (
+            "unknown",
+            "remote-host",
+            1.0,
+            "unknown_schedule_lease_age_exceeded",
+        ),
+        ("live", socket.gethostname(), 1.0, "live_schedule_lease_contention_timeout"),
+    ],
+)
+def test_schedule_lock_owner_liveness_classification_blocks_launch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    owner_state: str,
+    lease_hostname: str,
+    started_at: float,
+    expected_classification: str,
+) -> None:
+    _patch_valid_environment(monkeypatch)
+    monkeypatch.setattr(sys, "platform", "linux")
+    monkeypatch.setattr(replay, "SCHEDULE_LOCK_CONTENTION_WAIT_SECONDS", 0.05)
+    lock = _base_lock(tmp_path)
+    lock_path = _write_lock(tmp_path, lock)
+    output_root = Path(lock["output_root"])
+    state_lock = output_root / ".schedule.lock"
+    state_lock.parent.mkdir(parents=True)
+    state_lock.write_text(
+        json.dumps(
+            {
+                "pid": 12345,
+                "hostname": lease_hostname,
+                "started_at": started_at,
+                "case_id": "G4_CRP_S4PR_AGREE",
+                "run_label": "primary",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def fake_owner_liveness(pid: int, hostname: str) -> str:
+        assert pid == 12345
+        assert hostname == lease_hostname
+        return owner_state
+
+    monkeypatch.setattr(replay, "_schedule_lock_owner_liveness", fake_owner_liveness)
+    monkeypatch.setattr(
+        "ims_deadlock.historical_replay.subprocess.Popen",
+        lambda *args, **kwargs: pytest.fail("schedule lock failure must block launch"),
+    )
+
+    with pytest.raises(
+        replay.ReplayError,
+        match=(
+            "existing schedule lease requires manual incident classification; "
+            "automatic recovery is forbidden"
+        ),
+    ):
+        replay.capture(lock_path, BUNDLE_ROOT, CASE_IDS[0], "primary", "HEAD1", "TREE1")
+
+    assert state_lock.exists()
+    audits = list(output_root.glob(".schedule.lock.incident-*.json"))
+    assert len(audits) == 1
+    audit = json.loads(audits[0].read_text(encoding="utf-8"))
+    assert audit["classification"] == expected_classification
+    assert audit["owner_liveness"] == owner_state
+    assert audit["action"] == "fail_closed_no_auto_reap"
+    assert not _schedule_state_path(lock).exists()
+
+
+def test_schedule_lock_release_permission_error_preserves_replacement_lock(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lock_path = tmp_path / ".schedule.lock"
+    original_payload = b'{"owner":"original"}'
+    replacement_payload = b'{"owner":"replacement"}'
+    lock_path.write_bytes(original_payload)
+    attempts = 0
+
+    def replacing_unlink(path: Path, *, missing_ok: bool = False) -> None:
+        nonlocal attempts
+        if path == lock_path:
+            attempts += 1
+            path.write_bytes(replacement_payload)
+            raise PermissionError("simulated Windows sharing violation")
+        path.unlink(missing_ok=missing_ok)
+
+    monkeypatch.setattr(Path, "unlink", replacing_unlink)
+
+    with pytest.raises(replay.ReplayError, match="cannot release schedule lease"):
+        replay._release_schedule_state_lock(lock_path)
+
+    assert attempts == 1
+    assert lock_path.read_bytes() == replacement_payload
 
 
 def test_case_lease_failure_after_schedule_admission_records_terminal_incident(
