@@ -12,8 +12,11 @@ IMS Deadlock 是面向 IMS-RAS 的结构-概率-控制理论闭环项目。目�
 `-> competing-absorption CTMC`
 `-> exact finite nonblocking supervisor`.
 
-Gate 状态是：G0 仓库门通过，G1 文献门部分通过，G2 受限理论主链通过，
-G3 严格小有限模型算法门通过，G4 确认集尚未冻结，G5 论文门尚未开始。
+Gate 状态是：G0 通过，G1 scope-bounded 通过，G2 受限理论主链通过，
+G3 严格小有限模型算法门通过，G4 历史确认集已冻结并在 G5 原样执行，
+G5 论文门失败且证据已关闭；G6-A 的局部核—终端类代码/理论恢复和
+G6-R 历史重放机制门已经通过，独立 G6 discovery/confirmation
+设计、封存和执行仍是下一硬门。
 完整状态和开放义务见 `docs/ROADMAP.md`。
 
 ## 目录
@@ -60,6 +63,44 @@ PYTHONDONTWRITEBYTECODE=1 python -m ruff format --check src tests
 PYTHONDONTWRITEBYTECODE=1 python -m mypy --no-incremental src tests
 ```
 
+## G5 确认证据
+
+G5 对九个冻结案例各执行一次 primary 和一次 repro，9/9 运行记录和 hash
+链可复核。七例完成，grid/medium 因 reachable non-`D/F` state 不能到达
+声明吸收类而被构造器确定性拒绝。
+
+锁定 scorer 原样保留 `4 SUPPORTED / 3 FALSIFIED / 2 INCONCLUSIVE`。
+透明勘误把 theorem prediction 与 certificate minimality 分离后为
+`6 SUPPORTED / 1 FALSIFIED / 2 INCONCLUSIVE`，并独立保留两项
+minimality failure。该勘误不改变 raw execution，也不使 G5 通过。
+
+- `docs/verification/G5_CONFIRMATION_REPORT.md`
+- `docs/verification/G5_REPRODUCIBILITY_AUDIT.md`
+- `docs/verification/G5_CLAIM_EVIDENCE_TABLE.md`
+- `evidence/g5/G5_SCORING_ERRATUM.json`
+
+## G6 历史重放机制修复
+
+G6 将 theorem prediction、ancillary metric 和 execution status 分层，
+并实现 all-minimal local kernels、local CRP bridge 以及
+`D_global,D_local,F,R_livelock,R_terminal` terminal/stopping
+partition。R1 的 Windows 调度失败和 R2 的概率数值契约失败均作为不可变
+负证据保留，没有补跑、重评分或覆盖。
+
+预注册 R3 在新代码树、执行锁和输出根下对五个退役 G4 行各执行一次
+primary 和一次 repro。五对 raw/canonical/stderr 完全匹配，五个 mechanism
+check 均通过；两个 boundary case 的 theorem 为 `SUPPORTED`，同时两项
+`certificate_minimality=FAIL/false` 仍独立保留。
+
+R3 只关闭 historical replay 机制回归，不是 held-out confirmation。
+下一硬门是建立不复用 G4/G5 模型、参数、状态或随机流的 G6 discovery
+set，锁定新 estimand 和负对照，再进入 G6-C/D/E。
+
+- `docs/verification/G6_HARD_PROBLEM_ROOT_CAUSE_AND_R3_REPAIR.md`
+- `evidence/g6/G6_HISTORICAL_REPLAY_FAILURE_LEDGER.json`
+- `evidence/g6/G6_HISTORICAL_REPLAY_R3_REPORT.json`
+- `evidence/g6/G6_HISTORICAL_REPLAY_R3_RAW_HASH_MANIFEST.json`
+
 ## 科学边界
 
 - 程序验证只能支持理论判断，不能替代定义、引理和证明。
@@ -72,3 +113,6 @@ PYTHONDONTWRITEBYTECODE=1 python -m mypy --no-incremental src tests
   AND 请求、AGV/预约或多个 persistent buffers。一般制造岛阈值、
   风险预算控制与 Pareto 定理仍开放。
 - 被隔离的历史提交或外部项目产物不得直接转入本项目证据链。
+- G4/G5 九个案例已退役为历史 discovery/regression；G6 必须先修复
+  theorem/metric 分离、all-minimal local kernel、CRP local bridge 与
+  closed-class taxonomy，再封存完全独立的新确认集。

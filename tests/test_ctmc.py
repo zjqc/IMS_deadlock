@@ -2,7 +2,44 @@ from math import isclose
 
 import pytest
 
-from ims_deadlock.ctmc import AbsorbingCTMC, _solve_linear
+from ims_deadlock.ctmc import (
+    LINEAR_RESIDUAL_ABSOLUTE_TOLERANCE,
+    PROBABILITY_ABSOLUTE_TOLERANCE,
+    AbsorbingCTMC,
+    _solve_linear,
+    linear_residual_is_numerically_valid,
+    probability_bounds_match_values,
+    probability_interval_is_numerically_valid,
+    probability_values_are_numerically_valid,
+)
+
+
+def test_probability_interval_contract_accepts_roundoff_not_real_violations() -> None:
+    assert PROBABILITY_ABSOLUTE_TOLERANCE == 1e-10
+    assert probability_interval_is_numerically_valid(-0.0, 1.0000000000000002)
+    assert probability_interval_is_numerically_valid(-5e-11, 1.0 + 5e-11)
+
+    assert not probability_interval_is_numerically_valid(-1e-6, 1.0)
+    assert not probability_interval_is_numerically_valid(0.0, 1.0 + 1e-6)
+    assert not probability_interval_is_numerically_valid(0.75, 0.25)
+    assert not probability_interval_is_numerically_valid(True, 1.0)
+    assert not probability_interval_is_numerically_valid(0.0, float("inf"))
+
+
+def test_probability_vector_bounds_and_residual_contracts_are_independent() -> None:
+    values = (0.25, 1.0000000000000002, -0.0)
+
+    assert probability_values_are_numerically_valid(values)
+    assert probability_bounds_match_values(values, -0.0, 1.0000000000000002)
+    assert probability_bounds_match_values(values, 0.0, 1.0)
+    assert not probability_bounds_match_values(values, 0.0, 0.75)
+    assert not probability_values_are_numerically_valid((0.25, 1.000001))
+    assert not probability_values_are_numerically_valid(())
+
+    assert LINEAR_RESIDUAL_ABSOLUTE_TOLERANCE == 1e-10
+    assert linear_residual_is_numerically_valid(3.2e-15)
+    assert not linear_residual_is_numerically_valid(1e-6)
+    assert not linear_residual_is_numerically_valid(True)
 
 
 def test_absorbing_ctmc_solves_deadlock_committor_and_mean_time() -> None:

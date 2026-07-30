@@ -56,30 +56,70 @@ def find_local_blocking_certificate(
     state: IMSState,
     transitions: Iterable[TransitionSpec] = (),
     *,
+    allowed_job_ids: Iterable[str] | None = None,
     reachable_prefix: tuple[str, ...] | None = None,
 ) -> DeadlockCertificate | None:
     """Return an inclusion-minimal local closed blocking-kernel certificate."""
 
-    if not state.stable or state.complete:
-        return None
-    if not validate_model_state(model, state).valid:
-        return None
+    certificates = enumerate_local_blocking_certificates(
+        model,
+        state,
+        transitions,
+        allowed_job_ids=allowed_job_ids,
+        reachable_prefix=reachable_prefix,
+    )
+    return certificates[0] if certificates else None
 
-    jobs = sorted(state.blocked_jobs(model))
+
+def enumerate_local_blocking_certificates(
+    model: IMSModel,
+    state: IMSState,
+    transitions: Iterable[TransitionSpec] = (),
+    *,
+    allowed_job_ids: Iterable[str] | None = None,
+    reachable_prefix: tuple[str, ...] | None = None,
+) -> tuple[DeadlockCertificate, ...]:
+    """Return every inclusion-minimal local closed blocking-kernel certificate."""
+
+    if not state.stable or state.complete:
+        return ()
+    if not validate_model_state(model, state).valid:
+        return ()
+
+    blocked_jobs = state.blocked_jobs(model)
+    if allowed_job_ids is not None:
+        blocked_jobs &= frozenset(allowed_job_ids)
+    jobs = sorted(blocked_jobs)
     transitions = tuple(transitions)
+    certificates: list[DeadlockCertificate] = []
     for size in range(1, len(jobs) + 1):
         for subset_tuple in combinations(jobs, size):
-            certificate = _certificate_for_jobs(
-                model,
-                state,
-                frozenset(subset_tuple),
-                "local",
-                transitions,
-                reachable_prefix=reachable_prefix,
-            )
-            if certificate is not None:
-                return certificate
-    return None
+            subset = frozenset(subset_tuple)
+            if _has_enabled_transition_for_jobs(model, state, subset, transitions):
+                continue
+            for resources in _minimal_witness_resource_sets(model, state, subset):
+                if _has_retained_subkernel(certificates, subset, resources):
+                    continue
+                certificates.append(
+                    _certificate(
+                        model=model,
+                        state=state,
+                        jobs=subset,
+                        resources=resources,
+                        scope="local",
+                        is_minimal=True,
+                        reachable_prefix=reachable_prefix,
+                    )
+                )
+    return tuple(
+        sorted(
+            certificates,
+            key=lambda certificate: (
+                tuple(sorted(certificate.kernel_jobs)),
+                tuple(sorted(certificate.kernel_resources)),
+            ),
+        )
+    )
 
 
 def _certificate_for_jobs(
@@ -110,13 +150,43 @@ def _certificate_for_jobs(
 def _minimal_witness_resources(
     model: IMSModel, state: IMSState, jobs: frozenset[str]
 ) -> frozenset[str] | None:
+    resource_sets = _minimal_witness_resource_sets(model, state, jobs)
+    return resource_sets[0] if resource_sets else None
+
+
+def _minimal_witness_resource_sets(
+    model: IMSModel, state: IMSState, jobs: frozenset[str]
+) -> tuple[frozenset[str], ...]:
     candidates = sorted(_candidate_witness_resources(model, state, jobs))
+    minimal_resources: list[frozenset[str]] = []
     for size in range(1, len(candidates) + 1):
         for subset_tuple in combinations(candidates, size):
             resources = frozenset(subset_tuple)
+            if any(existing.issubset(resources) for existing in minimal_resources):
+                continue
             if _covers_every_alternative(model, state, jobs, resources):
-                return resources
-    return None
+                minimal_resources.append(resources)
+    return tuple(
+        sorted(
+            minimal_resources,
+            key=lambda resources: tuple(sorted(resources)),
+        )
+    )
+
+
+def _has_retained_subkernel(
+    certificates: list[DeadlockCertificate],
+    jobs: frozenset[str],
+    resources: frozenset[str],
+) -> bool:
+    return any(
+        certificate.kernel_jobs.issubset(jobs)
+        and certificate.kernel_resources.issubset(resources)
+        and (
+            certificate.kernel_jobs != jobs or certificate.kernel_resources != resources
+        )
+        for certificate in certificates
+    )
 
 
 def _candidate_witness_resources(

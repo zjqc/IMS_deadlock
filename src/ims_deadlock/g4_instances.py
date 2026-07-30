@@ -21,6 +21,14 @@ from ims_deadlock.model import (
     Resource,
     ResourceDemand,
 )
+from ims_deadlock.terminal_classes import (
+    DEFAULT_ESTIMAND_SPEC,
+    G6_CTM_GENERATOR_PROVENANCE,
+    TerminalPartitionError,
+    TerminalStoppingPartition,
+    VersionedEstimandSpec,
+    partition_stable_lts,
+)
 
 BIDIRECTIONAL_GENERATOR_ID = "bidirectional_bas_v1"
 MEDIUM_ISLAND_GENERATOR_ID = "three_island_bas_v1"
@@ -164,6 +172,10 @@ class DerivedG4CTMC:
     stable_state_count: int
     completion_state_ids: tuple[str, ...]
     deadlock_state_ids: tuple[str, ...]
+    global_deadlock_state_ids: tuple[str, ...] = ()
+    local_deadlock_state_ids: tuple[str, ...] = ()
+    terminal_classification: TerminalStoppingPartition | None = None
+    estimand: dict[str, object] | None = None
     truncated: bool = False
 
 
@@ -393,7 +405,11 @@ def build_adversarial_boundary_case(
     )
 
 
-def derive_absorbing_ctmc(built: BuiltG4Case) -> DerivedG4CTMC:
+def derive_absorbing_ctmc(
+    built: BuiltG4Case,
+    *,
+    estimand_spec: VersionedEstimandSpec = DEFAULT_ESTIMAND_SPEC,
+) -> DerivedG4CTMC:
     """Derive a case-bound CTMC from a complete generated stable LTS.
 
     This is a scientific execution entrypoint and must not be called on a
@@ -401,7 +417,6 @@ def derive_absorbing_ctmc(built: BuiltG4Case) -> DerivedG4CTMC:
     """
 
     from ims_deadlock.analysis import enumerate_stable_lts
-    from ims_deadlock.certificates import find_deadlock_certificate
 
     stable_lts = enumerate_stable_lts(
         built.spec.model,
@@ -414,32 +429,49 @@ def derive_absorbing_ctmc(built: BuiltG4Case) -> DerivedG4CTMC:
     if len(stable_lts.initial_state_ids) != 1:
         raise ValueError("CTMC derivation requires one stable initial state")
 
-    completion_states = {
-        record.state_id for record in stable_lts.states if record.state.complete
-    }
-    deadlock_states = {
-        record.state_id
-        for record in stable_lts.states
-        if not record.state.complete
-        and find_deadlock_certificate(
-            built.spec.model,
-            record.state,
-            built.spec.transitions,
-            reachable_prefix=record.witness,
+    partition = partition_stable_lts(
+        built.spec.model,
+        stable_lts,
+        built.spec.transitions,
+        event_rates=built.event_rates,
+        estimand_spec=estimand_spec,
+        require_selected_absorption=False,
+        verify_generated_lts=True,
+    )
+    if (
+        partition.d_local_state_ids
+        and "D_local" not in estimand_spec.selected_bad_classes
+    ):
+        raise TerminalPartitionError(
+            "d_global_only_estimand_refuses_local_core",
+            "D_global-only estimand is invalid when local blocking cores exist",
+            {
+                "local_state_ids": list(partition.d_local_state_ids),
+                "selected_bad_classes": list(estimand_spec.selected_bad_classes),
+            },
         )
-        is not None
-    }
+    if partition.unreachable_nonabsorbing_state_ids:
+        raise TerminalPartitionError(
+            "unreachable_nonabsorbing_state",
+            "nonabsorbing state cannot reach selected bad or success absorption",
+            {
+                "unreachable_state_ids": list(
+                    partition.unreachable_nonabsorbing_state_ids
+                ),
+                "terminal_scc_state_ids": sorted(
+                    set(partition.r_terminal_state_ids)
+                    | set(partition.r_livelock_state_ids)
+                ),
+            },
+        )
+    completion_states = set(partition.f_state_ids)
+    deadlock_states = set(partition.selected_bad_state_ids)
     overlap = completion_states & deadlock_states
     if overlap:
         raise ValueError("a stable state cannot be completion and deadlock")
-    absorbing_states = completion_states | deadlock_states
-    transient_states = tuple(
-        record.state_id
-        for record in stable_lts.states
-        if record.state_id not in absorbing_states
-    )
+    transient_states = partition.transient_state_ids
     initial_state = stable_lts.initial_state_ids[0]
-    if initial_state in absorbing_states:
+    if initial_state in completion_states or initial_state in deadlock_states:
         raise ValueError("CTMC derivation requires a transient initial state")
 
     transient_rates: dict[tuple[str, str], float] = {}
@@ -467,7 +499,7 @@ def derive_absorbing_ctmc(built: BuiltG4Case) -> DerivedG4CTMC:
         completion_rates=completion_rates,
         deadlock_rates=deadlock_rates,
         transient_rates=transient_rates,
-        generator_provenance="derived_from_locked_g4_ims_lts",
+        generator_provenance=G6_CTM_GENERATOR_PROVENANCE,
         case_derived=True,
     )
     ctmc._validate()
@@ -477,6 +509,13 @@ def derive_absorbing_ctmc(built: BuiltG4Case) -> DerivedG4CTMC:
         stable_state_count=len(stable_lts.states),
         completion_state_ids=tuple(sorted(completion_states)),
         deadlock_state_ids=tuple(sorted(deadlock_states)),
+        global_deadlock_state_ids=partition.d_global_state_ids,
+        local_deadlock_state_ids=partition.d_local_state_ids,
+        terminal_classification=partition,
+        estimand={
+            **partition.estimand_spec.to_json_dict(),
+            "hashes": partition.hashes_json_dict(),
+        },
     )
 
 

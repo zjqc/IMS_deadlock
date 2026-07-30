@@ -1,0 +1,206 @@
+{
+  "schema_version": "ims-deadlock/g6-historical-replay-r3-report/v1",
+  "report_version": 1,
+  "study_role": "historical_replay",
+  "status": "PASS_WITH_RETAINED_BOUNDARY_FAILURES",
+  "authorization_boundary": "read_only_remote_evidence_review_plus_local_evidence_file_creation",
+  "target": {
+    "remote_worktree": "D:\\worktree\\IMS_deadlock-g6-replay-code-v3",
+    "branch": "codex/g6-replay-code-r3",
+    "head": "7b213d279ca6d57b0a8f8e904f4028b315e9b2b5",
+    "tree": "9349bf891acc8d68925ba35e72463663fedab5a4",
+    "dirty_state": "clean",
+    "output_root": "D:\\worktree\\IMS_deadlock-g6-replay-code-v3\\artifacts\\g6-historical-replay\\G6-R-20260730-R3"
+  },
+  "evidence_references": {
+    "lock": {
+      "path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
+      "sha256": "99adb8c6725751037f066db5bcd36bb799f22137ba66aeb796094f38d7594bbb"
+    },
+    "preregistration": {
+      "path": "docs/cases/G6_HISTORICAL_REPLAY_R3_PREREGISTRATION.md",
+      "sha256": "099fb434659f04b3b84cd6f74a1d32821fea155dacafb224c537d9b999a974ab"
+    },
+    "failure_ledger": {
+      "path": "evidence/g6/G6_HISTORICAL_REPLAY_FAILURE_LEDGER.json",
+      "sha256": "eda46c8fc41071571141fc64e62522250b05cf955618d262d1a7935f66f822e6"
+    },
+    "raw_hash_manifest": {
+      "path": "evidence/g6/G6_HISTORICAL_REPLAY_R3_RAW_HASH_MANIFEST.json",
+      "canonical_path_sha256_map_hash": "494b17a3224fba0c8e4586c8afa0429a588d437b8500809b7fcc11cbc6957c14"
+    },
+    "remote_summary": {
+      "path": "D:\\worktree\\IMS_deadlock-g6-replay-code-v3\\artifacts\\g6-historical-replay\\G6-R-20260730-R3\\reports\\G6_HISTORICAL_REPLAY_R3_SUMMARY.json",
+      "sha256": "20265b3bcc29ed9c71f483a843f6f67e7b0c897f9634d73112b1772168d39521"
+    },
+    "remote_schedule_state": {
+      "path": "D:\\worktree\\IMS_deadlock-g6-replay-code-v3\\artifacts\\g6-historical-replay\\G6-R-20260730-R3\\schedule_state.json",
+      "sha256": "a4d5e3b446b2a7b0edaa340c7e0e592fe9f475bf7fdbd591f66039d9d4920f83"
+    }
+  },
+  "artifact_manifest": {
+    "file_count": 32,
+    "total_bytes": 18183026,
+    "canonical_path_sha256_map_hash": "494b17a3224fba0c8e4586c8afa0429a588d437b8500809b7fcc11cbc6957c14",
+    "canonicalization": "JSON sorted keys compact separators UTF-8"
+  },
+  "execution_constraints": {
+    "no_retries": true,
+    "third_run_allowed": false,
+    "no_confirmation_use": true,
+    "r1_r2_retained": true,
+    "r1_r2_gap_filling_or_rescoring": false,
+    "all_primary_complete_before_repro": true
+  },
+  "lock_validation": {
+    "status": "PASS",
+    "runtime": "D:\\worktree\\IMS_deadlock-final-integration\\.venv\\Scripts\\python.exe",
+    "pythonpath": "D:\\worktree\\IMS_deadlock-g6-replay-code-v3\\src",
+    "lock_path": "D:\\worktree\\IMS_deadlock-g6-lock-v3\\evidence\\g6\\G6_HISTORICAL_REPLAY_LOCK_R3.json",
+    "canonical_frozen_bundle_root": "D:\\worktree\\IMS_deadlock-g5-confirmation\\cases\\confirmation\\g4",
+    "published_head": "7b213d279ca6d57b0a8f8e904f4028b315e9b2b5",
+    "published_tree": "9349bf891acc8d68925ba35e72463663fedab5a4",
+    "note": "The replay-code-v3 checkout copy is not the frozen bundle authority; validate-lock must use the G5 confirmation frozen bundle root."
+  },
+  "captures": {
+    "expected_count": 10,
+    "observed_count": 10,
+    "formal_success_count": 10,
+    "case_count": 5,
+    "run_labels": [
+      "primary",
+      "repro"
+    ]
+  },
+  "hashes": {
+    "summary_sha256": "20265b3bcc29ed9c71f483a843f6f67e7b0c897f9634d73112b1772168d39521",
+    "schedule_state_sha256": "a4d5e3b446b2a7b0edaa340c7e0e592fe9f475bf7fdbd591f66039d9d4920f83",
+    "execution_schedule_sha256": "9a948178bc05668eed8ab389157e9ea4ec37171d74bac5530c55db614432d320"
+  },
+  "comparisons": [
+    {
+      "case_id": "G4_CRP_S4PR_AGREE",
+      "match": true,
+      "raw_stdout_sha256_match": true,
+      "canonical_json_sha256_match": true,
+      "stderr_raw_sha256_match": true,
+      "raw_stdout_sha256": "f74575f347c39f4f8cb1a25ee580e0189a91126443337d3998a0127634e837c7",
+      "canonical_json_sha256": "df787b58e11282d5636bc7d6cc96e0c38e89c0564c8223fd35c45301eb4d205a",
+      "stderr_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "case_id": "G4_CRP_OUTSIDE_S4PR",
+      "match": true,
+      "raw_stdout_sha256_match": true,
+      "canonical_json_sha256_match": true,
+      "stderr_raw_sha256_match": true,
+      "raw_stdout_sha256": "a62edb7ecb1c5c773dde172ab39bb3ff3b616ed4af67d0ef538926a0b0bcd062",
+      "canonical_json_sha256": "a74a7b66a9258eae7e5ac866446dc5681dc06c26ff247000d4c980b6fea9bb65",
+      "stderr_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "case_id": "G4_ADVERSARIAL_BOUNDARY",
+      "match": true,
+      "raw_stdout_sha256_match": true,
+      "canonical_json_sha256_match": true,
+      "stderr_raw_sha256_match": true,
+      "raw_stdout_sha256": "cececd6efa166bc528091aaed10c08971916279b75c0389db92fe284f88974ca",
+      "canonical_json_sha256": "6e5f9f05b92ddd604555c79ca086344f6cb22cc1bc5e7ee1a3d9db3cde5abb9f",
+      "stderr_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "case_id": "G4_IMS_PARAMETER_GRID",
+      "match": true,
+      "raw_stdout_sha256_match": true,
+      "canonical_json_sha256_match": true,
+      "stderr_raw_sha256_match": true,
+      "raw_stdout_sha256": "5be6fab3cb7a9d2604b2cf6747f3350bedbc6ed14a41812489f87a2daa8e44e2",
+      "canonical_json_sha256": "664e26beb9cdb86227f07b85c24dd27588699a4b4eb013e67b01fd641eb0e28e",
+      "stderr_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "case_id": "G4_MEDIUM_ISLAND_REBUILD",
+      "match": true,
+      "raw_stdout_sha256_match": true,
+      "canonical_json_sha256_match": true,
+      "stderr_raw_sha256_match": true,
+      "raw_stdout_sha256": "846a70e08860445a61640bdca620ea933970e03c74362497b4f1c50538d25e9d",
+      "canonical_json_sha256": "d5af0e7cb627adabe6d26114729bdd5942fb667c61ce3fd870c77698112669fe",
+      "stderr_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "mechanisms": [
+    {
+      "case_id": "G4_CRP_S4PR_AGREE",
+      "status": "PASS",
+      "evidence": {
+        "certificate_available": true,
+        "matching_kernel_count": 1,
+        "resources_equal": true
+      }
+    },
+    {
+      "case_id": "G4_CRP_OUTSIDE_S4PR",
+      "status": "PASS",
+      "theorem_prediction_status": "SUPPORTED",
+      "retained_boundary_result": {
+        "metric": "certificate_minimality",
+        "value": false,
+        "status": "FAIL",
+        "evidence_field": "outside_scope_boundary.analysis.certificate.certificate.is_minimal"
+      }
+    },
+    {
+      "case_id": "G4_ADVERSARIAL_BOUNDARY",
+      "status": "PASS",
+      "theorem_prediction_status": "SUPPORTED",
+      "retained_boundary_result": {
+        "metric": "certificate_minimality",
+        "value": false,
+        "status": "FAIL",
+        "evidence_field": "analysis.certificate.certificate.is_minimal"
+      }
+    },
+    {
+      "case_id": "G4_IMS_PARAMETER_GRID",
+      "status": "PASS",
+      "execution_complete": true,
+      "probability_bounds_valid": true,
+      "terminal_d_local_verified": true,
+      "probability_absolute_tolerance": 1e-10
+    },
+    {
+      "case_id": "G4_MEDIUM_ISLAND_REBUILD",
+      "status": "PASS",
+      "execution_complete": true,
+      "probability_bounds_valid": true,
+      "terminal_d_local_verified": true,
+      "probability_absolute_tolerance": 1e-10
+    }
+  ],
+  "retained_failures": {
+    "r1": {
+      "status": "FAILED_INCOMPLETE",
+      "completed_capture_count": 6,
+      "retention": "immutable_no_gap_filling"
+    },
+    "r2": {
+      "status": "FAILED_MECHANISM_CHECK",
+      "completed_capture_count": 10,
+      "failed_mechanisms": [
+        "G4_IMS_PARAMETER_GRID probability_bounds_valid=false",
+        "G4_MEDIUM_ISLAND_REBUILD probability_bounds_valid=false"
+      ],
+      "retention": "immutable_no_rescoring_as_r2"
+    }
+  },
+  "scope": {
+    "historical_replay_only": true,
+    "not_held_out_confirmation": true,
+    "not_g6_c": true,
+    "not_g6_d": true,
+    "not_g6_e": true,
+    "does_not_replace_g5_evidence": true,
+    "claim_upgrade": false
+  }
+}

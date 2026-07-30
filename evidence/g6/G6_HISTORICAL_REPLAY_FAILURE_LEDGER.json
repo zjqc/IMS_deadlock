@@ -1,0 +1,76 @@
+{
+  "schema_version": "ims-deadlock/g6-historical-replay-failure-ledger/v1",
+  "study_role": "historical_replay",
+  "no_confirmation_use": true,
+  "failures": [
+    {
+      "run_id": "G6-R-20260730-R1",
+      "status": "FAILED_INCOMPLETE",
+      "code_head": "eb9c1fc877f21639c55bee0852e19f0755aad3e9",
+      "code_tree": "50d15583b172e00d088050ca5a1580351b059212",
+      "lock_sha256": "87dec93e2933b2b553091e912097314df4edd39e2019132c77d433bd3b3f6cac",
+      "output_root": "D:\\worktree\\IMS_deadlock-g6-replay-code\\artifacts\\g6-historical-replay\\G6-R-20260730-R1",
+      "completed_capture_count": 6,
+      "missing_capture_pairs": [
+        "G4_CRP_OUTSIDE_S4PR/repro",
+        "G4_ADVERSARIAL_BOUNDARY/repro",
+        "G4_IMS_PARAMETER_GRID/repro",
+        "G4_MEDIUM_ISLAND_REBUILD/repro"
+      ],
+      "terminal_error": "existing schedule lease requires manual incident classification; automatic recovery is forbidden",
+      "root_cause": "fixed_0.25_second_schedule_lock_window_misclassified_legitimate_concurrent_state_lock_contention",
+      "automatic_retry_count": 0,
+      "raw_artifacts": {
+        "file_count": 19,
+        "total_bytes": 9090470,
+        "canonical_path_to_sha256_manifest_sha256": "b6de160ee3de57a3232f5e03a62dc98ba49b6c39966d5aaa3c32357c30da5fb7",
+        "schedule_state_sha256": "eb7c6a4f5ee7d3387d1b1ddcdd7b9059234e2a9f9c7e48a87daf8b084ebb52d3"
+      },
+      "retention": "immutable_no_gap_filling"
+    },
+    {
+      "run_id": "G6-R-20260730-R2",
+      "status": "FAILED_MECHANISM_CHECK",
+      "code_head": "fd6421b0bf214de5346402d711da83ff800e99a3",
+      "code_tree": "4db174dc06be127451c526c7bea85811e9d6cf22",
+      "lock_sha256": "64cf04cac098d5019af72a83555bb388a9b3af1cbfecc70305a6bdbc9f4d4b16",
+      "output_root": "D:\\worktree\\IMS_deadlock-g6-replay-code-v2\\artifacts\\g6-historical-replay\\G6-R-20260730-R2",
+      "completed_capture_count": 10,
+      "pairwise_reproducibility": {
+        "case_count": 5,
+        "all_raw_stdout_sha256_match": true,
+        "all_canonical_json_sha256_match": true,
+        "all_stderr_sha256_match": true
+      },
+      "failed_mechanisms": [
+        {
+          "case_id": "G4_IMS_PARAMETER_GRID",
+          "field": "probability_bounds_valid",
+          "observed": false
+        },
+        {
+          "case_id": "G4_MEDIUM_ISLAND_REBUILD",
+          "field": "probability_bounds_valid",
+          "observed": false
+        }
+      ],
+      "numeric_diagnostics": {
+        "largest_reported_probability": 1.0000000000000002,
+        "largest_material_excess_over_one": 2.220446049250313e-16,
+        "largest_committor_residual_inf_norm": 3.1086244689504383e-15,
+        "producer_absolute_tolerance": 1e-10,
+        "consumer_rule": "exact_0_le_min_le_max_le_1",
+        "classification": "consumer_producer_numeric_contract_drift"
+      },
+      "automatic_retry_count": 0,
+      "raw_artifacts": {
+        "file_count": 32,
+        "total_bytes": 18182920,
+        "canonical_path_to_sha256_manifest_sha256": "4fd47c07dedcd771f4d708b09f73b09d8d601303ce69294e1fcedde7dc8132d2",
+        "summary_sha256": "1b1ed146b6d1869c65285bc0acb30d233034e0c92962d88d7be36104856dd856",
+        "schedule_state_sha256": "8ba79992e8a2b7214c7b5dc740075bbea79cbbafba9c8bd6c8cfdf1d8b5c21f6"
+      },
+      "retention": "immutable_no_rescoring_as_r2"
+    }
+  ]
+}

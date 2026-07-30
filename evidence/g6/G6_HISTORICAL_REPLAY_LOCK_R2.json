@@ -1,0 +1,154 @@
+{
+  "schema_version": "ims-deadlock/g6-historical-replay-lock/v1",
+  "case_ids": [
+    "G4_CRP_S4PR_AGREE",
+    "G4_CRP_OUTSIDE_S4PR",
+    "G4_ADVERSARIAL_BOUNDARY",
+    "G4_IMS_PARAMETER_GRID",
+    "G4_MEDIUM_ISLAND_REBUILD"
+  ],
+  "run_labels": [
+    "primary",
+    "repro"
+  ],
+  "study_role": "historical_replay",
+  "no_confirmation_use": true,
+  "retry_enabled": false,
+  "third_run_allowed": false,
+  "same_case_overlap_allowed": false,
+  "nested_scientific_parallelism_allowed": false,
+  "stale_lease_policy": "manual_incident_classification_no_auto_reap",
+  "execution_schedule": {
+    "primary": [
+      {
+        "wave_id": "P1",
+        "case_ids": [
+          "G4_CRP_S4PR_AGREE",
+          "G4_CRP_OUTSIDE_S4PR",
+          "G4_ADVERSARIAL_BOUNDARY"
+        ],
+        "max_concurrent": 3
+      },
+      {
+        "wave_id": "P2",
+        "case_ids": [
+          "G4_IMS_PARAMETER_GRID",
+          "G4_MEDIUM_ISLAND_REBUILD"
+        ],
+        "max_concurrent": 2
+      }
+    ],
+    "repro": [
+      {
+        "wave_id": "R1",
+        "case_ids": [
+          "G4_CRP_S4PR_AGREE",
+          "G4_CRP_OUTSIDE_S4PR",
+          "G4_ADVERSARIAL_BOUNDARY"
+        ],
+        "max_concurrent": 3
+      },
+      {
+        "wave_id": "R2",
+        "case_ids": [
+          "G4_IMS_PARAMETER_GRID",
+          "G4_MEDIUM_ISLAND_REBUILD"
+        ],
+        "max_concurrent": 2
+      }
+    ],
+    "repro_starts_after_all_primary_complete": true,
+    "same_case_overlap_allowed": false,
+    "nested_scientific_parallelism_allowed": false
+  },
+  "output_root": "D:\\worktree\\IMS_deadlock-g6-replay-code-v2\\artifacts\\g6-historical-replay\\G6-R-20260730-R2",
+  "historical_g4": {
+    "freeze_id": "G4-FREEZE-C-20260730T051210Z",
+    "artifact_hashes": {
+      "baseline_manifest_sha256": "29ccd2e6170213d985069bfec0ca5bc350d91f1c3fef04aec72b7c9ac91edef6",
+      "case_manifest_sha256": "85a1de0fc8d006fd6efede10ec9e423724e9e34bd6663184b7cee4641b5e49d1",
+      "exclusions_sha256": "d55dede11224ba822a4c62535d7c0b671c56c2b8329d13f03d1065163c6cfdb3",
+      "experiment_script_manifest_sha256": "ebe953c7079777b02049658b88e5bcd08828983be6d4a8f44d12c922cfa6292a",
+      "metric_schema_sha256": "5ce58b7ffec2fe09166de8d41b69371990bddebae724f47cf350feb7fe41aeb6",
+      "prediction_sheet_sha256": "644bc94a188b1de06fa6d841b5a50a293c831943a8f51bafcd46ebedb5a2f3bd",
+      "random_stream_manifest_sha256": "be603caf5190b3dfd5fb625c8d4f5ea0757483a68c48d93b7a0f0b555399cfef",
+      "runtime_lock_sha256": "4b81812a9bec1a7768b9b83f680b2fa0ab6c91662b07f937abbf825bfb121a76",
+      "theory_manifest_sha256": "867a6345502f796619cd9af69881abc2b43e99dbef09f313b663af49a12b2cc8"
+    }
+  },
+  "g6_code_file_hashes": {
+    "src/ims_deadlock/__init__.py": "9e30cf8dbbdb208f1787c6b96fde3c8fd16d82a2f8b3e6b1eace59b95652becf",
+    "src/ims_deadlock/analysis.py": "a5dac26ed15bcb98328b6d267fe844aa4329c66157d9e304dc685fb970a4a518",
+    "src/ims_deadlock/baselines.py": "418b1e447e81b242d83e8d5d6c70df629c269a55ad5bedb3e7140a6b5ce6463b",
+    "src/ims_deadlock/cases.py": "6245d35f5ec0b23b7b73925b73b4c71ff5bc6867c4143a927967955500ee8609",
+    "src/ims_deadlock/certificates.py": "79840a66bdad66efe778b710a6e6273bd7a5094cb57e6de3e72cb5cea28ca065",
+    "src/ims_deadlock/cli.py": "3ed83e5bce67def89e67214c7cbc0b8ec20cb6fc7561a8278156212ea34b90d8",
+    "src/ims_deadlock/confirmation.py": "b1c9fcbc534632f727f0d9c8b22229ce29167682bd6584c55c8ec34f1e6f4ed7",
+    "src/ims_deadlock/ctmc.py": "312330dac1024df625dc5bf5f284bbaa48d92af18aa2e75861a7ae3a3752669a",
+    "src/ims_deadlock/engine.py": "0c1638e29cce6d42a66bb644c55029d8788b209f4fb38880405d0dfaa2552738",
+    "src/ims_deadlock/families.py": "5ed75517cc330266dca4175e791eec5c92cf3bdb020c23b45c2a31389492dfa6",
+    "src/ims_deadlock/g4_comparators.py": "b2f56b8b70afa805169cf4f1924c32b5415c07c7ca2d4922778a765f50b00a32",
+    "src/ims_deadlock/g4_freeze.py": "c94e836d72da019d572f32c15d53e56f93f2f0edc3147cefd029757a442d505c",
+    "src/ims_deadlock/g4_instances.py": "7ce79fc23e68eeb4895b1cf0dad5011beb9c99223f0987ce16595608cf87afb7",
+    "src/ims_deadlock/g4_protocol.py": "ac0d3cbce083653ab94f95ff8c5d20a1979b9ac0d4bce98238c7875422c0df01",
+    "src/ims_deadlock/g5_capture.py": "0d9a0846fe9cc8bead6897dfa3762c0a437daf7c4a4f9fba1f71830e66a881ca",
+    "src/ims_deadlock/g5_scoring.py": "5b75c29ab2166534815499a15e35c4af4783276b161e00e9163a24743cbb3609",
+    "src/ims_deadlock/historical_replay.py": "b2c1c43a219e121dd858b7a4e943b4ac3ae7d352fb0082aab4a56d328c8bdd7e",
+    "src/ims_deadlock/model.py": "001ad172872ea1783506d8aae954ff86ca59cde7111ab4034936412383b52ac7",
+    "src/ims_deadlock/petri.py": "415dd2c9abcf9c3b31d3472d4aa055eb5422012238d87b2d82f8e1b309928aff",
+    "src/ims_deadlock/stochastic.py": "135fa2fdf1ebedbff5c66ec088c77c183c76414bd7ed33771c0888f78e009433",
+    "src/ims_deadlock/terminal_classes.py": "8cd09c697ac577ad9720f7ad0d290d5b1382239112ad74ed3892bc96fab8ce73"
+  },
+  "default_estimand_spec": {
+    "schema_version": "ims-deadlock/g6-default-estimand-spec/v1",
+    "study_role": "historical_replay",
+    "no_confirmation_use": true,
+    "case_estimands": {
+      "G4_CRP_S4PR_AGREE": [
+        "crp_local_certificate_matching"
+      ],
+      "G4_CRP_OUTSIDE_S4PR": [
+        "theorem_prediction",
+        "certificate_minimality"
+      ],
+      "G4_ADVERSARIAL_BOUNDARY": [
+        "theorem_prediction",
+        "certificate_minimality"
+      ],
+      "G4_IMS_PARAMETER_GRID": [
+        "grid_cell_deadlock_probability",
+        "grid_cell_probability_bounds"
+      ],
+      "G4_MEDIUM_ISLAND_REBUILD": [
+        "medium_deadlock_probability",
+        "medium_probability_bounds"
+      ]
+    }
+  },
+  "default_estimand_spec_sha256": "4643e9bdd9532ac3fcd65c37783143966f75344cb70199a88838153dd1345eeb",
+  "original_g5": {
+    "summary_path": "D:\\worktree\\IMS_deadlock-g5-confirmation\\evidence\\g5\\G5_RESULT_SUMMARY.json",
+    "summary_sha256": "db36cce977015890618c93b8872a33d70ff158c4f69ad5277fc1eaee33f29815",
+    "raw_manifest_path": "D:\\worktree\\IMS_deadlock-g5-confirmation\\evidence\\g5\\G5_RAW_HASH_MANIFEST.json",
+    "raw_manifest_sha256": "c1940b5f421d5a22621d36a69fb055672d809277ccb8739d7ca2304b81397cf4",
+    "execution_lock_path": "D:\\worktree\\IMS_deadlock-g5-confirmation\\evidence\\g5\\G5_EXECUTION_LOCK.json",
+    "execution_lock_sha256": "c27cf4755fdcf378c950bef52b34395cc5ddd7941c26f10fa15d48a1af59c4fd",
+    "scoring_erratum_path": "D:\\worktree\\IMS_deadlock-g5-confirmation\\evidence\\g5\\G5_SCORING_ERRATUM.json",
+    "scoring_erratum_sha256": "4d487ffa3b88529af7521242f2bb1b3aaca49dd0137941104788c8d5dcdc7143",
+    "scorer_path": "D:\\worktree\\IMS_deadlock-g5-confirmation\\src\\ims_deadlock\\g5_scoring.py",
+    "scorer_sha256": "10fe19c835b958cf3ccdf8116a527eab159543ba642590489584230875121a48"
+  },
+  "runtime": {
+    "python_executable": "D:\\worktree\\IMS_deadlock-final-integration\\.venv\\Scripts\\python.exe",
+    "python_version": "3.13.9"
+  },
+  "caps": {
+    "max_stdout_bytes": 268435456,
+    "max_stderr_bytes": 16777216,
+    "timeout_seconds": 1800,
+    "max_parallel_cases": 1
+  },
+  "published_ref": "refs/heads/codex/g6-replay-code",
+  "published_head": "fd6421b0bf214de5346402d711da83ff800e99a3",
+  "published_tree": "4db174dc06be127451c526c7bea85811e9d6cf22"
+}

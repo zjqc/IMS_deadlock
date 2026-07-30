@@ -6,6 +6,7 @@ from ims_deadlock.cases import (
     load_case_spec,
 )
 from ims_deadlock.certificates import (
+    enumerate_local_blocking_certificates,
     find_deadlock_certificate,
     find_local_blocking_certificate,
 )
@@ -144,6 +145,85 @@ def test_local_kernel_survives_enabled_transition_outside_kernel() -> None:
     assert local_certificate.scope == "local"
     assert local_certificate.kernel_jobs == frozenset({"j1", "j2"})
     assert local_certificate.kernel_resources == frozenset({"r1", "r2"})
+
+
+def test_enumerates_all_incomparable_minimal_local_kernels_canonically() -> None:
+    model = IMSModel(
+        id="two-incomparable-kernels",
+        resources={
+            "r_b": Resource("r_b", 1),
+            "r_a": Resource("r_a", 1),
+            "r_d": Resource("r_d", 1),
+            "r_c": Resource("r_c", 1),
+        },
+        jobs=("k_right", "j_right", "k_left", "j_left"),
+    )
+    state = IMSState(
+        id="two-kernels-shuffled",
+        holds=(
+            Holding("k_right", "r_d", 1),
+            Holding("j_left", "r_a", 1),
+            Holding("k_left", "r_c", 1),
+            Holding("j_right", "r_b", 1),
+        ),
+        requests={
+            "k_right": (RequestAlternative((ResourceDemand("r_c", 1),)),),
+            "j_right": (RequestAlternative((ResourceDemand("r_a", 1),)),),
+            "k_left": (RequestAlternative((ResourceDemand("r_d", 1),)),),
+            "j_left": (RequestAlternative((ResourceDemand("r_b", 1),)),),
+        },
+        stable=True,
+        complete=False,
+        event_calendar_empty=True,
+    )
+
+    certificates = enumerate_local_blocking_certificates(model, state)
+    repeated = enumerate_local_blocking_certificates(model, state)
+
+    assert [
+        (certificate.kernel_jobs, certificate.kernel_resources)
+        for certificate in certificates
+    ] == [
+        (frozenset({"j_left", "j_right"}), frozenset({"r_a", "r_b"})),
+        (frozenset({"k_left", "k_right"}), frozenset({"r_c", "r_d"})),
+    ]
+    assert [certificate.to_json_dict() for certificate in certificates] == [
+        certificate.to_json_dict() for certificate in repeated
+    ]
+    assert find_local_blocking_certificate(model, state) == certificates[0]
+
+
+def test_local_kernel_enumeration_can_be_restricted_to_allowed_jobs() -> None:
+    model = IMSModel(
+        id="allowed-local-kernel",
+        resources={
+            "r1": Resource("r1", 1),
+            "r2": Resource("r2", 1),
+            "r3": Resource("r3", 1),
+        },
+        jobs=("j1", "j2", "free_job"),
+    )
+    state = IMSState(
+        id="allowed-local-kernel-state",
+        holds=(Holding("j1", "r1", 1), Holding("j2", "r2", 1)),
+        requests={
+            "j1": (RequestAlternative((ResourceDemand("r2", 1),)),),
+            "j2": (RequestAlternative((ResourceDemand("r1", 1),)),),
+        },
+        stable=True,
+        complete=False,
+        event_calendar_empty=True,
+    )
+
+    assert (
+        enumerate_local_blocking_certificates(
+            model,
+            state,
+            allowed_job_ids={"free_job"},
+        )
+        == ()
+    )
+    assert len(enumerate_local_blocking_certificates(model, state)) == 1
 
 
 def test_local_kernel_rejects_enabled_progress_inside_kernel() -> None:

@@ -1,0 +1,214 @@
+{
+  "case_count": 9,
+  "cases": [
+    {
+      "canonical_json_sha256": {
+        "primary": "6e5f9f05b92ddd604555c79ca086344f6cb22cc1bc5e7ee1a3d9db3cde5abb9f",
+        "repro": "6e5f9f05b92ddd604555c79ca086344f6cb22cc1bc5e7ee1a3d9db3cde5abb9f"
+      },
+      "case_id": "G4_ADVERSARIAL_BOUNDARY",
+      "raw_stdout_sha256": {
+        "primary": "cececd6efa166bc528091aaed10c08971916279b75c0389db92fe284f88974ca",
+        "repro": "cececd6efa166bc528091aaed10c08971916279b75c0389db92fe284f88974ca"
+      },
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "stderr_raw_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "canonical_json_sha256": {
+        "primary": "3fb14993c25fdbd6da87737cd21ed43c6b8c374772095dfd22ac2e0dcb131cce",
+        "repro": "3fb14993c25fdbd6da87737cd21ed43c6b8c374772095dfd22ac2e0dcb131cce"
+      },
+      "case_id": "G4_B05_SUPERVISOR_COMPARATOR",
+      "raw_stdout_sha256": {
+        "primary": "8bb8023659ad89075e1b33fd8f36998470939236c9dceb4089c6469cf39a6924",
+        "repro": "8bb8023659ad89075e1b33fd8f36998470939236c9dceb4089c6469cf39a6924"
+      },
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "stderr_raw_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "canonical_json_sha256": {
+        "primary": "a74a7b66a9258eae7e5ac866446dc5681dc06c26ff247000d4c980b6fea9bb65",
+        "repro": "a74a7b66a9258eae7e5ac866446dc5681dc06c26ff247000d4c980b6fea9bb65"
+      },
+      "case_id": "G4_CRP_OUTSIDE_S4PR",
+      "raw_stdout_sha256": {
+        "primary": "a62edb7ecb1c5c773dde172ab39bb3ff3b616ed4af67d0ef538926a0b0bcd062",
+        "repro": "a62edb7ecb1c5c773dde172ab39bb3ff3b616ed4af67d0ef538926a0b0bcd062"
+      },
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "stderr_raw_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "canonical_json_sha256": {
+        "primary": "c90679797526034b5f89435850ecf23da2e640c88a9a471508429605703d54e4",
+        "repro": "c90679797526034b5f89435850ecf23da2e640c88a9a471508429605703d54e4"
+      },
+      "case_id": "G4_CRP_S4PR_AGREE",
+      "raw_stdout_sha256": {
+        "primary": "e4264a549be56c4790be2692c07ee4f3ea1e8ef0e94657aec5faac0177b3d67c",
+        "repro": "e4264a549be56c4790be2692c07ee4f3ea1e8ef0e94657aec5faac0177b3d67c"
+      },
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "stderr_raw_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "canonical_json_sha256": {
+        "primary": "3b2c4318fc0557a8b0f94c444851b714b2015c8135e441d93d2649df2c409c38",
+        "repro": "3b2c4318fc0557a8b0f94c444851b714b2015c8135e441d93d2649df2c409c38"
+      },
+      "case_id": "G4_CRP_UNREACHABLE_CANDIDATE",
+      "raw_stdout_sha256": {
+        "primary": "726721b11e88b7024dd662359c86c7380ad3ad533bea44c16235961414bea3ed",
+        "repro": "726721b11e88b7024dd662359c86c7380ad3ad533bea44c16235961414bea3ed"
+      },
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "stderr_raw_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "canonical_json_sha256": {
+        "primary": null,
+        "repro": null
+      },
+      "case_id": "G4_IMS_PARAMETER_GRID",
+      "raw_stdout_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "stderr_raw_sha256": {
+        "primary": "204424d2898042bf3864bff1249a5eedfead10675d0674d831d678a8cf28f98a",
+        "repro": "204424d2898042bf3864bff1249a5eedfead10675d0674d831d678a8cf28f98a"
+      }
+    },
+    {
+      "canonical_json_sha256": {
+        "primary": "a330084a5db13ab80e05ad5b335aaaec43f479f15fa685bd16a40ed75e6cd6d2",
+        "repro": "a330084a5db13ab80e05ad5b335aaaec43f479f15fa685bd16a40ed75e6cd6d2"
+      },
+      "case_id": "G4_L30_RESOURCE_BASELINE",
+      "raw_stdout_sha256": {
+        "primary": "009c16cd63742b838a32d0c7309ddc5fe9f17d692e7bf9cbef7792d08b054a4d",
+        "repro": "009c16cd63742b838a32d0c7309ddc5fe9f17d692e7bf9cbef7792d08b054a4d"
+      },
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "stderr_raw_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "canonical_json_sha256": {
+        "primary": null,
+        "repro": null
+      },
+      "case_id": "G4_MEDIUM_ISLAND_REBUILD",
+      "raw_stdout_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "stderr_raw_sha256": {
+        "primary": "aa842fb3deafc390c137455d8a45d162db88200e315f488f277345c07c57452a",
+        "repro": "aa842fb3deafc390c137455d8a45d162db88200e315f488f277345c07c57452a"
+      }
+    },
+    {
+      "canonical_json_sha256": {
+        "primary": "3fc8dd50549863c718f3369191d7e63a6f8ed427d71cb7b44853616cfd960f6c",
+        "repro": "3fc8dd50549863c718f3369191d7e63a6f8ed427d71cb7b44853616cfd960f6c"
+      },
+      "case_id": "G4_RECORDER_TARGET_QUANTIFICATION",
+      "raw_stdout_sha256": {
+        "primary": "aa192e9926a01f1495c49a4da70b4c026f52c29a894417b87550c4d488858aad",
+        "repro": "aa192e9926a01f1495c49a4da70b4c026f52c29a894417b87550c4d488858aad"
+      },
+      "reproducibility": {
+        "canonical_json_match": true,
+        "execution_status_match": true,
+        "match": true,
+        "metadata_match": true,
+        "raw_stdout_match": true,
+        "stderr_match": true
+      },
+      "stderr_raw_sha256": {
+        "primary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "repro": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "freeze_id": "G4-FREEZE-C-20260730T051210Z",
+  "schema_version": "ims-deadlock/g5-raw-hash-manifest/v1"
+}

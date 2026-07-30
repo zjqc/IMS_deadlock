@@ -7,6 +7,7 @@ from ims_deadlock.engine import (
     ScheduledEvent,
     TransitionSpec,
     _enabled,
+    apply_enabled_transition,
     configuration_signature,
     exact_max_nonblocking_supervisor,
     semantic_signature,
@@ -84,6 +85,35 @@ def test_zero_time_closure_keeps_urgent_successors_in_canonical_order() -> None:
         "normalize-j1",
         "normalize-j2",
     )
+
+
+def test_final_completion_clears_event_calendar_flag() -> None:
+    model = IMSModel(id="final-completion-calendar", resources={}, jobs=("j1",))
+    state = IMSState(
+        id="working",
+        mode_by_job={"j1": "working"},
+        stage_by_job={"j1": "working"},
+        completed_jobs=frozenset(),
+        stable=True,
+        complete=False,
+        event_calendar_empty=False,
+    )
+    finish = TransitionSpec(
+        name="finish",
+        kind=EventKind.SERVICE_COMPLETE,
+        job_id="j1",
+        source_mode="working",
+        target_mode="completed",
+        controllable=False,
+        zero_time=False,
+        mark_complete=True,
+    )
+
+    completed = apply_enabled_transition(model, state, finish)
+
+    assert completed is not None
+    assert completed.complete is True
+    assert completed.event_calendar_empty is True
 
 
 def test_zero_time_closure_reports_trace_per_stable_successor() -> None:

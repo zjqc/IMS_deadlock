@@ -1,10 +1,10 @@
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
-from ims_deadlock.confirmation import ConfirmationCase
+from ims_deadlock.confirmation import ConfirmationCase, load_confirmation_case
 from ims_deadlock.g4_instances import (
     AdversarialBoundaryParameters,
     BidirectionalGridCell,
@@ -17,12 +17,21 @@ from ims_deadlock.g4_instances import (
 )
 from ims_deadlock.g4_protocol import (
     B05Protocol,
+    CRPPartialDeadlockBridge,
     CRPProtocol,
+    FrozenStreamPlan,
     GridProtocol,
+    MediumProtocol,
     RecorderProtocol,
+    _execute_protocol,
     parse_g4_protocol_case,
     run_after_freeze,
     validate_g4_protocol_case,
+)
+from ims_deadlock.terminal_classes import (
+    G6_CTM_GENERATOR_PROVENANCE,
+    TerminalPartitionError,
+    VersionedEstimandSpec,
 )
 
 
@@ -165,6 +174,78 @@ def test_parse_crp_protocol_binds_exact_comparator_and_bridge_inputs() -> None:
     assert parsed.profile.external_prefix_claimed is True
     assert parsed.bridge is not None
     assert parsed.bridge.target_snapshot.model.id == "g4-dev-snapshot"
+
+
+def test_crp_bridge_uses_local_certificate_family_for_g4_agree_target() -> None:
+    case = load_confirmation_case("G4_CRP_S4PR_AGREE", "g4")
+    protocol = parse_g4_protocol_case(case)
+
+    result = _execute_protocol(protocol, stream_plan=None)
+
+    assert result["classification"] == "partial_deadlock_bridge_agreement"
+    audit = result["evidence_profile_audit"]
+    assert isinstance(audit, dict)
+    assert audit["independent_witness"] == [
+        "admit_left",
+        "admit_right",
+        "left_service_complete",
+        "right_service_complete",
+    ]
+    bridge = result["partial_deadlock_bridge"]
+    assert isinstance(bridge, dict)
+    assert bridge["certificate_available"] is True
+    assert bridge["certificate_resources"] == ["cell_x", "cell_y"]
+    assert bridge["mapped_crp_resources"] == ["cell_x", "cell_y"]
+    assert bridge["matching_kernel_count"] == 1
+    assert bridge["certificate_family"] == [
+        {
+            "kernel_jobs": ["left_job", "right_job"],
+            "kernel_resources": ["cell_x", "cell_y"],
+        }
+    ]
+    selected_kernel = bridge["selected_matching_kernel"]
+    assert isinstance(selected_kernel, dict)
+    assert selected_kernel["kernel_resources"] == [
+        "cell_x",
+        "cell_y",
+    ]
+    certificate = bridge["certificate"]
+    assert isinstance(certificate, dict)
+    assert certificate["scope"] == "local"
+    assert bridge["agrees"] is True
+
+
+def test_crp_bridge_reports_nonmatching_local_family_without_false_agreement() -> None:
+    case = load_confirmation_case("G4_CRP_S4PR_AGREE", "g4")
+    protocol = parse_g4_protocol_case(case)
+    assert isinstance(protocol, CRPProtocol)
+    assert protocol.bridge is not None
+    nonmatching_bridge = CRPPartialDeadlockBridge(
+        target_state=protocol.bridge.target_state,
+        target_snapshot=protocol.bridge.target_snapshot,
+        crp_resource_to_ims_resource=(("p_r_x", "cell_x"), ("p_r_y", "free_fixture")),
+        comparison_rule=protocol.bridge.comparison_rule,
+    )
+    nonmatching_protocol = CRPProtocol(
+        case_id=protocol.case_id,
+        family=protocol.family,
+        lts=protocol.lts,
+        state_bound=protocol.state_bound,
+        profile=protocol.profile,
+        bridge=nonmatching_bridge,
+        outside_scope_parameters=protocol.outside_scope_parameters,
+    )
+
+    result = _execute_protocol(nonmatching_protocol, stream_plan=None)
+
+    assert result["classification"] == "partial_deadlock_bridge_disagreement"
+    bridge = result["partial_deadlock_bridge"]
+    assert isinstance(bridge, dict)
+    assert bridge["certificate_available"] is True
+    assert bridge["matching_kernel_count"] == 0
+    assert bridge["selected_matching_kernel"] is None
+    assert bridge["mapped_crp_resources"] == ["cell_x", "free_fixture"]
+    assert bridge["agrees"] is False
 
 
 def test_protocol_rejects_legacy_lts_fields_and_missing_controllability() -> None:
@@ -397,6 +478,75 @@ def test_development_grid_derives_case_bound_absorbing_ctmc() -> None:
     assert derived.completion_state_ids
     assert not derived.truncated
     assert exact.probability_bounds_valid is True
+    assert derived.ctmc.generator_provenance == G6_CTM_GENERATOR_PROVENANCE
+    assert derived.terminal_classification is not None
+    assert derived.estimand is not None
+    assert "hashes" in derived.estimand
+
+
+def test_g03_balanced_tight_derives_with_local_first_hit_estimand() -> None:
+    case = load_confirmation_case("G4_IMS_PARAMETER_GRID", "g4")
+    protocol = parse_g4_protocol_case(case)
+    assert isinstance(protocol, GridProtocol)
+    cell = next(item for item in protocol.cells if item.cell_id == "G03_BALANCED_TIGHT")
+    built = build_bidirectional_island_case(cell)
+
+    derived = derive_absorbing_ctmc(built)
+    solved = derived.ctmc.solve()
+
+    assert derived.local_deadlock_state_ids
+    assert set(derived.deadlock_state_ids) == set(derived.local_deadlock_state_ids)
+    assert solved.probability_bounds_valid is True
+
+
+def test_medium_protocol_payload_includes_terminal_classification_and_estimand() -> (
+    None
+):
+    case = load_confirmation_case("G4_MEDIUM_ISLAND_REBUILD", "g4")
+    protocol = parse_g4_protocol_case(case)
+    assert isinstance(protocol, MediumProtocol)
+
+    result = _execute_protocol(
+        protocol,
+        stream_plan=FrozenStreamPlan(master_seeds=(11,), sample_count=8),
+    )
+
+    assert "terminal_classification" in result
+    classification = result["terminal_classification"]
+    assert isinstance(classification, dict)
+    assert classification["classification_version"] == (
+        "ims-deadlock/g6-terminal-stopping-partition/v2"
+    )
+    provenance = cast(dict[str, object], classification["lts_provenance_audit"])
+    assert provenance["method"] == (
+        "deterministic_reenumeration_from_stable_initial_v1"
+    )
+    assert provenance["verified"] is True
+    assert cast(int, provenance["state_count"]) > 0
+    assert cast(int, provenance["plant_arc_count"]) > 0
+    estimand = result["estimand"]
+    assert isinstance(estimand, dict)
+    assert estimand["selected_bad_classes"] == ["D_global", "D_local"]
+    hashes = cast(dict[str, object], estimand["hashes"])
+    assert "estimand_id" in hashes
+    des_crosscheck = cast(dict[str, object], result["des_crosscheck"])
+    assert des_crosscheck["replicate_stream_count"] == 1
+
+
+def test_d_global_only_estimand_refuses_model_with_local_core() -> None:
+    case = load_confirmation_case("G4_IMS_PARAMETER_GRID", "g4")
+    protocol = parse_g4_protocol_case(case)
+    assert isinstance(protocol, GridProtocol)
+    cell = next(item for item in protocol.cells if item.cell_id == "G03_BALANCED_TIGHT")
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        derive_absorbing_ctmc(
+            build_bidirectional_island_case(cell),
+            estimand_spec=VersionedEstimandSpec(selected_bad_classes=("D_global",)),
+        )
+
+    assert excinfo.value.code == "d_global_only_estimand_refuses_local_core"
+    assert excinfo.value.details["selected_bad_classes"] == ["D_global"]
 
 
 def test_ctmc_derivation_refuses_a_truncated_generated_lts() -> None:
@@ -452,8 +602,10 @@ def test_ctmc_derivation_refuses_a_missing_frozen_event_rate() -> None:
         generator_id=built.generator_id,
     )
 
-    with pytest.raises(ValueError, match="missing frozen event rate"):
+    with pytest.raises(TerminalPartitionError) as excinfo:
         derive_absorbing_ctmc(missing_rates)
+
+    assert excinfo.value.code == "missing_event_rate"
 
 
 def test_adversarial_generator_materializes_or_and_capacity_and_reservations() -> None:
