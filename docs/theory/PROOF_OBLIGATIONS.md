@@ -29,6 +29,11 @@
 - `[closed in P2] PO-T2-5` 有限 capacity-ready OR-of-AND 替代后继与多 AGV/硬预约选择全部纳入阻塞条件；软预约排除在 P2 完备定理外。
 - `[closed in P2a/P2b] PO-T2-6` 有限包含极小核存在；单实例受限子类中 terminal SCC 与 inclusion-minimal local kernel 的对应，以及 simple cycle 推论。
 - `PO-T2-7` 为永久非资源 guard/外部同步缺失构造 P2 外反例，防止把一般停滞误写成容量核 iff。
+- `PO-T2-8` G4 CRP agreement 行必须同时关闭三个独立义务：
+  translated target 在冻结有限 LTS 中可达、冻结 IMS target snapshot 产生
+  capacity-aware closed blocking certificate、以及 CRP resource-place 到 IMS
+  resource 的冻结映射与 certificate kernel resource set 精确相等。仅有
+  reachability agreement 不得命名为 partial-deadlock bridge agreement。
 
 计算验证：
 
@@ -161,6 +166,15 @@ L28 已全文核验，竞争吸收 IMS 适配由 P4 独立证明。
 - `[closed in P4] PO-T5-4` 敏感性：`Q_{S_T,S_T} partial_theta h_{S_T} = - (partial_theta Q_{S_T,S_T}) h_{S_T} - (partial_theta Q_{S_T,D}) 1`。
 - `[closed in P4] PO-T5-5` Doob-`h`：在 `H union D` 上定义，`D` 吸收，跳入 `F` 的条件化率为 0，`q^h_ij = q_ij h_j / h_i` 只在 `i,j in H`。
 - `[closed in P4] PO-T5-6` 解释边界：Doob-`h` 是条件路径动力学，不是控制器。
+- `PO-T5-7` G4 grid/medium 的 CTMC 必须由同一冻结 `CaseSpec` 的完整 stable
+  LTS 和逐事件冻结速率生成。任何截断、多个 closure initial state、未分类
+  terminal class、缺失 event rate 或非吸收 recurrent class 都触发 refusal，
+  不得补造 rate matrix。
+- `PO-T5-8` G4 的 independent DES 只作为同一 case-derived CTMC 的
+  Gillespie cross-check；master seed、replication count 和
+  `sha256(master_seed:replication_index)` 派生规则在结果检查前冻结。
+  该实现不支持 rare-event efficiency 或 conditioned path mass，二者在
+  G4 必须保持不适用。
 
 计算验证：
 

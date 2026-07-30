@@ -29,6 +29,16 @@ theory/script manifests, and records Commit A. Commit C adds
 `FREEZE_ENTRY.json`, which records Commit B and hashes every prerequisite.
 Only Commit C may change G4 status to `FROZEN`.
 
+**2026-07-30 repair note:** Independent preregistration review rejected the
+first bundle draft before Commit B. The draft used prose/range inputs that did
+not lower uniquely to the implemented APIs, its CRP agreement target was not
+a partial-deadlock bridge, and its stochastic/performance applicability
+exceeded the available implementation. No held-out scientific backend was
+run. A subsequent implementation-lock commit must therefore add strict G4
+protocol adapters, versioned exact generators, a case-derived CTMC path, and
+honest metric refusals. The `implementation_commit` recorded by Commit B is
+the final repair commit, not the earlier comparator-only commit.
+
 **Tech Stack:** Python 3.13, frozen dataclasses, deterministic finite-state
 BFS, exhaustive subset search for small candidate covers, canonical JSON,
 SHA-256, pytest, Ruff, strict mypy, Markdown ledgers, and direct Dell
@@ -292,6 +302,10 @@ Expected: all selected checks pass.
 - Create: `docs/cases/G4_FREEZE_LEDGER.md`
 
 - [ ] **Step 1: Create nine independent preregistration inputs**
+
+Before this step can pass, every input must be accepted by
+`python -m ims_deadlock.g4_protocol ... validate`. Structural validation is
+allowed before the seal; `run` remains forbidden.
 
 Freeze:
 

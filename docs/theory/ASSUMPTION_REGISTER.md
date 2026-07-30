@@ -291,3 +291,49 @@ states 和 frozen supplied candidate monitor cover sets 上运行。候选 monit
 state 且保持 legal 时返回 infeasible；不得声称 P-semiflow synthesis、MCPP、
 source-net control-place synthesis、source theorem minimality 或 maximal
 permissiveness。
+
+## A22 G4 versioned generator contract
+
+状态：G4 implementation-lock 假设。
+
+`bidirectional_bas_v1`、`three_island_bas_v1` 和
+`or_and_reservation_v1` 的代码文件、生成器 ID、精确参数、state bound 与
+逐事件速率必须同时进入冻结 hash。`CaseSpec` 是由这些冻结源确定性生成的
+execution carrier，不是可在结果后修改的第二份模型。
+
+用途：G4 parameter grid、medium island 与 adversarial boundary。
+
+失败后果：未知 generator ID、额外/缺失参数、材料化不确定、或生成代码
+hash 漂移时，协议结构验证失败。不得用手工编辑的派生 `CaseSpec` 替换冻结
+生成器而继续沿用原 freeze entry。
+
+## A23 G4 BAS route and CTMC derivation boundary
+
+状态：G4 implementation-lock 假设。
+
+生成路线使用有限批、有限容量和原子 handoff。工件 service completion 后
+继续持有当前 stage bundle，直到下一 bundle 全部可获得；AGV 是 bundle 中
+的普通有限可重用资源。stable LTS 必须在冻结 bound 内完整。CTMC 仅由该
+LTS 的非自环 arc 与冻结 event rate 生成，完成和 certificate-bearing 状态
+是竞争吸收类。
+
+用途：G4 exact probability、mean absorption time 与 DES cross-check。
+
+失败后果：若存在截断、非合流初始闭包、未分类 recurrent class、缺失
+event rate、外部到达、抢占、故障或动态插单，则 quantitative row 必须
+refuse。不得把显式 user-supplied CTMC 冒充 case-derived generator。
+
+## A24 G4 metric nonavailability is frozen evidence
+
+状态：G4 preregistration 边界。
+
+当前实现没有 conditioned path-mass functional、importance sampler、
+policy-conditioned due-date model、regenerative throughput model、supervisor
+makespan response 或 policy-dependent WIP response。Doob generator、exact
+supervisor 或固定 WIP 输入本身不能替代这些 estimand。
+
+用途：G4 metrics applicability manifest。
+
+失败后果：上述指标在 G4 必须写为 inapplicable 并给出冻结理由。若以后
+实现，须新建 implementation/preregistration commit 和 freeze entry，不能
+在看到本轮 held-out 输出后补开指标。

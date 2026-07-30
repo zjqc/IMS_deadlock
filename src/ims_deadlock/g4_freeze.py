@@ -8,7 +8,7 @@ import json
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Literal
 
 FREEZE_CHECK_SCHEMA_VERSION = "ims-deadlock/g4-freeze-check/v1"
@@ -61,6 +61,21 @@ G4_REQUIRED_METRICS = (
     "supervisor_throughput_loss",
     "supervisor_wip_change",
     "theorem_prediction_correctness",
+)
+G4_GRID_CELL_IDS = (
+    "G01_FWD_DAG",
+    "G02_REV_DAG",
+    "G03_BALANCED_TIGHT",
+    "G04_BALANCED_AGV2",
+    "G05_BALANCED_BUFFER2",
+    "G06_BALANCED_MACHINE2",
+    "G07_BALANCED_LOW_WIP",
+    "G08_FORWARD_SKEW",
+    "G09_FAST_RELEASE",
+    "G10_SLOW_TRANSFER",
+)
+G4_GRID_PREDICTION_CLASS = (
+    "acyclic_controls_safe_and_bidirectional_cells_structurally_exposed"
 )
 
 _REQUIRED_ARTIFACTS = (
@@ -189,10 +204,17 @@ def check_g4_freeze(root: Path) -> FreezeCheckResult:
         _validate_metrics(metrics, case_ids, errors)
     runtime = documents.get("runtime_lock.json")
     if runtime is not None:
-        _validate_runtime_lock(runtime, errors)
+        _validate_runtime_lock(runtime, case_ids, errors)
     random_streams = documents.get("random_stream_manifest.json")
     if random_streams is not None:
         _validate_random_streams(random_streams, case_ids, errors)
+    if metrics is not None and random_streams is not None:
+        _validate_metric_stream_consistency(
+            metrics,
+            random_streams,
+            case_ids,
+            errors,
+        )
 
     repository_root = _repository_root(bundle_root, errors)
     scripts = documents.get("experiment_scripts_manifest.json")
@@ -343,8 +365,19 @@ def _validate_confirmation_case_payload(
     input_payload = payload.get("input_payload")
     if not isinstance(input_payload, dict):
         errors.append(f"{label} input_payload must be an object")
-    elif input_payload.get("g4_family") != expected_family:
-        errors.append(f"{label} g4_family does not match the case manifest")
+    else:
+        if input_payload.get("g4_family") != expected_family:
+            errors.append(f"{label} g4_family does not match the case manifest")
+        from ims_deadlock.g4_protocol import parse_g4_protocol_input
+
+        try:
+            parse_g4_protocol_input(
+                input_payload,
+                case_id=expected_case_id,
+                expected_family=expected_family,
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            errors.append(f"{label} protocol input is not executable: {exc}")
 
 
 def _validate_predictions(
@@ -368,17 +401,51 @@ def _validate_predictions(
             "prediction_class",
             "theory_scope",
             "falsifier",
+            "scoring_rule",
         ):
             _nonempty_string(row.get(field), f"{label} {field}", errors)
         evidence = row.get("required_evidence")
         if not _nonempty_string_list(evidence):
             errors.append(f"{label} required_evidence must be a nonempty string list")
+        if row.get("prediction_class") == G4_GRID_PREDICTION_CLASS:
+            _validate_grid_cell_predictions(
+                row.get("cell_predictions"),
+                label,
+                errors,
+            )
         if case_id is not None:
             predicted_ids.append(case_id)
     if len(set(predicted_ids)) != len(predicted_ids):
         errors.append("prediction case IDs must be unique")
     if set(predicted_ids) != set(case_ids):
         errors.append("prediction sheet must contain every frozen case exactly once")
+
+
+def _validate_grid_cell_predictions(
+    value: object,
+    label: str,
+    errors: list[str],
+) -> None:
+    if not isinstance(value, dict):
+        errors.append(f"{label} cell_predictions must be an object")
+        return
+    if set(value) != set(G4_GRID_CELL_IDS):
+        errors.append(f"{label} cell_predictions must cover the exact frozen grid")
+    for cell_id, decision in value.items():
+        cell_label = f"{label} cell {cell_id}"
+        if not isinstance(decision, dict):
+            errors.append(f"{cell_label} prediction must be an object")
+            continue
+        if set(decision) != {"expected_reachable_closed_core", "rationale"}:
+            errors.append(
+                f"{cell_label} must contain exactly "
+                "expected_reachable_closed_core and rationale"
+            )
+        if not isinstance(decision.get("expected_reachable_closed_core"), bool):
+            errors.append(
+                f"{cell_label} expected_reachable_closed_core must be boolean"
+            )
+        _nonempty_string(decision.get("rationale"), f"{cell_label} rationale", errors)
 
 
 def _validate_baselines(
@@ -477,6 +544,7 @@ def _validate_metrics(
 
 def _validate_runtime_lock(
     payload: Mapping[str, Any],
+    case_ids: tuple[str, ...],
     errors: list[str],
 ) -> None:
     _require_schema(
@@ -501,8 +569,25 @@ def _validate_runtime_lock(
     if not isinstance(packages, dict) or not packages:
         errors.append("runtime lock packages must be a nonempty object")
     commands = payload.get("commands")
-    if not _nonempty_string_list(commands):
+    if not isinstance(commands, list) or not _nonempty_string_list(commands):
         errors.append("runtime lock commands must be a nonempty string list")
+        return
+    expected_commands = {
+        "python -m ims_deadlock.g4_freeze --root cases/confirmation/g4 check",
+        "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 validate",
+        "python -m pytest tests/test_confirmation.py "
+        "tests/test_g4_protocol.py tests/test_g4_freeze.py -q",
+        *{
+            "python -m ims_deadlock.g4_protocol --root "
+            f"cases/confirmation/g4 run {case_id}"
+            for case_id in case_ids
+        },
+    }
+    if set(commands) != expected_commands:
+        errors.append(
+            "runtime lock commands must exactly match the structural checks "
+            "and one post-freeze internal run command per case"
+        )
 
 
 def _validate_random_streams(
@@ -532,17 +617,35 @@ def _validate_random_streams(
             errors.append(f"{label} applicable must be boolean")
             continue
         if not applicable:
+            if set(decision) != {"applicable", "reason"}:
+                errors.append(
+                    f"{label} inapplicable row must contain exactly "
+                    "applicable and reason"
+                )
             _nonempty_string(decision.get("reason"), f"{label} reason", errors)
             continue
+        if set(decision) != {
+            "applicable",
+            "derivation",
+            "master_seeds",
+            "replicates",
+        }:
+            errors.append(
+                f"{label} applicable row must contain exactly applicable, "
+                "derivation, master_seeds, and replicates"
+            )
         seeds = decision.get("master_seeds")
         if (
             not isinstance(seeds, list)
             or not seeds
             or any(
-                isinstance(seed, bool) or not isinstance(seed, int) for seed in seeds
+                isinstance(seed, bool) or not isinstance(seed, int) or seed < 0
+                for seed in seeds
             )
         ):
-            errors.append(f"{label} master_seeds must be nonempty integers")
+            errors.append(f"{label} master_seeds must be nonempty nonnegative integers")
+        elif len(set(seeds)) != len(seeds):
+            errors.append(f"{label} master_seeds must be unique")
         replicates = decision.get("replicates")
         if (
             isinstance(replicates, bool)
@@ -550,11 +653,47 @@ def _validate_random_streams(
             or replicates <= 0
         ):
             errors.append(f"{label} replicates must be a positive integer")
-        _nonempty_string(
-            decision.get("derivation"),
-            f"{label} derivation",
-            errors,
+        derivation = _nonempty_string(
+            decision.get("derivation"), f"{label} derivation", errors
         )
+        if (
+            derivation is not None
+            and derivation != "sha256(master_seed:replication_index)"
+        ):
+            errors.append(f"{label} uses an unsupported seed derivation")
+
+
+def _validate_metric_stream_consistency(
+    metrics: Mapping[str, Any],
+    random_streams: Mapping[str, Any],
+    case_ids: tuple[str, ...],
+    errors: list[str],
+) -> None:
+    metric_rows = metrics.get("metrics")
+    streams = random_streams.get("streams_by_case")
+    if not isinstance(metric_rows, list) or not isinstance(streams, dict):
+        return
+    des_rows = [
+        row
+        for row in metric_rows
+        if isinstance(row, dict) and row.get("metric_id") == "des_confidence_interval"
+    ]
+    if len(des_rows) != 1:
+        return
+    applicability = des_rows[0].get("applicability_by_case")
+    if not isinstance(applicability, dict):
+        return
+    for case_id in case_ids:
+        metric_decision = applicability.get(case_id)
+        stream_decision = streams.get(case_id)
+        if not isinstance(metric_decision, dict) or not isinstance(
+            stream_decision, dict
+        ):
+            continue
+        if metric_decision.get("applicable") != stream_decision.get("applicable"):
+            errors.append(
+                f"DES metric and random-stream applicability disagree for {case_id}"
+            )
 
 
 def _validate_file_manifest(
@@ -809,6 +948,18 @@ def _safe_relative_path(
     boundary: Path,
     errors: list[str],
 ) -> Path | None:
+    posix_path = PurePosixPath(relative)
+    windows_path = PureWindowsPath(relative)
+    if (
+        Path(relative).is_absolute()
+        or posix_path.is_absolute()
+        or windows_path.is_absolute()
+        or bool(windows_path.drive)
+        or "\\" in relative
+        or posix_path.as_posix() != relative
+    ):
+        errors.append(f"path {relative!r} must be a relative POSIX repository path")
+        return None
     candidate = (base / relative).resolve()
     try:
         candidate.relative_to(boundary.resolve())

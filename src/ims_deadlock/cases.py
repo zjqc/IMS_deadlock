@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, cast
@@ -73,6 +74,14 @@ def load_case_spec(case_id: str, *, root: Path | None = None) -> CaseSpec:
         payload = json.loads(
             handle.read(), object_pairs_hook=_no_duplicate_keys_object_pairs_hook
         )
+    return case_spec_from_json(payload)
+
+
+def case_spec_from_json(payload: Mapping[str, Any]) -> CaseSpec:
+    """Parse one data-only case payload without reading or analyzing it."""
+
+    if not isinstance(payload, dict):
+        raise TypeError("case specification payload must be a JSON object")
     return _case_spec_from_json(payload)
 
 
