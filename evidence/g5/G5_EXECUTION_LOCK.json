@@ -1,0 +1,359 @@
+{
+  "schema_version": "ims-deadlock/g5-execution-lock/v1",
+  "lock_id": "G5-EXECUTION-LOCK-20260730-R1",
+  "created_at_utc": "2026-07-30T07:05:08Z",
+  "contains_held_out_results": false,
+  "confirmation_results_inspected": false,
+  "source_plan": {
+    "path": "docs/superpowers/plans/2026-07-30-g5-confirmation-execution.md",
+    "sha256": "be66c5988c0c7a3a8533a834401b784cd3b4dd40bde7782f944829d5922026a8",
+    "integrated_source_commit": "58694a214458669525791d7d8100c8d9b4183a62",
+    "implementation_commit_a": "f9b9a5a5652c7a49053e7ef26d08911bd757f465",
+    "preregistration_commit_b2": "58bbd4ab7da8c2c1d0bcdea4a12f2ae7c020d09a",
+    "seal_commit_c": "e91be4d6d7511c76918093899269de4b78e69fd8"
+  },
+  "target_worktree": {
+    "absolute_path": "D:\\worktree\\IMS_deadlock-g5-confirmation",
+    "cwd": "D:\\worktree\\IMS_deadlock-g5-confirmation",
+    "branch": "codex/g5-confirmation-execution",
+    "pre_lock_head_commit": "b5e5dc0494b23a54c78c420bbca50a3639de8bff",
+    "required_execution_parent_commit": "b5e5dc0494b23a54c78c420bbca50a3639de8bff",
+    "required_execution_head_policy": "the exact commit that adds this lock on top of required_execution_parent_commit",
+    "execution_commit_recorded_by_capture": true,
+    "git_status_porcelain_v1_untracked_all": "",
+    "dirty": false,
+    "upstream_ahead": 0,
+    "upstream_behind": 0,
+    "dirty_lock_command": "git status --porcelain=v1 --untracked-files=all"
+  },
+  "g5a_tooling": {
+    "tooling_commit": "b5e5dc0494b23a54c78c420bbca50a3639de8bff",
+    "file_hashes": {
+      "src/ims_deadlock/g5_capture.py": "0d9a0846fe9cc8bead6897dfa3762c0a437daf7c4a4f9fba1f71830e66a881ca",
+      "src/ims_deadlock/g5_scoring.py": "10fe19c835b958cf3ccdf8116a527eab159543ba642590489584230875121a48",
+      "tests/test_g5_capture.py": "c90ed44d3c16b9f4fbdef982cc2f516d93a0951bf4676d9e222f683864cab7d5",
+      "tests/test_g5_scoring.py": "baa0e0691b5992bdd618f01e61df1e19cf5dcf8297c6af325dd2387e6e1e35eb"
+    },
+    "pre_execution_validation": {
+      "targeted_pytest": "55 passed",
+      "full_pytest": "242 passed",
+      "ruff_check": "passed",
+      "ruff_format_check": "80 files already formatted",
+      "strict_mypy": "19 source files passed",
+      "freeze_check": "FROZEN",
+      "protocol_validation": "9 cases valid; structural_only_no_scientific_execution"
+    }
+  },
+  "g4_seal": {
+    "freeze_entry_path": "cases/confirmation/g4/FREEZE_ENTRY.json",
+    "freeze_id": "G4-FREEZE-C-20260730T051210Z",
+    "owner": "zjqc/IMS_deadlock",
+    "implementation_commit": "f9b9a5a5652c7a49053e7ef26d08911bd757f465",
+    "preregistration_commit": "58bbd4ab7da8c2c1d0bcdea4a12f2ae7c020d09a",
+    "artifact_hashes": {
+      "baseline_manifest_sha256": "29ccd2e6170213d985069bfec0ca5bc350d91f1c3fef04aec72b7c9ac91edef6",
+      "case_manifest_sha256": "85a1de0fc8d006fd6efede10ec9e423724e9e34bd6663184b7cee4641b5e49d1",
+      "exclusions_sha256": "d55dede11224ba822a4c62535d7c0b671c56c2b8329d13f03d1065163c6cfdb3",
+      "experiment_script_manifest_sha256": "ebe953c7079777b02049658b88e5bcd08828983be6d4a8f44d12c922cfa6292a",
+      "metric_schema_sha256": "5ce58b7ffec2fe09166de8d41b69371990bddebae724f47cf350feb7fe41aeb6",
+      "prediction_sheet_sha256": "644bc94a188b1de06fa6d841b5a50a293c831943a8f51bafcd46ebedb5a2f3bd",
+      "random_stream_manifest_sha256": "be603caf5190b3dfd5fb625c8d4f5ea0757483a68c48d93b7a0f0b555399cfef",
+      "runtime_lock_sha256": "4b81812a9bec1a7768b9b83f680b2fa0ab6c91662b07f937abbf825bfb121a76",
+      "theory_manifest_sha256": "867a6345502f796619cd9af69881abc2b43e99dbef09f313b663af49a12b2cc8"
+    },
+    "case_json_sha256_by_id": {
+      "G4_ADVERSARIAL_BOUNDARY": "97e1e7e1e2c39d095dd144a490d7b11f85805d3684cb2f564c985045122bc86d",
+      "G4_B05_SUPERVISOR_COMPARATOR": "4cc0ed4458250838c7814fbe29537b8a3a12d18ad1283da4b101e2ca42d584c9",
+      "G4_CRP_OUTSIDE_S4PR": "a034ce93a1630230db520102d556354dda3ed4754f72d46f47cfe83620bbaf2b",
+      "G4_CRP_S4PR_AGREE": "c4f056fe2d952e1e8fbe516472e4ad77973812d4ba8965af345b054afedbaed1",
+      "G4_CRP_UNREACHABLE_CANDIDATE": "43f1e55b522267a50b9ca06f4ae1a85f5d9fbc04c9b49b5aac598a24500840ba",
+      "G4_IMS_PARAMETER_GRID": "3a4486a9796ffbd2156a6d9358c1b3699eb55c2d812c1974c0bcf3ad75f03e44",
+      "G4_L30_RESOURCE_BASELINE": "d65e9c435f43b79158f465e01647435a05c46eb2306f112cb9a55c88d1d345b9",
+      "G4_MEDIUM_ISLAND_REBUILD": "dac6fc9f19acb0aff162af78be4ba8501ae6dc613234cb4f89f653fe0dccee34",
+      "G4_RECORDER_TARGET_QUANTIFICATION": "1ea77498befbfdabbe6d84d97a68c2d0ff2451115e14bb75176ab3d008712712"
+    }
+  },
+  "runtime": {
+    "runtime_lock_path": "cases/confirmation/g4/runtime_lock.json",
+    "runtime_lock_sha256": "4b81812a9bec1a7768b9b83f680b2fa0ab6c91662b07f937abbf825bfb121a76",
+    "canonical_python_executable": "D:\\worktree\\IMS_deadlock-final-integration\\.venv\\Scripts\\python.exe",
+    "python_version": "3.13.9",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "ims-deadlock": "0.1.0",
+      "mypy": "2.3.0",
+      "pip": "25.2",
+      "pytest": "9.1.1",
+      "ruff": "0.16.0"
+    },
+    "require_executable_match": true,
+    "pythonpath": "D:\\worktree\\IMS_deadlock-g5-confirmation\\src"
+  },
+  "commands": {
+    "command_count": 9,
+    "exact_commands_source": "cases/confirmation/g4/runtime_lock.json",
+    "normalized_argv_uses_canonical_python": true,
+    "runs": [
+      {
+        "case_id": "G4_L30_RESOURCE_BASELINE",
+        "frozen_command": "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_L30_RESOURCE_BASELINE",
+        "normalized_argv": [
+          "D:\\worktree\\IMS_deadlock-final-integration\\.venv\\Scripts\\python.exe",
+          "-m",
+          "ims_deadlock.g4_protocol",
+          "--root",
+          "cases/confirmation/g4",
+          "run",
+          "G4_L30_RESOURCE_BASELINE"
+        ]
+      },
+      {
+        "case_id": "G4_RECORDER_TARGET_QUANTIFICATION",
+        "frozen_command": "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_RECORDER_TARGET_QUANTIFICATION",
+        "normalized_argv": [
+          "D:\\worktree\\IMS_deadlock-final-integration\\.venv\\Scripts\\python.exe",
+          "-m",
+          "ims_deadlock.g4_protocol",
+          "--root",
+          "cases/confirmation/g4",
+          "run",
+          "G4_RECORDER_TARGET_QUANTIFICATION"
+        ]
+      },
+      {
+        "case_id": "G4_B05_SUPERVISOR_COMPARATOR",
+        "frozen_command": "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_B05_SUPERVISOR_COMPARATOR",
+        "normalized_argv": [
+          "D:\\worktree\\IMS_deadlock-final-integration\\.venv\\Scripts\\python.exe",
+          "-m",
+          "ims_deadlock.g4_protocol",
+          "--root",
+          "cases/confirmation/g4",
+          "run",
+          "G4_B05_SUPERVISOR_COMPARATOR"
+        ]
+      },
+      {
+        "case_id": "G4_CRP_S4PR_AGREE",
+        "frozen_command": "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_CRP_S4PR_AGREE",
+        "normalized_argv": [
+          "D:\\worktree\\IMS_deadlock-final-integration\\.venv\\Scripts\\python.exe",
+          "-m",
+          "ims_deadlock.g4_protocol",
+          "--root",
+          "cases/confirmation/g4",
+          "run",
+          "G4_CRP_S4PR_AGREE"
+        ]
+      },
+      {
+        "case_id": "G4_CRP_UNREACHABLE_CANDIDATE",
+        "frozen_command": "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_CRP_UNREACHABLE_CANDIDATE",
+        "normalized_argv": [
+          "D:\\worktree\\IMS_deadlock-final-integration\\.venv\\Scripts\\python.exe",
+          "-m",
+          "ims_deadlock.g4_protocol",
+          "--root",
+          "cases/confirmation/g4",
+          "run",
+          "G4_CRP_UNREACHABLE_CANDIDATE"
+        ]
+      },
+      {
+        "case_id": "G4_CRP_OUTSIDE_S4PR",
+        "frozen_command": "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_CRP_OUTSIDE_S4PR",
+        "normalized_argv": [
+          "D:\\worktree\\IMS_deadlock-final-integration\\.venv\\Scripts\\python.exe",
+          "-m",
+          "ims_deadlock.g4_protocol",
+          "--root",
+          "cases/confirmation/g4",
+          "run",
+          "G4_CRP_OUTSIDE_S4PR"
+        ]
+      },
+      {
+        "case_id": "G4_ADVERSARIAL_BOUNDARY",
+        "frozen_command": "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_ADVERSARIAL_BOUNDARY",
+        "normalized_argv": [
+          "D:\\worktree\\IMS_deadlock-final-integration\\.venv\\Scripts\\python.exe",
+          "-m",
+          "ims_deadlock.g4_protocol",
+          "--root",
+          "cases/confirmation/g4",
+          "run",
+          "G4_ADVERSARIAL_BOUNDARY"
+        ]
+      },
+      {
+        "case_id": "G4_MEDIUM_ISLAND_REBUILD",
+        "frozen_command": "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_MEDIUM_ISLAND_REBUILD",
+        "normalized_argv": [
+          "D:\\worktree\\IMS_deadlock-final-integration\\.venv\\Scripts\\python.exe",
+          "-m",
+          "ims_deadlock.g4_protocol",
+          "--root",
+          "cases/confirmation/g4",
+          "run",
+          "G4_MEDIUM_ISLAND_REBUILD"
+        ]
+      },
+      {
+        "case_id": "G4_IMS_PARAMETER_GRID",
+        "frozen_command": "python -m ims_deadlock.g4_protocol --root cases/confirmation/g4 run G4_IMS_PARAMETER_GRID",
+        "normalized_argv": [
+          "D:\\worktree\\IMS_deadlock-final-integration\\.venv\\Scripts\\python.exe",
+          "-m",
+          "ims_deadlock.g4_protocol",
+          "--root",
+          "cases/confirmation/g4",
+          "run",
+          "G4_IMS_PARAMETER_GRID"
+        ]
+      }
+    ]
+  },
+  "execution_schedule": {
+    "primary_waves": [
+      {
+        "wave": "P1",
+        "max_concurrent": 4,
+        "case_ids": [
+          "G4_L30_RESOURCE_BASELINE",
+          "G4_RECORDER_TARGET_QUANTIFICATION",
+          "G4_B05_SUPERVISOR_COMPARATOR",
+          "G4_CRP_S4PR_AGREE"
+        ],
+        "timeout_seconds": 300
+      },
+      {
+        "wave": "P2",
+        "max_concurrent": 3,
+        "case_ids": [
+          "G4_CRP_UNREACHABLE_CANDIDATE",
+          "G4_CRP_OUTSIDE_S4PR",
+          "G4_ADVERSARIAL_BOUNDARY"
+        ],
+        "timeout_seconds": 300
+      },
+      {
+        "wave": "P3",
+        "max_concurrent": 2,
+        "case_ids": [
+          "G4_MEDIUM_ISLAND_REBUILD",
+          "G4_IMS_PARAMETER_GRID"
+        ],
+        "timeout_seconds": 1800
+      }
+    ],
+    "repro_waves": [
+      {
+        "wave": "R1",
+        "same_membership_and_order_as": "P1",
+        "max_concurrent": 4,
+        "timeout_seconds": 300
+      },
+      {
+        "wave": "R2",
+        "same_membership_and_order_as": "P2",
+        "max_concurrent": 3,
+        "timeout_seconds": 300
+      },
+      {
+        "wave": "R3",
+        "same_membership_and_order_as": "P3",
+        "max_concurrent": 2,
+        "timeout_seconds": 1800
+      }
+    ],
+    "repro_starts_after_all_primary_waves_complete": true,
+    "allowed_run_labels": [
+      "primary",
+      "repro"
+    ],
+    "third_run_allowed": false,
+    "retry_allowed": false,
+    "primary_repro_overlap_same_case_allowed": false,
+    "nested_scientific_parallelism_allowed": false,
+    "process_alive_monitoring_cadence_seconds": 30
+  },
+  "output_roots": {
+    "raw_output_root_relative": "artifacts/g5-confirmation/G5-CONFIRMATION-20260730-R1",
+    "raw_output_root_absolute": "D:\\worktree\\IMS_deadlock-g5-confirmation\\artifacts\\g5-confirmation\\G5-CONFIRMATION-20260730-R1",
+    "must_not_exist_before_execution": true,
+    "pre_execution_probe": "ABSENT",
+    "must_be_outside_frozen_bundle": true,
+    "frozen_bundle_root_relative": "cases/confirmation/g4",
+    "frozen_bundle_root_absolute": "D:\\worktree\\IMS_deadlock-g5-confirmation\\cases\\confirmation\\g4"
+  },
+  "scoring_policy": {
+    "predictions_source": "cases/confirmation/g4/predictions.json",
+    "metrics_source": "cases/confirmation/g4/metrics_schema.json",
+    "baseline_applicability_source": "cases/confirmation/g4/baseline_applicability.json",
+    "scorer": "src/ims_deadlock/g5_scoring.py",
+    "allowed_scientific_statuses": [
+      "SUPPORTED",
+      "FALSIFIED",
+      "INCONCLUSIVE"
+    ],
+    "grid_expected_certificate_vector": {
+      "G01_FWD_DAG": false,
+      "G02_REV_DAG": false,
+      "G03_BALANCED_TIGHT": true,
+      "G04_BALANCED_AGV2": true,
+      "G05_BALANCED_BUFFER2": true,
+      "G06_BALANCED_MACHINE2": true,
+      "G07_BALANCED_LOW_WIP": true,
+      "G08_FORWARD_SKEW": true,
+      "G09_FAST_RELEASE": true,
+      "G10_SLOW_TRANSFER": true
+    },
+    "missing_field_or_runtime_error": "INCONCLUSIVE",
+    "measured_contradiction_to_frozen_falsifier": "FALSIFIED",
+    "wilson_interval_miss": "coverage observation only; not a structural theorem falsifier",
+    "pool_des_seeds": false,
+    "retune_after_inspection": false,
+    "tracked_summary_path": "evidence/g5/G5_RESULT_SUMMARY.json",
+    "tracked_hash_manifest_path": "evidence/g5/G5_RAW_HASH_MANIFEST.json"
+  },
+  "reproducibility_policy": {
+    "required_runs_per_case": 2,
+    "required_labels": [
+      "primary",
+      "repro"
+    ],
+    "require_both_execution_status_completed": true,
+    "require_raw_stdout_sha256_match": true,
+    "require_canonical_json_sha256_match": true,
+    "require_stderr_raw_sha256_match": true,
+    "require_git_freeze_cwd_bundle_metadata_match": true,
+    "mismatch_disposition": "retain as reproducibility failure; no retry; no third run"
+  },
+  "failure_policy": {
+    "stop_before_next_wave_on": [
+      "invalid_freeze",
+      "frozen_input_hash_drift",
+      "missing_case",
+      "unexpected_case_count",
+      "output_directory_exists",
+      "output_overwrite_attempt",
+      "unexpected_runtime",
+      "git_dirty_or_head_mismatch",
+      "path_escape_or_output_inside_frozen_bundle",
+      "unclassified_execution_error"
+    ],
+    "case_execution_failure": "retain complete capture record and classify before advancing",
+    "primary_repro_hash_mismatch": "retain as reproducibility failure; no retry and no third run"
+  },
+  "resource_probe": {
+    "cpu": "Intel Xeon w7-3465X",
+    "physical_cores": 28,
+    "logical_processors": 56,
+    "memory_total_gib": 127.25,
+    "memory_free_gib_at_probe": 104.78,
+    "drive": "D:",
+    "free_storage_gib_at_probe": 5693.04,
+    "used_for_schedule_only": true,
+    "captured_before_execution": true
+  }
+}
