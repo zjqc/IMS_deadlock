@@ -10,10 +10,10 @@
 | G0 仓库门 | PASS | Dell 目标路径、GitHub SSH、干净集成 worktree 和项目专用 Python 3.13.9 已核验；污染历史保持隔离；最终源状态在该 worktree 验证后前推 `origin/main` | 无 |
 | G1 文献门 | PASS（scope-bounded） | 六条文献链、43 项审计矩阵、20 个全文/全文审计锚点、迁移卡；L30-L35 与 B05 七篇审计已纳入比较边界；R7/R8 类别饱和保持 | 不支持首创性、系统综述或一般 IMS/Petri 等价；G4 必须检验 CRP、recorder、SBA、L30/B05 comparator 边界 |
 | G2 理论门 | PASS（严格受限主链） | P1 有限 LTS/reachability-net；P2 capacity-mediated 封闭核 iff；P2c `IMS-SIP^1` 诊断虹吸双向桥；P3 偏序充分条件；P3d `BIX1-SAT` 可达阈值；P3e `BIX2-PERSIST` 三资源 ring 精确阈值与同语义 DAG 修复；P4 CTMC；P5 supervisor；P6 复杂性边界 | plant-level structured Petri/S3PR 桥、替代/AND/AGV/预约/多 persistent-buffer 一般岛阈值、一般紧凑 IMS 精确复杂性和 risk-budget 控制仍开放 |
-| G3 算法门 | PASS（严格小有限模型 + P2c/P3d/P3e） | 原 G3 证据为 123 tests；加入 G4/G5 协议、capture/scoring 基础设施后，Dell 项目 Python 3.13.9 全库 242 tests、Ruff check/format、strict mypy 通过；原 C0、BIX1/BIX2 结果不变 | 一般 plant/S3PR、结构案例物理速率、一般 persistent-buffer/AGV 阈值和风险预算/Pareto 算法仍开放 |
+| G3 算法门 | PASS（严格小有限模型 + P2c/P3d/P3e） | 原 G3 证据为 123 tests；加入 G4/G5/G6 协议、局部核/终端类恢复和 replay 数值完整性后，Dell 项目 Python 3.13.9 全库 335 tests、Ruff check/format、strict mypy 通过；原 C0、BIX1/BIX2 结果不变 | 一般 plant/S3PR、结构案例物理速率、一般 persistent-buffer/AGV 阈值和风险预算/Pareto 算法仍开放 |
 | G4 案例冻结门 | PASS（historical C seal；已在 G5 原样执行） | A=`f9b9a5a5652c7a49053e7ef26d08911bd757f465`，B2=`58bbd4ab7da8c2c1d0bcdea4a12f2ae7c020d09a`，C=`e91be4d6d7511c76918093899269de4b78e69fd8`；封存时 checker 为 `FROZEN`、`errors=[]`、`confirmation_results_inspected=false`；随后只在 G5-B execution lock 下执行一次 primary 和一次 repro | G4/G5 九行已退役为历史 discovery/regression，不能再次充当 held-out；后续缺陷必须进入独立 successor freeze |
 | G5 论文门 | FAIL（evidence closed） | G5-A=`b5e5dc0494b23a54c78c420bbca50a3639de8bff`，G5-B=`8aa752804b885b79e5371c98e7961087c540f2a8`，G5-C=`ff281481068a2325cb0bde00e85fd7b753ba854a`；9/9 案例完成 primary/repro，raw/canonical/stderr hash 一致；锁定 scorer 为 `4/3/2`，透明 theorem audit 为 `6/1/2` 并另保留两项 minimality failure | CRP local bridge 预测失败；grid/medium 因 `D/F` 未穷尽 terminal classes 而确定性拒绝；不能形成完整 exact/DES 证据链或宣称论文门通过 |
-| G6 局部核—终端类恢复门 | NEXT HARD GATE / PRE-IMPLEMENTATION | G5 负结果、评分 category error 和复现证据已定位；恢复义务已进入反例账本、证书、概率层和证明义务 | 先完成 theorem/metric 分离、all-minimal local kernels、CRP local bridge、closed-class taxonomy 与 synthetic regressions；再创建独立 discovery/confirmation set 并重新封存，封存前不得运行新 held-out |
+| G6 局部核—终端类恢复门 | IN PROGRESS / G6-A 与 G6-R PASS / G6-B NEXT HARD GATE | theorem/metric 分离、all-minimal local kernels、local CRP bridge、terminal/stopping partition、完整 probability map/bounds/residual 审计和 synthetic regressions 已实现；R3 五个历史行的 primary/repro raw/canonical/stderr 全匹配且 mechanism 5/5 PASS；R1/R2 失败与两项 minimality failure 原样保留 | 建立不复用 G4/G5 的独立 discovery set，冻结 terminal-class/estimand/negative-control 证据并关闭 G6-B；随后才能进入 G6-C preregistration、G6-D seal 和 G6-E 一次 primary/repro |
 
 ## G0 仓库门
 
@@ -179,6 +179,36 @@ G6 是新科学门，不是 G5 repair rerun。通过顺序：
 5. 用未复用 G4 参数或状态的 synthetic regressions 关闭已知机制；
 6. 建立新的 discovery set 与独立 confirmation set，预注册、hash lock、
    C seal 后才允许一次 primary/repro。
+
+当前阶段审计：
+
+- G6-A 的受限语义、局部核、CRP bridge、终端/停止分区和 scorer
+  正交性已经由 335 项全库测试及静态检查验证；
+- R1 因 Windows schedule-state 租约竞争失败，保持
+  `FAILED_INCOMPLETE`，未补齐缺失行；
+- R2 的五对原始结果完全匹配，但 consumer 使用严格 `[0,1]` 而 producer
+  使用 `1e-10` 数值容差，导致 grid/medium 被误判；R2 保持
+  `FAILED_MECHANISM_CHECK`，没有事后重评分；
+- 修复统一 producer/G5/G6 consumer 的完整 probability map、reported
+  bounds 与 linear residual 数值契约，不做 clamp，也不改写 R1/R2；
+- 预注册 R3 在不可变代码树上完成一次 primary 和一次 repro，五对
+  raw/canonical/stderr 完全匹配且五项 mechanism 均为 `PASS`；
+- 两个 boundary 行的 theorem 仍为 `SUPPORTED`，同时独立保留
+  `certificate_minimality=FAIL/false`；
+- R3 是 `historical_replay`，只关闭已诊断机制，不进入新确认集的预测
+  正确率，也不使 G6-C/D/E 通过。
+
+因此下一硬门不是继续重放旧案例，而是 G6-B：构造与 G4/G5 在 case hash、
+snapshot、route signature、parameter tuple 和 random-stream manifest
+上均独立的新 discovery set，预先锁定 terminal/stopping estimand、负对照、
+exact/DES 同目标规则和失败账本。只有 G6-B 独立审计通过后，才可创建
+G6-C confirmation preregistration。
+
+完整根因和 R3 证据见
+`docs/verification/G6_HARD_PROBLEM_ROOT_CAUSE_AND_R3_REPAIR.md`、
+`evidence/g6/G6_HISTORICAL_REPLAY_FAILURE_LEDGER.json`、
+`evidence/g6/G6_HISTORICAL_REPLAY_R3_REPORT.json` 与
+`evidence/g6/G6_HISTORICAL_REPLAY_R3_RAW_HASH_MANIFEST.json`。
 
 详细执行契约见
 `docs/superpowers/plans/2026-07-30-g6-local-core-terminal-class-recovery.md`。
