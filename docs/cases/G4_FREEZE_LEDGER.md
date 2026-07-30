@@ -1,6 +1,6 @@
 # G4 Freeze Ledger
 
-Status: `PREREGISTRATION-CANDIDATE / NOT SEALED`.
+Status: `SEALED / FROZEN`.
 
 This ledger is an append-only audit surface for the G4 confirmation freeze.
 It contains no held-out scientific outcome. A row may advance to `SEALED` only
@@ -31,7 +31,9 @@ The earlier preregistration candidate
 An adversarial pre-seal review showed that its prospective seal checker did not
 enforce the contents of `excluded_cases`. No C seal or held-out execution was
 committed. The implementation above closes that gap; the next preregistration
-commit is B2 and must refresh every implementation-dependent hash.
+commit was B2
+`58bbd4ab7da8c2c1d0bcdea4a12f2ae7c020d09a`, which refreshed every
+implementation-dependent hash.
 
 ## Candidate Bundle
 
@@ -45,9 +47,9 @@ commit is B2 and must refresh every implementation-dependent hash.
 - Discovery cases `C0-C5`, `C5_DAG`, `BIX1-SAT`, and `BIX2-PERSIST` are
   explicitly excluded.
 
-The preregistration commit is intentionally left pending in this candidate
-ledger. It will be filled only after the complete bundle is structurally
-validated, committed, and pushed.
+At candidate time the preregistration commit was intentionally left pending.
+It was filled only after the complete bundle was structurally validated,
+committed, and pushed; the immutable value is recorded in the seal below.
 
 ## Pre-Seal Allowed Operations
 
@@ -67,14 +69,35 @@ checker returns `FROZEN`.
 
 ## Seal Record
 
-Pending fields:
+- Implementation commit A:
+  `f9b9a5a5652c7a49053e7ef26d08911bd757f465`.
+- Preregistration commit B2:
+  `58bbd4ab7da8c2c1d0bcdea4a12f2ae7c020d09a`.
+- Seal commit C:
+  `e91be4d6d7511c76918093899269de4b78e69fd8`.
+- Freeze ID: `G4-FREEZE-C-20260730T051210Z`.
+- Freeze time: `2026-07-30T05:12:10Z`.
+- Exact seal:
+  `cases/confirmation/g4/FREEZE_ENTRY.json`.
+- The seal records all nine case canonical hashes, all nine prerequisite
+  artifact hashes, the exact nine included cases, and exact discovery
+  exclusions `C0-C5`, `C5_DAG`, `BIX1-SAT`, and `BIX2-PERSIST`.
+- Dell post-commit checker evidence:
+  `FROZEN`, `errors=[]`, `confirmation_results_inspected=false`.
+- Structural protocol evidence:
+  nine cases valid under
+  `structural_only_no_scientific_execution`.
+- Quality evidence before C:
+  `187 passed`, Ruff check/format passed, strict mypy passed.
+- Quality evidence after C:
+  51 freeze/confirmation/protocol tests passed.
+- Independent code, scientific-boundary, and static-hash reviews all returned
+  `PASS`.
 
-- preregistration commit;
-- seal commit;
-- freeze identifier and UTC timestamp;
-- nine case hashes;
-- nine prerequisite artifact hashes;
-- final `FROZEN` checker evidence.
+No held-out scientific backend was executed before or during the seal. The
+frozen cases also remain scientifically uninspected after C; executing them is
+a separate G5 action governed by the frozen commands and immutable reporting
+rules.
 
 If pre-seal validation finds a defect, repair it before the preregistration
 commit and record the repair in the execution plan. If any outcome is inspected
