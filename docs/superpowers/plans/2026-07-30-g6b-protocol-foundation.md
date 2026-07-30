@@ -471,12 +471,15 @@ Expected: all JSON and protocol tests pass.
 Evidence: five protocol JSON parse checks passed; targeted protocol tests
 `52 passed in 2.48s`.
 
-- [ ] **Step 5: Commit the state integration**
+- [x] **Step 5: Commit the state integration**
 
 ```bash
 git add docs/cases/CASE_CHANGE_LEDGER.md docs/ROADMAP.md PROJECT_HANDOFF.md
 git commit -m "docs: register open G6-B protocol gate"
 ```
+
+Completed on the locked feature branch as
+`ab82413b3254cc6b1e1e5e938b422ed9dc3e6106`.
 
 ## Final Review Gate
 
@@ -493,4 +496,21 @@ After Tasks 1-3:
    - execution remains disabled.
 4. Fix all critical and important findings and re-run the relevant review.
 5. Only after all three reviews pass may a separate plan define discovery
-   model construction and small-scale scientific execution.
+   model construction. Scientific execution remains prohibited until that
+   separate plan is written, adversarially reviewed, and later explicitly
+   authorized.
+
+Completion record:
+
+- Specification-compliance review: approved after requested state-doc
+  corrections.
+- Validator code-quality review: approved.
+- Independent scientific-boundary review: `PASS FOUNDATION ONLY`; artifact
+  `docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md`; no
+  Critical/Important/Minor protocol findings.
+- State integration commit: `ab82413`.
+- Boundary: `adversarial_review_status="PENDING"` and
+  `scientific_execution_authorized=false` remain unchanged; G6-B remains OPEN;
+  G6-C/D/E remain not started; only a separate row-family
+  discovery-model/execution plan and adversarial review may follow before any
+  science.

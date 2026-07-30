@@ -24,10 +24,13 @@
 - `G6-C/D/E = 均未开始，均未通过`；
 - 尚无完整论文主文件，也不能声称达到投稿或顶刊就绪状态。
 
-G6-B protocol foundation 和 data-only validator 已在 feature branch 上完成，
-但它只建立 execution-disabled/PENDING 的协议基础：没有创建 discovery case，
-没有运行 enumeration、CTMC 或 DES，没有检查任何新科学输出，不能把 G6-B
-改为 PASS。
+G6-B protocol foundation、data-only validator 和 independent foundation
+review 已在 feature branch 上完成；review verdict 是
+`PASS FOUNDATION ONLY`，artifact 为
+`docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md`，无
+Critical/Important/Minor protocol findings。但它只建立
+execution-disabled/PENDING 的协议基础：没有创建 discovery case，没有运行
+enumeration、CTMC 或 DES，没有检查任何新科学输出，不能把 G6-B 改为 PASS。
 
 ## 2. 权威目标与版本锁
 
@@ -171,7 +174,7 @@ IMS-RAS^CW 稳定语义
 | G3 算法门 | PASS | 稳定 LTS、证书、Petri/refusal、阈值、CTMC、监督器、G4/G5/G6 审计；全库 341 tests | 枚举只核验证明，不替代证明 |
 | G4 案例冻结门 | PASS（历史 seal） | 九个 held-out 案例在结果检查前冻结，并在 G5 原样执行 | 该面板已退役，不能再次作为 held-out |
 | G5 论文门 | FAIL（evidence closed） | 9/9 primary/repro 精确一致，失败、反例和 inconclusive 已固定 | 不得补跑、改 sealed input、重调参或宣称通过 |
-| G6 恢复门 | IN PROGRESS | G6-A 和 G6-R 通过；G6-B protocol foundation + validator 在 feature branch 完成且 execution disabled/PENDING；locked worktree `D:\worktree\IMS_deadlock-g6b-discovery` at HEAD `4c24f39` 已通过 full pytest 393、Ruff、format check、strict mypy、five JSON parse checks、52 protocol tests 和 `git diff --check` | G6-B 仍 OPEN；independent foundation review、actual overlap report、runtime lock 和 discovery outcomes 仍开放；G6-C/D/E 未通过 |
+| G6 恢复门 | IN PROGRESS | G6-A 和 G6-R 通过；G6-B protocol foundation + validator 在 feature branch 完成且 execution disabled/PENDING；locked worktree `D:\worktree\IMS_deadlock-g6b-discovery` at HEAD `4c24f39` 已通过 full pytest 393、Ruff、format check、strict mypy、five JSON parse checks、52 protocol tests 和 `git diff --check`；independent foundation review 为 `PASS FOUNDATION ONLY`，artifact `docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md`，无 Critical/Important/Minor protocol findings | G6-B 仍 OPEN；`adversarial_review_status=PENDING`、`scientific_execution_authorized=false` 不变；actual overlap report、runtime lock、discovery outcomes 和 row-family discovery-model/execution plan 仍开放；G6-C/D/E 未通过 |
 
 状态源：`docs/ROADMAP.md`。
 
@@ -556,9 +559,9 @@ git log -1 --format=%H -- PROJECT_HANDOFF.md
 ## 13. 下一硬门：G6-B
 
 下一进程不要继续重放 G4/G5，也不要先写成投稿稿件。第一未完成工作是
-independent foundation review；通过后才可另写 row-family
-discovery-model/execution plan 并做 adversarial review。该审查和后续计划
-审查完成前，不得把下一步描述为科学案例构造或执行。
+单独编写 row-family discovery-model/execution plan，并对该计划做
+adversarial review。该计划与审查完成且另获明确授权前，不得把下一步描述
+为科学案例构造或执行。
 
 G6-B protocol foundation 已在 feature branch
 `codex/g6b-discovery-estimand-lock` 的 pre-integration commits
@@ -576,6 +579,11 @@ Ruff check、Ruff format 41 files already formatted、strict mypy `src`
 parse checks、targeted protocol tests `52 passed in 2.48s` 和
 `git diff --check`。这些验证不改变 `OPEN/PENDING` 状态，也不表示执行了
 science、创建了 cases 或检查了 outcomes。
+Independent foundation review 已通过 `PASS FOUNDATION ONLY`，artifact 为
+`docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md`，无
+Critical/Important/Minor protocol findings；这不改变
+`adversarial_review_status=PENDING`、`scientific_execution_authorized=false`、
+G6-B `OPEN` 或 G6-C/D/E 未开始状态。
 
 ### 13.1 G6-B 必须冻结前定义的内容
 
@@ -759,13 +767,11 @@ G6-B 推进期间可以建立诚实的 working manuscript skeleton，但必须�
 4. 原始步骤 4 已在 feature branch 中完成：写入
    `docs/cases/G6_B_DISCOVERY_PROTOCOL.md`、独立性 schema、estimand
    schema、negative-control table、failure ledger 和 validator。
-5. 下一未完成工作：做 independent foundation review；通过前不得把 G6-B
-   标为 PASS。
-6. 通过 full verification 和 independent foundation review 后，另写
-   row-family discovery-model/execution plan，并对该计划做 adversarial review。
-7. 只有独立审查通过且新计划明确授权后，才可进入 discovery science；actual
+5. 下一未完成工作：单独编写 row-family discovery-model/execution plan，
+   并对该计划做 adversarial review；通过前不得把 G6-B 标为 PASS。
+6. 只有该计划审查通过且另获明确授权后，才可进入 discovery science；actual
    overlap report、runtime lock 和 discovery outcomes 目前仍开放。
-8. 达到 G6-B 通过条件后，独立复核并冻结结论；否则保留失败并继续修正。
+7. 达到 G6-B 通过条件后，独立复核并冻结结论；否则保留失败并继续修正。
 
 ## 17. 科学与工程停止条件
 
@@ -833,6 +839,7 @@ verification reports，不得用早期 B-stage 语气覆盖后来的 freeze、�
 - `docs/verification/G5_REPRODUCIBILITY_AUDIT.md`
 - `docs/verification/G5_CLAIM_EVIDENCE_TABLE.md`
 - `docs/verification/G6_HARD_PROBLEM_ROOT_CAUSE_AND_R3_REPAIR.md`
+- `docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md`
 - `evidence/g5/`
 - `evidence/g6/`
 - `src/ims_deadlock/g6b_protocol.py`

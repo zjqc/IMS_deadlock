@@ -13,7 +13,7 @@
 | G3 算法门 | PASS（严格小有限模型 + P2c/P3d/P3e） | 原 G3 证据为 123 tests；加入 G4/G5/G6 协议、局部核/终端类恢复、replay 数值完整性和 post-R3 comparator fail-closed 回归后，Dell 项目 Python 3.13.9 全库 341 tests、Ruff check/format、strict mypy 通过；原 C0、BIX1/BIX2 结果不变 | 一般 plant/S3PR、结构案例物理速率、一般 persistent-buffer/AGV 阈值和风险预算/Pareto 算法仍开放 |
 | G4 案例冻结门 | PASS（historical C seal；已在 G5 原样执行） | A=`f9b9a5a5652c7a49053e7ef26d08911bd757f465`，B2=`58bbd4ab7da8c2c1d0bcdea4a12f2ae7c020d09a`，C=`e91be4d6d7511c76918093899269de4b78e69fd8`；封存时 checker 为 `FROZEN`、`errors=[]`、`confirmation_results_inspected=false`；随后只在 G5-B execution lock 下执行一次 primary 和一次 repro | G4/G5 九行已退役为历史 discovery/regression，不能再次充当 held-out；后续缺陷必须进入独立 successor freeze |
 | G5 论文门 | FAIL（evidence closed） | G5-A=`b5e5dc0494b23a54c78c420bbca50a3639de8bff`，G5-B=`8aa752804b885b79e5371c98e7961087c540f2a8`，G5-C=`ff281481068a2325cb0bde00e85fd7b753ba854a`；9/9 案例完成 primary/repro，raw/canonical/stderr hash 一致；锁定 scorer 为 `4/3/2`，透明 theorem audit 为 `6/1/2` 并另保留两项 minimality failure | CRP local bridge 预测失败；grid/medium 因 `D/F` 未穷尽 terminal classes 而确定性拒绝；不能形成完整 exact/DES 证据链或宣称论文门通过 |
-| G6 局部核—终端类恢复门 | IN PROGRESS / G6-A 与 G6-R PASS / G6-B NEXT HARD GATE / OPEN | theorem/metric 分离、all-minimal local kernels、local CRP bridge、terminal/stopping partition、完整 probability map/bounds/residual 审计和 synthetic regressions 已实现；R3 五个历史行的 primary/repro raw/canonical/stderr 全匹配且 mechanism 5/5 PASS；G6-B protocol foundation 已创建：`docs/cases/G6_B_DISCOVERY_PROTOCOL.md`、`cases/discovery/g6b/`、`src/ims_deadlock/g6b_protocol.py`、`tests/test_g6b_protocol.py`；执行保持 disabled/PENDING；Task2 targeted+adjacent 验证为 52 validator tests + 59 adjacent = 111 passed；locked worktree `D:\worktree\IMS_deadlock-g6b-discovery` at HEAD `4c24f39` 在 state-doc commit 前通过 full pytest 393、Ruff、format check、strict mypy、five JSON parse checks、52 protocol tests 和 `git diff --check`；R1/R2 失败与两项 minimality failure 原样保留 | G6-B 仍未通过，未产生 discovery case，未运行 enumeration/CTMC/DES，未检查任何新 science output；下一步先做 independent foundation review；通过后再单独编写 adversarial row-family discovery-model/execution plan 并审查，审查通过前不得进入 science；actual overlap report、runtime lock 和 discovery outcomes 仍开放；随后才能进入 G6-C preregistration、G6-D seal 和 G6-E 一次 primary/repro |
+| G6 局部核—终端类恢复门 | IN PROGRESS / G6-A 与 G6-R PASS / G6-B NEXT HARD GATE / OPEN | theorem/metric 分离、all-minimal local kernels、local CRP bridge、terminal/stopping partition、完整 probability map/bounds/residual 审计和 synthetic regressions 已实现；R3 五个历史行的 primary/repro raw/canonical/stderr 全匹配且 mechanism 5/5 PASS；G6-B protocol foundation 已创建：`docs/cases/G6_B_DISCOVERY_PROTOCOL.md`、`cases/discovery/g6b/`、`src/ims_deadlock/g6b_protocol.py`、`tests/test_g6b_protocol.py`；执行保持 disabled/PENDING；Task2 targeted+adjacent 验证为 52 validator tests + 59 adjacent = 111 passed；locked worktree `D:\worktree\IMS_deadlock-g6b-discovery` at HEAD `4c24f39` 在 state-doc commit 前通过 full pytest 393、Ruff、format check、strict mypy、five JSON parse checks、52 protocol tests 和 `git diff --check`；independent foundation review 为 `PASS FOUNDATION ONLY`，artifact `docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md`，无 Critical/Important/Minor protocol findings；R1/R2 失败与两项 minimality failure 原样保留 | G6-B 仍未通过，`adversarial_review_status=PENDING`、`scientific_execution_authorized=false` 不变，未产生 discovery case，未运行 enumeration/CTMC/DES，未检查任何新 science output；下一步是单独编写 adversarial row-family discovery-model/execution plan 并审查，审查通过且另获明确授权前不得进入 science；actual overlap report、runtime lock 和 discovery outcomes 仍开放；随后才能进入 G6-C preregistration、G6-D seal 和 G6-E 一次 primary/repro |
 
 ## G0 仓库门
 
@@ -217,11 +217,16 @@ Ruff check、Ruff format 41 files already formatted、strict mypy `src`
 parse checks、targeted protocol tests `52 passed in 2.48s` 和
 `git diff --check`。
 它没有创建 discovery case，没有运行 enumeration、CTMC 或 DES，也没有
-检查任何新科学输出。下一步先做 independent foundation review；通过后再
-单独编写 adversarial row-family discovery-model/execution plan 并审查，
-审查通过前不得进入 science。actual overlap report、runtime lock 和
-discovery outcomes 仍开放。只有 G6-B 独立审计通过后，才可创建 G6-C
-confirmation preregistration。
+检查任何新科学输出。Independent foundation review 已通过
+`PASS FOUNDATION ONLY`，artifact 为
+`docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md`，无
+Critical/Important/Minor protocol findings；这不改变
+`adversarial_review_status=PENDING`、`scientific_execution_authorized=false`、
+G6-B `OPEN` 或 G6-C/D/E 未开始状态。下一步是单独编写 adversarial
+row-family discovery-model/execution plan 并审查，审查通过且另获明确授权前
+不得进入 science。actual overlap report、runtime lock 和 discovery
+outcomes 仍开放。只有 G6-B 独立审计通过后，才可创建 G6-C confirmation
+preregistration。
 
 完整根因和 R3 证据见
 `docs/verification/G6_HARD_PROBLEM_ROOT_CAUSE_AND_R3_REPAIR.md`、
