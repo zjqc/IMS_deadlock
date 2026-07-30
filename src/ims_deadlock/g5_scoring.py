@@ -13,6 +13,13 @@ from math import isfinite
 from pathlib import Path
 from typing import Any
 
+from ims_deadlock.ctmc import (
+    PROBABILITY_ABSOLUTE_TOLERANCE,
+    linear_residual_is_numerically_valid,
+    probability_bounds_match_values,
+    probability_interval_is_numerically_valid,
+    probability_values_are_numerically_valid,
+)
 from ims_deadlock.engine import enabled_transition
 from ims_deadlock.g4_freeze import canonical_json_sha256, check_g4_freeze
 from ims_deadlock.g4_instances import (
@@ -1014,12 +1021,20 @@ def _quantitative_reasons(
     initial_state = container.get("ctmc_initial_state")
     probabilities = _mapping_or_empty(quantitative.get("deadlock_probability"))
     mean_times = _mapping_or_empty(quantitative.get("mean_absorption_time"))
+    probability_values_valid = probability_values_are_numerically_valid(
+        probabilities.values()
+    )
+    if not probability_values_valid:
+        reasons.append(f"{label} deadlock probabilities contain an invalid value")
     initial_probability: float | None = None
     if not isinstance(initial_state, str) or initial_state not in probabilities:
         reasons.append(f"{label} exact p is absent for ctmc_initial_state")
     else:
         value = _strict_finite_float(probabilities[initial_state])
-        if value is None or not 0.0 <= value <= 1.0:
+        if value is None or not probability_interval_is_numerically_valid(
+            value,
+            value,
+        ):
             reasons.append(f"{label} exact p is not a finite probability")
         else:
             initial_probability = value
@@ -1033,15 +1048,27 @@ def _quantitative_reasons(
         value = _strict_finite_float(quantitative.get(field))
         if value is None or value < 0.0:
             reasons.append(f"{label} {field} is not finite nonnegative")
+        elif not linear_residual_is_numerically_valid(value):
+            reasons.append(f"{label} {field} exceeds numerical residual tolerance")
     bounds = _mapping_or_empty(quantitative.get("probability_bounds"))
     lower = _strict_finite_float(bounds.get("min"))
     upper = _strict_finite_float(bounds.get("max"))
     if lower is None or upper is None:
         reasons.append(f"{label} probability bounds are incomplete")
-    elif not (0.0 <= lower <= upper <= 1.0):
+    elif not probability_interval_is_numerically_valid(lower, upper):
         reasons.append(f"{label} probability bounds are outside [0,1]")
+    elif not probability_values_valid or not probability_bounds_match_values(
+        probabilities.values(),
+        lower,
+        upper,
+    ):
+        reasons.append(
+            f"{label} probability bounds do not match the full probability map"
+        )
     elif initial_probability is not None and not (
-        lower <= initial_probability <= upper
+        lower - PROBABILITY_ABSOLUTE_TOLERANCE
+        <= initial_probability
+        <= upper + PROBABILITY_ABSOLUTE_TOLERANCE
     ):
         reasons.append(f"{label} probability bounds do not contain initial p")
     if quantitative.get("probability_bounds_valid") is not True:
