@@ -602,6 +602,191 @@ def test_compare_requires_stderr_case_canonical_argv_freeze_and_git_match(
         assert comparison[f"{field}_match"] is False
 
 
+def test_compare_rejects_explicit_noncanonical_stdout_even_when_raw_hashes_match(
+    tmp_path: Path,
+) -> None:
+    primary_dir = tmp_path / "primary"
+    repro_dir = tmp_path / "repro"
+    primary_dir.mkdir()
+    repro_dir.mkdir()
+    base = {
+        "schema_version": "ims-deadlock/g5-capture-record/v1",
+        "case_id": "G4-HELD-01",
+        "argv": ["python", "-m", "ims_deadlock.g4_protocol", "run", "G4-HELD-01"],
+        "freeze_id": "G4-FREEZE-DEVELOPMENT-TEST",
+        "git_head": "d" * 40,
+        "stdout_raw_sha256": "a" * 64,
+        "stdout_canonical_json_sha256": None,
+        "stderr_raw_sha256": "e" * 64,
+    }
+    (primary_dir / "record.json").write_text(json.dumps(base), encoding="utf-8")
+    (repro_dir / "record.json").write_text(
+        json.dumps({**base, "run_label": "repro"}), encoding="utf-8"
+    )
+
+    comparison = compare_capture_hashes(primary_dir, repro_dir)
+
+    assert comparison["records_valid"] is False
+    assert comparison["stdout_raw_sha256_match"] is True
+    assert comparison["stdout_canonical_json_sha256_match"] is False
+    assert comparison["match"] is False
+
+
+def test_compare_rejects_one_sided_noncanonical_stdout(
+    tmp_path: Path,
+) -> None:
+    primary_dir = tmp_path / "primary"
+    repro_dir = tmp_path / "repro"
+    primary_dir.mkdir()
+    repro_dir.mkdir()
+    base = {
+        "schema_version": "ims-deadlock/g5-capture-record/v1",
+        "case_id": "G4-HELD-01",
+        "argv": ["python", "-m", "ims_deadlock.g4_protocol", "run", "G4-HELD-01"],
+        "freeze_id": "G4-FREEZE-DEVELOPMENT-TEST",
+        "git_head": "d" * 40,
+        "stdout_raw_sha256": "a" * 64,
+        "stdout_canonical_json_sha256": None,
+        "stderr_raw_sha256": "e" * 64,
+    }
+    (primary_dir / "record.json").write_text(json.dumps(base), encoding="utf-8")
+    (repro_dir / "record.json").write_text(
+        json.dumps(
+            {
+                **base,
+                "run_label": "repro",
+                "stdout_canonical_json_sha256": "b" * 64,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    comparison = compare_capture_hashes(primary_dir, repro_dir)
+
+    assert comparison["records_valid"] is False
+    assert comparison["stdout_canonical_json_sha256_match"] is False
+    assert comparison["match"] is False
+
+
+def test_compare_missing_canonical_field_cannot_pose_as_explicit_none(
+    tmp_path: Path,
+) -> None:
+    primary_dir = tmp_path / "primary"
+    repro_dir = tmp_path / "repro"
+    primary_dir.mkdir()
+    repro_dir.mkdir()
+    base = {
+        "schema_version": "ims-deadlock/g5-capture-record/v1",
+        "case_id": "G4-HELD-01",
+        "argv": ["python", "-m", "ims_deadlock.g4_protocol", "run", "G4-HELD-01"],
+        "freeze_id": "G4-FREEZE-DEVELOPMENT-TEST",
+        "git_head": "d" * 40,
+        "stdout_raw_sha256": "a" * 64,
+        "stdout_canonical_json_sha256": None,
+        "stderr_raw_sha256": "e" * 64,
+    }
+    missing_canonical = {
+        key: value
+        for key, value in {**base, "run_label": "repro"}.items()
+        if key != "stdout_canonical_json_sha256"
+    }
+    (primary_dir / "record.json").write_text(json.dumps(base), encoding="utf-8")
+    (repro_dir / "record.json").write_text(
+        json.dumps(missing_canonical),
+        encoding="utf-8",
+    )
+
+    comparison = compare_capture_hashes(primary_dir, repro_dir)
+    canonical_payload = cast(
+        dict[str, object], comparison["stdout_canonical_json_sha256"]
+    )
+
+    assert comparison["records_valid"] is False
+    assert comparison["stdout_canonical_json_sha256_match"] is False
+    assert canonical_payload["repro"] is None
+    assert comparison["match"] is False
+
+
+def test_compare_malformed_partial_records_return_structured_refusal(
+    tmp_path: Path,
+) -> None:
+    primary_dir = tmp_path / "primary"
+    repro_dir = tmp_path / "repro"
+    primary_dir.mkdir()
+    repro_dir.mkdir()
+    base = {
+        "schema_version": "ims-deadlock/g5-capture-record/v1",
+        "case_id": "G4-HELD-01",
+        "argv": ["python", "-m", "ims_deadlock.g4_protocol", "run", "G4-HELD-01"],
+        "freeze_id": "G4-FREEZE-DEVELOPMENT-TEST",
+        "git_head": "d" * 40,
+        "stdout_raw_sha256": "a" * 64,
+        "stdout_canonical_json_sha256": "b" * 64,
+        "stderr_raw_sha256": "e" * 64,
+    }
+
+    for missing_field in [
+        "stdout_raw_sha256",
+        "stdout_canonical_json_sha256",
+        "stderr_raw_sha256",
+    ]:
+        (primary_dir / "record.json").write_text(json.dumps(base), encoding="utf-8")
+        malformed = {
+            key: value
+            for key, value in {**base, "run_label": "repro"}.items()
+            if key != missing_field
+        }
+        (repro_dir / "record.json").write_text(
+            json.dumps(malformed),
+            encoding="utf-8",
+        )
+
+        comparison = compare_capture_hashes(primary_dir, repro_dir)
+        raw_payload = cast(dict[str, object], comparison["stdout_raw_sha256"])
+
+        assert comparison["records_valid"] is False
+        assert comparison["match"] is False
+        assert raw_payload["primary"] == "a" * 64
+        assert raw_payload["match"] is (missing_field != "stdout_raw_sha256")
+        assert comparison[f"{missing_field}_match"] is False
+
+
+@pytest.mark.parametrize("missing_side", ["primary", "repro"])
+def test_compare_missing_stdout_raw_hash_on_either_side_is_structured_failure(
+    tmp_path: Path, missing_side: str
+) -> None:
+    primary_dir = tmp_path / "primary"
+    repro_dir = tmp_path / "repro"
+    primary_dir.mkdir()
+    repro_dir.mkdir()
+    base = {
+        "schema_version": "ims-deadlock/g5-capture-record/v1",
+        "case_id": "G4-HELD-01",
+        "argv": ["python", "-m", "ims_deadlock.g4_protocol", "run", "G4-HELD-01"],
+        "freeze_id": "G4-FREEZE-DEVELOPMENT-TEST",
+        "git_head": "d" * 40,
+        "stdout_raw_sha256": "a" * 64,
+        "stdout_canonical_json_sha256": "b" * 64,
+        "stderr_raw_sha256": "e" * 64,
+    }
+    primary = dict(base)
+    repro = {**base, "run_label": "repro"}
+    if missing_side == "primary":
+        del primary["stdout_raw_sha256"]
+    else:
+        del repro["stdout_raw_sha256"]
+    (primary_dir / "record.json").write_text(json.dumps(primary), encoding="utf-8")
+    (repro_dir / "record.json").write_text(json.dumps(repro), encoding="utf-8")
+
+    comparison = compare_capture_hashes(primary_dir, repro_dir)
+    raw_payload = cast(dict[str, object], comparison["stdout_raw_sha256"])
+
+    assert comparison["records_valid"] is False
+    assert comparison["stdout_raw_sha256_match"] is False
+    assert comparison["match"] is False
+    assert raw_payload[missing_side] is None
+
+
 def test_compare_invalid_schema_or_missing_hash_fields_cannot_match(
     tmp_path: Path,
 ) -> None:
