@@ -164,6 +164,40 @@ deadlock-free。
 
 预期结论：standard nonblocking 是存在性延拓性质；要推出几乎必然完成需要额外进展、公平性或 CTMC 非爆炸假设。
 
+## CE-G6-BYPASS 局部核当前阻塞不推出一般 TransitionSpec 永久失败
+
+状态：已实例化/机器回归通过。
+
+目标击穿命题：任意 `TransitionSpec` 模型中，只要当前状态存在 inclusion-minimal
+local closed blocking kernel，就可直接把该状态作为 completion 不可达的
+`D_local` bad absorbing target。
+
+最小配置：
+
+- 三个容量均为 1 的资源 `r1,r2,r3` 与三个作业 `j1,j2,j3`；
+- `j1` 持有 `r1` 请求 `r2`，`j2` 持有 `r2` 请求 `r1`，当前形成两作业局部核；
+- `j3` 持有 `r3`，随后执行 `release-r3`；
+- `j1` 在相同 mode 下存在与当前 request 脱钩的 `j1-bypass-on-r3`，继而
+  `j2-finish-on-r1`，全批完成。
+
+最短事件前缀：
+
+`release-r3 -> j1-bypass-on-r3 -> j2-finish-on-r1`。
+
+失败证据：完整 generated stable LTS 从局部候选状态可达 `F`。G6 partition
+返回 `local_core_completion_reachable`，并保留上述最短事件路径。
+
+定理修正：
+
+- 结构性不可完成引理收缩到 request-closed progress discipline（A2b）；
+- 通用有限实现先区分 `K_local` 候选与 `D_local` 坏命中；
+- 只有完整、非截断 LTS 的 completion-nonreachability audit 通过后，候选才
+  进入 `D_local`；
+- 该有限图审计不升级为一般结构定理。
+
+用途：synthetic regression / theorem-boundary case；不得作为 held-out
+confirmation。
+
 ## 登记规则
 
 状态：定义。
