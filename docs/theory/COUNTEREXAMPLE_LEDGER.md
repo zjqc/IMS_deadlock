@@ -160,7 +160,7 @@ for probability-one hit of the selected stopped target.
 
 Concrete stopped chain:
 
-- states: `s0`, selected success state `F`, and unselected state `c`;
+- states: `s0`, selected success state `F`, so `A_stop=F` in this witness, and unselected state `c`;
 - positive transitions: `s0 -> F`, `s0 -> c`, and `c -> c`;
 - rates: `lambda_F > 0` for `s0 -> F` and `lambda_c > 0` for `s0 -> c`.
 

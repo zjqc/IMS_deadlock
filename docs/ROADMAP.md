@@ -299,7 +299,7 @@ Current boundary: `selected_stopping_targets` are `D_global`, `D_local`, and
 `P_policy` is separate; `S_reach` and `S_T` are derived and nonselectable.
 `S_reach` is support graph reachability only. `S_T` is certified by the finite
 positive-rate stopped-CTMC closed-SCC/reverse-basin certificate, where SCC
-closedness is checked against the full stopped graph including selected `A`, with
+closedness is checked against the full stopped graph including selected `A_stop`, with
 `absorption_domain_hash` binding the domain identity. Missing rates remain
 distinct from explicit empty rates. G6-B remains OPEN/PENDING,
 `case_creation_authorized=false`, and `scientific_execution_authorized=false`;

@@ -16,7 +16,7 @@
 | `E` | 离散事件集合 | 定义 |
 | `E_c, E_u` | 可控事件与不可控事件 | 定义 |
 | `D, F` | CTMC 中的死锁吸收类与完成吸收类 | 定义 |
-| `S_reach` | support graph 中存在到 selected A 路径的诊断状态集合 | 定义 |
+| `S_reach` | support graph 中存在到 `A_stop` 路径的诊断状态集合 | 定义 |
 | `S_T` | certified probability-one absorption domain, `S_T = T \ B_closed` | 定义 |
 | `B_closed` | unselected closed SCCs 的 reverse basin | 定义 |
 | `A_abs` | global gate: `B_closed = empty` over claimed nonabsorbing domain | 定义 |
@@ -57,7 +57,7 @@
 | `mathcal T` | IMS 的闭包归一化有限 LTS，避免与 CTMC 暂态集合混用 | 定义 |
 | `W_s` | 状态依赖等待结构；可为 job-resource 二部图或容量敏感超图 | 定义 |
 | `K` | 封闭阻塞核，含阻塞工件、资源需求边和不可释放证据 | 拟证明 |
-| `C` | 资源请求有向环；只在受限单实例子类中候选为充分证书 | 反例 |
+| `C` | resource-request directed cycle; only in restricted single-instance subclasses can it be a sufficient-certificate candidate | Counterexample boundary |
 | `Theta` | IMS 模型参数，包括容量、WIP、路线混合、速率和预约规则 | 定义 |
 
 ## Petri 网桥
@@ -76,7 +76,7 @@
 | 符号 | 含义 | 状态 |
 | --- | --- | --- |
 | `Q` | 有限 CTMC 生成元 | 定义 |
-| `Q_{S_T,S_T}, Q_{S_T,D}, Q_{S_T,F}` | 暂态到暂态、暂态到死锁、暂态到完成的生成元分块 | 定义 |
+| `Q_{S_T,S_T}, Q_{S_T,D_sel}, Q_{S_T,F}` | 暂态到暂态、暂态到死锁、暂态到完成的生成元分块 | 定义 |
 | `h_i` | 从状态 `i` 先达死锁类 `D` 的 committor | 文献基线 |
 | `tau_i` | 从状态 `i` 到任一吸收类的平均吸收时间 | 文献基线 |
 | `theta` | 模型参数或速率参数 | 定义 |
@@ -97,12 +97,13 @@
 
 | Symbol | Meaning | Status |
 | --- | --- | --- |
-| `A` | Selected stopped target `D_global union D_local union F` | Definition |
-| `T` | Nonabsorbing set `V \ A` | Definition |
-| `S_reach` | States in the complete stopped-LTS support graph with at least one path to `A` | Diagnostic, nonselectable |
-| `C` | Unselected closed SCC with membership `C subset T`; closedness is checked against all outgoing positive-rate edges in the full stopped graph, including edges to selected A | Certificate component |
+| `D_sel` | Selected bad target union, `D_sel := D_global union D_local` | Definition |
+| `A_stop` | Selected stopped target, `A_stop := D_sel union F` | Definition |
+| `T` | Nonabsorbing set `V \ A_stop` | Definition |
+| `S_reach` | States in the complete stopped-LTS support graph with at least one path to `A_stop` | Diagnostic, nonselectable |
+| `C_closed` | Unselected closed SCC with membership `C_closed subset T`; closedness is checked against all outgoing positive-rate edges in the full stopped graph, including edges to selected `A_stop` | Certificate component |
 | `B_closed` | Reverse basin in `T` of all unselected closed SCCs | Certificate component |
-| `S_T` | `T \ B_closed`; states that hit `A` with probability one in the finite positive-rate stopped CTMC | Certified absorption domain |
+| `S_T` | `T \ B_closed`; states that hit `A_stop` with probability one in the finite positive-rate stopped CTMC | Certified absorption domain |
 | `A_abs` | Global-domain gate `B_closed = empty` over the claimed nonabsorbing analysis domain | Strict protocol gate |
 | `rate_manifest_hash` | Hash of the full declared rate manifest; absent rates and explicit empty rates are distinct | Nullable hash |
 | `positive_rate_graph_hash` | Identity of the realized positive-rate stopped graph used by the certificate | Nullable hash |

@@ -341,9 +341,9 @@ supervisor 或固定 WIP 输入本身不能替代这些 estimand。
 ## A-G6B-ABS Certified Absorption Domain
 
 Scope: G6-B finite complete positive-rate stopped CTMCs only. The selected
-stopped target is `A = D_global union D_local union F`; `T = V \ A`.
+stopped target is `D_sel := D_global union D_local; A_stop := D_sel union F`; `T = V \ A_stop`.
 `S_reach` is a complete stopped-LTS support graph diagnostic. `S_T` is derived
-from positive-rate graph closed-class analysis: unselected closed SCCs have membership in `T`, but closedness is checked against every outgoing positive-rate edge in the full stopped graph, including edges to selected A; those SCCs produce `B_closed`, and `S_T = T \ B_closed`.
+from positive-rate graph closed-class analysis: unselected closed SCCs have membership in `T`, but closedness is checked against every outgoing positive-rate edge in the full stopped graph, including edges to selected A_stop; those SCCs produce `B_closed`, and `S_T = T \ B_closed`.
 
 Assumption: the state space is finite, the stopped LTS is complete and
 nontruncated, all realized positive-rate events are finite and positive, the

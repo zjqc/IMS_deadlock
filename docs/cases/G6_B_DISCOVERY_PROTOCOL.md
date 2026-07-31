@@ -46,15 +46,15 @@ candidate alone.
 The live G6-B ontology is typed. It is not a flat objective-class list.
 
 - `selected_stopping_targets`: bad hit sets are exactly `D_global` and
-  `D_local`; the success class is exactly `F`. These define the stopped target
-  set `A = D_global union D_local union F`.
+  `D_local`; the success class is exactly `F`. These define `D_sel := D_global union D_local` and the selected stopped
+  target `A_stop := D_sel union F`.
 - `unselected_plant_terminal_classes`: `R_livelock` and `R_terminal`. These are
   plant classifications and are not selectable bad or success targets.
 - `policy_analysis_class`: `P_policy`. It is outside the plant partition and is
   not a selectable target.
 - derived, nonselectable sets: `S_reach` is the diagnostic complete stopped-LTS
-  support graph basin with at least one support path to `A`; `S_T` is the
-  certified finite positive-rate stopped-CTMC domain whose states hit `A` with
+  support graph basin with at least one support path to `A_stop`; `S_T` is the
+  certified finite positive-rate stopped-CTMC domain whose states hit `A_stop` with
   probability one.
 
 Exact and DES rows must use the same selected stopping targets, the same
@@ -217,20 +217,20 @@ No scientific execution is authorized in this task.
 
 ## Certified Absorption-Domain Gate
 
-The stopped target set is `A = D_global union D_local union F`; the remaining
-states are `T = V \ A`. `S_reach` is computed only on the complete stopped-LTS
-positive-support graph and is diagnostic: a support path to `A` is necessary for
+The stopped target set is `D_sel := D_global union D_local; A_stop := D_sel union F`; the remaining
+states are `T = V \ A_stop`. `S_reach` is computed only on the complete stopped-LTS
+positive-support graph and is diagnostic: a support path to `A_stop` is necessary for
 almost-sure absorption, but it is not sufficient.
 
 For the finite complete positive-rate stopped CTMC, find every unselected
-closed SCC `C subset T`. Membership lies in `T`, but closedness is checked
+closed SCC `C_closed subset T`. Membership lies in `T`, but closedness is checked
 against every outgoing positive-rate edge in the full stopped graph: no state in
-`C` may have an outgoing positive-rate edge to `(T \ C)` or to selected A.
+`C` may have an outgoing positive-rate edge to `(T \ C)` or to selected A_stop.
 A state with `s -> F` is therefore not in an unselected closed SCC. Let
 `B_closed` be the reverse basin of those closed SCCs and let
 `S_T = T \ B_closed`. Under these
 assumptions, and only under these assumptions, `x in S_T` iff
-`P_x(tau_A < infinity) = 1`. The stronger global-domain gate `A_abs` requires
+`P_x(tau_{A_stop} < infinity) = 1`. The stronger global-domain gate `A_abs` requires
 `B_closed = empty` over the claimed nonabsorbing analysis domain. Production G4
 integration still refuses partial-domain solves; committor, mean-time,
 sensitivity, and Doob-h payloads are restricted to certified `S_T`.

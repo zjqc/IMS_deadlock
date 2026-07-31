@@ -519,6 +519,17 @@ def test_g6b_theory_documents_lock_typed_absorption_domain() -> None:
     probability_text = probability_path.read_text(encoding="utf-8")
     assumption_text = assumption_path.read_text(encoding="utf-8")
     symbol_text = symbol_path.read_text(encoding="utf-8")
+    active_scoped_text = "\n".join(
+        [
+            g6b_protocol_text,
+            theorem_text,
+            probability_text,
+            assumption_text,
+            symbol_text,
+            counterexample_ledger_text,
+        ]
+    )
+
     for document_text in [
         g6b_protocol_text,
         theorem_text,
@@ -530,7 +541,7 @@ def test_g6b_theory_documents_lock_typed_absorption_domain() -> None:
         assert "unselected closed SCC" in document_text
         assert "full stopped" in document_text
         assert "outgoing" in document_text
-        assert "selected A" in document_text
+        assert "A_stop" in document_text
 
     assert "rate_manifest_hash" in symbol_text
     assert "absorption_domain_hash" in symbol_text
@@ -571,9 +582,39 @@ def test_g6b_theory_documents_lock_typed_absorption_domain() -> None:
     assert "`R_c`" not in symbol_text
     assert "| `B` |" not in symbol_text
 
+    assert len(_symbol_rows(symbol_text, "A")) == 1
+    assert "AGV" in _symbol_rows(symbol_text, "A")[0]
+    assert len(_symbol_rows(symbol_text, "C")) == 1
+    assert "directed cycle" in _symbol_rows(symbol_text, "C")[0]
+    assert len(_symbol_rows(symbol_text, "A_stop")) == 1
+    assert len(_symbol_rows(symbol_text, "D_sel")) == 1
+    assert len(_symbol_rows(symbol_text, "C_closed")) == 1
+    assert "D_sel := D_global union D_local" in active_scoped_text
+    assert "A_stop := D_sel union F" in active_scoped_text
+    assert "T = V \\ A_stop" in active_scoped_text
+    assert "C_closed subset T" in active_scoped_text
+    assert "outgoing" in active_scoped_text
+    assert "A_stop" in active_scoped_text
+    assert "S_reach" in active_scoped_text
+    assert "path to `A_stop`" in active_scoped_text
+    assert "S_T = T \\ B_closed" in active_scoped_text
+    assert "tau_{D_sel}" in probability_text
+    assert "tau_{A_stop}" in probability_text
+    assert "Q_{S_T,D_sel}" in probability_text
+    assert "C subset T" not in active_scoped_text
+    assert "selected `A`" not in active_scoped_text
+    assert "selected A." not in active_scoped_text
+    assert "selected A," not in active_scoped_text
+
 
 def _symbol_row(symbol_text: str, symbol: str) -> str:
     for line in symbol_text.splitlines():
         if line.startswith(f"| `{symbol}` |"):
             return line
     raise AssertionError(f"missing symbol row: {symbol}")
+
+
+def _symbol_rows(symbol_text: str, symbol: str) -> list[str]:
+    return [
+        line for line in symbol_text.splitlines() if line.startswith(f"| `{symbol}` |")
+    ]
