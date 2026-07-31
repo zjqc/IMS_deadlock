@@ -4,6 +4,7 @@ from typing import Any, cast
 
 import pytest
 
+from ims_deadlock.analysis import StableLTS
 from ims_deadlock.confirmation import ConfirmationCase, load_confirmation_case
 from ims_deadlock.g4_instances import (
     AdversarialBoundaryParameters,
@@ -31,6 +32,7 @@ from ims_deadlock.g4_protocol import (
 from ims_deadlock.terminal_classes import (
     G6_CTM_GENERATOR_PROVENANCE,
     TerminalPartitionError,
+    TerminalStoppingPartition,
     VersionedEstimandSpec,
 )
 
@@ -594,38 +596,34 @@ def test_d_global_only_estimand_refuses_model_with_local_core() -> None:
 def test_ctmc_derivation_refuses_before_generator_when_global_certificate_fails(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    cell = BidirectionalGridCell(
-        cell_id="DEV_CERTIFIER_REFUSAL",
-        machine_capacity=1,
-        buffer_capacity=1,
-        agv_count=1,
-        forward_wip=1,
-        reverse_wip=0,
-        service_rate=1.0,
-        transfer_rate=0.8,
-        release_rate=0.4,
-        state_bound=128,
-    )
+    case = load_confirmation_case("G4_IMS_PARAMETER_GRID", "g4")
+    protocol = parse_g4_protocol_case(case)
+    assert isinstance(protocol, GridProtocol)
+    cell = next(item for item in protocol.cells if item.cell_id == "G01_FWD_DAG")
     built = build_bidirectional_island_case(cell)
     sentinel = TerminalPartitionError(
         "sentinel_global_certification_failed",
         "sentinel global certification failure",
         {"boundary": "before_absorbing_ctmc_constructor"},
     )
-    constructor_called = False
+    certifier_calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+    constructor_call_count = 0
 
-    def refusing_certifier(*_args: object, **_kwargs: object) -> object:
+    def refusing_certifier(
+        *args: object,
+        **kwargs: object,
+    ) -> object:
+        certifier_calls.append((args, kwargs))
         raise sentinel
 
     def forbidden_constructor(*_args: object, **_kwargs: object) -> object:
-        nonlocal constructor_called
-        constructor_called = True
+        nonlocal constructor_call_count
+        constructor_call_count += 1
         raise AssertionError("AbsorbingCTMC constructed before certification")
 
     monkeypatch.setattr(
         "ims_deadlock.g4_instances.certify_absorption_domain",
         refusing_certifier,
-        raising=False,
     )
     monkeypatch.setattr(
         "ims_deadlock.g4_instances.AbsorbingCTMC",
@@ -637,7 +635,32 @@ def test_ctmc_derivation_refuses_before_generator_when_global_certificate_fails(
 
     assert excinfo.value is sentinel
     assert excinfo.value.code == "sentinel_global_certification_failed"
-    assert constructor_called is False
+    assert constructor_call_count == 0
+    assert len(certifier_calls) == 1
+
+    args, kwargs = certifier_calls[0]
+    assert len(args) == 3
+    partition = args[0]
+    stable_lts = args[1]
+    event_rates = args[2]
+    assert isinstance(partition, TerminalStoppingPartition)
+    assert isinstance(stable_lts, StableLTS)
+    assert stable_lts.truncated is False
+    assert tuple(sorted(partition.declared_transition_event_names)) == tuple(
+        sorted(built.event_rates)
+    )
+    assert event_rates == built.event_rates
+    assert event_rates is built.event_rates
+    assert kwargs == {
+        "selected_bad_state_ids": partition.selected_bad_state_ids,
+        "selected_success_state_ids": partition.f_state_ids,
+        "policy_filter_declaration": {
+            "version": "ims-deadlock/g6-policy-filter-declaration/v1",
+            "mode": "no_policy_filter",
+            "excluded_plant_arcs": [],
+        },
+        "require_global": True,
+    }
 
 
 def test_ctmc_derivation_refuses_a_truncated_generated_lts() -> None:
