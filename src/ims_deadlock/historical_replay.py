@@ -1118,8 +1118,13 @@ def _terminal_d_local_verified(result: Mapping[str, object]) -> bool:
 def read_historical_terminal_classification(
     payload: Mapping[str, object],
 ) -> HistoricalTerminalClassification | None:
-    terminal_value = payload.get("terminal_classification")
-    terminal = terminal_value if isinstance(terminal_value, Mapping) else payload
+    if "terminal_classification" in payload:
+        terminal_value = payload.get("terminal_classification")
+        if not isinstance(terminal_value, Mapping):
+            return None
+        terminal = terminal_value
+    else:
+        terminal = payload
     provenance = terminal.get("lts_provenance_audit")
     local_audit = terminal.get("local_bad_soundness_audit")
     if not isinstance(provenance, Mapping) or provenance.get("verified") is not True:

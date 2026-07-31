@@ -1979,6 +1979,25 @@ def test_v3_terminal_payload_reads_only_certified_derived_s_t() -> None:
     )
 
 
+def test_direct_terminal_payload_without_wrapper_remains_supported() -> None:
+    classification = replay.read_historical_terminal_classification(
+        _v3_terminal_classification()
+    )
+
+    assert classification == replay.HistoricalTerminalClassification(
+        classification_version="ims-deadlock/g6-terminal-stopping-partition/v3",
+        d_local_state_ids=("s_dead",),
+        certified_s_t_state_ids=("s0", "s_dead"),
+    )
+
+
+def test_malformed_terminal_classification_wrapper_fails_closed() -> None:
+    payload = _v3_terminal_classification()
+    payload["terminal_classification"] = "not-a-mapping"
+
+    assert replay.read_historical_terminal_classification(payload) is None
+
+
 @pytest.mark.parametrize(
     "mutator",
     [
