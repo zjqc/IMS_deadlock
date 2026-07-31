@@ -17,6 +17,7 @@ import subprocess
 import sys
 import time
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 
@@ -41,6 +42,31 @@ SCHEDULE_LOCK_INCIDENT_SCHEMA = (
 SCHEDULE_LOCK_CONTENTION_WAIT_SECONDS = 30.0
 SCHEDULE_LOCK_STALE_SECONDS = 60.0
 SCHEDULE_LOCK_INITIALIZATION_GRACE_SECONDS = 0.25
+HISTORICAL_TERMINAL_CLASSIFICATION_V2 = "ims-deadlock/g6-terminal-stopping-partition/v2"
+HISTORICAL_TERMINAL_CLASSIFICATION_V3 = "ims-deadlock/g6-terminal-stopping-partition/v3"
+HISTORICAL_ABSORPTION_DOMAIN_CERTIFICATE_VERSION = (
+    "ims-deadlock/g6-absorption-domain-certificate/v1"
+)
+HISTORICAL_ABSORPTION_DOMAIN_ALGORITHM_VERSION = (
+    "finite-positive-rate-stopped-ctmc-scc-domain/v1"
+)
+HISTORICAL_CERTIFIED_STATUS = "certified_finite_positive_rate_stopped_ctmc"
+_HISTORICAL_CERTIFICATE_ASSUMPTION_FLAGS = (
+    "finite_state_space_verified",
+    "complete_nontruncated_lts_verified",
+    "lts_generation_provenance_verified",
+    "positive_finite_rate_manifest_verified",
+    "selected_target_identity_verified",
+    "policy_filter_identity_verified",
+)
+_HISTORICAL_CERTIFICATE_IDENTITY_HASHES = (
+    "state_space_hash",
+    "partition_hash",
+    "rate_manifest_hash",
+    "positive_rate_graph_hash",
+    "policy_filter_hash",
+    "absorption_domain_hash",
+)
 CASE_IDS = (
     "G4_CRP_S4PR_AGREE",
     "G4_CRP_OUTSIDE_S4PR",
@@ -178,6 +204,13 @@ EXPECTED_EXECUTION_SCHEDULE: Mapping[str, object] = {
 
 class ReplayError(RuntimeError):
     """Raised for historical replay lock, capture, compare, or summary failures."""
+
+
+@dataclass(frozen=True)
+class HistoricalTerminalClassification:
+    classification_version: str
+    d_local_state_ids: tuple[str, ...]
+    certified_s_t_state_ids: tuple[str, ...] | None
 
 
 def canonical_json_sha256(payload: object) -> str:
@@ -1082,25 +1115,114 @@ def _terminal_d_local_verified(result: Mapping[str, object]) -> bool:
     return d_local is not None and bool(d_local)
 
 
-def _terminal_d_local(payload: Mapping[str, object]) -> list[str] | None:
-    terminal = payload.get("terminal_classification")
-    if not isinstance(terminal, Mapping):
-        return None
+def read_historical_terminal_classification(
+    payload: Mapping[str, object],
+) -> HistoricalTerminalClassification | None:
+    terminal_value = payload.get("terminal_classification")
+    terminal = terminal_value if isinstance(terminal_value, Mapping) else payload
     provenance = terminal.get("lts_provenance_audit")
     local_audit = terminal.get("local_bad_soundness_audit")
     if not isinstance(provenance, Mapping) or provenance.get("verified") is not True:
         return None
     if not isinstance(local_audit, Mapping) or local_audit.get("verified") is not True:
         return None
+    version = terminal.get("classification_version")
     classes = terminal.get("classes")
-    if not isinstance(classes, Mapping):
+    if not isinstance(version, str) or not isinstance(classes, Mapping):
         return None
-    d_local = classes.get("D_local")
-    if not isinstance(d_local, list) or not all(
-        isinstance(item, str) for item in d_local
+    d_local = _historical_string_tuple(classes.get("D_local"))
+    if d_local is None:
+        return None
+    if version == HISTORICAL_TERMINAL_CLASSIFICATION_V2:
+        return HistoricalTerminalClassification(
+            classification_version=version,
+            d_local_state_ids=d_local,
+            certified_s_t_state_ids=None,
+        )
+    if version != HISTORICAL_TERMINAL_CLASSIFICATION_V3:
+        return None
+    certified_s_t = _historical_certified_s_t_state_ids(terminal)
+    if certified_s_t is None:
+        return None
+    return HistoricalTerminalClassification(
+        classification_version=version,
+        d_local_state_ids=d_local,
+        certified_s_t_state_ids=certified_s_t,
+    )
+
+
+def _historical_certified_s_t_state_ids(
+    terminal: Mapping[str, object],
+) -> tuple[str, ...] | None:
+    certificate = terminal.get("absorption_domain_certificate")
+    if not isinstance(certificate, Mapping):
+        return None
+    if certificate.get("version") != HISTORICAL_ABSORPTION_DOMAIN_CERTIFICATE_VERSION:
+        return None
+    if (
+        certificate.get("algorithm_version")
+        != HISTORICAL_ABSORPTION_DOMAIN_ALGORITHM_VERSION
     ):
         return None
-    return d_local
+    if certificate.get("certification_status") != HISTORICAL_CERTIFIED_STATUS:
+        return None
+    if certificate.get("reason_codes") != []:
+        return None
+    assumptions = certificate.get("assumptions")
+    if not isinstance(assumptions, Mapping):
+        return None
+    if any(
+        assumptions.get(flag) is not True
+        for flag in _HISTORICAL_CERTIFICATE_ASSUMPTION_FLAGS
+    ):
+        return None
+    identity = certificate.get("identity")
+    if not isinstance(identity, Mapping):
+        return None
+    if any(
+        not isinstance(identity.get(field), str) or identity.get(field) == ""
+        for field in _HISTORICAL_CERTIFICATE_IDENTITY_HASHES
+    ):
+        return None
+    hashes = terminal.get("hashes")
+    if not isinstance(hashes, Mapping):
+        return None
+    if hashes.get("absorption_domain_hash") != identity.get("absorption_domain_hash"):
+        return None
+    derived = terminal.get("derived_state_sets")
+    if not isinstance(derived, Mapping):
+        return None
+    s_reach = derived.get("S_reach")
+    if not isinstance(s_reach, Mapping):
+        return None
+    if s_reach.get("positive_rate_verified") is not True:
+        return None
+    s_t = derived.get("S_T")
+    if not isinstance(s_t, Mapping):
+        return None
+    if s_t.get("certification_status") != HISTORICAL_CERTIFIED_STATUS:
+        return None
+    if s_t.get("reason_codes") != []:
+        return None
+    return _historical_string_tuple(s_t.get("state_ids"))
+
+
+def _historical_string_tuple(value: object) -> tuple[str, ...] | None:
+    if not isinstance(value, list):
+        return None
+    result: list[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            return None
+        result.append(item)
+    return tuple(result)
+
+
+def _terminal_d_local(payload: Mapping[str, object]) -> list[str] | None:
+    classification = read_historical_terminal_classification(payload)
+    if classification is None:
+        return None
+    return list(classification.d_local_state_ids)
 
 
 def _safe_output_root(path: Path, bundle_root: Path) -> Path:
