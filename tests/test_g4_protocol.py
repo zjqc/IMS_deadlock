@@ -481,7 +481,30 @@ def test_development_grid_derives_case_bound_absorbing_ctmc() -> None:
     assert derived.ctmc.generator_provenance == G6_CTM_GENERATOR_PROVENANCE
     assert derived.terminal_classification is not None
     assert derived.estimand is not None
-    assert "hashes" in derived.estimand
+    classification = derived.terminal_classification.to_json_dict()
+    assert classification["classification_version"] == (
+        "ims-deadlock/g6-terminal-stopping-partition/v3"
+    )
+    classes = cast(dict[str, object], classification["classes"])
+    assert "P_policy" not in classes
+    assert "S_T" not in classes
+    derived_state_sets = cast(dict[str, object], classification["derived_state_sets"])
+    s_t = cast(dict[str, object], derived_state_sets["S_T"])
+    assert s_t["certification_status"] == (
+        "certified_finite_positive_rate_stopped_ctmc"
+    )
+    assert derived_state_sets["non_almost_sure_absorbing_state_ids"] == []
+    estimand = derived.estimand
+    hashes = cast(dict[str, object], estimand["hashes"])
+    for name in (
+        "rate_manifest_hash",
+        "positive_rate_graph_hash",
+        "policy_filter_hash",
+        "absorption_domain_hash",
+        "estimand_id",
+    ):
+        assert isinstance(hashes[name], str)
+        assert hashes[name]
 
 
 def test_g03_balanced_tight_derives_with_local_first_hit_estimand() -> None:
@@ -523,6 +546,11 @@ def test_medium_protocol_payload_includes_terminal_classification_and_estimand()
     assert classification["policy_analysis_classes"] == {"P_policy": []}
     derived_state_sets = cast(dict[str, object], classification["derived_state_sets"])
     assert set(derived_state_sets) >= {"S_reach", "S_T"}
+    s_t = cast(dict[str, object], derived_state_sets["S_T"])
+    assert s_t["certification_status"] == (
+        "certified_finite_positive_rate_stopped_ctmc"
+    )
+    assert derived_state_sets["non_almost_sure_absorbing_state_ids"] == []
     provenance = cast(dict[str, object], classification["lts_provenance_audit"])
     assert provenance["method"] == (
         "deterministic_reenumeration_from_stable_initial_v1"
@@ -534,7 +562,15 @@ def test_medium_protocol_payload_includes_terminal_classification_and_estimand()
     assert isinstance(estimand, dict)
     assert estimand["selected_bad_classes"] == ["D_global", "D_local"]
     hashes = cast(dict[str, object], estimand["hashes"])
-    assert "estimand_id" in hashes
+    for name in (
+        "rate_manifest_hash",
+        "positive_rate_graph_hash",
+        "policy_filter_hash",
+        "absorption_domain_hash",
+        "estimand_id",
+    ):
+        assert isinstance(hashes[name], str)
+        assert hashes[name]
     des_crosscheck = cast(dict[str, object], result["des_crosscheck"])
     assert des_crosscheck["replicate_stream_count"] == 1
 
@@ -553,6 +589,55 @@ def test_d_global_only_estimand_refuses_model_with_local_core() -> None:
 
     assert excinfo.value.code == "d_global_only_estimand_refuses_local_core"
     assert excinfo.value.details["selected_bad_classes"] == ["D_global"]
+
+
+def test_ctmc_derivation_refuses_before_generator_when_global_certificate_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cell = BidirectionalGridCell(
+        cell_id="DEV_CERTIFIER_REFUSAL",
+        machine_capacity=1,
+        buffer_capacity=1,
+        agv_count=1,
+        forward_wip=1,
+        reverse_wip=0,
+        service_rate=1.0,
+        transfer_rate=0.8,
+        release_rate=0.4,
+        state_bound=128,
+    )
+    built = build_bidirectional_island_case(cell)
+    sentinel = TerminalPartitionError(
+        "sentinel_global_certification_failed",
+        "sentinel global certification failure",
+        {"boundary": "before_absorbing_ctmc_constructor"},
+    )
+    constructor_called = False
+
+    def refusing_certifier(*_args: object, **_kwargs: object) -> object:
+        raise sentinel
+
+    def forbidden_constructor(*_args: object, **_kwargs: object) -> object:
+        nonlocal constructor_called
+        constructor_called = True
+        raise AssertionError("AbsorbingCTMC constructed before certification")
+
+    monkeypatch.setattr(
+        "ims_deadlock.g4_instances.certify_absorption_domain",
+        refusing_certifier,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        "ims_deadlock.g4_instances.AbsorbingCTMC",
+        forbidden_constructor,
+    )
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        derive_absorbing_ctmc(built)
+
+    assert excinfo.value is sentinel
+    assert excinfo.value.code == "sentinel_global_certification_failed"
+    assert constructor_called is False
 
 
 def test_ctmc_derivation_refuses_a_truncated_generated_lts() -> None:

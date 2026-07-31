@@ -685,16 +685,7 @@ def test_selected_reachable_s_t_differs_from_all_nonabsorbing() -> None:
     s_reach = cast(dict[str, object], derived_state_sets["S_reach"])
     assert s_reach["state_ids"] == ["s0"]
 
-    with pytest.raises(TerminalPartitionError) as excinfo:
-        partition_stable_lts(
-            model,
-            graph,
-            (_event("finish"),),
-            require_selected_absorption=True,
-        )
-    assert excinfo.value.code == "unreachable_nonabsorbing_state"
-    assert excinfo.value.details["unreachable_state_ids"] == ["s2"]
-    assert excinfo.value.details["terminal_scc_state_ids"] == ["s2"]
+    assert partition.unreachable_nonabsorbing_state_ids == ("s2",)
 
 
 def test_partition_hash_is_independent_of_selected_bad_union() -> None:

@@ -544,7 +544,6 @@ def partition_stable_lts(
     *,
     event_rates: Mapping[str, float] | None = None,
     estimand_spec: VersionedEstimandSpec = DEFAULT_ESTIMAND_SPEC,
-    require_selected_absorption: bool = False,
     verify_generated_lts: bool = False,
 ) -> TerminalStoppingPartition:
     """Classify reachable stable states before deriving a stopped estimand."""
@@ -723,17 +722,6 @@ def partition_stable_lts(
         for state_id in transient_ids
         if state_id not in set(selected_reachable_ids)
     )
-    if require_selected_absorption and unreachable_nonabsorbing_ids:
-        _raise(
-            "unreachable_nonabsorbing_state",
-            "nonabsorbing state cannot reach selected bad or success absorption",
-            {
-                "unreachable_state_ids": list(unreachable_nonabsorbing_ids),
-                "terminal_scc_state_ids": sorted(
-                    set(r_terminal_ids) | set(r_livelock_ids)
-                ),
-            },
-        )
     plant_arcs = tuple(
         sorted(
             (arc.source, arc.event, arc.target)
@@ -1540,34 +1528,6 @@ def _validated_rate_manifest_for_certification(
             {"event": extra[0], "extra_event_names": extra},
         )
     return rates
-
-
-def _validate_selected_absorption(
-    stable_lts: StableLTS,
-    *,
-    selected_bad: set[str],
-    selected_success: set[str],
-    classified_closed: set[str],
-) -> None:
-    selected = selected_bad | selected_success
-    can_reach = set(selected) | set(
-        _selected_reachable_nonabsorbing(
-            stable_lts,
-            selected_absorbing=selected,
-            nonabsorbing={record.state_id for record in stable_lts.states} - selected,
-        )
-    )
-    bad = sorted(
-        state_id
-        for state_id in classified_closed
-        if state_id not in selected and state_id not in can_reach
-    )
-    if bad:
-        _raise(
-            "unselected_closed_class_unreachable_to_estimand",
-            "reachable unselected closed class cannot reach selected bad or success",
-            {"state_ids": bad},
-        )
 
 
 def _state_space_payload(stable_lts: StableLTS) -> dict[str, object]:
