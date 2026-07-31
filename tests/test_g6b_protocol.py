@@ -601,6 +601,8 @@ def test_g6b_theory_documents_lock_typed_absorption_domain() -> None:
     assert "A_stop" in active_scoped_text
     assert "S_reach" in active_scoped_text
     assert "path to `A_stop`" in active_scoped_text
+    assert "到 `A_stop` 的 support path" in theorem_text
+    assert "到 `A` 的 support path" not in theorem_text
     assert "S_T = T \\ B_closed" in active_scoped_text
     assert "h_i = P_i(tau_{D_sel} < tau_F)" in probability_text
     assert "conditioning on first hitting `D_sel`" in probability_text

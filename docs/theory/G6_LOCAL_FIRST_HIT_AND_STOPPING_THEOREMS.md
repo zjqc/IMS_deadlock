@@ -155,7 +155,7 @@ E[T_L | T_L < T_F]  and  E[T_G | T_G < T_F]
 4. 对非 `F/D_global` 状态枚举 all-minimal local kernels，先标记为 `K_local` 候选并保存 certificate family。
 5. 若已证明 A2b，可由引理 3.2 把候选认定为 `D_local`；通用实现则在完整 LTS 上检查每个候选到 `F` 的可达性。任一候选可达 `F` 时返回最短事件反例并拒绝；全部不可达时记录 `local_bad_soundness_audit` 并标记 `D_local`。
 6. 在剩余状态图上求 SCC；无出边 SCC 归为 `R_terminal` 或 `R_livelock`。
-7. 按 `VersionedEstimandSpec` 选择 bad hit union 和 success class，形成 `D_sel := D_global union D_local; A_stop := D_sel union F`。`S_reach` 只是在 complete stopped-LTS support graph 中存在到 `A` 的 support path 的诊断集合。`S_T` 必须由 finite positive-rate stopped CTMC 的 unselected closed SCC / reverse-basin certificate 得出；若全域声明下 `B_closed` 非空，拒绝并报告 `non_almost_sure_absorption_domain`。
+7. 按 `VersionedEstimandSpec` 选择 bad hit union 和 success class，形成 `D_sel := D_global union D_local; A_stop := D_sel union F`。`S_reach` 只是在 complete stopped-LTS support graph 中存在到 `A_stop` 的 support path 的诊断集合。`S_T` 必须由 finite positive-rate stopped CTMC 的 unselected closed SCC / reverse-basin certificate 得出；若全域声明下 `B_closed` 非空，拒绝并报告 `non_almost_sure_absorption_domain`。
 8. 冻结 state-space hash、partition hash、rate-manifest hash、exact stopping-rule hash、DES stopping-rule hash。
 
 **定理 5.1 终端/停止分区健全性。**
