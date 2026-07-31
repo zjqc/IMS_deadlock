@@ -632,8 +632,7 @@ def test_g6b_theory_documents_lock_typed_absorption_domain() -> None:
 
 def test_g6b_ontology_absorption_review_locks_domain_semantics() -> None:
     review_path = Path(
-        "docs/verification/"
-        "G6_B_ONTOLOGY_ABSORPTION_DOMAIN_CORRECTION_REVIEW.md"
+        "docs/verification/G6_B_ONTOLOGY_ABSORPTION_DOMAIN_CORRECTION_REVIEW.md"
     )
     review_text = review_path.read_text(encoding="utf-8")
     normalized_review_text = " ".join(review_text.split())
