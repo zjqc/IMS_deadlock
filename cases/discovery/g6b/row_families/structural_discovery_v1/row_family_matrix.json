@@ -151,7 +151,8 @@
         "selected_label_mismatch",
         "versioned_target_mismatch",
         "stopping_hash_mismatch",
-        "companion_identity_mismatch"
+        "companion_identity_mismatch",
+        "absorption_domain_hash_mismatch"
       ],
       "favorable_outcome_frozen": false,
       "case_creation_authorized": false,
@@ -159,6 +160,35 @@
     }
   ],
   "ontology_contract": {
+    "foundation_estimand_schema_version": "ims-deadlock/g6b-estimand-schema/v2",
+    "terminal_classification_version": "ims-deadlock/g6-terminal-stopping-partition/v3",
+    "selected_stopping_targets": {
+      "bad_hit_sets": [
+        "D_global",
+        "D_local"
+      ],
+      "success_class": "F"
+    },
+    "unselected_plant_terminal_classes": [
+      "R_livelock",
+      "R_terminal"
+    ],
+    "policy_analysis_class": {
+      "label": "P_policy",
+      "plant_partition_member": false,
+      "selectable_target": false
+    },
+    "derived_state_sets": {
+      "S_reach": {
+        "role": "diagnostic_only",
+        "selectable_target": false
+      },
+      "S_T": {
+        "role": "certified_absorption_domain",
+        "selectable_target": false,
+        "requires_nonnull_absorption_domain_hash": true
+      }
+    },
     "D_local_definition": "verified_first_hit_bad_set_not_terminal_scc",
     "D_local_admission_routes": [
       "A2b_proof",
@@ -173,7 +203,9 @@
     ],
     "same_selected_success_label": "F",
     "same_versioned_target": true,
-    "method_observations_are_independent_cases": false
+    "method_observations_are_independent_cases": false,
+    "certified_absorption_domain_required": true,
+    "same_absorption_domain_hash": true
   },
   "initial_scoring_state": {
     "theorem_prediction_status": "not_evaluated",

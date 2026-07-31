@@ -282,6 +282,7 @@ _EXPECTED_ROW_FAMILY_MATRIX: JsonObject = {
                 "versioned_target_mismatch",
                 "stopping_hash_mismatch",
                 "companion_identity_mismatch",
+                "absorption_domain_hash_mismatch",
             ],
             "favorable_outcome_frozen": False,
             "case_creation_authorized": False,
@@ -289,6 +290,31 @@ _EXPECTED_ROW_FAMILY_MATRIX: JsonObject = {
         },
     ],
     "ontology_contract": {
+        "foundation_estimand_schema_version": "ims-deadlock/g6b-estimand-schema/v2",
+        "terminal_classification_version": (
+            "ims-deadlock/g6-terminal-stopping-partition/v3"
+        ),
+        "selected_stopping_targets": {
+            "bad_hit_sets": ["D_global", "D_local"],
+            "success_class": "F",
+        },
+        "unselected_plant_terminal_classes": ["R_livelock", "R_terminal"],
+        "policy_analysis_class": {
+            "label": "P_policy",
+            "plant_partition_member": False,
+            "selectable_target": False,
+        },
+        "derived_state_sets": {
+            "S_reach": {
+                "role": "diagnostic_only",
+                "selectable_target": False,
+            },
+            "S_T": {
+                "role": "certified_absorption_domain",
+                "selectable_target": False,
+                "requires_nonnull_absorption_domain_hash": True,
+            },
+        },
         "D_local_definition": "verified_first_hit_bad_set_not_terminal_scc",
         "D_local_admission_routes": [
             "A2b_proof",
@@ -301,6 +327,8 @@ _EXPECTED_ROW_FAMILY_MATRIX: JsonObject = {
         "same_selected_success_label": "F",
         "same_versioned_target": True,
         "method_observations_are_independent_cases": False,
+        "certified_absorption_domain_required": True,
+        "same_absorption_domain_hash": True,
     },
     "initial_scoring_state": {
         "theorem_prediction_status": "not_evaluated",

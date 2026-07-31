@@ -1848,6 +1848,69 @@ def test_admission_matrix_accepted_a2b_route_is_rejected(tmp_path: Path) -> None
     _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
 
 
+def test_row_family_matrix_requires_foundation_estimand_v2(
+    tmp_path: Path,
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    assert (
+        matrix["ontology_contract"]["foundation_estimand_schema_version"]
+        == "ims-deadlock/g6b-estimand-schema/v2"
+    )
+    matrix["ontology_contract"]["foundation_estimand_schema_version"] = (
+        "ims-deadlock/g6b-estimand-schema/v1"
+    )
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
+
+
+def test_row_family_matrix_requires_terminal_partition_v3(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    assert (
+        matrix["ontology_contract"]["terminal_classification_version"]
+        == "ims-deadlock/g6-terminal-stopping-partition/v3"
+    )
+    matrix["ontology_contract"]["terminal_classification_version"] = (
+        "ims-deadlock/g6-terminal-stopping-partition/v2"
+    )
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
+
+
+def test_row_family_matrix_rejects_s_reach_as_selected(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    matrix["ontology_contract"]["derived_state_sets"]["S_reach"][
+        "selectable_target"
+    ] = True
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
+
+
+def test_row_family_matrix_requires_nonnull_certified_domain_hash(
+    tmp_path: Path,
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    matrix["ontology_contract"]["derived_state_sets"]["S_T"][
+        "requires_nonnull_absorption_domain_hash"
+    ] = False
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
+
+
+def test_exact_des_pairing_requires_same_absorption_domain_hash(
+    tmp_path: Path,
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    assert matrix["exact_des_pairing"]["same_absorption_domain_hash"] is True
+    matrix["exact_des_pairing"]["same_absorption_domain_hash"] = False
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
+
+
 @pytest.mark.parametrize(
     "mutation",
     [
@@ -1863,6 +1926,14 @@ def test_admission_matrix_accepted_a2b_route_is_rejected(tmp_path: Path) -> None
         pytest.param(
             "method_observations_independent_true",
             id="exact_des_method_observations_independent_true",
+        ),
+        pytest.param(
+            "certified_absorption_domain_required_false",
+            id="exact_des_certified_absorption_domain_required_false",
+        ),
+        pytest.param(
+            "same_absorption_domain_hash_false",
+            id="exact_des_same_absorption_domain_hash_false",
         ),
     ],
 )
@@ -1886,6 +1957,10 @@ def test_exact_des_matrix_pairing_drift_is_rejected(
         pairing["same_versioned_target"] = False
     elif mutation == "method_observations_independent_true":
         pairing["method_observations_are_independent_cases"] = True
+    elif mutation == "certified_absorption_domain_required_false":
+        pairing["certified_absorption_domain_required"] = False
+    elif mutation == "same_absorption_domain_hash_false":
+        pairing["same_absorption_domain_hash"] = False
     else:  # pragma: no cover - parameterization guard
         raise AssertionError(mutation)
     _write(bundle, "row_family_matrix.json", matrix)
