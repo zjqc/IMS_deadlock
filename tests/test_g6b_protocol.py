@@ -83,47 +83,6 @@ _EXPECTED_NEGATIVE_CONTROLS = [
         "not_support_if_failed": True,
     },
 ]
-_EXPECTED_TYPED_ONTOLOGY = {
-    "selected_stopping_targets": {
-        "bad_hit_sets": ["D_global", "D_local"],
-        "success_class": "F",
-    },
-    "unselected_plant_terminal_classes": [
-        "R_livelock",
-        "R_terminal",
-    ],
-    "policy_analysis_class": {
-        "label": "P_policy",
-        "plant_partition_member": False,
-        "selectable_target": False,
-    },
-    "derived_state_sets": {
-        "S_reach": {
-            "definition": "complete_stopped_lts_support_reachability",
-            "role": "diagnostic_only",
-            "selectable_target": False,
-        },
-        "S_T": {
-            "definition": (
-                "probability_one_hit_selected_target_in_finite_positive_rate_"
-                "stopped_ctmc"
-            ),
-            "role": "certified_absorption_domain",
-            "selectable_target": False,
-        },
-    },
-    "D_local": {
-        "ontology": "first_hit_bad_set_not_terminal_scc",
-        "definition": (
-            "verified first-hit bad set selected by the G6-B estimand, "
-            "not a plant terminal SCC"
-        ),
-        "admission": [
-            "A2b_proof",
-            "complete_LTS_completion_nonreachability_audit",
-        ],
-    },
-}
 _NEW_FUTURE_HASHES = [
     "positive_rate_graph_hash",
     "policy_filter_hash",
