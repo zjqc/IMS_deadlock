@@ -1,5 +1,6 @@
 import json
 import shutil
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -119,6 +120,98 @@ _EXPECTED_RUNTIME_LOCK_SCHEMA = {
         "required_fields": list(_RUNTIME_LOCK_REQUIRED_FIELDS),
     },
 }
+_TASK5_MATRIX_ERROR = "row_family_matrix.json: document must match"
+
+
+def _matrix() -> dict[str, Any]:
+    return _load(BUNDLE, "row_family_matrix.json")
+
+
+def _control_field_cases() -> Iterable[Any]:
+    controls = _matrix()["negative_control_families"]
+    field_paths = (
+        ("structural_family_id",),
+        ("required_negative_control_id",),
+        ("hypothesis_attacked",),
+        ("admission_route_allowed",),
+        ("expected_classification",),
+        ("expected_refusal",),
+        ("expected_refusal_or_classification",),
+        ("expected_refusal_or_classification", "classification"),
+        ("expected_refusal_or_classification", "refusal"),
+        ("not_support_if_failed",),
+        ("supports_hypothesis_if_failed",),
+        ("case_creation_authorized",),
+        ("observed_outcome",),
+    )
+    for control_index, control in enumerate(controls):
+        control_id = control["required_negative_control_id"]
+        for field_path in field_paths:
+            path_id = "_".join(field_path)
+            yield pytest.param(
+                control_index,
+                field_path,
+                id=f"control_{control_id}_{path_id}",
+            )
+
+
+def _probe_removal_cases() -> Iterable[Any]:
+    for probe in _matrix()["discovery_probes"]:
+        yield pytest.param(probe["role"], id=f"probe_remove_{probe['role']}")
+
+
+def _probe_falsifier_cases() -> Iterable[Any]:
+    for probe in _matrix()["discovery_probes"]:
+        for falsifier in probe["falsifiers"]:
+            yield pytest.param(
+                probe["role"],
+                falsifier,
+                id=f"probe_remove_{probe['role']}_{falsifier}",
+            )
+
+
+def _probe_outcome_neutrality_cases() -> Iterable[Any]:
+    fields = (
+        "favorable_outcome_frozen",
+        "case_creation_authorized",
+        "observed_outcome",
+    )
+    for probe in _matrix()["discovery_probes"]:
+        for field in fields:
+            yield pytest.param(
+                probe["role"],
+                field,
+                id=f"probe_outcome_neutral_{probe['role']}_{field}",
+            )
+
+
+def _drift_value(value: Any) -> Any:
+    if isinstance(value, str):
+        return "TASK5_DETERMINISTIC_DRIFT"
+    if isinstance(value, bool):
+        return not value
+    if value is None:
+        return "TASK5_NON_NULL_OBSERVED_OUTCOME"
+    if isinstance(value, dict):
+        return {
+            "classification": "TASK5_DETERMINISTIC_DRIFT",
+            "refusal": "TASK5_DETERMINISTIC_DRIFT",
+        }
+    if isinstance(value, list):
+        return ["TASK5_DETERMINISTIC_DRIFT"]
+    raise AssertionError(f"unsupported drift value: {value!r}")
+
+
+def _set_path(document: dict[str, Any], path: tuple[str, ...]) -> None:
+    target = document
+    for key in path[:-1]:
+        target = target[key]
+        assert isinstance(target, dict)
+    target[path[-1]] = _drift_value(target[path[-1]])
+
+
+def _row_family_matrix_from(bundle: Path) -> dict[str, Any]:
+    return _load(bundle, "row_family_matrix.json")
 
 
 def _copy_bundle(tmp_path: Path) -> Path:
@@ -543,3 +636,175 @@ def test_missing_reuse_relation_id_is_rejected(
     ]
     _write(bundle, "reuse_matrix.json", value)
     _assert_invalid(bundle, "reuse relation ids must match")
+
+
+@pytest.mark.parametrize(("control_index", "field_path"), list(_control_field_cases()))
+def test_control_matrix_field_drift_is_rejected(
+    tmp_path: Path, control_index: int, field_path: tuple[str, ...]
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    controls = matrix["negative_control_families"]
+    assert isinstance(controls, list)
+    control = controls[control_index]
+    assert isinstance(control, dict)
+    _set_path(control, field_path)
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
+
+
+@pytest.mark.parametrize("probe_role", list(_probe_removal_cases()))
+def test_probe_matrix_role_removal_is_rejected(tmp_path: Path, probe_role: str) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    matrix["discovery_probes"] = [
+        probe for probe in matrix["discovery_probes"] if probe["role"] != probe_role
+    ]
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
+
+
+@pytest.mark.parametrize(("probe_role", "falsifier"), list(_probe_falsifier_cases()))
+def test_probe_matrix_falsifier_removal_is_rejected(
+    tmp_path: Path, probe_role: str, falsifier: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    for probe in matrix["discovery_probes"]:
+        if probe["role"] == probe_role:
+            probe["falsifiers"].remove(falsifier)
+            break
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
+
+
+@pytest.mark.parametrize(
+    ("probe_role", "field"), list(_probe_outcome_neutrality_cases())
+)
+def test_probe_matrix_outcome_neutrality_drift_is_rejected(
+    tmp_path: Path, probe_role: str, field: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    for probe in matrix["discovery_probes"]:
+        if probe["role"] == probe_role:
+            probe[field] = _drift_value(probe[field])
+            break
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
+
+
+def test_ontology_matrix_terminal_scc_definition_is_rejected(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    matrix["ontology_contract"]["D_local_definition"] = "terminal_scc_deadlock"
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
+
+
+@pytest.mark.parametrize(
+    "route",
+    [
+        "A2b_proof",
+        "complete_LTS_completion_nonreachability_audit",
+    ],
+    ids=[
+        "admission_remove_A2b_proof",
+        "admission_remove_complete_LTS_completion_nonreachability_audit",
+    ],
+)
+def test_admission_matrix_route_removal_is_rejected(tmp_path: Path, route: str) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    matrix["ontology_contract"]["D_local_admission_routes"].remove(route)
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
+
+
+def test_admission_matrix_accepted_a2b_route_is_rejected(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    routes = matrix["ontology_contract"]["D_local_admission_routes"]
+    routes[routes.index("A2b_proof")] = "accepted_A2b_proof"
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        pytest.param("same_case_unit_id_false", id="exact_des_same_case_unit_id_false"),
+        pytest.param("drop_bad_label", id="exact_des_drop_bad_label"),
+        pytest.param("mutate_bad_label", id="exact_des_mutate_bad_label"),
+        pytest.param("swap_bad_labels", id="exact_des_swap_bad_labels"),
+        pytest.param("success_label", id="exact_des_success_label"),
+        pytest.param(
+            "same_versioned_target_false",
+            id="exact_des_same_versioned_target_false",
+        ),
+        pytest.param(
+            "method_observations_independent_true",
+            id="exact_des_method_observations_independent_true",
+        ),
+    ],
+)
+def test_exact_des_matrix_pairing_drift_is_rejected(
+    tmp_path: Path, mutation: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    pairing = matrix["exact_des_pairing"]
+    if mutation == "same_case_unit_id_false":
+        pairing["same_case_unit_id"] = False
+    elif mutation == "drop_bad_label":
+        pairing["same_selected_bad_labels"].remove("D_global")
+    elif mutation == "mutate_bad_label":
+        pairing["same_selected_bad_labels"][1] = "D_local_drift"
+    elif mutation == "swap_bad_labels":
+        pairing["same_selected_bad_labels"] = ["D_local", "D_global"]
+    elif mutation == "success_label":
+        pairing["same_selected_success_label"] = "SUCCESS"
+    elif mutation == "same_versioned_target_false":
+        pairing["same_versioned_target"] = False
+    elif mutation == "method_observations_independent_true":
+        pairing["method_observations_are_independent_cases"] = True
+    else:  # pragma: no cover - parameterization guard
+        raise AssertionError(mutation)
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "theorem_prediction_status",
+        "metric_applicability",
+        "metric_observations",
+        "execution_status",
+        "reproducibility_status",
+    ],
+    ids=[
+        "scoring_theorem_prediction_status",
+        "scoring_metric_applicability",
+        "scoring_metric_observations",
+        "scoring_execution_status",
+        "scoring_reproducibility_status",
+    ],
+)
+def test_scoring_matrix_field_drift_is_rejected(tmp_path: Path, field: str) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    scoring = matrix["initial_scoring_state"]
+    scoring[field] = _drift_value(scoring[field])
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
+
+
+def test_scoring_matrix_bad_copy_not_executed_is_rejected(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    scoring = matrix["initial_scoring_state"]
+    for field in scoring:
+        scoring[field] = "not_executed"
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
