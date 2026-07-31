@@ -112,9 +112,13 @@ refer to the old flat ontology or to an uncertified `S_T`.
   - not a plant-partition member for the G6-B plant estimand;
 - `derived_state_sets`:
   - `S_reach`: nonabsorbing states from which a selected target is reachable
-    by at least one positive-rate path;
+    by at least one path in the complete stopped-LTS support graph; this is a
+    structural diagnostic, not a probability-one certificate;
   - `S_T`: nonabsorbing states that hit the selected target with probability
     one in the complete finite stopped CTMC.
+
+Only after every support edge has a frozen finite strictly positive rate does
+`S_reach` also describe existential reachability in the positive-rate graph.
 
 The existing `D_local` definition and its two alternative admission routes
 remain unchanged. `selected_bad_classes` and `selected_success_class` remain
@@ -152,8 +156,10 @@ included in the plant partition hash for a plant-only estimand.
 
 Derived sets move to `derived_state_sets`:
 
-- `selected_reachable_state_ids` retains the existential diagnostic and is
-  serialized as `S_reach`, not `S_T`;
+- `selected_reachable_state_ids` retains the complete stopped-LTS support-graph
+  existential diagnostic and is serialized as `S_reach`, not `S_T`;
+- `S_reach.positive_rate_verified` stays false until every support edge has a
+  frozen finite strictly positive rate;
 - `S_T` is serialized from a new almost-sure absorption-domain computation;
 - unselected closed SCCs and their reverse basin are serialized separately;
 - a certification record states the finite/completeness/rate/stopping/policy
@@ -258,13 +264,17 @@ The G6-B v2 schema requires all three new hashes for any future scientific row.
 Exact and DES companions must share the same target and absorption-domain hash.
 
 Classification-only calls without a frozen rate manifest may return
-structural classes and `S_reach`, but the uncertified representation is exact:
+structural classes and support-graph `S_reach`, but they must serialize
+`derived_state_sets.S_reach.graph_semantics = "complete_stopped_lts_support"`
+and `derived_state_sets.S_reach.positive_rate_verified = false`. The
+uncertified `S_T` representation is exact:
 `derived_state_sets.S_T.state_ids = null`,
 `derived_state_sets.S_T.certification_status = "not_certified"`, and
 `derived_state_sets.S_T.reason_codes` is a nonempty sorted list. The three new
 hashes are null. An empty list is never used to mean uncertified. For a
 certified zero-state domain, `state_ids = []`, status is
-`certified_finite_positive_rate_stopped_ctmc`, and `reason_codes = []`.
+`certified_finite_positive_rate_stopped_ctmc`, `reason_codes = []`, and
+`derived_state_sets.S_reach.positive_rate_verified = true`.
 
 ## 9. Counterexample and Proof Ledger
 
@@ -373,8 +383,10 @@ edits:
 5. the branching closed-class counterexample separates `S_reach` from `S_T`;
 6. a full finite positive-rate domain certifies `S_T` and passes strict
    derivation;
-7. missing rate, zero rate, truncated LTS, unavailable branch, target drift,
-   policy-filter drift, or unselected closed SCC fails closed;
+7. missing rates leave support-graph `S_reach` diagnostic-only with
+   `positive_rate_verified = false` and fail scientific certification closed;
+   a zero rate, truncated LTS, unavailable branch, target drift, policy-filter
+   drift, or unselected closed SCC also fails scientific certification closed;
 8. `partition_hash` is independent of selected bad union while
    `absorption_domain_hash` and `estimand_id` drift when the selected target or
    positive-rate support changes;
