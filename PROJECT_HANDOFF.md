@@ -957,3 +957,41 @@ distinct from explicit empty rates. G6-B remains OPEN/PENDING,
 G6-C, G6-D, and G6-E are not started.
 
 Approved design: `docs/superpowers/specs/2026-07-31-g6b-ontology-absorption-domain-correction-design.md`. Historical review superseded in part, not deleted. Negative and boundary evidence are retained.
+
+## 2026-07-31 G6-B Ontology And Absorption-Domain Review Record
+
+Final review record:
+`docs/verification/G6_B_ONTOLOGY_ABSORPTION_DOMAIN_CORRECTION_REVIEW.md`.
+
+Verification HEAD before the documentation commit:
+`94fbf6517eb0abaf3c09a4c7238129547e76b8f5` on
+`codex/g6b-discovery-estimand-lock`. The reviewed worktree was clean at
+`D:\worktree\IMS_deadlock-g6b-discovery`, with upstream relation
+`0 behind / 20 ahead`. The documentation commit containing the review record is
+self-identifying through Git history and must be re-locked after push.
+
+Evidence summary: focused verification `1157 passed in 132.13s`; full pytest
+`1410 passed in 167.44s`; Ruff check passed; Ruff format reported 43 files
+already formatted; strict mypy passed on 23 source files and on 43 source/test
+files; diff checks passed. Validators reported exact `5/8`, valid, no errors,
+science false, case false, and `PENDING`. Changed-path guards reported 24
+changed paths, 1 added plan, outside allowed `[]`, immutable diff `[]`, and
+forbidden additions `[]`.
+
+Independent verdicts: theory review `PASS` with 45 targeted checks; code review
+`PASS` with no actionable blockers and focused `1157 passed in 116.08s`;
+verifier `PASS` with focused `1157 passed in 125.10s`, full
+`1410 passed in 172.45s`, and reproduced static/guard checks; Task 7 final
+specification, theory, quality, and citation-traceability reviews all `PASS`.
+
+Boundary: this is governance/theory/code correction evidence only. It creates
+no G6-B case, runs no enumeration, solves no CTMC, runs no DES, inspects no
+scientific output root, replays no R3 evidence, and changes no authorization.
+G6-B remains `OPEN/PENDING`; `case_creation_authorized=false` and
+`scientific_execution_authorized=false` remain in force; G6-C/D/E are not
+started; immutable G4/G5/G6 evidence is unchanged.
+
+The next first action after normal push is to re-lock the pushed branch and
+confirm HEAD/upstream/status. The next scientific successor remains a separately
+reviewed and approved case-construction plan, not execution and not a
+partial-domain production solve.
