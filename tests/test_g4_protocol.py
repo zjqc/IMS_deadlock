@@ -515,8 +515,14 @@ def test_medium_protocol_payload_includes_terminal_classification_and_estimand()
     classification = result["terminal_classification"]
     assert isinstance(classification, dict)
     assert classification["classification_version"] == (
-        "ims-deadlock/g6-terminal-stopping-partition/v2"
+        "ims-deadlock/g6-terminal-stopping-partition/v3"
     )
+    classes = cast(dict[str, object], classification["classes"])
+    assert "P_policy" not in classes
+    assert "S_T" not in classes
+    assert classification["policy_analysis_classes"] == {"P_policy": []}
+    derived_state_sets = cast(dict[str, object], classification["derived_state_sets"])
+    assert set(derived_state_sets) >= {"S_reach", "S_T"}
     provenance = cast(dict[str, object], classification["lts_provenance_audit"])
     assert provenance["method"] == (
         "deterministic_reenumeration_from_stable_initial_v1"

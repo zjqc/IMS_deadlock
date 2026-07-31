@@ -18,9 +18,21 @@ from ims_deadlock.certificates import (
 from ims_deadlock.engine import TransitionSpec, configuration_signature
 from ims_deadlock.model import IMSModel, IMSState, validate_model_state
 
-TERMINAL_CLASSIFICATION_VERSION = "ims-deadlock/g6-terminal-stopping-partition/v2"
-ESTIMAND_SPEC_VERSION = "ims-deadlock/g6-versioned-estimand/v1"
-G6_CTM_GENERATOR_PROVENANCE = "derived_from_g6_terminal_stopping_partition_ims_lts_v2"
+TERMINAL_CLASSIFICATION_VERSION = "ims-deadlock/g6-terminal-stopping-partition/v3"
+ESTIMAND_SPEC_VERSION = "ims-deadlock/g6-versioned-estimand/v2"
+ABSORPTION_DOMAIN_CERTIFICATE_VERSION = (
+    "ims-deadlock/g6-absorption-domain-certificate/v1"
+)
+ABSORPTION_DOMAIN_ALGORITHM_VERSION = "finite-positive-rate-stopped-ctmc-scc-domain/v1"
+G6_CTM_GENERATOR_PROVENANCE = "derived_from_g6_terminal_stopping_partition_ims_lts_v3"
+SUPPORT_GRAPH_SEMANTICS = "complete_stopped_lts_support"
+CERTIFIED_STATUS = "certified_finite_positive_rate_stopped_ctmc"
+NOT_CERTIFIED_STATUS = "not_certified"
+NO_POLICY_FILTER_DECLARATION = {
+    "version": "ims-deadlock/g6-policy-filter-declaration/v1",
+    "mode": "no_policy_filter",
+    "excluded_plant_arcs": [],
+}
 
 _BAD_CLASSES = frozenset({"D_global", "D_local"})
 _CLASS_ORDER = ("D_global", "D_local", "F", "R_livelock", "R_terminal")
@@ -52,7 +64,7 @@ class VersionedEstimandSpec:
         "exact_absorption_first_hit_selected_bad_union_or_completion_v1"
     )
     des_stopping_rule: str = "des_first_hit_same_absorbing_ctmc_labels_v1"
-    plant_policy_class: str = "P_policy"
+    policy_analysis_class: str = "P_policy"
     version: str = ESTIMAND_SPEC_VERSION
 
     def __post_init__(self) -> None:
@@ -77,8 +89,8 @@ class VersionedEstimandSpec:
             raise ValueError("exact_stopping_rule must be nonempty")
         if not self.des_stopping_rule:
             raise ValueError("des_stopping_rule must be nonempty")
-        if self.plant_policy_class != "P_policy":
-            raise ValueError("plant_policy_class must be P_policy")
+        if self.policy_analysis_class != "P_policy":
+            raise ValueError("policy_analysis_class must be P_policy")
 
     def to_json_dict(self) -> dict[str, object]:
         return {
@@ -87,11 +99,105 @@ class VersionedEstimandSpec:
             "success_class": self.success_class,
             "exact_stopping_rule": self.exact_stopping_rule,
             "des_stopping_rule": self.des_stopping_rule,
-            "plant_policy_class": self.plant_policy_class,
+            "policy_analysis_class": self.policy_analysis_class,
         }
 
 
 DEFAULT_ESTIMAND_SPEC = VersionedEstimandSpec()
+
+
+@dataclass(frozen=True)
+class AbsorptionDomainCertificate:
+    version: str
+    algorithm_version: str
+    certification_status: str
+    reason_codes: tuple[str, ...]
+    selected_absorbing_state_ids: tuple[str, ...]
+    unselected_closed_sccs: tuple[tuple[str, ...], ...] | None
+    closed_class_reverse_basin_state_ids: tuple[str, ...] | None
+    s_t_state_ids: tuple[str, ...] | None
+    non_almost_sure_absorbing_state_ids: tuple[str, ...] | None
+    finite_state_space_verified: bool
+    complete_nontruncated_lts_verified: bool
+    lts_generation_provenance_verified: bool
+    positive_finite_rate_manifest_verified: bool
+    selected_target_identity_verified: bool
+    policy_filter_identity_verified: bool
+    state_space_hash: str
+    partition_hash: str
+    rate_manifest_hash: str | None
+    positive_rate_graph_hash: str | None
+    policy_filter_hash: str | None
+    absorption_domain_hash: str | None
+
+    def __post_init__(self) -> None:
+        if self.version != ABSORPTION_DOMAIN_CERTIFICATE_VERSION:
+            raise ValueError("absorption certificate version mismatch")
+        if self.algorithm_version != ABSORPTION_DOMAIN_ALGORITHM_VERSION:
+            raise ValueError("absorption certificate algorithm version mismatch")
+        if self.certification_status == NOT_CERTIFIED_STATUS:
+            if not self.reason_codes:
+                raise ValueError(
+                    "uncertified absorption certificate needs reason codes"
+                )
+            if (
+                self.unselected_closed_sccs is not None
+                or self.closed_class_reverse_basin_state_ids is not None
+                or self.s_t_state_ids is not None
+                or self.non_almost_sure_absorbing_state_ids is not None
+                or self.positive_rate_graph_hash is not None
+                or self.policy_filter_hash is not None
+                or self.absorption_domain_hash is not None
+            ):
+                raise ValueError("uncertified absorption certificate has derived data")
+        elif self.certification_status == CERTIFIED_STATUS:
+            if self.reason_codes:
+                raise ValueError("certified absorption certificate has reason codes")
+            if (
+                self.unselected_closed_sccs is None
+                or self.closed_class_reverse_basin_state_ids is None
+                or self.s_t_state_ids is None
+                or self.non_almost_sure_absorbing_state_ids is None
+                or self.positive_rate_graph_hash is None
+                or self.policy_filter_hash is None
+                or self.absorption_domain_hash is None
+            ):
+                raise ValueError("certified absorption certificate lacks derived data")
+        else:
+            raise ValueError("unknown absorption certificate status")
+
+    def to_json_dict(self) -> dict[str, object]:
+        return {
+            "version": self.version,
+            "algorithm_version": self.algorithm_version,
+            "certification_status": self.certification_status,
+            "reason_codes": list(self.reason_codes),
+            "selected_absorbing_state_ids": list(self.selected_absorbing_state_ids),
+            "identity": {
+                "state_space_hash": self.state_space_hash,
+                "partition_hash": self.partition_hash,
+                "rate_manifest_hash": self.rate_manifest_hash,
+                "positive_rate_graph_hash": self.positive_rate_graph_hash,
+                "policy_filter_hash": self.policy_filter_hash,
+                "absorption_domain_hash": self.absorption_domain_hash,
+            },
+            "assumptions": {
+                "finite_state_space_verified": self.finite_state_space_verified,
+                "complete_nontruncated_lts_verified": (
+                    self.complete_nontruncated_lts_verified
+                ),
+                "lts_generation_provenance_verified": (
+                    self.lts_generation_provenance_verified
+                ),
+                "positive_finite_rate_manifest_verified": (
+                    self.positive_finite_rate_manifest_verified
+                ),
+                "selected_target_identity_verified": (
+                    self.selected_target_identity_verified
+                ),
+                "policy_filter_identity_verified": self.policy_filter_identity_verified,
+            },
+        }
 
 
 @dataclass(frozen=True)
@@ -117,12 +223,17 @@ class TerminalStoppingPartition:
     selected_bad_state_ids: tuple[str, ...]
     terminal_sccs: tuple[tuple[str, ...], ...]
     plant_arcs: tuple[tuple[str, str, str], ...]
+    declared_transition_event_names: tuple[str, ...]
     state_space_hash: str
     partition_hash: str
-    rate_manifest_hash: str
+    rate_manifest_hash: str | None
+    positive_rate_graph_hash: str | None
+    policy_filter_hash: str | None
+    absorption_domain_hash: str | None
     stopping_rule_hash: str
     des_stopping_rule_hash: str
-    estimand_id: str
+    estimand_id: str | None
+    absorption_domain_certificate: AbsorptionDomainCertificate
     lts_provenance_audit: dict[str, object]
     local_bad_soundness_audit: dict[str, object]
     global_certificates: dict[str, dict[str, object]] = field(default_factory=dict)
@@ -138,22 +249,79 @@ class TerminalStoppingPartition:
                 "F": list(self.f_state_ids),
                 "R_livelock": list(self.r_livelock_state_ids),
                 "R_terminal": list(self.r_terminal_state_ids),
+            },
+            "policy_analysis_classes": {
                 "P_policy": list(self.p_policy_state_ids),
-                "S_T": list(self.selected_reachable_state_ids),
+            },
+            "derived_state_sets": {
+                "S_reach": {
+                    "state_ids": list(self.selected_reachable_state_ids),
+                    "support_unreachable_state_ids": list(
+                        self.unreachable_nonabsorbing_state_ids
+                    ),
+                    "graph_semantics": SUPPORT_GRAPH_SEMANTICS,
+                    "positive_rate_verified": False,
+                },
+                "S_T": {
+                    "state_ids": (
+                        list(self.absorption_domain_certificate.s_t_state_ids)
+                        if self.absorption_domain_certificate.s_t_state_ids is not None
+                        else None
+                    ),
+                    "certification_status": (
+                        self.absorption_domain_certificate.certification_status
+                    ),
+                    "reason_codes": list(
+                        self.absorption_domain_certificate.reason_codes
+                    ),
+                },
+                "unselected_closed_sccs": (
+                    [
+                        list(component)
+                        for component in (
+                            self.absorption_domain_certificate.unselected_closed_sccs
+                        )
+                    ]
+                    if self.absorption_domain_certificate.unselected_closed_sccs
+                    is not None
+                    else None
+                ),
+                "closed_class_reverse_basin_state_ids": (
+                    list(
+                        self.absorption_domain_certificate.closed_class_reverse_basin_state_ids
+                    )
+                    if (
+                        self.absorption_domain_certificate.closed_class_reverse_basin_state_ids
+                        is not None
+                    )
+                    else None
+                ),
+                "non_almost_sure_absorbing_state_ids": (
+                    list(
+                        self.absorption_domain_certificate.non_almost_sure_absorbing_state_ids
+                    )
+                    if (
+                        self.absorption_domain_certificate.non_almost_sure_absorbing_state_ids
+                        is not None
+                    )
+                    else None
+                ),
             },
             "bad_hit_sets": {
                 "D_global": list(self.d_global_state_ids),
                 "D_local": list(self.d_local_state_ids),
             },
             "selected_bad_state_ids": list(self.selected_bad_state_ids),
-            "selected_reachable_state_ids": list(self.selected_reachable_state_ids),
-            "unreachable_nonabsorbing_state_ids": list(
-                self.unreachable_nonabsorbing_state_ids
-            ),
             "terminal_sccs": [list(component) for component in self.terminal_sccs],
             "plant_arcs": [list(arc) for arc in self.plant_arcs],
+            "declared_transition_event_names": list(
+                self.declared_transition_event_names
+            ),
             "lts_provenance_audit": self.lts_provenance_audit,
             "local_bad_soundness_audit": self.local_bad_soundness_audit,
+            "absorption_domain_certificate": (
+                self.absorption_domain_certificate.to_json_dict()
+            ),
             "certificates": {
                 "global": self.global_certificates,
                 "local": self.local_certificates,
@@ -161,11 +329,34 @@ class TerminalStoppingPartition:
             "hashes": self.hashes_json_dict(),
         }
 
-    def hashes_json_dict(self) -> dict[str, str]:
+    def plant_partition_json_dict(self) -> dict[str, object]:
+        return {
+            "classification_version": self.classification_version,
+            "classes": {
+                "D_global": list(self.d_global_state_ids),
+                "D_local": list(self.d_local_state_ids),
+                "F": list(self.f_state_ids),
+                "R_livelock": list(self.r_livelock_state_ids),
+                "R_terminal": list(self.r_terminal_state_ids),
+            },
+            "bad_hit_sets": {
+                "D_global": list(self.d_global_state_ids),
+                "D_local": list(self.d_local_state_ids),
+            },
+            "local_bad_soundness_audit": self.local_bad_soundness_audit,
+            "terminal_sccs": [list(component) for component in self.terminal_sccs],
+            "plant_arcs": [list(arc) for arc in self.plant_arcs],
+            "lts_provenance_audit": self.lts_provenance_audit,
+        }
+
+    def hashes_json_dict(self) -> dict[str, str | None]:
         return {
             "state_space_hash": self.state_space_hash,
             "partition_hash": self.partition_hash,
             "rate_manifest_hash": self.rate_manifest_hash,
+            "positive_rate_graph_hash": self.positive_rate_graph_hash,
+            "policy_filter_hash": self.policy_filter_hash,
+            "absorption_domain_hash": self.absorption_domain_hash,
             "stopping_rule_hash": self.stopping_rule_hash,
             "des_stopping_rule_hash": self.des_stopping_rule_hash,
             "estimand_id": self.estimand_id,
@@ -211,7 +402,10 @@ def partition_stable_lts(
         )
 
     rules = tuple(transitions)
-    declared_events = {transition.name for transition in rules}
+    declared_transition_event_names = tuple(
+        sorted(transition.name for transition in rules)
+    )
+    declared_events = set(declared_transition_event_names)
     state_ids = tuple(record.state_id for record in stable_lts.states)
     if len(set(state_ids)) != len(state_ids):
         _raise("duplicate_state_id", "stable LTS contains duplicate state ids", {})
@@ -392,7 +586,6 @@ def partition_stable_lts(
             "F": list(f_ids),
             "R_livelock": list(r_livelock_ids),
             "R_terminal": list(r_terminal_ids),
-            "P_policy": [],
         },
         "bad_hit_sets": {
             "D_global": list(d_global_ids),
@@ -400,16 +593,26 @@ def partition_stable_lts(
         },
         "local_bad_soundness_audit": local_bad_soundness_audit,
         "terminal_sccs": [list(component) for component in terminal_sccs],
+        "plant_arcs": [list(arc) for arc in plant_arcs],
+        "lts_provenance_audit": lts_provenance_audit,
     }
     state_space_hash = _canonical_sha256(state_space_payload)
     partition_hash = _canonical_sha256(partition_payload)
-    rate_manifest = _validated_rate_manifest(event_rates, stable_lts)
-    rate_manifest_hash = _canonical_sha256(rate_manifest)
+    rate_manifest = _validated_rate_manifest(
+        event_rates,
+        declared_transition_event_names=declared_transition_event_names,
+    )
+    rate_manifest_hash = (
+        _canonical_sha256(rate_manifest) if rate_manifest is not None else None
+    )
+    positive_rate_graph_hash = None
+    policy_filter_hash = None
+    absorption_domain_hash = None
     common_stopping_spec = {
         "version": estimand_spec.version,
         "selected_bad_classes": list(estimand_spec.selected_bad_classes),
         "success_class": estimand_spec.success_class,
-        "plant_policy_class": estimand_spec.plant_policy_class,
+        "policy_analysis_class": estimand_spec.policy_analysis_class,
     }
     stopping_rule_hash = _canonical_sha256(
         {
@@ -423,14 +626,18 @@ def partition_stable_lts(
             "des_stopping_rule": estimand_spec.des_stopping_rule,
         }
     )
-    estimand_id = _canonical_sha256(
-        {
-            "state_space_hash": state_space_hash,
-            "partition_hash": partition_hash,
-            "rate_manifest_hash": rate_manifest_hash,
-            "stopping_rule_hash": stopping_rule_hash,
-            "des_stopping_rule_hash": des_stopping_rule_hash,
-        }
+    estimand_id = None
+    absorption_domain_certificate = _uncertified_absorption_domain_certificate(
+        selected_absorbing_state_ids=tuple(sorted(all_absorbing)),
+        state_space_hash=state_space_hash,
+        partition_hash=partition_hash,
+        rate_manifest_hash=rate_manifest_hash,
+        reason_codes=(
+            ("rate_manifest_absent",)
+            if rate_manifest is None
+            else ("absorption_domain_not_certified",)
+        ),
+        lts_generation_provenance_verified=bool(lts_provenance_audit.get("verified")),
     )
     return TerminalStoppingPartition(
         classification_version=TERMINAL_CLASSIFICATION_VERSION,
@@ -447,12 +654,17 @@ def partition_stable_lts(
         selected_bad_state_ids=selected_bad,
         terminal_sccs=terminal_sccs,
         plant_arcs=plant_arcs,
+        declared_transition_event_names=declared_transition_event_names,
         state_space_hash=state_space_hash,
         partition_hash=partition_hash,
         rate_manifest_hash=rate_manifest_hash,
+        positive_rate_graph_hash=positive_rate_graph_hash,
+        policy_filter_hash=policy_filter_hash,
+        absorption_domain_hash=absorption_domain_hash,
         stopping_rule_hash=stopping_rule_hash,
         des_stopping_rule_hash=des_stopping_rule_hash,
         estimand_id=estimand_id,
+        absorption_domain_certificate=absorption_domain_certificate,
         lts_provenance_audit=lts_provenance_audit,
         local_bad_soundness_audit=local_bad_soundness_audit,
         global_certificates=dict(sorted(global_payloads.items())),
@@ -702,12 +914,49 @@ def _selected_reachable_nonabsorbing(
     return tuple(sorted(state_id for state_id in can_reach if state_id in nonabsorbing))
 
 
+def _uncertified_absorption_domain_certificate(
+    *,
+    selected_absorbing_state_ids: tuple[str, ...],
+    state_space_hash: str,
+    partition_hash: str,
+    rate_manifest_hash: str | None,
+    reason_codes: tuple[str, ...],
+    lts_generation_provenance_verified: bool,
+) -> AbsorptionDomainCertificate:
+    if not reason_codes:
+        raise ValueError("uncertified absorption certificate needs reason codes")
+    return AbsorptionDomainCertificate(
+        version=ABSORPTION_DOMAIN_CERTIFICATE_VERSION,
+        algorithm_version=ABSORPTION_DOMAIN_ALGORITHM_VERSION,
+        certification_status=NOT_CERTIFIED_STATUS,
+        reason_codes=tuple(sorted(reason_codes)),
+        selected_absorbing_state_ids=tuple(sorted(selected_absorbing_state_ids)),
+        unselected_closed_sccs=None,
+        closed_class_reverse_basin_state_ids=None,
+        s_t_state_ids=None,
+        non_almost_sure_absorbing_state_ids=None,
+        finite_state_space_verified=True,
+        complete_nontruncated_lts_verified=True,
+        lts_generation_provenance_verified=lts_generation_provenance_verified,
+        positive_finite_rate_manifest_verified=rate_manifest_hash is not None,
+        selected_target_identity_verified=True,
+        policy_filter_identity_verified=False,
+        state_space_hash=state_space_hash,
+        partition_hash=partition_hash,
+        rate_manifest_hash=rate_manifest_hash,
+        positive_rate_graph_hash=None,
+        policy_filter_hash=None,
+        absorption_domain_hash=None,
+    )
+
+
 def _validated_rate_manifest(
     event_rates: Mapping[str, float] | None,
-    stable_lts: StableLTS,
-) -> dict[str, float]:
+    *,
+    declared_transition_event_names: tuple[str, ...],
+) -> dict[str, float] | None:
     if event_rates is None:
-        return {}
+        return None
     rates: dict[str, float] = {}
     for event, rate in sorted(event_rates.items()):
         if isinstance(rate, bool) or not isinstance(rate, int | float):
@@ -724,13 +973,20 @@ def _validated_rate_manifest(
                 {"event": event, "rate": repr(rate)},
             )
         rates[str(event)] = value
-    for event in sorted({arc.event for arc in stable_lts.transitions}):
+    declared_events = set(declared_transition_event_names)
+    for event in declared_transition_event_names:
         if event not in rates:
             _raise(
                 "missing_event_rate",
-                "event rate manifest is missing a stable LTS arc event",
+                "event rate manifest is missing a declared transition event",
                 {"event": event},
             )
+    for event in sorted(set(rates) - declared_events):
+        _raise(
+            "unexpected_event_rate",
+            "event rate manifest includes an undeclared transition event",
+            {"event": event},
+        )
     return rates
 
 

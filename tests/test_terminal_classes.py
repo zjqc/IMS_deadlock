@@ -123,8 +123,8 @@ def test_estimand_spec_validates_selected_classes_and_exclusivity() -> None:
     with pytest.raises(ValueError, match="version must be nonempty"):
         VersionedEstimandSpec(version="")
 
-    with pytest.raises(ValueError, match="plant_policy_class must be P_policy"):
-        VersionedEstimandSpec(plant_policy_class="custom_policy")
+    with pytest.raises(ValueError, match="policy_analysis_class must be P_policy"):
+        VersionedEstimandSpec(policy_analysis_class="custom_policy")
 
 
 def test_local_first_hit_keeps_free_job_transient_edge_but_selects_local_bad() -> None:
@@ -411,32 +411,33 @@ def test_hashes_are_stable_and_drift_with_rules_rates_and_stopping() -> None:
         complete=True,
     )
     graph = _lts((_record("s0", _state("start")), _record("s1", completion)))
+    finish = _event("finish", job_id="free_job")
 
     base = partition_stable_lts(
         model,
         graph,
-        (),
+        (finish,),
         event_rates={"finish": 1.0},
         estimand_spec=DEFAULT_ESTIMAND_SPEC,
     )
     rate_drift = partition_stable_lts(
         model,
         graph,
-        (),
+        (finish,),
         event_rates={"finish": 2.0},
         estimand_spec=DEFAULT_ESTIMAND_SPEC,
     )
     rule_drift = partition_stable_lts(
         model,
         graph,
-        (),
+        (finish,),
         event_rates={"finish": 1.0},
         estimand_spec=VersionedEstimandSpec(selected_bad_classes=("D_global",)),
     )
     stopping_drift = partition_stable_lts(
         model,
         graph,
-        (),
+        (finish,),
         event_rates={"finish": 1.0},
         estimand_spec=VersionedEstimandSpec(
             exact_stopping_rule="exact/changed",
@@ -449,17 +450,19 @@ def test_hashes_are_stable_and_drift_with_rules_rates_and_stopping() -> None:
         == partition_stable_lts(
             model,
             graph,
-            (),
+            (finish,),
             event_rates={"finish": 1.0},
             estimand_spec=DEFAULT_ESTIMAND_SPEC,
         ).partition_hash
     )
     assert base.rate_manifest_hash != rate_drift.rate_manifest_hash
-    assert base.estimand_id != rate_drift.estimand_id
     assert base.stopping_rule_hash != stopping_drift.stopping_rule_hash
     assert base.des_stopping_rule_hash != stopping_drift.des_stopping_rule_hash
-    assert base.estimand_id != rule_drift.estimand_id
-    assert base.estimand_id != stopping_drift.estimand_id
+    assert base.stopping_rule_hash != rule_drift.stopping_rule_hash
+    assert base.estimand_id is None
+    assert rate_drift.estimand_id is None
+    assert rule_drift.estimand_id is None
+    assert stopping_drift.estimand_id is None
 
 
 def test_selected_reachable_s_t_differs_from_all_nonabsorbing() -> None:
@@ -474,11 +477,12 @@ def test_selected_reachable_s_t_differs_from_all_nonabsorbing() -> None:
 
     partition = partition_stable_lts(model, graph, (_event("finish"),))
     payload = partition.to_json_dict()
-    classes = cast(dict[str, object], payload["classes"])
 
     assert partition.transient_state_ids == ("s0", "s2")
     assert partition.selected_reachable_state_ids == ("s0",)
-    assert classes["S_T"] == ["s0"]
+    derived_state_sets = cast(dict[str, object], payload["derived_state_sets"])
+    s_reach = cast(dict[str, object], derived_state_sets["S_reach"])
+    assert s_reach["state_ids"] == ["s0"]
 
     with pytest.raises(TerminalPartitionError) as excinfo:
         partition_stable_lts(
@@ -521,7 +525,8 @@ def test_partition_hash_is_independent_of_selected_bad_union() -> None:
 
     assert both.partition_hash == global_only.partition_hash
     assert both.stopping_rule_hash != global_only.stopping_rule_hash
-    assert both.estimand_id != global_only.estimand_id
+    assert both.estimand_id is None
+    assert global_only.estimand_id is None
 
 
 def test_reversed_selected_bad_classes_have_identical_hashes() -> None:
@@ -589,3 +594,243 @@ def test_rate_manifest_rejects_invalid_or_missing_arc_rates() -> None:
         )
     assert excinfo.value.code == "missing_event_rate"
     assert excinfo.value.details["event"] == "go"
+
+
+def test_v3_serialization_separates_plant_policy_and_derived_sets() -> None:
+    model = _local_model()
+    start = _state("start")
+    done = _state(
+        "done",
+        completed_jobs=frozenset({"j1", "j2", "free_job"}),
+        complete=True,
+    )
+    graph = _lts(
+        (_record("s0", start), _record("s1", done)),
+        (StableLTSArc("s0", "finish", "s1", False, ("finish",)),),
+    )
+
+    payload = partition_stable_lts(
+        model,
+        graph,
+        (_event("finish", job_id="free_job"),),
+    ).to_json_dict()
+
+    classes = cast(dict[str, object], payload["classes"])
+    assert set(classes) == {"D_global", "D_local", "F", "R_livelock", "R_terminal"}
+    assert classes == {
+        "D_global": [],
+        "D_local": [],
+        "F": ["s1"],
+        "R_livelock": [],
+        "R_terminal": [],
+    }
+    assert payload["policy_analysis_classes"] == {"P_policy": []}
+    assert "P_policy" not in classes
+    assert "S_T" not in classes
+    derived_state_sets = cast(dict[str, object], payload["derived_state_sets"])
+    assert set(derived_state_sets) == {
+        "S_reach",
+        "S_T",
+        "unselected_closed_sccs",
+        "closed_class_reverse_basin_state_ids",
+        "non_almost_sure_absorbing_state_ids",
+    }
+    s_reach = cast(dict[str, object], derived_state_sets["S_reach"])
+    assert set(s_reach) == {
+        "state_ids",
+        "support_unreachable_state_ids",
+        "graph_semantics",
+        "positive_rate_verified",
+    }
+    assert s_reach["state_ids"] == ["s0"]
+    assert s_reach["support_unreachable_state_ids"] == []
+    assert s_reach["graph_semantics"] == "complete_stopped_lts_support"
+    assert s_reach["positive_rate_verified"] is False
+    assert "selected_reachable_state_ids" not in payload
+    assert "unreachable_nonabsorbing_state_ids" not in payload
+
+
+def test_classification_without_rates_is_explicitly_uncertified() -> None:
+    model = _local_model()
+    start = _state("start")
+    done = _state(
+        "done",
+        completed_jobs=frozenset({"j1", "j2", "free_job"}),
+        complete=True,
+    )
+    graph = _lts(
+        (_record("s0", start), _record("s1", done)),
+        (StableLTSArc("s0", "finish", "s1", False, ("finish",)),),
+    )
+
+    partition = partition_stable_lts(
+        model,
+        graph,
+        (_event("finish", job_id="free_job"),),
+    )
+    payload = partition.to_json_dict()
+    hashes = cast(dict[str, object], payload["hashes"])
+    derived_state_sets = cast(dict[str, object], payload["derived_state_sets"])
+    s_reach = cast(dict[str, object], derived_state_sets["S_reach"])
+    s_t = cast(dict[str, object], derived_state_sets["S_T"])
+    certificate = cast(dict[str, object], payload["absorption_domain_certificate"])
+    identity = cast(dict[str, object], certificate["identity"])
+    assumptions = cast(dict[str, object], certificate["assumptions"])
+
+    assert s_reach == {
+        "state_ids": ["s0"],
+        "support_unreachable_state_ids": [],
+        "graph_semantics": "complete_stopped_lts_support",
+        "positive_rate_verified": False,
+    }
+    assert s_t == {
+        "state_ids": None,
+        "certification_status": "not_certified",
+        "reason_codes": ["rate_manifest_absent"],
+    }
+    assert hashes["rate_manifest_hash"] is None
+    assert hashes["positive_rate_graph_hash"] is None
+    assert hashes["policy_filter_hash"] is None
+    assert hashes["absorption_domain_hash"] is None
+    assert hashes["estimand_id"] is None
+    assert certificate["version"] == "ims-deadlock/g6-absorption-domain-certificate/v1"
+    assert certificate["algorithm_version"] == (
+        "finite-positive-rate-stopped-ctmc-scc-domain/v1"
+    )
+    assert certificate["certification_status"] == "not_certified"
+    assert certificate["reason_codes"] == ["rate_manifest_absent"]
+    assert certificate["selected_absorbing_state_ids"] == ["s1"]
+    assert identity == {
+        "state_space_hash": partition.state_space_hash,
+        "partition_hash": partition.partition_hash,
+        "rate_manifest_hash": None,
+        "positive_rate_graph_hash": None,
+        "policy_filter_hash": None,
+        "absorption_domain_hash": None,
+    }
+    assert assumptions == {
+        "finite_state_space_verified": True,
+        "complete_nontruncated_lts_verified": True,
+        "lts_generation_provenance_verified": False,
+        "positive_finite_rate_manifest_verified": False,
+        "selected_target_identity_verified": True,
+        "policy_filter_identity_verified": False,
+    }
+
+
+def test_absent_and_explicitly_empty_rate_manifests_are_distinct() -> None:
+    model = IMSModel(id="edgeless-model", resources={}, jobs=())
+    complete = _state("complete", complete=True)
+    graph = _lts((_record("s0", complete),))
+
+    absent = partition_stable_lts(model, graph, (), event_rates=None)
+    explicit_empty = partition_stable_lts(model, graph, (), event_rates={})
+
+    assert absent.rate_manifest_hash is None
+    assert explicit_empty.rate_manifest_hash is not None
+    assert absent.positive_rate_graph_hash is None
+    assert explicit_empty.positive_rate_graph_hash is None
+    assert absent.estimand_id is None
+    assert explicit_empty.estimand_id is None
+    assert absent.absorption_domain_certificate.reason_codes == (
+        "rate_manifest_absent",
+    )
+    assert explicit_empty.absorption_domain_certificate.reason_codes == (
+        "absorption_domain_not_certified",
+    )
+    assert (
+        explicit_empty.absorption_domain_certificate.rate_manifest_hash
+        == explicit_empty.rate_manifest_hash
+    )
+
+
+def test_rate_manifest_keys_exactly_match_declared_transition_events() -> None:
+    model = IMSModel(id="rate-registry-model", resources={}, jobs=("j1",))
+    graph = _lts(
+        (_record("s0", _state("start")), _record("s1", _state("done"))),
+        (StableLTSArc("s0", "realized", "s1", False, ("realized",)),),
+    )
+    transitions = (_event("realized"), _event("declared-unreachable"))
+
+    partition = partition_stable_lts(
+        model,
+        graph,
+        transitions,
+        event_rates={"declared-unreachable": 2.0, "realized": 1.0},
+    )
+
+    assert partition.declared_transition_event_names == (
+        "declared-unreachable",
+        "realized",
+    )
+    assert partition.rate_manifest_hash is not None
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        partition_stable_lts(model, graph, transitions, event_rates={"realized": 1.0})
+    assert excinfo.value.code == "missing_event_rate"
+    assert excinfo.value.details["event"] == "declared-unreachable"
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        partition_stable_lts(
+            model,
+            graph,
+            transitions,
+            event_rates={
+                "declared-unreachable": 2.0,
+                "realized": 1.0,
+                "extra": 3.0,
+            },
+        )
+    assert excinfo.value.code == "unexpected_event_rate"
+    assert excinfo.value.details["event"] == "extra"
+
+
+def test_plant_partition_payload_excludes_policy_and_derived_sets() -> None:
+    model = _local_model()
+    start = _state("start")
+    done = _state(
+        "done",
+        completed_jobs=frozenset({"j1", "j2", "free_job"}),
+        complete=True,
+    )
+    graph = _lts(
+        (_record("s0", start), _record("s1", done)),
+        (StableLTSArc("s0", "finish", "s1", False, ("finish",)),),
+    )
+
+    partition = partition_stable_lts(
+        model,
+        graph,
+        (_event("finish", job_id="free_job"),),
+    )
+    payload = partition.plant_partition_json_dict()
+
+    assert set(payload) == {
+        "classification_version",
+        "classes",
+        "bad_hit_sets",
+        "local_bad_soundness_audit",
+        "terminal_sccs",
+        "plant_arcs",
+        "lts_provenance_audit",
+    }
+    classes = cast(dict[str, object], payload["classes"])
+    assert set(classes) == {"D_global", "D_local", "F", "R_livelock", "R_terminal"}
+    assert "P_policy" not in classes
+    assert "S_T" not in classes
+    assert "policy_analysis_classes" not in payload
+    assert "derived_state_sets" not in payload
+    assert "selected_bad_state_ids" not in payload
+    assert "selected_reachable_state_ids" not in payload
+
+
+def test_estimand_spec_v2_uses_policy_analysis_class() -> None:
+    spec = VersionedEstimandSpec(policy_analysis_class="P_policy")
+
+    assert spec.version == "ims-deadlock/g6-versioned-estimand/v2"
+    assert spec.policy_analysis_class == "P_policy"
+    assert spec.to_json_dict()["policy_analysis_class"] == "P_policy"
+    assert "plant_policy_class" not in spec.to_json_dict()
+
+    with pytest.raises(ValueError, match="policy_analysis_class must be P_policy"):
+        VersionedEstimandSpec(policy_analysis_class="custom_policy")
