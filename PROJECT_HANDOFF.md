@@ -24,13 +24,18 @@
 - `G6-C/D/E = 均未开始，均未通过`；
 - 尚无完整论文主文件，也不能声称达到投稿或顶刊就绪状态。
 
-G6-B protocol foundation、data-only validator 和 independent foundation
-review 已在 feature branch 上完成；review verdict 是
+G6-B protocol foundation、row-family nested bundle 和 data-only validator 已在
+feature branch 上完成；foundation review verdict 是
 `PASS FOUNDATION ONLY`，artifact 为
-`docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md`，无
-Critical/Important/Minor protocol findings。但它只建立
-execution-disabled/PENDING 的协议基础：没有创建 discovery case，没有运行
-enumeration、CTMC 或 DES，没有检查任何新科学输出，不能把 G6-B 改为 PASS。
+`docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md`。Row-family 三道独立
+review 已完成：specification compliance 为 `APPROVED`、code quality 为
+`APPROVED` 且无 Critical/Important/Minor blockers、scientific boundary 为
+`PASS PROTOCOL ONLY`，artifact 为
+`docs/verification/G6_B_ROW_FAMILY_PROTOCOL_REVIEW.md`。这些 verdict 只批准
+protocol/spec/code/boundary，不授权 case construction 或 science。当前只建立
+execution-disabled/PENDING 的协议基础和 `IMPLEMENTED / DATA-ONLY` nested
+bundle：没有创建 discovery case，没有运行 enumeration、CTMC 或 DES，没有检查
+任何新科学输出，不能把 G6-B 改为 PASS。
 
 ## 2. 权威目标与版本锁
 
@@ -64,6 +69,35 @@ enumeration、CTMC 或 DES，没有检查任何新科学输出，不能把 G6-B 
   passed on 22 source files; strict mypy `src+tests` passed on 41 source files;
   five protocol JSON parse checks passed; targeted protocol tests
   `52 passed in 2.48s`; `git diff --check` passed.
+- Row-family Phase A validation evidence before this documentation edit:
+  locked worktree `D:\worktree\IMS_deadlock-g6b-discovery`, branch
+  `codex/g6b-discovery-estimand-lock`, HEAD
+  `4fda4896d2284c360f3021e48475f7678b0f37fd`, no upstream, with the Task 8
+  candidate dirty only in the five state-document files listed in this handoff,
+  Python `D:\worktree\IMS_deadlock-final-integration\.venv\Scripts\python.exe`
+  version 3.13.9; exact `PYTHONPATH` pointed at
+  `D:\worktree\IMS_deadlock-g6b-discovery\src`,
+  `PYTHONDONTWRITEBYTECODE=1`, pytest cache disabled, Ruff no-cache, mypy
+  no-incremental. Fresh checks passed: full pytest
+  `1307 passed in 150.84s`; Ruff check `All checks passed!`; Ruff format
+  `43 files already formatted`; strict mypy `src` passed on 23 source files;
+  strict mypy `src tests` passed on 43 source files; `git diff --check` passed;
+  all eight nested JSON parsed with `python -m json.tool`; top-level
+  `cases/discovery/g6b/` JSON set is exactly five; nested row-family JSON set
+  is exactly eight; top-level foundation suite `52 passed in 5.00s`;
+  canonical row-family test `1 passed in 0.12s`; canonical row-family
+  validator returned `valid=True`, errors empty, `science=False`,
+  `case=False`, `adversarial_review_status=PENDING`,
+  `current_state=ROW_FAMILY_BUNDLE_IMPLEMENTED`, and 8 hashes; recursive scan
+  found 8 scientific authorization occurrences all false, 18 case
+  authorization occurrences all false, and both review-status occurrences
+  `PENDING`. Git diff `a4897ab..4fda489` for Tasks 1-7 contains only the
+  eight row-family JSON files, `src/ims_deadlock/g6b_row_family_protocol.py`,
+  and `tests/test_g6b_row_family_protocol.py`; therefore no case artifact,
+  actual overlap report/value, current lock, output root, result/science
+  summary, enumeration, CTMC, or DES artifact was introduced. Task-owned mypy
+  cache directories `D:\worktree\_task8_mypy_src_cache` and
+  `D:\worktree\_task8_mypy_src_tests_cache` are absent.
 
 若本文件已发布到 `main`，包含它的提交会是上述 source baseline 的后继。
 下一进程不得把交接前 SHA 当作当前 SHA，必须重新运行锁定命令。实际包含
@@ -174,7 +208,7 @@ IMS-RAS^CW 稳定语义
 | G3 算法门 | PASS | 稳定 LTS、证书、Petri/refusal、阈值、CTMC、监督器、G4/G5/G6 审计；全库 341 tests | 枚举只核验证明，不替代证明 |
 | G4 案例冻结门 | PASS（历史 seal） | 九个 held-out 案例在结果检查前冻结，并在 G5 原样执行 | 该面板已退役，不能再次作为 held-out |
 | G5 论文门 | FAIL（evidence closed） | 9/9 primary/repro 精确一致，失败、反例和 inconclusive 已固定 | 不得补跑、改 sealed input、重调参或宣称通过 |
-| G6 恢复门 | IN PROGRESS | G6-A 和 G6-R 通过；G6-B protocol foundation + validator 在 feature branch 完成且 execution disabled/PENDING；locked worktree `D:\worktree\IMS_deadlock-g6b-discovery` at HEAD `4c24f39` 已通过 full pytest 393、Ruff、format check、strict mypy、five JSON parse checks、52 protocol tests 和 `git diff --check`；independent foundation review 为 `PASS FOUNDATION ONLY`，artifact `docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md`，无 Critical/Important/Minor protocol findings | G6-B 仍 OPEN；`adversarial_review_status=PENDING`、`scientific_execution_authorized=false` 不变；actual overlap report、runtime lock、discovery outcomes 和 row-family discovery-model/execution plan 仍开放；G6-C/D/E 未通过 |
+| G6 恢复门 | IN PROGRESS | G6-A 和 G6-R 通过；G6-B protocol foundation、row-family nested bundle 和 validator 在 feature branch 完成且 execution disabled/PENDING；locked worktree `D:\worktree\IMS_deadlock-g6b-discovery` at HEAD `4fda4896d2284c360f3021e48475f7678b0f37fd` 已通过 full pytest `1307 passed in 150.84s`、Ruff、format check、strict mypy、eight nested JSON parse checks、52 top-level foundation tests、canonical row-family test、canonical row-family validator 和 `git diff --check`；row-family independent reviews 完成：specification compliance `APPROVED`、code quality `APPROVED` 且无 Critical/Important/Minor blockers、scientific boundary `PASS PROTOCOL ONLY` | G6-B 仍 OPEN；`adversarial_review_status=PENDING`、`scientific_execution_authorized=false`、`case_creation_authorized=false` 不变；actual overlap report、overlap-authority lock、execution-runtime lock、discovery outcomes、output root 和 row-family discovery-model/execution plan 仍开放；G6-C/D/E 未通过 |
 
 状态源：`docs/ROADMAP.md`。
 
@@ -563,27 +597,41 @@ git log -1 --format=%H -- PROJECT_HANDOFF.md
 adversarial review。该计划与审查完成且另获明确授权前，不得把下一步描述
 为科学案例构造或执行。
 
-G6-B protocol foundation 已在 feature branch
-`codex/g6b-discovery-estimand-lock` 的 pre-integration commits
-`73cbbbc52be59fa6a14fcd2a4cf647ea5dc8f811` 和
-`4c24f39dfd1b47fee874a2315ee77759b51311cb` 中完成协议文档、五个 JSON
-文件和 strict data-only validator。其状态仍是
-`scientific_execution_authorized=false`、`adversarial_review_status=PENDING`；
-G6-B 仍为 `OPEN`，G6-C/D/E 仍未开始。该批次没有创建 discovery case，
-没有运行 enumeration、CTMC 或 DES，没有改变 G4/G5/R1/R2/R3 历史证据。
+G6-B protocol foundation 和 row-family nested bundle 已在 feature branch
+`codex/g6b-discovery-estimand-lock` 中完成协议文档、top-level 精确五个 JSON、
+nested 精确八个 JSON 和 strict data-only validator。其状态仍是
+`scientific_execution_authorized=false`、`case_creation_authorized=false`、
+`adversarial_review_status=PENDING`；G6-B 仍为 `OPEN`，G6-C/D/E 仍未开始。
+该批次没有创建 discovery case，没有运行 enumeration、CTMC 或 DES，没有改变
+G4/G5/R1/R2/R3 历史证据。
 Task2 targeted+adjacent 验证为 52 validator tests + 59 adjacent = 111
 passed；随后 locked worktree `D:\worktree\IMS_deadlock-g6b-discovery` at HEAD
 `4c24f39` 在 state-doc commit 前通过 full pytest `393 passed in 47.22s`、
 Ruff check、Ruff format 41 files already formatted、strict mypy `src`
 22 source files、strict mypy `src+tests` 41 source files、five protocol JSON
 parse checks、targeted protocol tests `52 passed in 2.48s` 和
-`git diff --check`。这些验证不改变 `OPEN/PENDING` 状态，也不表示执行了
-science、创建了 cases 或检查了 outcomes。
+`git diff --check`。Row-family Phase A at HEAD
+`4fda4896d2284c360f3021e48475f7678b0f37fd` 又通过 full pytest
+`1307 passed in 150.84s`、Ruff check、Ruff format `43 files already formatted`、
+strict mypy `src` 23 source files、strict mypy `src tests` 43 source files、
+eight nested JSON parse checks、top-level foundation suite
+`52 passed in 5.00s`、canonical row-family test `1 passed in 0.12s`、
+canonical validator `valid=True`/errors empty/`science=False`/`case=False`/
+`PENDING`/`ROW_FAMILY_BUNDLE_IMPLEMENTED`/8 hashes、recursive authorization
+scan 和 `git diff --check`。Git diff `a4897ab..4fda489` 只包含 exact-eight
+nested JSON、row-family validator source 和 row-family tests；这些验证不改变
+`OPEN/PENDING` 状态，也不表示执行了 science、创建了 cases 或检查了 outcomes。
 Independent foundation review 已通过 `PASS FOUNDATION ONLY`，artifact 为
 `docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md`，无
 Critical/Important/Minor protocol findings；这不改变
 `adversarial_review_status=PENDING`、`scientific_execution_authorized=false`、
 G6-B `OPEN` 或 G6-C/D/E 未开始状态。
+Row-family independent spec review 已给出 `APPROVED` 且无 blockers；
+code-quality review 已给出 `APPROVED` 且无 Critical/Important/Minor blockers；
+scientific-boundary review 的 verdict 是 `PASS PROTOCOL ONLY` 且无 blockers。
+这些 verdict 只批准 protocol/spec/code/boundary，不改变
+`adversarial_review_status=PENDING`、不使 G6-B PASS、不授权 case construction
+或 science。唯一后续仍是另行批准的 case-construction plan。
 
 ### 13.1 G6-B 必须冻结前定义的内容
 

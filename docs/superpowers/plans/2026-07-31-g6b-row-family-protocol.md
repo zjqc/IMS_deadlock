@@ -232,7 +232,7 @@ _DOCUMENTS = (
 - Create: `src/ims_deadlock/g6b_row_family_protocol.py`
 - Create: `tests/test_g6b_row_family_protocol.py`
 
-- [ ] **Step 1: Write the canonical-bundle test before the module exists**
+- [x] **Step 1: Write the canonical-bundle test before the module exists**
 
 ```python
 from pathlib import Path
@@ -267,7 +267,7 @@ def test_canonical_bundle_loads_disabled_before_semantic_validation() -> None:
     }
 ```
 
-- [ ] **Step 2: Run the test and record RED**
+- [x] **Step 2: Run the test and record RED**
 
 Run:
 
@@ -279,7 +279,7 @@ Run:
 Expected: collection fails with
 `ModuleNotFoundError: No module named 'ims_deadlock.g6b_row_family_protocol'`.
 
-- [ ] **Step 3: Add the frozen result type, exact document list, duplicate-key loader, and canonical hash**
+- [x] **Step 3: Add the frozen result type, exact document list, duplicate-key loader, and canonical hash**
 
 ```python
 """Data-only validation for the G6-B row-family protocol bundle."""
@@ -364,39 +364,39 @@ def _canonical_sha256(document: JsonObject) -> str:
     return hashlib.sha256(payload).hexdigest()
 ```
 
-- [ ] **Step 4a: Create `row_family_protocol.json`**
+- [x] **Step 4a: Create `row_family_protocol.json`**
 
 Use `ROW_FAMILY_PROTOCOL` from Canonical Document Appendix A field-for-field.
 
-- [ ] **Step 4b: Create `identity_schema.json`**
+- [x] **Step 4b: Create `identity_schema.json`**
 
 Use `IDENTITY_SCHEMA` from Canonical Document Appendix A field-for-field.
 
-- [ ] **Step 4c: Create `row_family_matrix.json`**
+- [x] **Step 4c: Create `row_family_matrix.json`**
 
 Use `ROW_FAMILY_MATRIX` from Canonical Document Appendix A field-for-field.
 
-- [ ] **Step 4d: Create `reuse_matrix.json`**
+- [x] **Step 4d: Create `reuse_matrix.json`**
 
 Use `REUSE_MATRIX` from Canonical Document Appendix A field-for-field.
 
-- [ ] **Step 4e: Create `overlap_report_schema.json`**
+- [x] **Step 4e: Create `overlap_report_schema.json`**
 
 Use `OVERLAP_REPORT_SCHEMA` from Canonical Document Appendix A field-for-field.
 
-- [ ] **Step 4f: Create `runtime_lock_schema.json`**
+- [x] **Step 4f: Create `runtime_lock_schema.json`**
 
 Use `RUNTIME_LOCK_SCHEMA` from Canonical Document Appendix A field-for-field.
 
-- [ ] **Step 4g: Create `review_state.json`**
+- [x] **Step 4g: Create `review_state.json`**
 
 Use `REVIEW_STATE` from Canonical Document Appendix A field-for-field.
 
-- [ ] **Step 4h: Create `failure_ledger.json`**
+- [x] **Step 4h: Create `failure_ledger.json`**
 
 Use `FAILURE_LEDGER` from Canonical Document Appendix A field-for-field.
 
-- [ ] **Step 5: Implement the minimal orchestrating validator**
+- [x] **Step 5: Implement the minimal orchestrating validator**
 
 ```python
 def validate_g6b_row_family_bundle(root: Path) -> G6BRowFamilyValidation:
@@ -446,7 +446,7 @@ def validate_g6b_row_family_bundle(root: Path) -> G6BRowFamilyValidation:
     )
 ```
 
-- [ ] **Step 6: Run the load-only test and record GREEN**
+- [x] **Step 6: Run the load-only test and record GREEN**
 
 Run:
 
@@ -458,7 +458,7 @@ Run:
 Expected: `1 passed`. This proves loading and disabled-status reporting only;
 the canonical result remains invalid until Task 6 closes all semantic checks.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add cases/discovery/g6b/row_families/structural_discovery_v1 `
@@ -474,7 +474,7 @@ git commit -m "test: scaffold disabled G6-B row-family bundle"
 - Modify: `src/ims_deadlock/g6b_row_family_protocol.py`
 - Modify: `tests/test_g6b_row_family_protocol.py`
 
-- [ ] **Step 1: Add mutation helpers and RED tests**
+- [x] **Step 1: Add mutation helpers and RED tests**
 
 ```python
 import json
@@ -562,7 +562,7 @@ def test_true_authorization_is_rejected(
     _assert_invalid(bundle, f"{field} must be false")
 ```
 
-- [ ] **Step 2: Run the new tests and record RED**
+- [x] **Step 2: Run the new tests and record RED**
 
 Run:
 
@@ -575,7 +575,7 @@ Run:
 Expected: failures because canonical layout, exact keys, common status, and
 cross-document authorization are not yet validated.
 
-- [ ] **Step 3: Implement canonical-root, exact-key, and common-contract helpers**
+- [x] **Step 3: Implement canonical-root, exact-key, and common-contract helpers**
 
 ```python
 _RELATIVE_ROOT = Path(
@@ -701,7 +701,7 @@ if set(documents) == set(_DOCUMENTS):
     errors.append("semantic validation incomplete")
 ```
 
-- [ ] **Step 4: Add duplicate-key, non-object, extra-file, unknown-key, and review-status mutations**
+- [x] **Step 4: Add duplicate-key, non-object, extra-file, unknown-key, and review-status mutations**
 
 Add these exact parameterized tests:
 
@@ -771,7 +771,7 @@ des != prohibited
 output_inspection != prohibited
 ```
 
-- [ ] **Step 5: Run targeted tests and record GREEN**
+- [x] **Step 5: Run targeted tests and record GREEN**
 
 Run:
 
@@ -786,7 +786,7 @@ Run:
 Expected: all Task 1-2 tests pass, and both explicit top-level exact-five
 guards pass.
 
-- [ ] **Step 6: Run static guards**
+- [x] **Step 6: Run static guards**
 
 ```powershell
 rg -n 'Path\.cwd|subprocess|ims_deadlock\.(analysis|ctmc|stochastic|engine|g4|g5)' `
@@ -795,7 +795,7 @@ rg -n 'Path\.cwd|subprocess|ims_deadlock\.(analysis|ctmc|stochastic|engine|g4|g5
 
 Expected: no matches.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add src/ims_deadlock/g6b_row_family_protocol.py `
@@ -814,7 +814,7 @@ git commit -m "feat: fail closed on row-family protocol drift"
 - Modify: `src/ims_deadlock/g6b_row_family_protocol.py`
 - Modify: `tests/test_g6b_row_family_protocol.py`
 
-- [ ] **Step 1: Freeze the identity schema content**
+- [x] **Step 1: Freeze the identity schema content**
 
 `identity_schema.json` must encode:
 
@@ -863,7 +863,7 @@ git commit -m "feat: fail closed on row-family protocol drift"
 }
 ```
 
-- [ ] **Step 2: Freeze the controlled reuse matrix**
+- [x] **Step 2: Freeze the controlled reuse matrix**
 
 `reuse_matrix.json["relations"]` must equal
 `REUSE_MATRIX["relations"]` from Canonical Document Appendix A: four allowed
@@ -886,7 +886,7 @@ named variation axis and a preregistered list of held-fixed dimensions. For
 `method_schema_reuse`, require outcome-independent comparability. For
 `retired_authority_overlap`, set `admission = refused`.
 
-- [ ] **Step 3: Write RED mutations**
+- [x] **Step 3: Write RED mutations**
 
 Add tests that reject:
 
@@ -908,7 +908,7 @@ Also mutate each fingerprint key, method role, relation id, and no-stochastic
 truth value. Add a test that changes
 `method_observations_are_independent_cases` to `true`.
 
-- [ ] **Step 3b: Run identity/reuse tests and record RED**
+- [x] **Step 3b: Run identity/reuse tests and record RED**
 
 ```powershell
 & $Python -m pytest -p no:cacheprovider -q `
@@ -919,7 +919,7 @@ truth value. Add a test that changes
 Expected: the new mutations fail because exact identity/reuse validation is
 not implemented.
 
-- [ ] **Step 4: Implement exact-list and exact-object validation**
+- [x] **Step 4: Implement exact-list and exact-object validation**
 
 Add immutable module constants equal to `IDENTITY_SCHEMA` and `REUSE_MATRIX`
 from Appendix A, then reuse Task 2 `_expect_exact_document`:
@@ -942,7 +942,7 @@ _expect_exact_document(
 Whole-object equality makes order-sensitive arrays, duplicates, missing
 values, extra values, and semantic drift fail deterministically.
 
-- [ ] **Step 5: Run tests and record GREEN**
+- [x] **Step 5: Run tests and record GREEN**
 
 Run:
 
@@ -955,7 +955,7 @@ Run:
 Expected: all identity/reuse mutation tests pass. The load-only canonical test
 still reports the deliberate `semantic validation incomplete` invalid state.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add cases/discovery/g6b/row_families/structural_discovery_v1/identity_schema.json `
@@ -976,7 +976,7 @@ git commit -m "feat: lock row-family identity and controlled reuse"
 - Modify: `src/ims_deadlock/g6b_row_family_protocol.py`
 - Modify: `tests/test_g6b_row_family_protocol.py`
 
-- [ ] **Step 1: Freeze overlap scope and dimensions**
+- [x] **Step 1: Freeze overlap scope and dimensions**
 
 The overlap schema must encode:
 
@@ -1028,7 +1028,7 @@ It must also contain:
 }
 ```
 
-- [ ] **Step 2: Freeze the two distinct later lock schemas**
+- [x] **Step 2: Freeze the two distinct later lock schemas**
 
 `runtime_lock_schema.json` must set both statuses to `required_later` and list
 the exact approved fields:
@@ -1070,7 +1070,7 @@ the exact approved fields:
 }
 ```
 
-- [ ] **Step 3: Write RED tests for every dimension and lock field**
+- [x] **Step 3: Write RED tests for every dimension and lock field**
 
 Parameterize removal, duplication, and replacement of all eight retired
 dimensions, all seven future-confirmation dimensions, every metric-reuse flag,
@@ -1084,7 +1084,7 @@ execution_runtime_lock.status != required_later
 execution_runtime_lock.allowed_only_after != ACTUAL_OVERLAP_REPORT_PASSED
 ```
 
-- [ ] **Step 3b: Run overlap/lock mutations and record RED**
+- [x] **Step 3b: Run overlap/lock mutations and record RED**
 
 ```powershell
 & $Python -m pytest -p no:cacheprovider -q `
@@ -1095,12 +1095,12 @@ execution_runtime_lock.allowed_only_after != ACTUAL_OVERLAP_REPORT_PASSED
 Expected: the new mutations fail because overlap/lock exact validation is not
 implemented.
 
-- [ ] **Step 4: Implement full-object validation**
+- [x] **Step 4: Implement full-object validation**
 
 Add `_EXPECTED_OVERLAP_REPORT_SCHEMA` and `_EXPECTED_RUNTIME_LOCK_SCHEMA` from
 Appendix A and validate each with `_expect_exact_document`.
 
-- [ ] **Step 4b: Run overlap/lock mutations and record GREEN**
+- [x] **Step 4b: Run overlap/lock mutations and record GREEN**
 
 ```powershell
 & $Python -m pytest -p no:cacheprovider -q `
@@ -1111,7 +1111,7 @@ Appendix A and validate each with `_expect_exact_document`.
 Expected: all overlap/lock mutation tests pass. Canonical validation remains
 deliberately incomplete until Task 6.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add cases/discovery/g6b/row_families/structural_discovery_v1/overlap_report_schema.json `
@@ -1130,7 +1130,7 @@ git commit -m "feat: define future overlap and lock gates"
 - Modify: `src/ims_deadlock/g6b_row_family_protocol.py`
 - Modify: `tests/test_g6b_row_family_protocol.py`
 
-- [ ] **Step 1: Encode all seven controls exactly**
+- [x] **Step 1: Encode all seven controls exactly**
 
 Use the seven complete records in Appendix A `ROW_FAMILY_MATRIX`. The frozen
 foundation fields are:
@@ -1150,7 +1150,7 @@ hypothesis, allowed admission route, `not_support_if_failed = true`,
 `supports_hypothesis_if_failed = false`, `case_creation_authorized = false`,
 and `observed_outcome = null`.
 
-- [ ] **Step 2: Encode the three outcome-neutral probes**
+- [x] **Step 2: Encode the three outcome-neutral probes**
 
 ```json
 [
@@ -1189,7 +1189,7 @@ and `observed_outcome = null`.
 Every probe has `observed_outcome = null`,
 `favorable_outcome_frozen = false`, and `case_creation_authorized = false`.
 
-- [ ] **Step 3: Encode ontology, exact/DES, and scoring contracts**
+- [x] **Step 3: Encode ontology, exact/DES, and scoring contracts**
 
 Require:
 
@@ -1217,14 +1217,14 @@ Require:
 }
 ```
 
-- [ ] **Step 4: Write RED semantic mutations**
+- [x] **Step 4: Write RED semantic mutations**
 
 Mutate every control field, remove each probe/falsifier, change `D_local` to a
 terminal SCC, remove either admission route, drift exact/DES labels/target,
 mark method companions independent, and copy `not_executed` into all scoring
 fields.
 
-- [ ] **Step 4b: Run semantic mutations and record RED**
+- [x] **Step 4b: Run semantic mutations and record RED**
 
 ```powershell
 & $Python -m pytest -p no:cacheprovider -q `
@@ -1234,12 +1234,12 @@ fields.
 
 Expected: the new mutations fail because matrix exact validation is absent.
 
-- [ ] **Step 5: Implement exact semantic validation**
+- [x] **Step 5: Implement exact semantic validation**
 
 Add `_EXPECTED_ROW_FAMILY_MATRIX` from Appendix A and validate it with
 `_expect_exact_document`.
 
-- [ ] **Step 5b: Run semantic mutations and record GREEN**
+- [x] **Step 5b: Run semantic mutations and record GREEN**
 
 ```powershell
 & $Python -m pytest -p no:cacheprovider -q `
@@ -1250,7 +1250,7 @@ Add `_EXPECTED_ROW_FAMILY_MATRIX` from Appendix A and validate it with
 Expected: every matrix mutation test passes. Canonical validation remains
 deliberately incomplete until Task 6.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add cases/discovery/g6b/row_families/structural_discovery_v1/row_family_matrix.json `
@@ -1270,7 +1270,7 @@ git commit -m "feat: lock G6-B controls and outcome-neutral probes"
 - Modify: `src/ims_deadlock/g6b_row_family_protocol.py`
 - Modify: `tests/test_g6b_row_family_protocol.py`
 
-- [ ] **Step 1: Freeze the non-executing state machine**
+- [x] **Step 1: Freeze the non-executing state machine**
 
 ```json
 {
@@ -1298,7 +1298,7 @@ The validator does not transition the file to
 `DATA_ONLY_VALIDATION_PASSED`; a later reviewed state-integration task records
 that fact without changing `adversarial_review_status`.
 
-- [ ] **Step 2: Freeze the empty append-only ledger**
+- [x] **Step 2: Freeze the empty append-only ledger**
 
 ```json
 {
@@ -1326,7 +1326,7 @@ that fact without changing `adversarial_review_status`.
 }
 ```
 
-- [ ] **Step 3: Write RED state/ledger/leakage mutations**
+- [x] **Step 3: Write RED state/ledger/leakage mutations**
 
 Reject a reordered or missing state, any current state beyond
 `ROW_FAMILY_BUNDLE_IMPLEMENTED`, `PENDING` drift, `append_only = false`,
@@ -1343,7 +1343,7 @@ actual_overlap_result
 current_runtime_lock
 ```
 
-- [ ] **Step 3b: Run state/ledger/leakage mutations and record RED**
+- [x] **Step 3b: Run state/ledger/leakage mutations and record RED**
 
 ```powershell
 & $Python -m pytest -p no:cacheprovider -q `
@@ -1354,7 +1354,7 @@ current_runtime_lock
 Expected: the new mutations fail because state/ledger/leakage validation is
 absent.
 
-- [ ] **Step 4: Implement recursive prohibited-key scan**
+- [x] **Step 4: Implement recursive prohibited-key scan**
 
 ```python
 _PROHIBITED_OUTCOME_KEYS = {
@@ -1384,7 +1384,7 @@ def _walk_keys(value: Any) -> set[str]:
 
 Reject any intersection with `_PROHIBITED_OUTCOME_KEYS`.
 
-- [ ] **Step 5: Close exact review/ledger validation and remove the incomplete sentinel**
+- [x] **Step 5: Close exact review/ledger validation and remove the incomplete sentinel**
 
 Add `_EXPECTED_REVIEW_STATE` and `_EXPECTED_FAILURE_LEDGER` from Appendix A,
 validate them with `_expect_exact_document`, then remove:
@@ -1408,7 +1408,7 @@ def test_canonical_row_family_bundle_is_valid_and_disabled() -> None:
     assert set(result.bundle_hashes) == set(_NAMES)
 ```
 
-- [ ] **Step 5b: Run targeted tests and record GREEN**
+- [x] **Step 5b: Run targeted tests and record GREEN**
 
 ```powershell
 & $Python -m pytest -p no:cacheprovider -q `
@@ -1417,7 +1417,7 @@ def test_canonical_row_family_bundle_is_valid_and_disabled() -> None:
 
 Expected: canonical bundle passes; all state/ledger/leakage mutations fail.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add cases/discovery/g6b/row_families/structural_discovery_v1/review_state.json `
@@ -1434,7 +1434,7 @@ git commit -m "feat: enforce row-family review and failure state"
 - Modify: `src/ims_deadlock/g6b_row_family_protocol.py`
 - Modify: `tests/test_g6b_row_family_protocol.py`
 
-- [ ] **Step 1: Add exhaustive parameterized mutation tables**
+- [x] **Step 1: Add exhaustive parameterized mutation tables**
 
 Create parameter tables for:
 
@@ -1533,7 +1533,7 @@ The document-specific removal/addition/reorder/duplicate/semantic mutations
 are the exact tests already introduced in Tasks 3-6; Task 7 collects them into
 the full targeted run rather than describing new unnamed cases.
 
-- [ ] **Step 2: Add AST-based import and call guards**
+- [x] **Step 2: Add AST-based import and call guards**
 
 ```python
 import ast
@@ -1680,7 +1680,7 @@ def test_invalid_floating_copy_is_rejected_without_mutation(
     assert after == before
 ```
 
-- [ ] **Step 3: Run targeted, adjacent, Ruff, and strict mypy**
+- [x] **Step 3: Run targeted, adjacent, Ruff, and strict mypy**
 
 ```powershell
 & $Python -m pytest -p no:cacheprovider -q `
@@ -1702,7 +1702,7 @@ def test_invalid_floating_copy_is_rejected_without_mutation(
 Expected: all pass. Record exact counts; do not predict counts in state docs
 before reading output.
 
-- [ ] **Step 4: Run all eight JSON parsers**
+- [x] **Step 4: Run all eight JSON parsers**
 
 ```powershell
 $JsonFiles = @(
@@ -1728,7 +1728,7 @@ foreach ($File in $JsonFiles) {
 
 Expected: all eight parse.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add src/ims_deadlock/g6b_row_family_protocol.py `
@@ -1748,7 +1748,7 @@ git commit -m "test: harden G6-B row-family validation"
 - Create:
   `docs/verification/G6_B_ROW_FAMILY_PROTOCOL_REVIEW.md`
 
-- [ ] **Step 1: Record only the bounded implementation status**
+- [x] **Step 1: Record only the bounded implementation status**
 
 State documents must say:
 
@@ -1766,7 +1766,7 @@ G6-C/D/E = NOT STARTED
 historical evidence changed = false
 ```
 
-- [ ] **Step 2a: Run the full qualified pytest suite**
+- [x] **Step 2a: Run the full qualified pytest suite**
 
 Using the locked remote worktree and canonical qualified Python:
 
@@ -1776,7 +1776,7 @@ Using the locked remote worktree and canonical qualified Python:
 
 Expected: pass. Record the exact test count and elapsed time.
 
-- [ ] **Step 2b: Run both Ruff checks**
+- [x] **Step 2b: Run both Ruff checks**
 
 ```powershell
 & $Python -m ruff check --no-cache src tests
@@ -1785,7 +1785,7 @@ Expected: pass. Record the exact test count and elapsed time.
 
 Expected: both pass. Record the exact formatted-file count.
 
-- [ ] **Step 2c: Run both strict mypy scopes**
+- [x] **Step 2c: Run both strict mypy scopes**
 
 ```powershell
 & $Python -m mypy --no-incremental --strict src
@@ -1795,7 +1795,7 @@ Expected: both pass. Record the exact formatted-file count.
 
 Expected: both pass. Record both exact source-file counts.
 
-- [ ] **Step 2d: Run the Git diff check**
+- [x] **Step 2d: Run the Git diff check**
 
 ```powershell
 git diff --check
@@ -1803,18 +1803,73 @@ git diff --check
 
 Expected: pass with no output.
 
-- [ ] **Step 3: Run a specification-compliance review**
+Phase A evidence recorded 2026-07-31 before final documentation reconciliation:
+
+```text
+target path = D:\worktree\IMS_deadlock-g6b-discovery
+branch = codex/g6b-discovery-estimand-lock
+HEAD = 4fda4896d2284c360f3021e48475f7678b0f37fd
+upstream = NO_UPSTREAM
+candidate dirty scope = PROJECT_HANDOFF.md; docs/ROADMAP.md;
+  docs/cases/CASE_CHANGE_LEDGER.md;
+  docs/superpowers/plans/2026-07-31-g6b-row-family-protocol.md;
+  untracked docs/verification/G6_B_ROW_FAMILY_PROTOCOL_REVIEW.md
+Python = D:\worktree\IMS_deadlock-final-integration\.venv\Scripts\python.exe
+Python version = 3.13.9
+PYTHONPATH = D:\worktree\IMS_deadlock-g6b-discovery\src
+PYTHONDONTWRITEBYTECODE = 1
+pytest = 1307 passed in 150.84s
+ruff check = All checks passed!
+ruff format = 43 files already formatted
+mypy src = Success: no issues found in 23 source files
+mypy src tests = Success: no issues found in 43 source files
+git diff --check = pass before docs edits
+nested JSON parse = 8/8 passed with python -m json.tool
+top-level G6-B JSON set = exact five: estimand_schema.json,
+  failure_ledger.json, independence_schema.json, negative_controls.json,
+  protocol.json
+nested row-family JSON set = exact eight: failure_ledger.json,
+  identity_schema.json, overlap_report_schema.json, reuse_matrix.json,
+  review_state.json, row_family_matrix.json, row_family_protocol.json,
+  runtime_lock_schema.json
+row_families inventory = one structural_discovery_v1 directory plus those
+  exact-eight JSON files
+foundation tests = 52 passed in 5.00s
+canonical row-family test = 1 passed in 0.12s
+canonical validator = valid=True, errors=[], science=False, case=False,
+  adversarial_review_status=PENDING,
+  current_state=ROW_FAMILY_BUNDLE_IMPLEMENTED, hashes=8
+recursive exact-eight scan = 8 scientific authorization occurrences all false;
+  18 case authorization occurrences all false; both review-status occurrences
+  PENDING
+Tasks 1-7 diff a4897ab..4fda489 = exact-eight nested JSON,
+  src/ims_deadlock/g6b_row_family_protocol.py,
+  tests/test_g6b_row_family_protocol.py only
+artifact inventory = no discovery cases/outcomes, actual overlap report,
+  actual overlap value, current lock, overlap-authority lock,
+  execution-runtime lock, output root, result/science summary, enumeration,
+  CTMC, DES, or science artifact
+task-owned mypy cache dirs = absent:
+  D:\worktree\_task8_mypy_src_cache;
+  D:\worktree\_task8_mypy_src_tests_cache
+```
+
+- [x] **Step 3: Run a specification-compliance review**
 
 The reviewer must compare every approved design section with an implemented
 artifact/test and report either `APPROVED` or exact file:line blockers.
 
-- [ ] **Step 4: Run a code-quality review**
+Phase B verdict: `APPROVED`; no blockers.
+
+- [x] **Step 4: Run a code-quality review**
 
 The reviewer must check data-only imports, no cwd fallback, exact-root
 resolution, strict JSON/key behavior, deterministic errors, type safety,
 mutation coverage, and no case/science call surface.
 
-- [ ] **Step 5: Run an independent scientific-boundary review**
+Phase B verdict: `APPROVED`; no Critical/Important/Minor blockers.
+
+- [x] **Step 5: Run an independent scientific-boundary review**
 
 The review must check:
 
@@ -1837,11 +1892,18 @@ no actual cases, locks, overlap values, outputs, or science exist
 Verdict may be `PASS PROTOCOL ONLY`; it must not authorize case construction
 or science.
 
-- [ ] **Step 6: Fix every Critical/Important finding and re-run its review**
+Phase B verdict: `PASS PROTOCOL ONLY`; no blockers. This is a protocol-only
+scientific-boundary verdict and does not authorize case construction or
+science.
+
+- [x] **Step 6: Fix every Critical/Important finding and re-run its review**
 
 Do not waive, downgrade, or delete negative findings. Minor findings may remain
 only if the reviewer explicitly states they cannot change scientific meaning,
 execution authority, reproducibility, or handoff correctness.
+
+Phase B finding disposition: no Critical, Important, or Minor blockers were
+reported, so no fixes or review re-runs were required.
 
 - [ ] **Step 7: Commit bounded state integration**
 
