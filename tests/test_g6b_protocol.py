@@ -655,7 +655,7 @@ def test_g6b_ontology_absorption_review_locks_domain_semantics() -> None:
         "positive-rate edge in the full stopped graph, including exits to "
         "`A_stop`"
     ) in normalized_review_text
-    assert "positive-rate graph induced by `T`" not in normalized_review_text
+    assert review_text.count("`C_closed`:") == 1
 
     assert (
         "Current production supports only the global `A_abs` certificate-or-"
