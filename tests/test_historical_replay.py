@@ -387,28 +387,40 @@ def _v3_terminal_classification(
     d_local: list[Any] | None = None,
     s_t: list[Any] | None = None,
 ) -> dict[str, Any]:
-    absorption_hash = "a" * 64
+    identity = {
+        "state_space_hash": "0" * 64,
+        "partition_hash": "1" * 64,
+        "rate_manifest_hash": "2" * 64,
+        "positive_rate_graph_hash": "3" * 64,
+        "policy_filter_hash": "4" * 64,
+        "absorption_domain_hash": "a" * 64,
+    }
+    d_local_state_ids = ["s_dead"] if d_local is None else d_local
+    s_t_state_ids = ["s0"] if s_t is None else s_t
     return {
         "classification_version": "ims-deadlock/g6-terminal-stopping-partition/v3",
         "classes": {
             "D_global": [],
-            "D_local": ["s_dead"] if d_local is None else d_local,
+            "D_local": d_local_state_ids,
             "F": [],
             "R_livelock": [],
             "R_terminal": [],
         },
         "derived_state_sets": {
             "S_reach": {
-                "state_ids": ["s0", "s_dead"],
+                "state_ids": ["s0"],
                 "support_unreachable_state_ids": [],
                 "graph_semantics": "complete_stopped_lts_support",
                 "positive_rate_verified": True,
             },
             "S_T": {
-                "state_ids": ["s0", "s_dead"] if s_t is None else s_t,
+                "state_ids": s_t_state_ids,
                 "certification_status": ("certified_finite_positive_rate_stopped_ctmc"),
                 "reason_codes": [],
             },
+            "unselected_closed_sccs": [],
+            "closed_class_reverse_basin_state_ids": [],
+            "non_almost_sure_absorbing_state_ids": [],
         },
         "absorption_domain_certificate": {
             "version": "ims-deadlock/g6-absorption-domain-certificate/v1",
@@ -416,14 +428,11 @@ def _v3_terminal_classification(
             "certification_status": "certified_finite_positive_rate_stopped_ctmc",
             "reason_codes": [],
             "selected_absorbing_state_ids": ["s_dead"],
-            "identity": {
-                "state_space_hash": "0" * 64,
-                "partition_hash": "1" * 64,
-                "rate_manifest_hash": "2" * 64,
-                "positive_rate_graph_hash": "3" * 64,
-                "policy_filter_hash": "4" * 64,
-                "absorption_domain_hash": absorption_hash,
-            },
+            "unselected_closed_sccs": [],
+            "closed_class_reverse_basin_state_ids": [],
+            "s_t_state_ids": s_t_state_ids,
+            "non_almost_sure_absorbing_state_ids": [],
+            "identity": dict(identity),
             "assumptions": {
                 "finite_state_space_verified": True,
                 "complete_nontruncated_lts_verified": True,
@@ -435,7 +444,9 @@ def _v3_terminal_classification(
         },
         "lts_provenance_audit": {"verified": True},
         "local_bad_soundness_audit": {"verified": True},
-        "hashes": {"absorption_domain_hash": absorption_hash},
+        "bad_hit_sets": {"D_global": [], "D_local": list(d_local_state_ids)},
+        "selected_bad_state_ids": list(d_local_state_ids),
+        "hashes": dict(identity),
     }
 
 
@@ -1952,10 +1963,10 @@ def test_probability_bounds_accept_solver_roundoff_not_material_violation() -> N
 
 
 def test_v2_terminal_payload_is_legacy_and_s_t_is_not_certificate() -> None:
+    terminal = _terminal_classification(["s_dead"])
     payload = {
-        "terminal_classification": _terminal_classification(["s_dead"]),
+        "terminal_classification": terminal,
     }
-    terminal = cast(dict[str, Any], payload["terminal_classification"])
     cast(dict[str, Any], terminal["classes"])["S_T"] = ["legacy-s-t"]
 
     classification = replay.read_historical_terminal_classification(payload)
@@ -1975,7 +1986,7 @@ def test_v3_terminal_payload_reads_only_certified_derived_s_t() -> None:
     assert classification == replay.HistoricalTerminalClassification(
         classification_version="ims-deadlock/g6-terminal-stopping-partition/v3",
         d_local_state_ids=("s_dead",),
-        certified_s_t_state_ids=("s0", "s_dead"),
+        certified_s_t_state_ids=("s0",),
     )
 
 
@@ -1987,7 +1998,7 @@ def test_direct_terminal_payload_without_wrapper_remains_supported() -> None:
     assert classification == replay.HistoricalTerminalClassification(
         classification_version="ims-deadlock/g6-terminal-stopping-partition/v3",
         d_local_state_ids=("s_dead",),
-        certified_s_t_state_ids=("s0", "s_dead"),
+        certified_s_t_state_ids=("s0",),
     )
 
 
@@ -1996,6 +2007,69 @@ def test_malformed_terminal_classification_wrapper_fails_closed() -> None:
     payload["terminal_classification"] = "not-a-mapping"
 
     assert replay.read_historical_terminal_classification(payload) is None
+
+
+def test_v3_terminal_payload_rejects_certificate_derived_s_t_drift() -> None:
+    terminal = _v3_terminal_classification()
+    certificate = cast(dict[str, Any], terminal["absorption_domain_certificate"])
+    certificate["s_t_state_ids"] = ["s_other"]
+
+    assert (
+        replay.read_historical_terminal_classification(
+            {"terminal_classification": terminal}
+        )
+        is None
+    )
+
+    result = _valid_result("G4_MEDIUM_ISLAND_REBUILD")
+    result["terminal_classification"] = terminal
+    mechanism = replay._mechanism_check(
+        "G4_MEDIUM_ISLAND_REBUILD",
+        result,
+        {"exit_code": 0, "timed_out": False, "estimand_ids": ["x"]},
+        BUNDLE_ROOT,
+    )
+    assert mechanism["status"] == "FAIL"
+    assert mechanism["terminal_d_local_verified"] is False
+
+
+def test_v3_terminal_payload_rejects_selected_absorbing_target_drift() -> None:
+    terminal = _v3_terminal_classification()
+    certificate = cast(dict[str, Any], terminal["absorption_domain_certificate"])
+    certificate["selected_absorbing_state_ids"] = ["s_other"]
+
+    assert (
+        replay.read_historical_terminal_classification(
+            {"terminal_classification": terminal}
+        )
+        is None
+    )
+
+
+def test_v3_terminal_payload_rejects_certificate_derived_mirror_drift() -> None:
+    terminal = _v3_terminal_classification()
+    certificate = cast(dict[str, Any], terminal["absorption_domain_certificate"])
+    certificate["closed_class_reverse_basin_state_ids"] = ["s_closed"]
+
+    assert (
+        replay.read_historical_terminal_classification(
+            {"terminal_classification": terminal}
+        )
+        is None
+    )
+
+
+def test_v3_terminal_payload_rejects_top_level_identity_hash_drift() -> None:
+    terminal = _v3_terminal_classification()
+    hashes = cast(dict[str, Any], terminal["hashes"])
+    hashes["state_space_hash"] = "b" * 64
+
+    assert (
+        replay.read_historical_terminal_classification(
+            {"terminal_classification": terminal}
+        )
+        is None
+    )
 
 
 @pytest.mark.parametrize(
