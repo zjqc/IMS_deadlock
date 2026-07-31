@@ -589,22 +589,43 @@ def test_g6b_theory_documents_lock_typed_absorption_domain() -> None:
     assert len(_symbol_rows(symbol_text, "A_stop")) == 1
     assert len(_symbol_rows(symbol_text, "D_sel")) == 1
     assert len(_symbol_rows(symbol_text, "C_closed")) == 1
+    assert len(_symbol_rows(symbol_text, "V")) == 1
+    assert "reservation" in _symbol_rows(symbol_text, "V")[0]
+    assert len(_symbol_rows(symbol_text, "X_stop")) == 1
+    assert "full finite stopped state set" in _symbol_rows(symbol_text, "X_stop")[0]
     assert "D_sel := D_global union D_local" in active_scoped_text
     assert "A_stop := D_sel union F" in active_scoped_text
-    assert "T = V \\ A_stop" in active_scoped_text
+    assert "T := X_stop \\ A_stop" in active_scoped_text
     assert "C_closed subset T" in active_scoped_text
     assert "outgoing" in active_scoped_text
     assert "A_stop" in active_scoped_text
     assert "S_reach" in active_scoped_text
     assert "path to `A_stop`" in active_scoped_text
     assert "S_T = T \\ B_closed" in active_scoped_text
-    assert "tau_{D_sel}" in probability_text
+    assert "h_i = P_i(tau_{D_sel} < tau_F)" in probability_text
+    assert "conditioning on first hitting `D_sel`" in probability_text
     assert "tau_{A_stop}" in probability_text
     assert "Q_{S_T,D_sel}" in probability_text
     assert "C subset T" not in active_scoped_text
     assert "selected `A`" not in active_scoped_text
     assert "selected A." not in active_scoped_text
     assert "selected A," not in active_scoped_text
+    assert "for `i in D`" not in active_scoped_text
+    assert "for i in D`" not in active_scoped_text
+    assert "first hitting `D`" not in active_scoped_text
+    assert "counts for `A`" not in active_scoped_text
+    assert "path to `A`" not in active_scoped_text
+    assert "V \\ A_stop" not in active_scoped_text
+    assert "`C` may have" not in g6b_protocol_text
+    assert "`C_closed` may have" in g6b_protocol_text
+    assert "source-local" in probability_text
+    assert "F_N=(I-T_N)^-1" in probability_text
+    assert "G_N=F_N C_N" in probability_text
+    assert "printed in the source as `F=(I-T)^-1`" in probability_text
+    assert "printed in the source as `G=FC`" in probability_text
+    assert "L23" in probability_text
+    assert "L28" in probability_text
+    assert "L16" in probability_text
 
 
 def _symbol_row(symbol_text: str, symbol: str) -> str:

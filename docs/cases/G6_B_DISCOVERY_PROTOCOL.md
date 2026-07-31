@@ -217,15 +217,15 @@ No scientific execution is authorized in this task.
 
 ## Certified Absorption-Domain Gate
 
-The stopped target set is `D_sel := D_global union D_local; A_stop := D_sel union F`; the remaining
-states are `T = V \ A_stop`. `S_reach` is computed only on the complete stopped-LTS
+The stopped target set is `D_sel := D_global union D_local; A_stop := D_sel union F`; let `X_stop` be the full finite stopped state set, and define the remaining
+states as `T := X_stop \ A_stop`. `S_reach` is computed only on the complete stopped-LTS
 positive-support graph and is diagnostic: a support path to `A_stop` is necessary for
 almost-sure absorption, but it is not sufficient.
 
 For the finite complete positive-rate stopped CTMC, find every unselected
 closed SCC `C_closed subset T`. Membership lies in `T`, but closedness is checked
 against every outgoing positive-rate edge in the full stopped graph: no state in
-`C` may have an outgoing positive-rate edge to `(T \ C)` or to selected A_stop.
+`C_closed` may have an outgoing positive-rate edge to `(T \ C_closed)` or to selected A_stop.
 A state with `s -> F` is therefore not in an unselected closed SCC. Let
 `B_closed` be the reverse basin of those closed SCCs and let
 `S_T = T \ B_closed`. Under these

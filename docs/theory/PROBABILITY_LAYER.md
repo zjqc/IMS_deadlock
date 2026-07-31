@@ -5,8 +5,8 @@ expansion. Non-exponential timing cannot use these equations directly.
 
 ## 1. Competing Absorption Domains
 
-Let `D_sel := D_global union D_local; A_stop := D_sel union F` be the selected stopped target and let
-`T = V \ A_stop` be the nonabsorbing set. `S_reach` is the diagnostic complete
+Let `D_sel := D_global union D_local; A_stop := D_sel union F` be the selected stopped target, let `X_stop` be the full finite stopped state set, and let
+`T := X_stop \ A_stop` be the nonabsorbing set. `S_reach` is the diagnostic complete
 stopped-LTS support graph basin: states with at least one support path to `A_stop`.
 `S_reach` is necessary but not sufficient for probability-one absorption.
 
@@ -45,7 +45,7 @@ mathematically nonexistent.
 
 For certified `S_T`, the deadlock committor `h_i = P_i(tau_{D_sel} < tau_F)` satisfies:
 
-- `h_i = 1` for `i in D`;
+- `h_i = 1` for `i in D_sel`;
 - `h_i = 0` for `i in F`;
 - `Q_{S_T,S_T} h_{S_T} = - Q_{S_T,D_sel} 1` for `i in S_T`.
 
@@ -81,7 +81,7 @@ change handling, and differentiable rate parameters.
 
 ## 6. Doob-h Conditioning
 
-For states in certified `S_T` with `h_i > 0`, conditioning on first hitting `D`
+For states in certified `S_T` with `h_i > 0`, conditioning on first hitting `D_sel`
 uses jump rates:
 
 `q^h_ij = q_ij h_j / h_i` for `i != j`.
@@ -97,7 +97,7 @@ statistics, and is not a controller.
 
 A probability payload must report:
 
-- counts for `A`, `T`, `S_reach`, `S_T`, unselected closed SCCs, and `B_closed`;
+- counts for `A_stop`, `T`, `S_reach`, `S_T`, unselected closed SCCs, and `B_closed`;
 - whether `A_abs` is certified;
 - `positive_rate_graph_hash`, `policy_filter_hash`, `absorption_domain_hash`,
   `rate_manifest_hash`, and `estimand_id` with nullable identities preserved;
@@ -119,24 +119,25 @@ identity states.
 ## 8. Source Boundary
 
 Markov jump transition path theory and discrete committor background can cite
-Trace `L23`: Metzner et al. 2009, DOI `10.1137/070699500`, but that source supports ergodic
-Markov jump process TPT and discrete committor background only. It does not by
-itself prove this absorbing IMS stopped-domain theorem; readers should follow
-`L23` in the existing literature matrix/source-verification surfaces.
+Trace `L23` (see the existing literature matrix/source-verification surfaces):
+Metzner et al. 2009, DOI `10.1137/070699500`, supports ergodic Markov jump
+process TPT and discrete committor background only. It does not by itself prove this absorbing IMS stopped-domain theorem.
 
 The committor, mean-time, sensitivity, and Doob-h equations above are finite
 CTMC equations used inside this project's certified stopped-domain boundary.
-For conditioned jump-process/change-of-measure background, Trace `L28`: Corstanje and van der
-Meulen (2025) provides the publicly checkable baseline: Eq. 3.1 gives adjusted
-intensities, Eq. 3.3 gives the generator form, and Appendix D explains the
-change of generator. Migrating that background into an IMS absorbing-boundary
-theorem still requires the finite stopped-domain proof stated here; readers should follow `L28` in the existing literature
-matrix/source-verification surfaces.
+Trace `L28` (see the existing literature matrix/source-verification surfaces):
+Corstanje and van der Meulen (2025) provides the conditioned
+jump-process/change-of-measure baseline. Eq. 3.1 gives adjusted intensities,
+Eq. 3.3 gives the generator form, and Appendix D explains the change of
+generator. Migrating that background into an IMS absorbing-boundary theorem
+still requires the finite stopped-domain proof stated here.
 
-Trace `L16`: Narahari et al. remains a manufacturing-system absorbing Markov baseline: Section
-3 gives `F=(I-T)^-1`, Section 3.1 gives mean deadlock time, Section 3.2 gives
-`G=FC`, and Section 4 gives transient deadlock-time distributions. That evidence
-supports the historical DTMC/embedded-chain scope only; it does not replace this
-project's CTMC committor, sensitivity, Doob-h, or certified absorption-domain
-proof obligations; readers should follow `L16` in the existing literature
-matrix/source-verification surfaces.
+Trace `L16` (see the existing literature matrix/source-verification surfaces):
+Narahari et al. remains a manufacturing-system absorbing Markov baseline. In
+source-local notation, write `F_N=(I-T_N)^-1` and `G_N=F_N C_N`. The source-local fundamental-matrix formula is printed in the source as `F=(I-T)^-1`; the absorption-probability product is printed in the source as `G=FC`. These source-local `F_N`, `T_N`, and `C_N`
+are not the project completion set `F`, stopped nonabsorbing set `T`, or
+resource-cycle symbol `C`. Section 3 gives the fundamental matrix, Section 3.1
+gives mean deadlock time, Section 3.2 gives `G_N`, and Section 4 gives transient
+deadlock-time distributions. That evidence supports the historical
+DTMC/embedded-chain scope only; it does not replace this project's CTMC
+committor, sensitivity, Doob-h, or certified absorption-domain proof obligations.

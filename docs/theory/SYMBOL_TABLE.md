@@ -11,7 +11,7 @@
 | `M` | 机器资源子集，`M subset R` | 定义 |
 | `B_in, B_out` | 输入缓冲、输出缓冲资源子集 | 定义 |
 | `A` | AGV 或运输载具资源子集 | 定义 |
-| `V` | 预约 token 资源子集；必须与物理资源占用分离 | 定义 |
+| `V` | reservation-token resource subset; keep distinct from stopped state sets | Definition |
 | `P_j` | 工件 `j` 的有限路线阶段集合 | 定义 |
 | `E` | 离散事件集合 | 定义 |
 | `E_c, E_u` | 可控事件与不可控事件 | 定义 |
@@ -77,7 +77,7 @@
 | --- | --- | --- |
 | `Q` | 有限 CTMC 生成元 | 定义 |
 | `Q_{S_T,S_T}, Q_{S_T,D_sel}, Q_{S_T,F}` | 暂态到暂态、暂态到死锁、暂态到完成的生成元分块 | 定义 |
-| `h_i` | 从状态 `i` 先达死锁类 `D` 的 committor | 文献基线 |
+| `h_i` | committor from state `i` for hitting selected bad target `D_sel` before `F` | Literature baseline |
 | `tau_i` | 从状态 `i` 到任一吸收类的平均吸收时间 | 文献基线 |
 | `theta` | 模型参数或速率参数 | 定义 |
 | `partial_theta h` | committor 参数敏感性 | 拟证明 |
@@ -99,7 +99,8 @@
 | --- | --- | --- |
 | `D_sel` | Selected bad target union, `D_sel := D_global union D_local` | Definition |
 | `A_stop` | Selected stopped target, `A_stop := D_sel union F` | Definition |
-| `T` | Nonabsorbing set `V \ A_stop` | Definition |
+| `X_stop` | full finite stopped state set for the G6-B stopped process | Definition |
+| `T` | Nonabsorbing stopped states, `T := X_stop \ A_stop` | Definition |
 | `S_reach` | States in the complete stopped-LTS support graph with at least one path to `A_stop` | Diagnostic, nonselectable |
 | `C_closed` | Unselected closed SCC with membership `C_closed subset T`; closedness is checked against all outgoing positive-rate edges in the full stopped graph, including edges to selected `A_stop` | Certificate component |
 | `B_closed` | Reverse basin in `T` of all unselected closed SCCs | Certificate component |

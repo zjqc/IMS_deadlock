@@ -288,8 +288,8 @@ E[T_L | T_L < T_F]  and  E[T_G | T_G < T_F]
 
 ## 2026-07-31 Certified Absorption-Domain Correction
 
-Let `D_sel := D_global union D_local; A_stop := D_sel union F` be the selected stopped target and let
-`T = V \ A_stop`. `S_reach` is the set of nonabsorbing states in the complete
+Let `D_sel := D_global union D_local; A_stop := D_sel union F` be the selected stopped target, let `X_stop` be the full finite stopped state set, and let
+`T := X_stop \ A_stop`. `S_reach` is the set of nonabsorbing states in the complete
 stopped-LTS support graph that have at least one support path to `A_stop`. It is a
 structural diagnostic and a necessary condition for probability-one absorption,
 not a sufficient condition.
