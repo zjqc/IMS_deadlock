@@ -208,7 +208,7 @@ def test_missing_fingerprint_record_key_is_rejected(tmp_path: Path, key: str) ->
         "review_only_placeholder",
     ],
 )
-def test_missing_method_role_is_rejected(tmp_path: Path, role: str) -> None:
+def test_missing_reuse_method_role_is_rejected(tmp_path: Path, role: str) -> None:
     bundle = _copy_bundle(tmp_path)
     value = _load(bundle, "identity_schema.json")
     value["method_roles"].remove(role)
