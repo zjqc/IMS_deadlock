@@ -936,3 +936,23 @@ verification reports，不得用早期 B-stage 语气覆盖后来的 freeze、�
 
 若其中任一项只能从聊天记录获得，应先把它补入本文件或相应权威跟踪文件，
 再继续科学执行。
+
+## 2026-07-31 G6-B Ontology And Absorption-Domain Correction
+
+Implementation status: Task 7 documentation alignment is applied on top of the
+v2 foundation estimand, v3 terminal stopping partition, certificate v1, and
+generator provenance v3 work already present on this branch. The correction does
+not create a G6-B case, does not run LTS/CTMC/DES science, and does not upgrade
+G6-B to PASS.
+
+Current boundary: `selected_stopping_targets` are `D_global`, `D_local`, and
+`F`; `unselected_plant_terminal_classes` are `R_livelock` and `R_terminal`;
+`P_policy` is separate; `S_reach` and `S_T` are derived and nonselectable.
+`S_reach` is support graph reachability only. `S_T` is certified by the finite
+positive-rate stopped-CTMC closed-SCC/reverse-basin certificate, with
+`absorption_domain_hash` binding the domain identity. Missing rates remain
+distinct from explicit empty rates. G6-B remains OPEN/PENDING,
+`case_creation_authorized=false`, and `scientific_execution_authorized=false`;
+G6-C, G6-D, and G6-E are not started.
+
+Approved design: `docs/superpowers/specs/2026-07-31-g6b-ontology-absorption-domain-correction-design.md`. Historical review superseded in part, not deleted. Negative and boundary evidence are retained.

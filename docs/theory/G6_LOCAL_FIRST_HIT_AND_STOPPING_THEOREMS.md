@@ -285,3 +285,32 @@ E[T_L | T_L < T_F]  and  E[T_G | T_G < T_F]
 > 该概率是新的版本化 estimand，不是对 G5 全局操作死锁 estimand 的事后修补。
 
 历史 G4/G5 case 可以用于 labelled historical replay，以验证诊断机制是否被新语义修复；它们不能替代新的独立 sealed confirmation set。
+
+## 2026-07-31 Certified Absorption-Domain Correction
+
+Let `A = D_global union D_local union F` be the selected stopped target and let
+`T = V \ A`. `S_reach` is the set of nonabsorbing states in the complete
+stopped-LTS support graph that have at least one support path to `A`. It is a
+structural diagnostic and a necessary condition for probability-one absorption,
+not a sufficient condition.
+
+In a finite complete positive-rate stopped CTMC, compute the positive-rate graph
+on `T`. Let the unselected closed SCCs be the closed communicating classes that
+avoid `A`; let `B_closed` be their reverse basin. Define `S_T = T \ B_closed`.
+Then `x in S_T` iff `P_x(tau_A < infinity) = 1`. Proof: a finite CTMC reaches a
+closed class almost surely; states in `B_closed` can enter a closed class that
+never hits `A`, while every state outside `B_closed` has no closed class except
+`A` available and therefore hits `A` with probability one.
+
+The global gate `A_abs` is stronger: `B_closed = empty` over the claimed
+nonabsorbing analysis domain. The current production G4 gate supports the
+global certificate/refusal boundary only; partial-domain committor or mean-time
+payloads remain unsupported even though the mathematics of a restricted `S_T`
+exists.
+
+Counterexample `CE-NB1`: `s0 -> F`, `s0 -> c`, and `c -> c`, all with positive
+rates. With rates `lambda_F` and `lambda_c`, the hit probability from `s0` is
+`lambda_F / (lambda_F + lambda_c) < 1`. Thus `s0 in S_reach` but `s0 notin S_T`;
+`{c}` is an unselected closed SCC, and the reverse basin includes `s0` and
+`c`. The old reverse-reachability definition failed this boundary; the machine
+regression is `tests/test_terminal_classes.py::test_branching_closed_class_separates_s_reach_from_s_t`.

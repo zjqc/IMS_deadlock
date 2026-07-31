@@ -131,3 +131,24 @@ L28 提供条件跳过程全文锚点。
 - 参数敏感性；
 - 与独立 DES 仿真的置信区间对照；
 - 所用速率和随机流清单。
+
+## 2026-07-31 Certified Absorption Domain
+
+The probability layer uses two separate domains. `S_reach` is the complete
+stopped-LTS support graph basin of the selected target `A = D_global union
+D_local union F`; it records that a path to `A` exists. Probability-one claims
+use `S_T`, not `S_reach`.
+
+For a finite complete positive-rate stopped CTMC, let `T = V \ A`. Find
+unselected closed SCCs in the positive-rate graph on `T`, let `B_closed` be
+their reverse basin, and define `S_T = T \ B_closed`. Exactly on `S_T`,
+`P_x(tau_A < infinity) = 1`; outside `S_T`, unconditional committor,
+mean-time, sensitivity, and Doob-h payloads for the selected stopped target are
+refused by protocol, not asserted to be mathematically nonexistent in every
+other model. `A_abs` is the stronger global gate `B_closed = empty` over the
+claimed nonabsorbing analysis domain.
+
+A valid payload must bind the v1 absorption-domain certificate with
+`positive_rate_graph_hash`, `policy_filter_hash`, `absorption_domain_hash`, and
+the v2 estimand identity. Missing rates, explicit empty rates, and certified
+positive rates are distinct identity states.

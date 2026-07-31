@@ -470,3 +470,47 @@ def test_artifact_path_ambiguity_is_rejected(tmp_path: Path) -> None:
     _write(bundle, "protocol.json", protocol)
 
     _assert_invalid(bundle, "protocol.json: artifact_paths")
+
+
+def test_g6b_theory_documents_lock_typed_absorption_domain() -> None:
+    protocol_path = Path("docs/cases/G6_B_DISCOVERY_PROTOCOL.md")
+    theorem_path = Path("docs/theory/G6_LOCAL_FIRST_HIT_AND_STOPPING_THEOREMS.md")
+    assumption_path = Path("docs/theory/ASSUMPTION_REGISTER.md")
+    probability_path = Path("docs/theory/PROBABILITY_LAYER.md")
+    symbol_path = Path("docs/theory/SYMBOL_TABLE.md")
+    counterexample_path = Path("docs/theory/COUNTEREXAMPLE_LEDGER.md")
+    foundation_review_path = Path(
+        "docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md"
+    )
+
+    g6b_protocol_text = protocol_path.read_text(encoding="utf-8")
+    counterexample_ledger_text = counterexample_path.read_text(encoding="utf-8")
+    foundation_review_text = foundation_review_path.read_text(encoding="utf-8")
+    combined_text = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in [
+            protocol_path,
+            theorem_path,
+            assumption_path,
+            probability_path,
+            symbol_path,
+            counterexample_path,
+        ]
+    )
+
+    assert "S_reach" in combined_text
+    assert "support graph" in combined_text or "support-graph" in combined_text
+    assert "probability one" in combined_text
+    assert "absorption_domain_hash" in combined_text
+    assert "Objective classes are:" not in g6b_protocol_text
+    assert "selected_stopping_targets" in g6b_protocol_text
+    assert "unselected_plant_terminal_classes" in g6b_protocol_text
+    assert "CE-NB1" in counterexample_ledger_text
+    assert "S_reach" in counterexample_ledger_text
+    assert "S_T" in counterexample_ledger_text
+    assert "non_almost_sure_absorption_domain" in counterexample_ledger_text
+    assert "SUPERSEDED IN PART" in foundation_review_text
+    assert (
+        "docs/superpowers/specs/2026-07-31-g6b-ontology-absorption-domain-correction-design.md"
+        in foundation_review_text
+    )

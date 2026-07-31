@@ -119,3 +119,21 @@ set，锁定新 estimand 和负对照，再进入 G6-C/D/E。
 - G4/G5 九个案例已退役为历史 discovery/regression；G6 必须先修复
   theorem/metric 分离、all-minimal local kernel、CRP local bridge 与
   closed-class taxonomy，再封存完全独立的新确认集。
+
+## 2026-07-31 G6-B Ontology And Absorption-Domain Correction
+
+Implementation status: Task 7 documentation alignment is applied on top of the
+v2 foundation estimand, v3 terminal stopping partition, certificate v1, and
+generator provenance v3 work already present on this branch. The correction does
+not create a G6-B case, does not run LTS/CTMC/DES science, and does not upgrade
+G6-B to PASS.
+
+Current boundary: `selected_stopping_targets` are `D_global`, `D_local`, and
+`F`; `unselected_plant_terminal_classes` are `R_livelock` and `R_terminal`;
+`P_policy` is separate; `S_reach` and `S_T` are derived and nonselectable.
+`S_reach` is support graph reachability only. `S_T` is certified by the finite
+positive-rate stopped-CTMC closed-SCC/reverse-basin certificate, with
+`absorption_domain_hash` binding the domain identity. Missing rates remain
+distinct from explicit empty rates. G6-B remains OPEN/PENDING,
+`case_creation_authorized=false`, and `scientific_execution_authorized=false`;
+G6-C, G6-D, and G6-E are not started.

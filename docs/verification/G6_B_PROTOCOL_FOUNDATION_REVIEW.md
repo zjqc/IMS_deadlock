@@ -1,3 +1,14 @@
+# SUPERSEDED IN PART - G6-B Protocol Foundation Review
+
+Supersession date: 2026-07-31. This historical review is preserved as a record,
+but its no-finding conclusion is superseded in part by the approved ontology and
+absorption-domain correction design: `docs/superpowers/specs/2026-07-31-g6b-ontology-absorption-domain-correction-design.md`. The corrected boundary separates
+`S_reach` support-graph reachability from certified probability-one `S_T`, adds
+the v1 `absorption_domain_hash` certificate identity, and preserves G6-B as
+OPEN/PENDING with case creation and science still disabled.
+
+---
+
 # G6-B Protocol Foundation Review
 
 ## Verdict

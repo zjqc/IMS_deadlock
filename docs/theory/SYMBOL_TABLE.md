@@ -91,3 +91,17 @@
 | 拟证明 | 本项目首篇论文目标命题，尚需完整证明 |
 | 计算验证 | 小模型枚举或数值校验目标，不替代证明 |
 | 反例 | 已知会击穿更强或错误命题的边界案例 |
+
+## G6-B Certified Absorption-Domain Symbols
+
+| Symbol | Meaning | Status |
+| --- | --- | --- |
+| `A` | Selected stopped target `D_global union D_local union F` | Definition |
+| `T` | Nonabsorbing set `V \ A` | Definition |
+| `S_reach` | States in the complete stopped-LTS support graph with at least one path to `A` | Diagnostic, nonselectable |
+| `B_closed` | Reverse basin of unselected closed SCCs in the positive-rate stopped graph on `T` | Certificate component |
+| `S_T` | `T \ B_closed`; states that hit `A` with probability one in the finite positive-rate stopped CTMC | Certified absorption domain |
+| `A_abs` | Global-domain gate `B_closed = empty` over the claimed nonabsorbing analysis domain | Strict protocol gate |
+| `positive_rate_graph_hash` | Identity of the realized positive-rate stopped graph used by the certificate | Nullable hash |
+| `policy_filter_hash` | Identity of the policy-filter declaration, including no-filter declarations | Nullable hash |
+| `absorption_domain_hash` | Identity of the certified `S_T`, closed-class witness, selected target, graph, policy, and rate manifest | Nullable hash |

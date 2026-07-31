@@ -43,21 +43,23 @@ local source.
 It is not a plant terminal SCC and must not be inferred from a local-kernel
 candidate alone.
 
-Objective classes are:
+The live G6-B ontology is typed. It is not a flat objective-class list.
 
-- `D_global`: global capacity-mediated deadlock;
-- `D_local`: verified first-hit bad set, not a plant terminal SCC;
-- `F`: declared successful completion;
-- `R_livelock`: non-`D/F` closed recurrent communicating class;
-- `R_terminal`: non-resource terminal boundary such as calendar-empty or
-  missing external synchronization;
-- `P_policy`: stall caused only by an imposed policy;
-- `S_T`: states that reach the selected absorbing target classes under the
-  frozen stopping rule.
+- `selected_stopping_targets`: bad hit sets are exactly `D_global` and
+  `D_local`; the success class is exactly `F`. These define the stopped target
+  set `A = D_global union D_local union F`.
+- `unselected_plant_terminal_classes`: `R_livelock` and `R_terminal`. These are
+  plant classifications and are not selectable bad or success targets.
+- `policy_analysis_class`: `P_policy`. It is outside the plant partition and is
+  not a selectable target.
+- derived, nonselectable sets: `S_reach` is the diagnostic complete stopped-LTS
+  support graph basin with at least one support path to `A`; `S_T` is the
+  certified finite positive-rate stopped-CTMC domain whose states hit `A` with
+  probability one.
 
-Selected bad labels are exactly `D_global` and `D_local`. The selected success
-label is exactly `F`. Exact and DES rows must use the same selected bad labels,
-the same selected success label, and the same versioned target.
+Exact and DES rows must use the same selected stopping targets, the same
+versioned target, and the same non-null `absorption_domain_hash` before any
+future scientific execution can be considered.
 
 ## Local Candidate Admission
 
@@ -212,3 +214,29 @@ Stop before execution if:
 - the failure ledger is not append-only.
 
 No scientific execution is authorized in this task.
+
+## Certified Absorption-Domain Gate
+
+The stopped target set is `A = D_global union D_local union F`; the remaining
+states are `T = V \ A`. `S_reach` is computed only on the complete stopped-LTS
+positive-support graph and is diagnostic: a support path to `A` is necessary for
+almost-sure absorption, but it is not sufficient.
+
+For the finite complete positive-rate stopped CTMC, find every unselected
+closed SCC in the positive-rate graph induced by `T`. Let `B_closed` be the
+reverse basin of those closed SCCs and let `S_T = T \ B_closed`. Under these
+assumptions, and only under these assumptions, `x in S_T` iff
+`P_x(tau_A < infinity) = 1`. The stronger global-domain gate `A_abs` requires
+`B_closed = empty` over the claimed nonabsorbing analysis domain. Production G4
+integration still refuses partial-domain solves; committor, mean-time,
+sensitivity, and Doob-h payloads are restricted to certified `S_T`.
+
+Every accepted future exact/DES pairing must carry certificate version
+`ims-deadlock/g6-absorption-domain-certificate/v1`, generator provenance
+`derived_from_g6_terminal_stopping_partition_ims_lts_v3`, a v2 foundation
+estimand, v3 terminal partition, and the identities `positive_rate_graph_hash`,
+`policy_filter_hash`, `absorption_domain_hash`, and `estimand_id`. A missing
+rate manifest is distinct from an explicit empty rate manifest. Never invent a
+hash value; absent identity remains null. A missing, mismatched, or non-global
+certificate fails closed with the appropriate refusal code, including
+`non_almost_sure_absorption_domain` when an unselected closed basin is reachable.

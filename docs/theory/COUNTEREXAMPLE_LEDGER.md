@@ -151,18 +151,29 @@ deadlock-free。
 可达前缀。P3e-b 的修复必须真正删除 `Q->M` 或施加等价的不可绕过结构
 顺序；可选 drain 属于 P5 控制问题。
 
-## CE-NB1 Nonblocking 不等于所有随机路径完成
+## CE-NB1 Nonblocking Does Not Imply Almost-Sure Completion
 
-状态：反例候选/待实例化。
+Status: concrete theory counterexample and machine-regression boundary.
 
-目标击穿命题：标准 nonblocking 保证每条随机路径完成。
+Claim defeated: support reachability or existential nonblocking is sufficient
+for probability-one hit of the selected stopped target.
 
-构造要点：
+Concrete stopped chain:
 
-- 每个状态都存在到 completion 的延拓。
-- 同时存在无限循环路径或策略反复选择不完成事件。
+- states: `s0`, selected success state `F`, and unselected state `c`;
+- positive transitions: `s0 -> F`, `s0 -> c`, and `c -> c`;
+- rates: `lambda_F > 0` for `s0 -> F` and `lambda_c > 0` for `s0 -> c`.
 
-预期结论：standard nonblocking 是存在性延拓性质；要推出几乎必然完成需要额外进展、公平性或 CTMC 非爆炸假设。
+The support graph has a path from `s0` to `F`, so `s0 in S_reach`. The hit
+probability from `s0` is `lambda_F / (lambda_F + lambda_c) < 1` because the
+branch to `c` enters the unselected closed SCC `{c}`. Therefore `s0 notin
+S_T`; the reverse basin `B_closed` includes both `s0` and `c`. A global-domain
+certificate must refuse with `non_almost_sure_absorption_domain`.
+
+Protocol consequence: no committor, mean-time, sensitivity, or Doob-h payload
+may be emitted for the uncertified global domain. The older reverse-reachability
+construction failed because it treated support reachability as the absorption
+domain. Machine regression: `tests/test_terminal_classes.py::test_branching_closed_class_separates_s_reach_from_s_t`.
 
 ## CE-G6-BYPASS 局部核当前阻塞不推出一般 TransitionSpec 永久失败
 
