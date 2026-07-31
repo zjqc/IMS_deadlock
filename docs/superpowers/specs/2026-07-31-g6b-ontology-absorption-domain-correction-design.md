@@ -270,8 +270,12 @@ and `derived_state_sets.S_reach.positive_rate_verified = false`. The
 uncertified `S_T` representation is exact:
 `derived_state_sets.S_T.state_ids = null`,
 `derived_state_sets.S_T.certification_status = "not_certified"`, and
-`derived_state_sets.S_T.reason_codes` is a nonempty sorted list. The three new
-hashes are null. An empty list is never used to mean uncertified. For a
+`derived_state_sets.S_T.reason_codes` is a nonempty sorted list. When no rate
+manifest is supplied, `rate_manifest_hash`, the three new hashes, and
+`estimand_id` are null. An explicit empty rate manifest is distinct from an
+absent manifest: only an explicitly frozen empty manifest on an edgeless
+complete stopped LTS may receive a nonnull rate-manifest hash and proceed to
+certification. An empty list is never used to mean uncertified. For a
 certified zero-state domain, `state_ids = []`, status is
 `certified_finite_positive_rate_stopped_ctmc`, `reason_codes = []`, and
 `derived_state_sets.S_reach.positive_rate_verified = true`.
@@ -391,7 +395,8 @@ edits:
    `absorption_domain_hash` and `estimand_id` drift when the selected target or
    positive-rate support changes;
 9. uncertified, certified-empty, and certified-nonempty `S_T` payloads are
-   unambiguous and strictly validated;
+   unambiguous and strictly validated, and an absent rate manifest is distinct
+   from an explicitly frozen empty manifest;
 10. v2 historical payloads remain readable only as historical input; v2
     `classes["S_T"]` is never accepted as v3 proof, and captured v2 estimand IDs
     are never recomputed;
