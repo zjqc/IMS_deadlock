@@ -19,7 +19,11 @@ from ims_deadlock.model import (
     ResourceDemand,
 )
 from ims_deadlock.terminal_classes import (
+    ABSORPTION_DOMAIN_ALGORITHM_VERSION,
+    ABSORPTION_DOMAIN_CERTIFICATE_VERSION,
+    CERTIFIED_STATUS,
     DEFAULT_ESTIMAND_SPEC,
+    AbsorptionDomainCertificate,
     TerminalPartitionError,
     VersionedEstimandSpec,
     partition_stable_lts,
@@ -101,6 +105,41 @@ def _event(name: str, *, job_id: str = "j1") -> TransitionSpec:
         target_mode="done",
         controllable=False,
         zero_time=False,
+    )
+
+
+def _certified_certificate(
+    *,
+    false_assumption: str | None = None,
+    rate_manifest_hash: str | None = "rate-hash",
+) -> AbsorptionDomainCertificate:
+    return AbsorptionDomainCertificate(
+        version=ABSORPTION_DOMAIN_CERTIFICATE_VERSION,
+        algorithm_version=ABSORPTION_DOMAIN_ALGORITHM_VERSION,
+        certification_status=CERTIFIED_STATUS,
+        reason_codes=(),
+        selected_absorbing_state_ids=("s1",),
+        unselected_closed_sccs=(),
+        closed_class_reverse_basin_state_ids=("s0",),
+        s_t_state_ids=("s0", "s1"),
+        non_almost_sure_absorbing_state_ids=(),
+        finite_state_space_verified=false_assumption != "finite_state_space_verified",
+        complete_nontruncated_lts_verified=false_assumption
+        != "complete_nontruncated_lts_verified",
+        lts_generation_provenance_verified=false_assumption
+        != "lts_generation_provenance_verified",
+        positive_finite_rate_manifest_verified=false_assumption
+        != "positive_finite_rate_manifest_verified",
+        selected_target_identity_verified=false_assumption
+        != "selected_target_identity_verified",
+        policy_filter_identity_verified=false_assumption
+        != "policy_filter_identity_verified",
+        state_space_hash="state-hash",
+        partition_hash="partition-hash",
+        rate_manifest_hash=rate_manifest_hash,
+        positive_rate_graph_hash="positive-rate-hash",
+        policy_filter_hash="policy-filter-hash",
+        absorption_domain_hash="absorption-domain-hash",
     )
 
 
@@ -554,6 +593,54 @@ def test_reversed_selected_bad_classes_have_identical_hashes() -> None:
     assert forward.estimand_id == reversed_order.estimand_id
 
 
+def test_partition_hash_is_independent_of_lts_provenance_verification_mode() -> None:
+    model = IMSModel(id="generated-provenance-model", resources={}, jobs=("j1",))
+    initial = _state("start", mode_by_job={"j1": "ready"})
+    finish = TransitionSpec(
+        name="finish",
+        kind=EventKind.SERVICE_COMPLETE,
+        job_id="j1",
+        source_mode="ready",
+        target_mode="completed",
+        controllable=False,
+        zero_time=False,
+        mark_complete=True,
+    )
+    graph = enumerate_stable_lts(model, initial, (finish,), max_states=8)
+    assert graph.truncated is False
+    assert graph.unavailable_reasons == ()
+
+    caller_contract = partition_stable_lts(
+        model,
+        graph,
+        (finish,),
+        verify_generated_lts=False,
+    )
+    verified = partition_stable_lts(
+        model,
+        graph,
+        (finish,),
+        verify_generated_lts=True,
+    )
+
+    assert caller_contract.state_space_hash == verified.state_space_hash
+    assert caller_contract.d_global_state_ids == verified.d_global_state_ids
+    assert caller_contract.d_local_state_ids == verified.d_local_state_ids
+    assert caller_contract.f_state_ids == verified.f_state_ids
+    assert caller_contract.r_livelock_state_ids == verified.r_livelock_state_ids
+    assert caller_contract.r_terminal_state_ids == verified.r_terminal_state_ids
+    assert caller_contract.plant_arcs == verified.plant_arcs
+    caller_payload = caller_contract.plant_partition_json_dict()
+    verified_payload = verified.plant_partition_json_dict()
+    if caller_payload != verified_payload:
+        assert [
+            key
+            for key in sorted(set(caller_payload) | set(verified_payload))
+            if caller_payload.get(key) != verified_payload.get(key)
+        ] == ["lts_provenance_audit"]
+    assert caller_contract.partition_hash == verified.partition_hash
+
+
 def test_unknown_lts_arc_event_is_structured_refusal() -> None:
     model = IMSModel(id="registry-model", resources={}, jobs=("j1",))
     graph = _lts(
@@ -594,6 +681,29 @@ def test_rate_manifest_rejects_invalid_or_missing_arc_rates() -> None:
         )
     assert excinfo.value.code == "missing_event_rate"
     assert excinfo.value.details["event"] == "go"
+
+
+@pytest.mark.parametrize(
+    "field_name",
+    [
+        "finite_state_space_verified",
+        "complete_nontruncated_lts_verified",
+        "lts_generation_provenance_verified",
+        "positive_finite_rate_manifest_verified",
+        "selected_target_identity_verified",
+        "policy_filter_identity_verified",
+    ],
+)
+def test_certified_absorption_certificate_requires_all_assumptions_true(
+    field_name: str,
+) -> None:
+    with pytest.raises(ValueError, match="certified absorption certificate"):
+        _certified_certificate(false_assumption=field_name)
+
+
+def test_certified_absorption_certificate_requires_rate_manifest_hash() -> None:
+    with pytest.raises(ValueError, match="certified absorption certificate"):
+        _certified_certificate(rate_manifest_hash=None)
 
 
 def test_v3_serialization_separates_plant_policy_and_derived_sets() -> None:
@@ -804,6 +914,7 @@ def test_plant_partition_payload_excludes_policy_and_derived_sets() -> None:
         (_event("finish", job_id="free_job"),),
     )
     payload = partition.plant_partition_json_dict()
+    full_payload = partition.to_json_dict()
 
     assert set(payload) == {
         "classification_version",
@@ -812,7 +923,6 @@ def test_plant_partition_payload_excludes_policy_and_derived_sets() -> None:
         "local_bad_soundness_audit",
         "terminal_sccs",
         "plant_arcs",
-        "lts_provenance_audit",
     }
     classes = cast(dict[str, object], payload["classes"])
     assert set(classes) == {"D_global", "D_local", "F", "R_livelock", "R_terminal"}
@@ -822,6 +932,8 @@ def test_plant_partition_payload_excludes_policy_and_derived_sets() -> None:
     assert "derived_state_sets" not in payload
     assert "selected_bad_state_ids" not in payload
     assert "selected_reachable_state_ids" not in payload
+    assert "lts_provenance_audit" not in payload
+    assert "lts_provenance_audit" in full_payload
 
 
 def test_estimand_spec_v2_uses_policy_analysis_class() -> None:

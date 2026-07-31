@@ -153,11 +153,23 @@ class AbsorptionDomainCertificate:
         elif self.certification_status == CERTIFIED_STATUS:
             if self.reason_codes:
                 raise ValueError("certified absorption certificate has reason codes")
+            if not (
+                self.finite_state_space_verified
+                and self.complete_nontruncated_lts_verified
+                and self.lts_generation_provenance_verified
+                and self.positive_finite_rate_manifest_verified
+                and self.selected_target_identity_verified
+                and self.policy_filter_identity_verified
+            ):
+                raise ValueError(
+                    "certified absorption certificate requires verified assumptions"
+                )
             if (
                 self.unselected_closed_sccs is None
                 or self.closed_class_reverse_basin_state_ids is None
                 or self.s_t_state_ids is None
                 or self.non_almost_sure_absorbing_state_ids is None
+                or self.rate_manifest_hash is None
                 or self.positive_rate_graph_hash is None
                 or self.policy_filter_hash is None
                 or self.absorption_domain_hash is None
@@ -346,7 +358,6 @@ class TerminalStoppingPartition:
             "local_bad_soundness_audit": self.local_bad_soundness_audit,
             "terminal_sccs": [list(component) for component in self.terminal_sccs],
             "plant_arcs": [list(arc) for arc in self.plant_arcs],
-            "lts_provenance_audit": self.lts_provenance_audit,
         }
 
     def hashes_json_dict(self) -> dict[str, str | None]:
@@ -594,7 +605,6 @@ def partition_stable_lts(
         "local_bad_soundness_audit": local_bad_soundness_audit,
         "terminal_sccs": [list(component) for component in terminal_sccs],
         "plant_arcs": [list(arc) for arc in plant_arcs],
-        "lts_provenance_audit": lts_provenance_audit,
     }
     state_space_hash = _canonical_sha256(state_space_payload)
     partition_hash = _canonical_sha256(partition_payload)
