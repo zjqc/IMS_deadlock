@@ -20,6 +20,105 @@ _NAMES = (
     "review_state.json",
     "failure_ledger.json",
 )
+_RETIRED_DIMENSIONS = (
+    "case_content_sha256",
+    "state_snapshot_sha256",
+    "route_signature_sha256",
+    "parameter_tuple_sha256",
+    "random_stream_manifest_sha256",
+    "output_root",
+    "sealed_prediction_sha256",
+    "metric_schema_sha256",
+)
+_FUTURE_CONFIRMATION_DIMENSIONS = (
+    "case_content_sha256",
+    "state_snapshot_sha256",
+    "route_signature_sha256",
+    "parameter_tuple_sha256",
+    "random_stream_manifest_sha256",
+    "output_root",
+    "sealed_prediction_sha256",
+)
+_CONFIRMATION_METRIC_FLAGS = (
+    "explicitly_preregistered",
+    "same_target_comparability",
+    "not_derived_from_outcomes",
+)
+_AUTHORITY_LOCK_REQUIRED_FIELDS = (
+    "target_path",
+    "target_branch",
+    "target_head",
+    "target_dirty_state",
+    "upstream_ahead_behind",
+    "worktree_identity",
+    "repo_remote_url",
+    "source_tree_hash",
+    "sealed_case_artifact_hashes",
+    "retired_authority_paths_and_hashes",
+)
+_RUNTIME_LOCK_REQUIRED_FIELDS = (
+    "python_executable",
+    "python_version",
+    "package_lock_or_environment_hash",
+    "validation_commands",
+    "validation_results",
+    "runtime_lock_created_at_utc",
+    "science_execution_authorized_by_artifact",
+    "pythondontwritebytecode_or_cache_policy",
+    "output_root_policy",
+)
+_EXPECTED_OVERLAP_REPORT_SCHEMA = {
+    "schema_version": "ims-deadlock/g6b-row-family-overlap-schema/v1",
+    "study_role": "discovery_only",
+    "confirmation_use": "prohibited",
+    "scientific_execution_authorized": False,
+    "case_creation_authorized": False,
+    "report_role": "schema_only",
+    "actual_overlap_checked": False,
+    "actual_overlap_report_available": False,
+    "schema_only_overlap_report_cannot_authorize_execution": True,
+    "missing_actual_overlap_report_blocks_execution": True,
+    "retired_authorities": ["G4", "G5", "G6_R"],
+    "retired_dimensions": list(_RETIRED_DIMENSIONS),
+    "future_confirmation_dimensions": list(_FUTURE_CONFIRMATION_DIMENSIONS),
+    "future_confirmation_metric_reuse": {
+        _CONFIRMATION_METRIC_FLAGS[0]: True,
+        _CONFIRMATION_METRIC_FLAGS[1]: True,
+        _CONFIRMATION_METRIC_FLAGS[2]: True,
+    },
+    "required_lock_before_actual_report": "overlap_authority_lock",
+    "remote_only_G5_authority_paths": [
+        "evidence/g5/G5_RAW_HASH_MANIFEST.json",
+        "evidence/g5/G5_RESULT_SUMMARY.json",
+    ],
+    "local_absence_is_nonoverlap_evidence": False,
+    "later_actual_report_required_fields": [
+        "locked_target_identity",
+        "retired_authority_hashes",
+        "discovery_case_unit_hashes",
+        "per_dimension_results",
+        "per_unit_results",
+        "refusal_entries",
+    ],
+}
+_EXPECTED_RUNTIME_LOCK_SCHEMA = {
+    "schema_version": "ims-deadlock/g6b-row-family-runtime-lock-schema/v1",
+    "study_role": "discovery_only",
+    "confirmation_use": "prohibited",
+    "scientific_execution_authorized": False,
+    "case_creation_authorized": False,
+    "overlap_authority_lock": {
+        "status": "required_later",
+        "authorizes_execution": False,
+        "required_fields": list(_AUTHORITY_LOCK_REQUIRED_FIELDS),
+    },
+    "execution_runtime_lock": {
+        "status": "required_later",
+        "allowed_only_after": "ACTUAL_OVERLAP_REPORT_PASSED",
+        "authorizes_execution": False,
+        "required_fields": list(_RUNTIME_LOCK_REQUIRED_FIELDS),
+    },
+}
 
 
 def _copy_bundle(tmp_path: Path) -> Path:
@@ -52,6 +151,20 @@ def _assert_invalid(bundle: Path, text: str) -> None:
     assert any(text in error for error in result.errors), result.errors
 
 
+def _mutate_list(value: list[str], item: str, operation: str) -> list[str]:
+    mutated = list(value)
+    index = mutated.index(item)
+    if operation == "remove":
+        mutated.pop(index)
+    elif operation == "duplicate":
+        mutated.insert(index, item)
+    elif operation == "replace":
+        mutated[index] = "UNEXPECTED_TASK4_SENTINEL"
+    else:  # pragma: no cover - parameterization guard
+        raise AssertionError(operation)
+    return mutated
+
+
 def test_canonical_bundle_loads_disabled_before_semantic_validation() -> None:
     result = validate_g6b_row_family_bundle(BUNDLE)
 
@@ -71,6 +184,34 @@ def test_canonical_bundle_loads_disabled_before_semantic_validation() -> None:
         "review_state.json",
         "failure_ledger.json",
     }
+
+
+def test_overlap_and_runtime_lock_canonical_objects_are_immutable() -> None:
+    overlap = _load(BUNDLE, "overlap_report_schema.json")
+    runtime = _load(BUNDLE, "runtime_lock_schema.json")
+
+    assert overlap == _EXPECTED_OVERLAP_REPORT_SCHEMA
+    assert runtime == _EXPECTED_RUNTIME_LOCK_SCHEMA
+    assert overlap["actual_overlap_checked"] is False
+    assert overlap["actual_overlap_report_available"] is False
+    assert overlap["schema_only_overlap_report_cannot_authorize_execution"] is True
+    assert overlap["missing_actual_overlap_report_blocks_execution"] is True
+    assert overlap["local_absence_is_nonoverlap_evidence"] is False
+    assert overlap["remote_only_G5_authority_paths"] == [
+        "evidence/g5/G5_RAW_HASH_MANIFEST.json",
+        "evidence/g5/G5_RESULT_SUMMARY.json",
+    ]
+    assert overlap["retired_authorities"] == ["G4", "G5", "G6_R"]
+    assert overlap["later_actual_report_required_fields"] == [
+        "locked_target_identity",
+        "retired_authority_hashes",
+        "discovery_case_unit_hashes",
+        "per_dimension_results",
+        "per_unit_results",
+        "refusal_entries",
+    ]
+    assert runtime["overlap_authority_lock"]["authorizes_execution"] is False
+    assert runtime["execution_runtime_lock"]["authorizes_execution"] is False
 
 
 @pytest.mark.parametrize("name", _NAMES)
@@ -125,6 +266,139 @@ def test_extra_nested_json_is_rejected(tmp_path: Path) -> None:
     bundle = _copy_bundle(tmp_path)
     _write(bundle, "extra.json", {"schema_version": "unexpected"})
     _assert_invalid(bundle, "unexpected JSON documents: ['extra.json']")
+
+
+@pytest.mark.parametrize("operation", ["remove", "duplicate", "replace"])
+@pytest.mark.parametrize("retired_dimension", _RETIRED_DIMENSIONS)
+def test_retired_overlap_dimension_contract_drift_is_rejected(
+    tmp_path: Path, retired_dimension: str, operation: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    overlap = _load(bundle, "overlap_report_schema.json")
+    overlap["retired_dimensions"] = _mutate_list(
+        overlap["retired_dimensions"], retired_dimension, operation
+    )
+    _write(bundle, "overlap_report_schema.json", overlap)
+    _assert_invalid(bundle, "overlap_report_schema.json: document must match")
+
+
+@pytest.mark.parametrize("operation", ["remove", "duplicate", "replace"])
+@pytest.mark.parametrize("confirmation_dimension", _FUTURE_CONFIRMATION_DIMENSIONS)
+def test_confirmation_overlap_dimension_contract_drift_is_rejected(
+    tmp_path: Path, confirmation_dimension: str, operation: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    overlap = _load(bundle, "overlap_report_schema.json")
+    overlap["future_confirmation_dimensions"] = _mutate_list(
+        overlap["future_confirmation_dimensions"], confirmation_dimension, operation
+    )
+    _write(bundle, "overlap_report_schema.json", overlap)
+    _assert_invalid(bundle, "overlap_report_schema.json: document must match")
+
+
+@pytest.mark.parametrize("confirmation_flag", _CONFIRMATION_METRIC_FLAGS)
+def test_confirmation_metric_reuse_false_is_rejected(
+    tmp_path: Path, confirmation_flag: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    overlap = _load(bundle, "overlap_report_schema.json")
+    metric_reuse = overlap["future_confirmation_metric_reuse"]
+    assert isinstance(metric_reuse, dict)
+    metric_reuse[confirmation_flag] = False
+    _write(bundle, "overlap_report_schema.json", overlap)
+    _assert_invalid(bundle, "overlap_report_schema.json: document must match")
+
+
+@pytest.mark.parametrize("confirmation_flag", _CONFIRMATION_METRIC_FLAGS)
+def test_confirmation_metric_reuse_key_removal_is_rejected(
+    tmp_path: Path, confirmation_flag: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    overlap = _load(bundle, "overlap_report_schema.json")
+    metric_reuse = overlap["future_confirmation_metric_reuse"]
+    assert isinstance(metric_reuse, dict)
+    metric_reuse.pop(confirmation_flag)
+    _write(bundle, "overlap_report_schema.json", overlap)
+    _assert_invalid(bundle, "overlap_report_schema.json: document must match")
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("actual_overlap_checked", True),
+        ("actual_overlap_report_available", True),
+    ],
+)
+def test_overlap_actual_report_state_drift_is_rejected(
+    tmp_path: Path, field: str, value: bool
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    overlap = _load(bundle, "overlap_report_schema.json")
+    overlap[field] = value
+    _write(bundle, "overlap_report_schema.json", overlap)
+    _assert_invalid(bundle, "overlap_report_schema.json: document must match")
+
+
+@pytest.mark.parametrize("operation", ["remove", "duplicate", "replace"])
+@pytest.mark.parametrize("authority_lock_field", _AUTHORITY_LOCK_REQUIRED_FIELDS)
+def test_authority_lock_required_field_contract_drift_is_rejected(
+    tmp_path: Path, authority_lock_field: str, operation: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    runtime = _load(bundle, "runtime_lock_schema.json")
+    authority_lock = runtime["overlap_authority_lock"]
+    assert isinstance(authority_lock, dict)
+    authority_lock["required_fields"] = _mutate_list(
+        authority_lock["required_fields"], authority_lock_field, operation
+    )
+    _write(bundle, "runtime_lock_schema.json", runtime)
+    _assert_invalid(bundle, "runtime_lock_schema.json: document must match")
+
+
+@pytest.mark.parametrize("operation", ["remove", "duplicate", "replace"])
+@pytest.mark.parametrize("runtime_lock_field", _RUNTIME_LOCK_REQUIRED_FIELDS)
+def test_runtime_lock_required_field_contract_drift_is_rejected(
+    tmp_path: Path, runtime_lock_field: str, operation: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    runtime = _load(bundle, "runtime_lock_schema.json")
+    runtime_lock = runtime["execution_runtime_lock"]
+    assert isinstance(runtime_lock, dict)
+    runtime_lock["required_fields"] = _mutate_list(
+        runtime_lock["required_fields"], runtime_lock_field, operation
+    )
+    _write(bundle, "runtime_lock_schema.json", runtime)
+    _assert_invalid(bundle, "runtime_lock_schema.json: document must match")
+
+
+def test_authority_lock_status_drift_is_rejected(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    runtime = _load(bundle, "runtime_lock_schema.json")
+    authority_lock = runtime["overlap_authority_lock"]
+    assert isinstance(authority_lock, dict)
+    authority_lock["status"] = "ready_now"
+    _write(bundle, "runtime_lock_schema.json", runtime)
+    _assert_invalid(bundle, "runtime_lock_schema.json: document must match")
+
+
+def test_runtime_lock_status_drift_is_rejected(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    runtime = _load(bundle, "runtime_lock_schema.json")
+    runtime_lock = runtime["execution_runtime_lock"]
+    assert isinstance(runtime_lock, dict)
+    runtime_lock["status"] = "ready_now"
+    _write(bundle, "runtime_lock_schema.json", runtime)
+    _assert_invalid(bundle, "runtime_lock_schema.json: document must match")
+
+
+def test_runtime_lock_allowed_only_after_drift_is_rejected(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    runtime = _load(bundle, "runtime_lock_schema.json")
+    runtime_lock = runtime["execution_runtime_lock"]
+    assert isinstance(runtime_lock, dict)
+    runtime_lock["allowed_only_after"] = "SCHEMA_ONLY_REPORT_PRESENT"
+    _write(bundle, "runtime_lock_schema.json", runtime)
+    _assert_invalid(bundle, "runtime_lock_schema.json: document must match")
 
 
 def test_foundation_top_level_json_set_remains_exact_five() -> None:

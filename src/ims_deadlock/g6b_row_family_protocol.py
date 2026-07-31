@@ -199,6 +199,96 @@ _EXPECTED_REUSE_MATRIX: JsonObject = {
         },
     ],
 }
+_EXPECTED_OVERLAP_REPORT_SCHEMA: JsonObject = {
+    "schema_version": "ims-deadlock/g6b-row-family-overlap-schema/v1",
+    "study_role": "discovery_only",
+    "confirmation_use": "prohibited",
+    "scientific_execution_authorized": False,
+    "case_creation_authorized": False,
+    "report_role": "schema_only",
+    "actual_overlap_checked": False,
+    "actual_overlap_report_available": False,
+    "schema_only_overlap_report_cannot_authorize_execution": True,
+    "missing_actual_overlap_report_blocks_execution": True,
+    "retired_authorities": ["G4", "G5", "G6_R"],
+    "retired_dimensions": [
+        "case_content_sha256",
+        "state_snapshot_sha256",
+        "route_signature_sha256",
+        "parameter_tuple_sha256",
+        "random_stream_manifest_sha256",
+        "output_root",
+        "sealed_prediction_sha256",
+        "metric_schema_sha256",
+    ],
+    "future_confirmation_dimensions": [
+        "case_content_sha256",
+        "state_snapshot_sha256",
+        "route_signature_sha256",
+        "parameter_tuple_sha256",
+        "random_stream_manifest_sha256",
+        "output_root",
+        "sealed_prediction_sha256",
+    ],
+    "future_confirmation_metric_reuse": {
+        "explicitly_preregistered": True,
+        "same_target_comparability": True,
+        "not_derived_from_outcomes": True,
+    },
+    "required_lock_before_actual_report": "overlap_authority_lock",
+    "remote_only_G5_authority_paths": [
+        "evidence/g5/G5_RAW_HASH_MANIFEST.json",
+        "evidence/g5/G5_RESULT_SUMMARY.json",
+    ],
+    "local_absence_is_nonoverlap_evidence": False,
+    "later_actual_report_required_fields": [
+        "locked_target_identity",
+        "retired_authority_hashes",
+        "discovery_case_unit_hashes",
+        "per_dimension_results",
+        "per_unit_results",
+        "refusal_entries",
+    ],
+}
+_EXPECTED_RUNTIME_LOCK_SCHEMA: JsonObject = {
+    "schema_version": "ims-deadlock/g6b-row-family-runtime-lock-schema/v1",
+    "study_role": "discovery_only",
+    "confirmation_use": "prohibited",
+    "scientific_execution_authorized": False,
+    "case_creation_authorized": False,
+    "overlap_authority_lock": {
+        "status": "required_later",
+        "authorizes_execution": False,
+        "required_fields": [
+            "target_path",
+            "target_branch",
+            "target_head",
+            "target_dirty_state",
+            "upstream_ahead_behind",
+            "worktree_identity",
+            "repo_remote_url",
+            "source_tree_hash",
+            "sealed_case_artifact_hashes",
+            "retired_authority_paths_and_hashes",
+        ],
+    },
+    "execution_runtime_lock": {
+        "status": "required_later",
+        "allowed_only_after": "ACTUAL_OVERLAP_REPORT_PASSED",
+        "authorizes_execution": False,
+        "required_fields": [
+            "python_executable",
+            "python_version",
+            "package_lock_or_environment_hash",
+            "validation_commands",
+            "validation_results",
+            "runtime_lock_created_at_utc",
+            "science_execution_authorized_by_artifact",
+            "pythondontwritebytecode_or_cache_policy",
+            "output_root_policy",
+        ],
+    },
+}
 
 
 @dataclass(frozen=True)
@@ -405,6 +495,18 @@ def validate_g6b_row_family_bundle(root: Path) -> G6BRowFamilyValidation:
             documents["reuse_matrix.json"],
             _EXPECTED_REUSE_MATRIX,
             "reuse_matrix.json",
+            errors,
+        )
+        _expect_exact_document(
+            documents["overlap_report_schema.json"],
+            _EXPECTED_OVERLAP_REPORT_SCHEMA,
+            "overlap_report_schema.json",
+            errors,
+        )
+        _expect_exact_document(
+            documents["runtime_lock_schema.json"],
+            _EXPECTED_RUNTIME_LOCK_SCHEMA,
+            "runtime_lock_schema.json",
             errors,
         )
         errors.append("semantic validation incomplete")
