@@ -19,6 +19,8 @@ from ims_deadlock.g6b_row_family_protocol import (
     validate_g6b_row_family_bundle,
 )
 
+PathPart = str | int
+
 BUNDLE = Path("cases/discovery/g6b/row_families/structural_discovery_v1")
 _NAMES = (
     "row_family_protocol.json",
@@ -239,6 +241,447 @@ def _probe_outcome_neutrality_cases() -> Iterable[Any]:
             )
 
 
+def _probe_nested_falsifier_cases() -> Iterable[Any]:
+    matrix = _matrix()
+    for probe_index, probe in enumerate(matrix["discovery_probes"]):
+        for operation in ("add", "reorder", "duplicate", "semantic"):
+            yield pytest.param(
+                probe_index,
+                operation,
+                id=f"probe_{probe['role']}_falsifiers_{operation}",
+            )
+
+
+def _control_expected_object_key_cases() -> Iterable[Any]:
+    matrix = _matrix()
+    for control_index, control in enumerate(matrix["negative_control_families"]):
+        control_id = control["required_negative_control_id"]
+        for key in ("classification", "refusal"):
+            for operation in ("remove_key", "add_key"):
+                yield pytest.param(
+                    control_index,
+                    key,
+                    operation,
+                    id=f"control_{control_id}_expected_object_{key}_{operation}",
+                )
+
+
+def _path_get(document: dict[str, Any], path: tuple[PathPart, ...]) -> Any:
+    target: Any = document
+    for part in path:
+        if isinstance(part, int):
+            assert isinstance(target, list)
+            target = target[part]
+        else:
+            assert isinstance(target, dict)
+            target = target[part]
+    return target
+
+
+def _path_set(document: dict[str, Any], path: tuple[PathPart, ...], value: Any) -> None:
+    target: Any = document
+    for part in path[:-1]:
+        if isinstance(part, int):
+            assert isinstance(target, list)
+            target = target[part]
+        else:
+            assert isinstance(target, dict)
+            target = target[part]
+    final = path[-1]
+    if isinstance(final, int):
+        assert isinstance(target, list)
+        target[final] = value
+    else:
+        assert isinstance(target, dict)
+        target[final] = value
+
+
+def _path_pop(document: dict[str, Any], path: tuple[PathPart, ...]) -> None:
+    target: Any = document
+    for part in path[:-1]:
+        if isinstance(part, int):
+            assert isinstance(target, list)
+            target = target[part]
+        else:
+            assert isinstance(target, dict)
+            target = target[part]
+    final = path[-1]
+    if isinstance(final, int):
+        assert isinstance(target, list)
+        target.pop(final)
+    else:
+        assert isinstance(target, dict)
+        target.pop(final)
+
+
+def _reuse_relation_nested_list_cases() -> Iterable[Any]:
+    reuse = _load(BUNDLE, "reuse_matrix.json")
+    relations = reuse["relations"]
+    assert isinstance(relations, list)
+    for relation_index, relation in enumerate(relations):
+        assert isinstance(relation, dict)
+        relation_id = relation["id"]
+        fields = (
+            "allowed_shared_dimensions",
+            "required_distinct_fields",
+            "required_fields",
+        )
+        for field in fields:
+            if field not in relation:
+                continue
+            value = relation[field]
+            assert isinstance(value, list)
+            operations = (
+                ("add",)
+                if not value
+                else (
+                    ("remove", "add", "reorder", "duplicate", "semantic")
+                    if len(value) >= 2
+                    else ("remove", "add", "duplicate", "semantic")
+                )
+            )
+            for operation in operations:
+                yield pytest.param(
+                    relation_index,
+                    field,
+                    operation,
+                    id=f"reuse_{relation_id}_{field}_{operation}",
+                )
+
+
+def _nested_scientific_list_cases() -> Iterable[Any]:
+    list_cases: tuple[tuple[str, tuple[PathPart, ...], str], ...] = (
+        (
+            "row_family_protocol.json",
+            ("artifact_paths",),
+            "row_family_protocol.json: document must match",
+        ),
+        (
+            "identity_schema.json",
+            ("identity_levels",),
+            "identity_schema.json: identity_levels must match",
+        ),
+        (
+            "identity_schema.json",
+            ("canonical_dimensions",),
+            "identity_schema.json: document must match",
+        ),
+        (
+            "identity_schema.json",
+            ("fingerprint_record_keys",),
+            "identity_schema.json: fingerprint_record_keys must match",
+        ),
+        (
+            "identity_schema.json",
+            ("method_roles",),
+            "identity_schema.json: method_roles must match",
+        ),
+        ("row_family_matrix.json", ("negative_control_families",), _TASK5_MATRIX_ERROR),
+        ("row_family_matrix.json", ("discovery_probes",), _TASK5_MATRIX_ERROR),
+        (
+            "row_family_matrix.json",
+            ("discovery_probes", 0, "falsifiers"),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("discovery_probes", 1, "falsifiers"),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("discovery_probes", 2, "falsifiers"),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("ontology_contract", "D_local_admission_routes"),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("exact_des_pairing", "same_selected_bad_labels"),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("initial_scoring_state", "metric_observations"),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "reuse_matrix.json",
+            ("relations",),
+            "reuse_matrix.json: reuse relation ids must match",
+        ),
+        (
+            "reuse_matrix.json",
+            ("relations", 0, "allowed_shared_dimensions"),
+            "reuse_matrix.json: document must match",
+        ),
+        (
+            "reuse_matrix.json",
+            ("relations", 0, "required_distinct_fields"),
+            "reuse_matrix.json: document must match",
+        ),
+        (
+            "reuse_matrix.json",
+            ("relations", 1, "allowed_shared_dimensions"),
+            "reuse_matrix.json: document must match",
+        ),
+        (
+            "reuse_matrix.json",
+            ("relations", 1, "required_fields"),
+            "reuse_matrix.json: document must match",
+        ),
+        (
+            "reuse_matrix.json",
+            ("relations", 2, "allowed_shared_dimensions"),
+            "reuse_matrix.json: document must match",
+        ),
+        (
+            "reuse_matrix.json",
+            ("relations", 2, "required_fields"),
+            "reuse_matrix.json: document must match",
+        ),
+        (
+            "reuse_matrix.json",
+            ("relations", 3, "allowed_shared_dimensions"),
+            "reuse_matrix.json: document must match",
+        ),
+        (
+            "reuse_matrix.json",
+            ("relations", 3, "required_fields"),
+            "reuse_matrix.json: document must match",
+        ),
+        (
+            "reuse_matrix.json",
+            ("relations", 4, "allowed_shared_dimensions"),
+            "reuse_matrix.json: document must match",
+        ),
+        (
+            "reuse_matrix.json",
+            ("relations", 4, "required_fields"),
+            "reuse_matrix.json: document must match",
+        ),
+        (
+            "overlap_report_schema.json",
+            ("retired_authorities",),
+            "overlap_report_schema.json: document must match",
+        ),
+        (
+            "overlap_report_schema.json",
+            ("retired_dimensions",),
+            "overlap_report_schema.json: document must match",
+        ),
+        (
+            "overlap_report_schema.json",
+            ("future_confirmation_dimensions",),
+            "overlap_report_schema.json: document must match",
+        ),
+        (
+            "overlap_report_schema.json",
+            ("remote_only_G5_authority_paths",),
+            "overlap_report_schema.json: document must match",
+        ),
+        (
+            "overlap_report_schema.json",
+            ("later_actual_report_required_fields",),
+            "overlap_report_schema.json: document must match",
+        ),
+        (
+            "runtime_lock_schema.json",
+            ("overlap_authority_lock", "required_fields"),
+            "runtime_lock_schema.json: document must match",
+        ),
+        (
+            "runtime_lock_schema.json",
+            ("execution_runtime_lock", "required_fields"),
+            "runtime_lock_schema.json: document must match",
+        ),
+        (
+            "review_state.json",
+            ("allowed_states_in_order",),
+            "review_state.json: allowed_states_in_order must match",
+        ),
+        (
+            "failure_ledger.json",
+            ("entries",),
+            "failure_ledger.json: entries must remain empty",
+        ),
+        (
+            "failure_ledger.json",
+            ("required_future_reason_codes",),
+            "failure_ledger.json: required_future_reason_codes must match",
+        ),
+    )
+    for name, path, expected_error in list_cases:
+        value = _path_get(_load(BUNDLE, name), path)
+        assert isinstance(value, list)
+        operations = (
+            ("add",)
+            if not value
+            else (
+                ("remove", "add", "reorder", "duplicate", "semantic")
+                if len(value) >= 2
+                else ("remove", "add", "duplicate", "semantic")
+            )
+        )
+        case_id = "_".join(str(item) for item in path).replace("[", "").replace("]", "")
+        for operation in operations:
+            yield pytest.param(
+                name,
+                path,
+                expected_error,
+                operation,
+                id=f"{name}_{case_id}_{operation}",
+            )
+
+
+def _nested_scientific_object_cases() -> Iterable[Any]:
+    object_cases: tuple[tuple[str, tuple[PathPart, ...], str], ...] = (
+        (
+            "row_family_protocol.json",
+            ("execution_boundary",),
+            "row_family_protocol.json: document must match",
+        ),
+        (
+            "identity_schema.json",
+            ("no_stochastic_method_manifest",),
+            "identity_schema.json: no_stochastic_method_manifest must match",
+        ),
+        (
+            "row_family_matrix.json",
+            ("negative_control_families", 0),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("negative_control_families", 1),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("negative_control_families", 2),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("negative_control_families", 3),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("negative_control_families", 4),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("negative_control_families", 5),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("negative_control_families", 6),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("negative_control_families", 0, "expected_refusal_or_classification"),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("negative_control_families", 1, "expected_refusal_or_classification"),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("negative_control_families", 2, "expected_refusal_or_classification"),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("negative_control_families", 3, "expected_refusal_or_classification"),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("negative_control_families", 4, "expected_refusal_or_classification"),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("negative_control_families", 5, "expected_refusal_or_classification"),
+            _TASK5_MATRIX_ERROR,
+        ),
+        (
+            "row_family_matrix.json",
+            ("negative_control_families", 6, "expected_refusal_or_classification"),
+            _TASK5_MATRIX_ERROR,
+        ),
+        ("row_family_matrix.json", ("discovery_probes", 0), _TASK5_MATRIX_ERROR),
+        ("row_family_matrix.json", ("discovery_probes", 1), _TASK5_MATRIX_ERROR),
+        ("row_family_matrix.json", ("discovery_probes", 2), _TASK5_MATRIX_ERROR),
+        ("row_family_matrix.json", ("ontology_contract",), _TASK5_MATRIX_ERROR),
+        ("row_family_matrix.json", ("exact_des_pairing",), _TASK5_MATRIX_ERROR),
+        ("row_family_matrix.json", ("initial_scoring_state",), _TASK5_MATRIX_ERROR),
+        (
+            "reuse_matrix.json",
+            ("relations", 0),
+            "reuse_matrix.json: document must match",
+        ),
+        (
+            "reuse_matrix.json",
+            ("relations", 1),
+            "reuse_matrix.json: document must match",
+        ),
+        (
+            "reuse_matrix.json",
+            ("relations", 2),
+            "reuse_matrix.json: document must match",
+        ),
+        (
+            "reuse_matrix.json",
+            ("relations", 3),
+            "reuse_matrix.json: document must match",
+        ),
+        (
+            "reuse_matrix.json",
+            ("relations", 4),
+            "reuse_matrix.json: document must match",
+        ),
+        (
+            "overlap_report_schema.json",
+            ("future_confirmation_metric_reuse",),
+            "overlap_report_schema.json: document must match",
+        ),
+        (
+            "runtime_lock_schema.json",
+            ("overlap_authority_lock",),
+            "runtime_lock_schema.json: document must match",
+        ),
+        (
+            "runtime_lock_schema.json",
+            ("execution_runtime_lock",),
+            "runtime_lock_schema.json: document must match",
+        ),
+    )
+    for name, path, expected_error in object_cases:
+        value = _path_get(_load(BUNDLE, name), path)
+        assert isinstance(value, dict)
+        semantic_key = sorted(value)[0]
+        case_id = "_".join(str(item) for item in path).replace("[", "").replace("]", "")
+        for operation in ("remove_key", "add_key", "semantic"):
+            yield pytest.param(
+                name,
+                path,
+                semantic_key,
+                expected_error,
+                operation,
+                id=f"{name}_{case_id}_{semantic_key}_{operation}",
+            )
+
+
 def _drift_value(value: Any) -> Any:
     if isinstance(value, str):
         return "TASK5_DETERMINISTIC_DRIFT"
@@ -290,6 +733,22 @@ def _write(bundle: Path, name: str, value: dict[str, Any]) -> None:
         json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
         encoding="utf-8",
     )
+
+
+def _write_preserving_key_order(bundle: Path, name: str, value: dict[str, Any]) -> None:
+    (bundle / name).write_text(
+        json.dumps(value, ensure_ascii=False, sort_keys=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _root_key_order(path: Path) -> list[str]:
+    loaded = json.loads(
+        path.read_text(encoding="utf-8"),
+        object_pairs_hook=lambda pairs: pairs,
+    )
+    assert isinstance(loaded, list)
+    return [key for key, _value in loaded]
 
 
 def _assert_invalid(bundle: Path, text: str) -> None:
@@ -667,16 +1126,132 @@ def test_major_contract_object_mutations_are_rejected(
     _assert_invalid(bundle, expected_error)
 
 
+@pytest.mark.parametrize(
+    ("name", "path", "expected_error", "operation"),
+    list(_nested_scientific_list_cases()),
+)
+def test_nested_scientific_list_mutation_inventory_is_rejected(
+    tmp_path: Path,
+    name: str,
+    path: tuple[PathPart, ...],
+    expected_error: str,
+    operation: str,
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    document = _load(bundle, name)
+    value = _path_get(document, path)
+    assert isinstance(value, list)
+    _path_set(document, path, _mutate_contract_list(value, operation))
+    _write(bundle, name, document)
+    _assert_invalid(bundle, expected_error)
+
+
+@pytest.mark.parametrize(
+    ("name", "path", "semantic_key", "expected_error", "operation"),
+    list(_nested_scientific_object_cases()),
+)
+def test_nested_scientific_object_mutation_inventory_is_rejected(
+    tmp_path: Path,
+    name: str,
+    path: tuple[PathPart, ...],
+    semantic_key: str,
+    expected_error: str,
+    operation: str,
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    document = _load(bundle, name)
+    value = _path_get(document, path)
+    assert isinstance(value, dict)
+    if operation == "remove_key":
+        _path_pop(document, (*path, semantic_key))
+    elif operation == "add_key":
+        value["task7_nested_unexpected"] = "not allowed"
+    elif operation == "semantic":
+        _path_set(document, (*path, semantic_key), _drift_value(value[semantic_key]))
+    else:  # pragma: no cover - parameterization guard
+        raise AssertionError(operation)
+    _write(bundle, name, document)
+    _assert_invalid(bundle, expected_error)
+
+
+@pytest.mark.parametrize(
+    ("probe_index", "operation"), list(_probe_nested_falsifier_cases())
+)
+def test_probe_matrix_nested_falsifier_mutations_are_rejected(
+    tmp_path: Path, probe_index: int, operation: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    probes = matrix["discovery_probes"]
+    assert isinstance(probes, list)
+    probe = probes[probe_index]
+    assert isinstance(probe, dict)
+    falsifiers = probe["falsifiers"]
+    assert isinstance(falsifiers, list)
+    probe["falsifiers"] = _mutate_contract_list(falsifiers, operation)
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
+
+
+@pytest.mark.parametrize(
+    ("relation_index", "field", "operation"), list(_reuse_relation_nested_list_cases())
+)
+def test_reuse_relation_nested_list_mutations_are_rejected(
+    tmp_path: Path, relation_index: int, field: str, operation: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    reuse = _load(bundle, "reuse_matrix.json")
+    relations = reuse["relations"]
+    assert isinstance(relations, list)
+    relation = relations[relation_index]
+    assert isinstance(relation, dict)
+    value = relation[field]
+    assert isinstance(value, list)
+    relation[field] = _mutate_contract_list(value, operation)
+    _write(bundle, "reuse_matrix.json", reuse)
+    _assert_invalid(bundle, "reuse_matrix.json: document must match")
+
+
+@pytest.mark.parametrize(
+    ("control_index", "key", "operation"), list(_control_expected_object_key_cases())
+)
+def test_control_expected_refusal_or_classification_key_mutations_are_rejected(
+    tmp_path: Path, control_index: int, key: str, operation: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    controls = matrix["negative_control_families"]
+    assert isinstance(controls, list)
+    control = controls[control_index]
+    assert isinstance(control, dict)
+    expected = control["expected_refusal_or_classification"]
+    assert isinstance(expected, dict)
+    if operation == "remove_key":
+        expected.pop(key)
+    elif operation == "add_key":
+        expected["task7_nested_unexpected"] = "not allowed"
+    else:  # pragma: no cover - parameterization guard
+        raise AssertionError(operation)
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
+
+
 def test_json_object_key_reordering_remains_semantically_neutral(
     tmp_path: Path,
 ) -> None:
     bundle = _copy_bundle(tmp_path)
+    canonical_path = BUNDLE / "row_family_protocol.json"
+    target_path = bundle / "row_family_protocol.json"
+    canonical_order = _root_key_order(canonical_path)
     protocol = _load(bundle, "row_family_protocol.json")
     reordered = dict(reversed(list(protocol.items())))
-    _write(bundle, "row_family_protocol.json", reordered)
+    _write_preserving_key_order(bundle, "row_family_protocol.json", reordered)
+    reordered_order = _root_key_order(target_path)
 
     result = validate_g6b_row_family_bundle(bundle)
 
+    assert reordered_order != canonical_order
+    assert reordered_order == list(reversed(canonical_order))
     assert result.valid is True
 
 
