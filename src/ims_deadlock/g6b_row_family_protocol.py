@@ -484,6 +484,64 @@ _EXPECTED_RUNTIME_LOCK_SCHEMA: JsonObject = {
         ],
     },
 }
+_EXPECTED_REVIEW_STATE: JsonObject = {
+    "schema_version": "ims-deadlock/g6b-row-family-review-state/v1",
+    "study_role": "discovery_only",
+    "confirmation_use": "prohibited",
+    "scientific_execution_authorized": False,
+    "case_creation_authorized": False,
+    "current_state": "ROW_FAMILY_BUNDLE_IMPLEMENTED",
+    "allowed_states_in_order": [
+        "SPEC_DRAFTED",
+        "ROW_FAMILY_BUNDLE_IMPLEMENTED",
+        "DATA_ONLY_VALIDATION_PASSED",
+        "ADVERSARIAL_ROW_FAMILY_REVIEW_PASSED",
+        "CASE_CONSTRUCTION_PLAN_APPROVED",
+        "CASE_ARTIFACTS_SEALED_NO_SCIENCE",
+        "OVERLAP_AUTHORITY_LOCK_RECORDED",
+        "ACTUAL_OVERLAP_REPORT_PASSED",
+        "EXECUTION_RUNTIME_LOCK_RECORDED",
+        "EXPLICIT_SCIENCE_AUTHORIZATION_RECORDED",
+    ],
+    "adversarial_review_status": "PENDING",
+    "forward_only": True,
+    "current_state_authorizes_case_creation": False,
+    "current_state_authorizes_science": False,
+}
+_EXPECTED_FAILURE_LEDGER: JsonObject = {
+    "schema_version": "ims-deadlock/g6b-row-family-failure-ledger/v1",
+    "study_role": "discovery_only",
+    "confirmation_use": "prohibited",
+    "scientific_execution_authorized": False,
+    "case_creation_authorized": False,
+    "append_only": True,
+    "entries": [],
+    "empty_entries_meaning": (
+        "no row-family admission or execution attempt has occurred"
+    ),
+    "empty_entries_do_not_mean_no_historical_failures": True,
+    "required_future_reason_codes": [
+        "schema_drift",
+        "ontology_drift",
+        "target_drift",
+        "overlap_hit",
+        "missing_hash",
+        "failed_negative_control",
+        "incomplete_LTS_audit",
+        "outcome_leakage",
+        "unauthorized_case_creation_attempt",
+        "unauthorized_science_execution_attempt",
+    ],
+}
+_PROHIBITED_OUTCOME_KEYS = {
+    "observed_result",
+    "exact_output",
+    "des_output",
+    "state_enumeration_result",
+    "metric_value",
+    "actual_overlap_result",
+    "current_runtime_lock",
+}
 
 
 @dataclass(frozen=True)
@@ -564,6 +622,77 @@ def _expect_exact_document(
     _exact_keys(actual, set(expected), label, errors)
     if actual != expected:
         errors.append(f"{label}: document must match the canonical contract")
+
+
+def _walk_keys(value: Any) -> set[str]:
+    if isinstance(value, dict):
+        keys = set(value)
+        for child in value.values():
+            keys.update(_walk_keys(child))
+        return keys
+    if isinstance(value, list):
+        list_keys: set[str] = set()
+        for child in value:
+            list_keys.update(_walk_keys(child))
+        return list_keys
+    return set()
+
+
+def _reject_prohibited_outcome_keys(
+    document: JsonObject,
+    label: str,
+    errors: list[str],
+) -> None:
+    for key in sorted(_walk_keys(document) & _PROHIBITED_OUTCOME_KEYS):
+        errors.append(f"{label}: prohibited outcome key present: {key}")
+
+
+def _expect_review_state(actual: JsonObject, errors: list[str]) -> None:
+    if (
+        actual.get("allowed_states_in_order")
+        != _EXPECTED_REVIEW_STATE["allowed_states_in_order"]
+    ):
+        errors.append("review_state.json: allowed_states_in_order must match")
+    if actual.get("current_state") != "ROW_FAMILY_BUNDLE_IMPLEMENTED":
+        errors.append(
+            "review_state.json: current_state must remain ROW_FAMILY_BUNDLE_IMPLEMENTED"
+        )
+    if actual.get("adversarial_review_status") != "PENDING":
+        errors.append(
+            "review_state.json: adversarial_review_status must remain PENDING"
+        )
+    if actual.get("forward_only") is not True:
+        errors.append("review_state.json: forward_only must be true")
+    if actual.get("current_state_authorizes_case_creation") is not False:
+        errors.append(
+            "review_state.json: current_state_authorizes_case_creation must be false"
+        )
+    if actual.get("current_state_authorizes_science") is not False:
+        errors.append(
+            "review_state.json: current_state_authorizes_science must be false"
+        )
+
+
+def _expect_failure_ledger(actual: JsonObject, errors: list[str]) -> None:
+    if actual.get("append_only") is not True:
+        errors.append("failure_ledger.json: append_only must be true")
+    if actual.get("entries") != []:
+        errors.append("failure_ledger.json: entries must remain empty")
+    if (
+        actual.get("empty_entries_meaning")
+        != _EXPECTED_FAILURE_LEDGER["empty_entries_meaning"]
+    ):
+        errors.append("failure_ledger.json: empty_entries_meaning must match")
+    if actual.get("empty_entries_do_not_mean_no_historical_failures") is not True:
+        errors.append(
+            "failure_ledger.json: empty_entries_do_not_mean_no_historical_failures "
+            "must be true"
+        )
+    if (
+        actual.get("required_future_reason_codes")
+        != _EXPECTED_FAILURE_LEDGER["required_future_reason_codes"]
+    ):
+        errors.append("failure_ledger.json: required_future_reason_codes must match")
 
 
 def _expect_identity_schema(actual: JsonObject, errors: list[str]) -> None:
@@ -672,6 +801,7 @@ def validate_g6b_row_family_bundle(root: Path) -> G6BRowFamilyValidation:
             errors.append("source design path is missing")
         for name, version in _SCHEMA_VERSIONS.items():
             _common_contract(documents[name], name, version, errors)
+            _reject_prohibited_outcome_keys(documents[name], name, errors)
         _expect_exact_document(
             documents["row_family_protocol.json"],
             _EXPECTED_ROW_FAMILY_PROTOCOL,
@@ -710,7 +840,20 @@ def validate_g6b_row_family_bundle(root: Path) -> G6BRowFamilyValidation:
             "runtime_lock_schema.json",
             errors,
         )
-        errors.append("semantic validation incomplete")
+        _expect_review_state(documents["review_state.json"], errors)
+        _expect_exact_document(
+            documents["review_state.json"],
+            _EXPECTED_REVIEW_STATE,
+            "review_state.json",
+            errors,
+        )
+        _expect_failure_ledger(documents["failure_ledger.json"], errors)
+        _expect_exact_document(
+            documents["failure_ledger.json"],
+            _EXPECTED_FAILURE_LEDGER,
+            "failure_ledger.json",
+            errors,
+        )
     return G6BRowFamilyValidation(
         valid=not errors,
         errors=tuple(errors),

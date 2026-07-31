@@ -121,6 +121,40 @@ _EXPECTED_RUNTIME_LOCK_SCHEMA = {
     },
 }
 _TASK5_MATRIX_ERROR = "row_family_matrix.json: document must match"
+_ALLOWED_REVIEW_STATES = (
+    "SPEC_DRAFTED",
+    "ROW_FAMILY_BUNDLE_IMPLEMENTED",
+    "DATA_ONLY_VALIDATION_PASSED",
+    "ADVERSARIAL_ROW_FAMILY_REVIEW_PASSED",
+    "CASE_CONSTRUCTION_PLAN_APPROVED",
+    "CASE_ARTIFACTS_SEALED_NO_SCIENCE",
+    "OVERLAP_AUTHORITY_LOCK_RECORDED",
+    "ACTUAL_OVERLAP_REPORT_PASSED",
+    "EXECUTION_RUNTIME_LOCK_RECORDED",
+    "EXPLICIT_SCIENCE_AUTHORIZATION_RECORDED",
+)
+_LATER_REVIEW_STATES = _ALLOWED_REVIEW_STATES[2:]
+_REQUIRED_FUTURE_REASON_CODES = (
+    "schema_drift",
+    "ontology_drift",
+    "target_drift",
+    "overlap_hit",
+    "missing_hash",
+    "failed_negative_control",
+    "incomplete_LTS_audit",
+    "outcome_leakage",
+    "unauthorized_case_creation_attempt",
+    "unauthorized_science_execution_attempt",
+)
+_PROHIBITED_OUTCOME_KEYS = (
+    "observed_result",
+    "exact_output",
+    "des_output",
+    "state_enumeration_result",
+    "metric_value",
+    "actual_overlap_result",
+    "current_runtime_lock",
+)
 
 
 def _matrix() -> dict[str, Any]:
@@ -258,25 +292,162 @@ def _mutate_list(value: list[str], item: str, operation: str) -> list[str]:
     return mutated
 
 
-def test_canonical_bundle_loads_disabled_before_semantic_validation() -> None:
+def _insert_prohibited_key(document: dict[str, Any], key: str) -> None:
+    document["task6_leakage_probe"] = [{"nested": {key: "TASK6_INERT_SENTINEL"}}]
+
+
+def test_canonical_row_family_bundle_is_valid_and_disabled() -> None:
     result = validate_g6b_row_family_bundle(BUNDLE)
 
-    assert result.valid is False
-    assert result.errors == ("semantic validation incomplete",)
+    assert result.valid is True
+    assert result.errors == ()
     assert result.scientific_execution_authorized is False
     assert result.case_creation_authorized is False
     assert result.adversarial_review_status == "PENDING"
     assert result.review_state == "ROW_FAMILY_BUNDLE_IMPLEMENTED"
-    assert set(result.bundle_hashes) == {
-        "row_family_protocol.json",
-        "identity_schema.json",
-        "row_family_matrix.json",
-        "reuse_matrix.json",
-        "overlap_report_schema.json",
-        "runtime_lock_schema.json",
-        "review_state.json",
-        "failure_ledger.json",
-    }
+    assert set(result.bundle_hashes) == set(_NAMES)
+
+
+def test_review_state_order_drift_is_rejected(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    review_state = _load(bundle, "review_state.json")
+    states = review_state["allowed_states_in_order"]
+    states[0], states[1] = states[1], states[0]
+    _write(bundle, "review_state.json", review_state)
+    _assert_invalid(bundle, "review_state.json: allowed_states_in_order must match")
+
+
+@pytest.mark.parametrize("state", _ALLOWED_REVIEW_STATES)
+def test_review_state_allowed_state_removal_is_rejected(
+    tmp_path: Path, state: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    review_state = _load(bundle, "review_state.json")
+    review_state["allowed_states_in_order"].remove(state)
+    _write(bundle, "review_state.json", review_state)
+    _assert_invalid(bundle, "review_state.json: allowed_states_in_order must match")
+
+
+@pytest.mark.parametrize("state", _LATER_REVIEW_STATES)
+def test_review_state_forward_transition_is_rejected(
+    tmp_path: Path, state: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    review_state = _load(bundle, "review_state.json")
+    review_state["current_state"] = state
+    _write(bundle, "review_state.json", review_state)
+    _assert_invalid(
+        bundle,
+        "review_state.json: current_state must remain ROW_FAMILY_BUNDLE_IMPLEMENTED",
+    )
+
+
+def test_review_state_adversarial_status_drift_is_rejected(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    review_state = _load(bundle, "review_state.json")
+    review_state["adversarial_review_status"] = "PASSED"
+    _write(bundle, "review_state.json", review_state)
+    _assert_invalid(
+        bundle,
+        "review_state.json: adversarial_review_status must remain PENDING",
+    )
+
+
+def test_review_state_forward_only_false_is_rejected(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    review_state = _load(bundle, "review_state.json")
+    review_state["forward_only"] = False
+    _write(bundle, "review_state.json", review_state)
+    _assert_invalid(bundle, "review_state.json: forward_only must be true")
+
+
+def test_review_state_case_creation_authorization_is_rejected(
+    tmp_path: Path,
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    review_state = _load(bundle, "review_state.json")
+    review_state["current_state_authorizes_case_creation"] = True
+    _write(bundle, "review_state.json", review_state)
+    _assert_invalid(
+        bundle,
+        "review_state.json: current_state_authorizes_case_creation must be false",
+    )
+
+
+def test_review_state_science_authorization_is_rejected(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    review_state = _load(bundle, "review_state.json")
+    review_state["current_state_authorizes_science"] = True
+    _write(bundle, "review_state.json", review_state)
+    _assert_invalid(
+        bundle,
+        "review_state.json: current_state_authorizes_science must be false",
+    )
+
+
+def test_ledger_append_only_false_is_rejected(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    ledger = _load(bundle, "failure_ledger.json")
+    ledger["append_only"] = False
+    _write(bundle, "failure_ledger.json", ledger)
+    _assert_invalid(bundle, "failure_ledger.json: append_only must be true")
+
+
+def test_ledger_nonempty_entries_are_rejected(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    ledger = _load(bundle, "failure_ledger.json")
+    ledger["entries"] = [{"reason_code": "schema_drift"}]
+    _write(bundle, "failure_ledger.json", ledger)
+    _assert_invalid(bundle, "failure_ledger.json: entries must remain empty")
+
+
+def test_ledger_empty_entries_meaning_drift_is_rejected(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    ledger = _load(bundle, "failure_ledger.json")
+    ledger["empty_entries_meaning"] = "no failures"
+    _write(bundle, "failure_ledger.json", ledger)
+    _assert_invalid(bundle, "failure_ledger.json: empty_entries_meaning must match")
+
+
+def test_ledger_historical_failure_flag_false_is_rejected(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    ledger = _load(bundle, "failure_ledger.json")
+    ledger["empty_entries_do_not_mean_no_historical_failures"] = False
+    _write(bundle, "failure_ledger.json", ledger)
+    _assert_invalid(
+        bundle,
+        "failure_ledger.json: empty_entries_do_not_mean_no_historical_failures "
+        "must be true",
+    )
+
+
+@pytest.mark.parametrize("reason_code", _REQUIRED_FUTURE_REASON_CODES)
+def test_ledger_required_reason_code_removal_is_rejected(
+    tmp_path: Path, reason_code: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    ledger = _load(bundle, "failure_ledger.json")
+    ledger["required_future_reason_codes"].remove(reason_code)
+    _write(bundle, "failure_ledger.json", ledger)
+    _assert_invalid(
+        bundle,
+        "failure_ledger.json: required_future_reason_codes must match",
+    )
+
+
+@pytest.mark.parametrize("name", _NAMES)
+@pytest.mark.parametrize("prohibited_key", _PROHIBITED_OUTCOME_KEYS)
+def test_prohibited_key_leakage_is_rejected_recursively(
+    tmp_path: Path, name: str, prohibited_key: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    document = _load(bundle, name)
+    _insert_prohibited_key(document, prohibited_key)
+    _write(bundle, name, document)
+    _assert_invalid(
+        bundle,
+        f"{name}: prohibited outcome key present: {prohibited_key}",
+    )
 
 
 def test_overlap_and_runtime_lock_canonical_objects_are_immutable() -> None:
