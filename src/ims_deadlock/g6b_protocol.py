@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, TypeAlias
 
 G6B_PROTOCOL_SCHEMA_VERSION = "ims-deadlock/g6b-discovery-protocol/v1"
-G6B_ESTIMAND_SCHEMA_VERSION = "ims-deadlock/g6b-estimand-schema/v1"
+G6B_ESTIMAND_SCHEMA_VERSION = "ims-deadlock/g6b-estimand-schema/v2"
 G6B_INDEPENDENCE_SCHEMA_VERSION = "ims-deadlock/g6b-independence-schema/v1"
 G6B_NEGATIVE_CONTROLS_VERSION = "ims-deadlock/g6b-negative-controls/v1"
 G6B_FAILURE_LEDGER_VERSION = "ims-deadlock/g6b-failure-ledger/v1"
@@ -64,19 +64,58 @@ _REMOTE_ONLY_HISTORICAL_AUTHORITIES = {
     "evidence/g5/G5_RAW_HASH_MANIFEST.json",
     "evidence/g5/G5_RESULT_SUMMARY.json",
 }
-_OBJECTIVE_CLASSES = [
-    "D_global",
-    "D_local",
-    "F",
+_SELECTED_STOPPING_TARGETS = {
+    "bad_hit_sets": ["D_global", "D_local"],
+    "success_class": "F",
+}
+_UNSELECTED_PLANT_TERMINAL_CLASSES = [
     "R_livelock",
     "R_terminal",
-    "P_policy",
-    "S_T",
 ]
+_POLICY_ANALYSIS_CLASS = {
+    "label": "P_policy",
+    "plant_partition_member": False,
+    "selectable_target": False,
+}
+_DERIVED_STATE_SETS = {
+    "S_reach": {
+        "definition": "complete_stopped_lts_support_reachability",
+        "role": "diagnostic_only",
+        "selectable_target": False,
+    },
+    "S_T": {
+        "definition": (
+            "probability_one_hit_selected_target_in_finite_positive_rate_stopped_ctmc"
+        ),
+        "role": "certified_absorption_domain",
+        "selectable_target": False,
+    },
+}
+_D_LOCAL_ONTOLOGY = {
+    "ontology": "first_hit_bad_set_not_terminal_scc",
+    "definition": (
+        "verified first-hit bad set selected by the G6-B estimand, "
+        "not a plant terminal SCC"
+    ),
+    "admission": [
+        "A2b_proof",
+        "complete_LTS_completion_nonreachability_audit",
+    ],
+}
+_TYPED_ONTOLOGY = {
+    "selected_stopping_targets": _SELECTED_STOPPING_TARGETS,
+    "unselected_plant_terminal_classes": _UNSELECTED_PLANT_TERMINAL_CLASSES,
+    "policy_analysis_class": _POLICY_ANALYSIS_CLASS,
+    "derived_state_sets": _DERIVED_STATE_SETS,
+    "D_local": _D_LOCAL_ONTOLOGY,
+}
 _FUTURE_HASHES = [
     "state_space_hash",
     "partition_hash",
     "rate_manifest_hash",
+    "positive_rate_graph_hash",
+    "policy_filter_hash",
+    "absorption_domain_hash",
     "stopping_rule_hash",
     "des_stopping_rule_hash",
     "estimand_id",
@@ -320,24 +359,8 @@ def _validate_estimand(document: JsonObject, errors: list[str]) -> None:
     else:
         _expect(
             ontology,
-            {
-                "objective_classes": _OBJECTIVE_CLASSES,
-                "D_local": {
-                    "ontology": "first_hit_bad_set_not_terminal_scc",
-                    "definition": (
-                        "verified first-hit bad set selected by the G6-B "
-                        "estimand, not a plant terminal SCC"
-                    ),
-                    "admission": [
-                        "A2b_proof",
-                        "complete_LTS_completion_nonreachability_audit",
-                    ],
-                },
-                "success_class": "F",
-                "selected_bad_classes": ["D_global", "D_local"],
-                "selected_success_class": "F",
-            },
-            "estimand_schema.json: D_local ontology",
+            _TYPED_ONTOLOGY,
+            "estimand_schema.json: ontology",
             errors,
         )
     _expect(
@@ -347,6 +370,8 @@ def _validate_estimand(document: JsonObject, errors: list[str]) -> None:
             "same_selected_bad_labels_required": True,
             "same_selected_success_label_required": True,
             "same_versioned_target_required": True,
+            "certified_absorption_domain_required": True,
+            "same_absorption_domain_hash_required": True,
         },
         "estimand_schema.json: exact_des_consistency",
         errors,

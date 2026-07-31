@@ -83,6 +83,52 @@ _EXPECTED_NEGATIVE_CONTROLS = [
         "not_support_if_failed": True,
     },
 ]
+_EXPECTED_TYPED_ONTOLOGY = {
+    "selected_stopping_targets": {
+        "bad_hit_sets": ["D_global", "D_local"],
+        "success_class": "F",
+    },
+    "unselected_plant_terminal_classes": [
+        "R_livelock",
+        "R_terminal",
+    ],
+    "policy_analysis_class": {
+        "label": "P_policy",
+        "plant_partition_member": False,
+        "selectable_target": False,
+    },
+    "derived_state_sets": {
+        "S_reach": {
+            "definition": "complete_stopped_lts_support_reachability",
+            "role": "diagnostic_only",
+            "selectable_target": False,
+        },
+        "S_T": {
+            "definition": (
+                "probability_one_hit_selected_target_in_finite_positive_rate_"
+                "stopped_ctmc"
+            ),
+            "role": "certified_absorption_domain",
+            "selectable_target": False,
+        },
+    },
+    "D_local": {
+        "ontology": "first_hit_bad_set_not_terminal_scc",
+        "definition": (
+            "verified first-hit bad set selected by the G6-B estimand, "
+            "not a plant terminal SCC"
+        ),
+        "admission": [
+            "A2b_proof",
+            "complete_LTS_completion_nonreachability_audit",
+        ],
+    },
+}
+_NEW_FUTURE_HASHES = [
+    "positive_rate_graph_hash",
+    "policy_filter_hash",
+    "absorption_domain_hash",
+]
 
 
 def _copy_bundle(tmp_path: Path) -> Path:
@@ -250,6 +296,124 @@ def test_missing_independence_dimension_is_rejected(tmp_path: Path) -> None:
     _assert_invalid(bundle, "independence_schema.json: dimensions")
 
 
+def test_estimand_schema_v2_uses_typed_ontology() -> None:
+    estimand = _load(Path("cases/discovery/g6b"), "estimand_schema.json")
+
+    assert estimand["schema_version"] == "ims-deadlock/g6b-estimand-schema/v2"
+    assert "objective_classes" not in estimand["ontology"]
+    assert estimand["ontology"]["selected_stopping_targets"] == {
+        "bad_hit_sets": ["D_global", "D_local"],
+        "success_class": "F",
+    }
+    assert estimand["ontology"]["unselected_plant_terminal_classes"] == [
+        "R_livelock",
+        "R_terminal",
+    ]
+    assert estimand["ontology"]["policy_analysis_class"] == {
+        "label": "P_policy",
+        "plant_partition_member": False,
+        "selectable_target": False,
+    }
+    assert estimand["ontology"]["derived_state_sets"] == {
+        "S_reach": {
+            "definition": "complete_stopped_lts_support_reachability",
+            "role": "diagnostic_only",
+            "selectable_target": False,
+        },
+        "S_T": {
+            "definition": (
+                "probability_one_hit_selected_target_in_finite_positive_rate_"
+                "stopped_ctmc"
+            ),
+            "role": "certified_absorption_domain",
+            "selectable_target": False,
+        },
+    }
+
+
+def test_legacy_objective_classes_is_rejected(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    schema = _load(bundle, "estimand_schema.json")
+    ontology = schema["ontology"]
+    assert isinstance(ontology, dict)
+    ontology["objective_classes"] = [
+        "D_global",
+        "D_local",
+        "F",
+        "R_livelock",
+        "R_terminal",
+        "P_policy",
+        "S_T",
+    ]
+    _write(bundle, "estimand_schema.json", schema)
+
+    _assert_invalid(bundle, "estimand_schema.json: ontology")
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    [
+        ("bad_hit_sets", ["D_global", "D_local", "S_T"]),
+        ("bad_hit_sets", ["D_global", "D_local", "S_reach"]),
+        ("bad_hit_sets", ["D_global", "D_local", "R_livelock"]),
+        ("success_class", "P_policy"),
+    ],
+)
+def test_selected_target_kind_drift_is_rejected(
+    tmp_path: Path, field: str, replacement: list[str] | str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    schema = _load(bundle, "estimand_schema.json")
+    ontology = schema["ontology"]
+    assert isinstance(ontology, dict)
+    assert ontology.get("selected_stopping_targets") == {
+        "bad_hit_sets": ["D_global", "D_local"],
+        "success_class": "F",
+    }
+    selected = ontology["selected_stopping_targets"]
+    assert isinstance(selected, dict)
+    selected[field] = replacement
+    _write(bundle, "estimand_schema.json", schema)
+
+    _assert_invalid(bundle, "estimand_schema.json: ontology")
+
+
+@pytest.mark.parametrize("missing_hash", _NEW_FUTURE_HASHES)
+def test_future_hashes_require_absorption_identity(
+    tmp_path: Path, missing_hash: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    schema = _load(bundle, "estimand_schema.json")
+    future_hashes = schema["future_required_hashes"]
+    assert isinstance(future_hashes, list)
+    assert missing_hash in future_hashes
+    future_hashes.remove(missing_hash)
+    _write(bundle, "estimand_schema.json", schema)
+
+    _assert_invalid(bundle, "estimand_schema.json: future_required_hashes")
+
+
+@pytest.mark.parametrize(
+    "rule",
+    [
+        "certified_absorption_domain_required",
+        "same_absorption_domain_hash_required",
+    ],
+)
+def test_exact_des_contract_requires_same_absorption_domain(
+    tmp_path: Path, rule: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    schema = _load(bundle, "estimand_schema.json")
+    consistency = schema["exact_des_consistency"]
+    assert isinstance(consistency, dict)
+    assert consistency.get(rule) is True
+    consistency[rule] = False
+    _write(bundle, "estimand_schema.json", schema)
+
+    _assert_invalid(bundle, "estimand_schema.json: exact_des_consistency")
+
+
 def test_wrong_d_local_ontology_is_rejected(tmp_path: Path) -> None:
     bundle = _copy_bundle(tmp_path)
     schema = _load(bundle, "estimand_schema.json")
@@ -260,7 +424,7 @@ def test_wrong_d_local_ontology_is_rejected(tmp_path: Path) -> None:
     d_local["ontology"] = "terminal_scc"
     _write(bundle, "estimand_schema.json", schema)
 
-    _assert_invalid(bundle, "estimand_schema.json: D_local ontology")
+    _assert_invalid(bundle, "estimand_schema.json: ontology")
 
 
 def test_exact_des_consistency_drift_is_rejected(tmp_path: Path) -> None:
