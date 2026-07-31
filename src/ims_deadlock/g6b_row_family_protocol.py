@@ -77,6 +77,128 @@ _EXPECTED_ROW_FAMILY_PROTOCOL: JsonObject = {
         "output_inspection": "prohibited",
     },
 }
+_EXPECTED_IDENTITY_SCHEMA: JsonObject = {
+    "schema_version": "ims-deadlock/g6b-row-family-identity/v1",
+    "study_role": "discovery_only",
+    "confirmation_use": "prohibited",
+    "scientific_execution_authorized": False,
+    "case_creation_authorized": False,
+    "identity_levels": ["family_id", "case_unit_id", "method_observation_id"],
+    "canonical_dimensions": [
+        "case_content_sha256",
+        "state_snapshot_sha256",
+        "route_signature_sha256",
+        "parameter_tuple_sha256",
+        "random_stream_manifest_sha256",
+        "output_root",
+        "sealed_prediction_sha256",
+        "metric_schema_sha256",
+    ],
+    "fingerprint_record_keys": [
+        "dimension",
+        "applicability_status",
+        "artifact_role",
+        "sha256_or_null",
+    ],
+    "no_stochastic_method_manifest": {
+        "allowed": True,
+        "must_be_case_unit_specific": True,
+        "shared_global_sentinel_prohibited": True,
+        "proves_provenance_only": True,
+        "proves_stochastic_independence": False,
+    },
+    "method_roles": [
+        "exact_companion",
+        "des_companion",
+        "schema_only_refusal",
+        "review_only_placeholder",
+    ],
+    "method_observations_are_independent_cases": False,
+}
+_EXPECTED_REUSE_MATRIX: JsonObject = {
+    "schema_version": "ims-deadlock/g6b-row-family-reuse/v1",
+    "study_role": "discovery_only",
+    "confirmation_use": "prohibited",
+    "scientific_execution_authorized": False,
+    "case_creation_authorized": False,
+    "relations": [
+        {
+            "id": "exact_des_companion",
+            "same_case_unit_id": True,
+            "allowed_shared_dimensions": [
+                "case_content_sha256",
+                "state_snapshot_sha256",
+                "route_signature_sha256",
+                "parameter_tuple_sha256",
+                "sealed_prediction_sha256",
+                "metric_schema_sha256",
+            ],
+            "required_distinct_fields": [
+                "method_observation_id",
+                "method_role",
+                "output_root",
+            ],
+            "evidence_counting": "one_case_unit",
+        },
+        {
+            "id": "controlled_family_variant",
+            "same_case_unit_id": False,
+            "allowed_shared_dimensions": [
+                "family_id",
+                "ontology_version",
+                "metric_schema_sha256",
+                "selected_target_version",
+                "declared_held_fixed_dimensions",
+            ],
+            "required_fields": [
+                "declared_variation_axis",
+                "declared_held_fixed_dimensions",
+                "outcome_independent_declaration",
+            ],
+            "evidence_counting": "distinct_case_units_not_independent_replicates",
+        },
+        {
+            "id": "negative_control_pair",
+            "same_case_unit_id": False,
+            "allowed_shared_dimensions": [
+                "family_id",
+                "ontology_version",
+                "metric_schema_sha256",
+            ],
+            "required_fields": [
+                "required_negative_control_id",
+                "hypothesis_attacked",
+                "mechanism_difference",
+            ],
+            "evidence_counting": "control_pair",
+        },
+        {
+            "id": "method_schema_reuse",
+            "same_case_unit_id": False,
+            "allowed_shared_dimensions": [
+                "metric_schema_sha256",
+                "orthogonal_scoring_layers",
+            ],
+            "required_fields": [
+                "explicitly_preregistered",
+                "same_target_comparability",
+                "not_derived_from_outcomes",
+            ],
+            "evidence_counting": "no_independence_claim_from_schema_reuse",
+        },
+        {
+            "id": "retired_authority_overlap",
+            "same_case_unit_id": False,
+            "allowed_shared_dimensions": [],
+            "required_fields": [
+                "retired_authority",
+                "overlap_dimension",
+                "refusal_ledger_entry",
+            ],
+            "admission": "refused",
+        },
+    ],
+}
 
 
 @dataclass(frozen=True)
@@ -159,6 +281,42 @@ def _expect_exact_document(
         errors.append(f"{label}: document must match the canonical contract")
 
 
+def _expect_identity_schema(actual: JsonObject, errors: list[str]) -> None:
+    if actual.get("identity_levels") != _EXPECTED_IDENTITY_SCHEMA["identity_levels"]:
+        errors.append("identity_schema.json: identity_levels must match")
+    if (
+        actual.get("fingerprint_record_keys")
+        != _EXPECTED_IDENTITY_SCHEMA["fingerprint_record_keys"]
+    ):
+        errors.append("identity_schema.json: fingerprint_record_keys must match")
+    if actual.get("method_roles") != _EXPECTED_IDENTITY_SCHEMA["method_roles"]:
+        errors.append("identity_schema.json: method_roles must match")
+    if (
+        actual.get("no_stochastic_method_manifest")
+        != _EXPECTED_IDENTITY_SCHEMA["no_stochastic_method_manifest"]
+    ):
+        errors.append("identity_schema.json: no_stochastic_method_manifest must match")
+    if actual.get("method_observations_are_independent_cases") is not False:
+        errors.append(
+            "identity_schema.json: method_observations_are_independent_cases "
+            "must be false"
+        )
+
+
+def _expect_reuse_matrix(actual: JsonObject, errors: list[str]) -> None:
+    relations = actual.get("relations")
+    if not isinstance(relations, list):
+        errors.append("reuse_matrix.json: reuse relation ids must match")
+        return
+    relation_ids = [
+        relation.get("id") if isinstance(relation, dict) else None
+        for relation in relations
+    ]
+    expected_ids = [relation["id"] for relation in _EXPECTED_REUSE_MATRIX["relations"]]
+    if relation_ids != expected_ids:
+        errors.append("reuse_matrix.json: reuse relation ids must match")
+
+
 def _common_contract(
     document: JsonObject,
     label: str,
@@ -233,6 +391,20 @@ def validate_g6b_row_family_bundle(root: Path) -> G6BRowFamilyValidation:
             documents["row_family_protocol.json"],
             _EXPECTED_ROW_FAMILY_PROTOCOL,
             "row_family_protocol.json",
+            errors,
+        )
+        _expect_identity_schema(documents["identity_schema.json"], errors)
+        _expect_exact_document(
+            documents["identity_schema.json"],
+            _EXPECTED_IDENTITY_SCHEMA,
+            "identity_schema.json",
+            errors,
+        )
+        _expect_reuse_matrix(documents["reuse_matrix.json"], errors)
+        _expect_exact_document(
+            documents["reuse_matrix.json"],
+            _EXPECTED_REUSE_MATRIX,
+            "reuse_matrix.json",
             errors,
         )
         errors.append("semantic validation incomplete")

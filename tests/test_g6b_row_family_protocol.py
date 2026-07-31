@@ -175,3 +175,97 @@ def test_execution_boundary_drift_is_rejected(tmp_path: Path, field: str) -> Non
     boundary[field] = "authorized"
     _write(bundle, "row_family_protocol.json", protocol)
     _assert_invalid(bundle, "row_family_protocol.json: document must match")
+
+
+@pytest.mark.parametrize(
+    "level", ["family_id", "case_unit_id", "method_observation_id"]
+)
+def test_missing_identity_level_is_rejected(tmp_path: Path, level: str) -> None:
+    bundle = _copy_bundle(tmp_path)
+    value = _load(bundle, "identity_schema.json")
+    value["identity_levels"].remove(level)
+    _write(bundle, "identity_schema.json", value)
+    _assert_invalid(bundle, "identity_levels must match")
+
+
+@pytest.mark.parametrize(
+    "key", ["dimension", "applicability_status", "artifact_role", "sha256_or_null"]
+)
+def test_missing_fingerprint_record_key_is_rejected(tmp_path: Path, key: str) -> None:
+    bundle = _copy_bundle(tmp_path)
+    value = _load(bundle, "identity_schema.json")
+    value["fingerprint_record_keys"].remove(key)
+    _write(bundle, "identity_schema.json", value)
+    _assert_invalid(bundle, "fingerprint_record_keys must match")
+
+
+@pytest.mark.parametrize(
+    "role",
+    [
+        "exact_companion",
+        "des_companion",
+        "schema_only_refusal",
+        "review_only_placeholder",
+    ],
+)
+def test_missing_method_role_is_rejected(tmp_path: Path, role: str) -> None:
+    bundle = _copy_bundle(tmp_path)
+    value = _load(bundle, "identity_schema.json")
+    value["method_roles"].remove(role)
+    _write(bundle, "identity_schema.json", value)
+    _assert_invalid(bundle, "method_roles must match")
+
+
+@pytest.mark.parametrize(
+    ("field", "canonical"),
+    [
+        ("allowed", True),
+        ("must_be_case_unit_specific", True),
+        ("shared_global_sentinel_prohibited", True),
+        ("proves_provenance_only", True),
+        ("proves_stochastic_independence", False),
+    ],
+)
+def test_no_stochastic_method_manifest_truth_value_is_rejected(
+    tmp_path: Path, field: str, canonical: bool
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    value = _load(bundle, "identity_schema.json")
+    manifest = value["no_stochastic_method_manifest"]
+    assert isinstance(manifest, dict)
+    manifest[field] = not canonical
+    _write(bundle, "identity_schema.json", value)
+    _assert_invalid(bundle, "no_stochastic_method_manifest must match")
+
+
+def test_independent_method_observations_are_rejected(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    value = _load(bundle, "identity_schema.json")
+    value["method_observations_are_independent_cases"] = True
+    _write(bundle, "identity_schema.json", value)
+    _assert_invalid(
+        bundle,
+        "method_observations_are_independent_cases must be false",
+    )
+
+
+@pytest.mark.parametrize(
+    "relation_id",
+    [
+        "exact_des_companion",
+        "controlled_family_variant",
+        "negative_control_pair",
+        "method_schema_reuse",
+        "retired_authority_overlap",
+    ],
+)
+def test_missing_reuse_relation_id_is_rejected(
+    tmp_path: Path, relation_id: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    value = _load(bundle, "reuse_matrix.json")
+    value["relations"] = [
+        relation for relation in value["relations"] if relation["id"] != relation_id
+    ]
+    _write(bundle, "reuse_matrix.json", value)
+    _assert_invalid(bundle, "reuse relation ids must match")
