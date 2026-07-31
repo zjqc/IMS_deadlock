@@ -155,7 +155,7 @@ E[T_L | T_L < T_F]  and  E[T_G | T_G < T_F]
 4. 对非 `F/D_global` 状态枚举 all-minimal local kernels，先标记为 `K_local` 候选并保存 certificate family。
 5. 若已证明 A2b，可由引理 3.2 把候选认定为 `D_local`；通用实现则在完整 LTS 上检查每个候选到 `F` 的可达性。任一候选可达 `F` 时返回最短事件反例并拒绝；全部不可达时记录 `local_bad_soundness_audit` 并标记 `D_local`。
 6. 在剩余状态图上求 SCC；无出边 SCC 归为 `R_terminal` 或 `R_livelock`。
-7. 按 `VersionedEstimandSpec` 选择 bad hit union 和 success class；从所选吸收集反向可达，得到完整非吸收 basin `S_T`。任何非吸收状态不在 `S_T` 时拒绝构造，并报告 `selected_reachable_state_ids` 与 `unreachable_nonabsorbing_state_ids`。
+7. 按 `VersionedEstimandSpec` 选择 bad hit union 和 success class，形成 `A = D_global union D_local union F`。`S_reach` 只是在 complete stopped-LTS support graph 中存在到 `A` 的 support path 的诊断集合。`S_T` 必须由 finite positive-rate stopped CTMC 的 unselected closed SCC / reverse-basin certificate 得出；若全域声明下 `B_closed` 非空，拒绝并报告 `non_almost_sure_absorption_domain`。
 8. 冻结 state-space hash、partition hash、rate-manifest hash、exact stopping-rule hash、DES stopping-rule hash。
 
 **定理 5.1 终端/停止分区健全性。**
@@ -164,7 +164,7 @@ E[T_L | T_L < T_F]  and  E[T_G | T_G < T_F]
 1. `D_global`、`D_local`、`F`、`R_livelock`、`R_terminal` 在报告中按优先级互斥；
 2. `R_livelock/R_terminal` 是剩余 plant graph 的 terminal SCC 分类；
 3. `D_local` 只作为经 A2b 证明或完整 LTS completion-nonreachability audit 核验的 stopped-process bad hit set 使用；
-4. `S_T` 是能到达所选 bad/success absorption 的全部非吸收状态，而不是“所有非吸收状态”的别名；
+4. `S_reach` is the existential support-reachability diagnostic; `S_T` is the certified probability-one absorption domain, not a support-reachability basin;
 5. exact CTMC 与 DES 可以共享同一 selected bad/success labels。
 
 **结构拒绝定理。**
@@ -294,23 +294,29 @@ stopped-LTS support graph that have at least one support path to `A`. It is a
 structural diagnostic and a necessary condition for probability-one absorption,
 not a sufficient condition.
 
-In a finite complete positive-rate stopped CTMC, compute the positive-rate graph
-on `T`. Let the unselected closed SCCs be the closed communicating classes that
-avoid `A`; let `B_closed` be their reverse basin. Define `S_T = T \ B_closed`.
-Then `x in S_T` iff `P_x(tau_A < infinity) = 1`. Proof: a finite CTMC reaches a
-closed class almost surely; states in `B_closed` can enter a closed class that
-never hits `A`, while every state outside `B_closed` has no closed class except
-`A` available and therefore hits `A` with probability one.
+For a finite complete positive-rate stopped CTMC, compute the positive-rate
+edges in the full stopped graph. An unselected closed SCC `C subset T` has no
+outgoing positive-rate edge from `C` to `(T \ C)` and no outgoing positive-rate
+edge from `C` to selected A. Closure is not checked in the graph induced only
+by `T`; a state with `s -> F` is not in an unselected closed SCC. Let
+`B_closed` be the reverse basin in `T` of all such unselected closed SCCs.
+Define `S_T = T \ B_closed`.
 
-The global gate `A_abs` is stronger: `B_closed = empty` over the claimed
-nonabsorbing analysis domain. The current production G4 gate supports the
-global certificate/refusal boundary only; partial-domain committor or mean-time
+Theorem, under exactly the finite complete positive-rate stopped-CTMC
+assumptions: `x in S_T` iff `P_x(tau_A < infinity) = 1`. If `x` can reach an
+unselected closed SCC, there is positive probability of entering it and then
+never hitting `A`. If `x` cannot reach one, every eventual closed class reachable
+from `x` in the finite stopped chain is selected A, so `x` hits `A` almost
+surely.
+
+The global gate `A_abs` is `B_closed = empty` over the claimed nonabsorbing
+analysis domain. The current production G4 gate supports the global
+certificate/refusal boundary only; partial-domain committor or mean-time
 payloads remain unsupported even though the mathematics of a restricted `S_T`
-exists.
+exists. Committor, mean-time, sensitivity, and Doob-h equations are confined to
+certified `S_T`.
 
-Counterexample `CE-NB1`: `s0 -> F`, `s0 -> c`, and `c -> c`, all with positive
-rates. With rates `lambda_F` and `lambda_c`, the hit probability from `s0` is
-`lambda_F / (lambda_F + lambda_c) < 1`. Thus `s0 in S_reach` but `s0 notin S_T`;
-`{c}` is an unselected closed SCC, and the reverse basin includes `s0` and
-`c`. The old reverse-reachability definition failed this boundary; the machine
-regression is `tests/test_terminal_classes.py::test_branching_closed_class_separates_s_reach_from_s_t`.
+Counterexample `CE-NB1`: with unit rates for `s0 -> F`, `s0 -> c`, and `c -> c`,
+`P_s0(hit F) = 1/2`. Thus `s0 in S_reach` but `s0 notin S_T`; `{c}` is an
+unselected closed SCC, `B_closed = {s0, c}`, and the global certificate refuses
+`non_almost_sure_absorption_domain`. Machine regression: `tests/test_terminal_classes.py::test_branching_closed_class_separates_s_reach_from_s_t`.

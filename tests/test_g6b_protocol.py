@@ -514,3 +514,66 @@ def test_g6b_theory_documents_lock_typed_absorption_domain() -> None:
         "docs/superpowers/specs/2026-07-31-g6b-ontology-absorption-domain-correction-design.md"
         in foundation_review_text
     )
+
+    theorem_text = theorem_path.read_text(encoding="utf-8")
+    probability_text = probability_path.read_text(encoding="utf-8")
+    assumption_text = assumption_path.read_text(encoding="utf-8")
+    symbol_text = symbol_path.read_text(encoding="utf-8")
+    for document_text in [
+        g6b_protocol_text,
+        theorem_text,
+        probability_text,
+        assumption_text,
+        symbol_text,
+    ]:
+        assert "S_T = T \\ B_closed" in document_text
+        assert "unselected closed SCC" in document_text
+        assert "full stopped" in document_text
+        assert "outgoing" in document_text
+        assert "selected A" in document_text
+
+    assert "rate_manifest_hash" in symbol_text
+    assert "absorption_domain_hash" in symbol_text
+    absorption_row = _symbol_row(symbol_text, "absorption_domain_hash")
+    for field in [
+        "algorithm version",
+        "state_space_hash",
+        "partition_hash",
+        "positive_rate_graph_hash",
+        "policy_filter_hash",
+        "selected IDs",
+        "unselected closed SCCs",
+        "B_closed",
+        "S_T",
+    ]:
+        assert field in absorption_row
+    assert "full declared rate manifest" not in absorption_row
+    assert "Hash of the full declared rate manifest" in _symbol_row(
+        symbol_text,
+        "rate_manifest_hash",
+    )
+    assert "absorption-domain identity" in _symbol_row(symbol_text, "estimand_id")
+
+    stale_reverse_basin_sentence = (
+        "\u4ece\u6240\u9009\u5438\u6536\u96c6\u53cd\u5411"
+        "\u53ef\u8fbe\uff0c\u5f97\u5230\u5b8c\u6574"
+        "\u975e\u5438\u6536 basin `S_T`"
+    )
+    stale_reachability_sentence = (
+        "`S_T` \u662f\u80fd\u5230\u8fbe\u6240\u9009"
+        " bad/success absorption \u7684\u5168\u90e8"
+        "\u975e\u5438\u6536\u72b6\u6001"
+    )
+    assert stale_reverse_basin_sentence not in theorem_text
+    assert stale_reachability_sentence not in theorem_text
+    assert "reverse-reachability definition" not in theorem_text
+    assert "`R_c`" not in probability_text
+    assert "`R_c`" not in symbol_text
+    assert "| `B` |" not in symbol_text
+
+
+def _symbol_row(symbol_text: str, symbol: str) -> str:
+    for line in symbol_text.splitlines():
+        if line.startswith(f"| `{symbol}` |"):
+            return line
+    raise AssertionError(f"missing symbol row: {symbol}")

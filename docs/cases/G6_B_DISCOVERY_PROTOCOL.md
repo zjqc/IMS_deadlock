@@ -223,8 +223,12 @@ positive-support graph and is diagnostic: a support path to `A` is necessary for
 almost-sure absorption, but it is not sufficient.
 
 For the finite complete positive-rate stopped CTMC, find every unselected
-closed SCC in the positive-rate graph induced by `T`. Let `B_closed` be the
-reverse basin of those closed SCCs and let `S_T = T \ B_closed`. Under these
+closed SCC `C subset T`. Membership lies in `T`, but closedness is checked
+against every outgoing positive-rate edge in the full stopped graph: no state in
+`C` may have an outgoing positive-rate edge to `(T \ C)` or to selected A.
+A state with `s -> F` is therefore not in an unselected closed SCC. Let
+`B_closed` be the reverse basin of those closed SCCs and let
+`S_T = T \ B_closed`. Under these
 assumptions, and only under these assumptions, `x in S_T` iff
 `P_x(tau_A < infinity) = 1`. The stronger global-domain gate `A_abs` requires
 `B_closed = empty` over the claimed nonabsorbing analysis domain. Production G4

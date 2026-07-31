@@ -126,7 +126,7 @@ core 全集完备，且容量调整、预约约束或路线断环不会引入新
 
 状态：项目内已证明（严格受限子类）/一般情形拟证明。
 
-对 T5 的竞争吸收分析，所有分析范围内可达的非 `D/F` 状态必须以概率 1 命中 `D union F`；若不满足，必须先做 closed-class 分解，显式给出 `S_T`、其它 closed/recurrent/livelock 类 `R_c`，并把 `R_c` 并入坏吸收类、报告其可达概率，或把 committor/平均吸收时间方程限制到 `S_T`。
+对 T5 的竞争吸收分析，所有分析范围内可达的非 `D/F` 状态必须以概率 1 命中 `D union F`；若不满足，必须先做 unselected closed SCC / `B_closed` 分解，显式给出 certified `S_T = T \ B_closed`。当前生产协议对全域声明下非空 `B_closed` 返回 `non_almost_sure_absorption_domain`，不得发出全域 committor 或平均吸收时间 payload。
 
 用途：T5、T6 概率版本。
 
@@ -343,8 +343,7 @@ supervisor 或固定 WIP 输入本身不能替代这些 estimand。
 Scope: G6-B finite complete positive-rate stopped CTMCs only. The selected
 stopped target is `A = D_global union D_local union F`; `T = V \ A`.
 `S_reach` is a complete stopped-LTS support graph diagnostic. `S_T` is derived
-from positive-rate graph closed-class analysis: unselected closed SCCs produce
-`B_closed`, and `S_T = T \ B_closed`.
+from positive-rate graph closed-class analysis: unselected closed SCCs have membership in `T`, but closedness is checked against every outgoing positive-rate edge in the full stopped graph, including edges to selected A; those SCCs produce `B_closed`, and `S_T = T \ B_closed`.
 
 Assumption: the state space is finite, the stopped LTS is complete and
 nontruncated, all realized positive-rate events are finite and positive, the

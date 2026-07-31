@@ -16,9 +16,10 @@
 | `E` | 离散事件集合 | 定义 |
 | `E_c, E_u` | 可控事件与不可控事件 | 定义 |
 | `D, F` | CTMC 中的死锁吸收类与完成吸收类 | 定义 |
-| `S_T` | 在给定吸收分解下会以概率 1 命中 `D union F` 的暂态状态集合 | 定义 |
-| `R_c` | 不属于 `D union F` 的其它闭合或 recurrent/livelock 类 | 定义 |
-| `B` | 可达 `R_c` 或其它非目标闭合类时引入的边界/坏类集合 | 定义 |
+| `S_reach` | support graph 中存在到 selected A 路径的诊断状态集合 | 定义 |
+| `S_T` | certified probability-one absorption domain, `S_T = T \ B_closed` | 定义 |
+| `B_closed` | unselected closed SCCs 的 reverse basin | 定义 |
+| `A_abs` | global gate: `B_closed = empty` over claimed nonabsorbing domain | 定义 |
 
 ## 容量、持有与请求
 
@@ -99,9 +100,12 @@
 | `A` | Selected stopped target `D_global union D_local union F` | Definition |
 | `T` | Nonabsorbing set `V \ A` | Definition |
 | `S_reach` | States in the complete stopped-LTS support graph with at least one path to `A` | Diagnostic, nonselectable |
-| `B_closed` | Reverse basin of unselected closed SCCs in the positive-rate stopped graph on `T` | Certificate component |
+| `C` | Unselected closed SCC with membership `C subset T`; closedness is checked against all outgoing positive-rate edges in the full stopped graph, including edges to selected A | Certificate component |
+| `B_closed` | Reverse basin in `T` of all unselected closed SCCs | Certificate component |
 | `S_T` | `T \ B_closed`; states that hit `A` with probability one in the finite positive-rate stopped CTMC | Certified absorption domain |
 | `A_abs` | Global-domain gate `B_closed = empty` over the claimed nonabsorbing analysis domain | Strict protocol gate |
+| `rate_manifest_hash` | Hash of the full declared rate manifest; absent rates and explicit empty rates are distinct | Nullable hash |
 | `positive_rate_graph_hash` | Identity of the realized positive-rate stopped graph used by the certificate | Nullable hash |
 | `policy_filter_hash` | Identity of the policy-filter declaration, including no-filter declarations | Nullable hash |
-| `absorption_domain_hash` | Identity of the certified `S_T`, closed-class witness, selected target, graph, policy, and rate manifest | Nullable hash |
+| `absorption_domain_hash` | Certificate-domain identity over algorithm version, `state_space_hash`, `partition_hash`, `positive_rate_graph_hash`, `policy_filter_hash`, selected IDs, unselected closed SCCs, `B_closed`, and `S_T` | Nullable hash |
+| `estimand_id` | Identity binding the v2 estimand, selected targets, partition identity, rate-manifest identity, positive-rate graph, policy filter, and certified absorption-domain identity | Nullable hash |
