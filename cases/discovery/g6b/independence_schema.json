@@ -1,30 +1,228 @@
 {
-  "schema_version": "ims-deadlock/g6b-independence-schema/v1",
+  "schema_version": "ims-deadlock/g6b-independence-schema/v2",
   "study_role": "discovery_only",
   "confirmation_use": "prohibited",
   "scientific_execution_authorized": false,
-  "canonical_hash_normalization": {
-    "format": "canonical_json_sha256",
-    "encoding": "utf-8",
-    "sort_keys": true,
-    "separators": [
-      ",",
-      ":"
-    ],
-    "duplicate_keys_allowed": false
+  "canonicalization_contract": {
+    "version": "ims-deadlock/g6b-canonical-json/v2",
+    "duplicate_members": "rejected_at_every_depth",
+    "unicode_normalization": {
+      "required_form": "NFC",
+      "silent_normalization": false,
+      "scope": [
+        "member_names",
+        "string_values"
+      ]
+    },
+    "object_key_order": "unicode_code_point",
+    "array_order_policy": {
+      "ordinary_arrays": "preserve_declared_order",
+      "set_like_arrays": "unique_and_already_sorted_when_schema_declared"
+    },
+    "utf8_serialization": {
+      "encoding": "utf-8",
+      "ensure_ascii": false,
+      "sort_keys": true,
+      "separators": [
+        ",",
+        ":"
+      ],
+      "allow_nan": false
+    },
+    "numeric_policy": {
+      "json_float_values": "prohibited",
+      "nan": "prohibited",
+      "infinity": "prohibited",
+      "negative_zero": "prohibited",
+      "integers": "json_integers_for_counts_and_integral_budgets",
+      "decimal_strings_regex": "^-?(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+      "historical_json_numbers": "exact_decimal_token_no_binary_float"
+    },
+    "path_policy": {
+      "format": "case_sensitive_repo_relative_posix",
+      "separator": "/",
+      "drive_letter": "prohibited",
+      "leading_slash": "prohibited",
+      "backslash": "prohibited",
+      "empty_component": "prohibited",
+      "dot_or_dotdot": "prohibited",
+      "symlink_dependent_resolution": "prohibited",
+      "runtime_executables": "logical_id_plus_byte_environment_hashes"
+    },
+    "timestamp_policy": {
+      "utc": "fixed_rfc3339_z",
+      "format": "YYYY-MM-DDTHH:MM:SSZ"
+    }
   },
-  "zero_overlap_required": true,
-  "zero_overlap_required_scope": "discovery_vs_retired",
+  "self_hash_finalization_contract": {
+    "version": "ims-deadlock/g6b-self-hash-finalization/v1",
+    "placeholder_value": null,
+    "replaced_field_count": 1,
+    "omitted_field_allowed": false,
+    "empty_string_placeholder_allowed": false,
+    "prepopulated_digest_allowed": false,
+    "excluded_field_escape_hatch_allowed": false,
+    "cross_record_reference_order": "upstream_records_finalized_first",
+    "digest_algorithm": "sha256",
+    "digest_encoding": "lowercase_hex"
+  },
   "dimensions": [
     "case_content_sha256",
     "state_snapshot_sha256",
     "route_signature_sha256",
     "parameter_tuple_sha256",
     "random_stream_manifest_sha256",
-    "output_root",
+    "output_root_reservation_sha256",
     "sealed_prediction_sha256",
     "metric_schema_sha256"
   ],
+  "fingerprint_subject_map": {
+    "case_content_sha256": "case_unit",
+    "state_snapshot_sha256": "case_unit",
+    "route_signature_sha256": "case_unit",
+    "parameter_tuple_sha256": "case_unit",
+    "random_stream_manifest_sha256": "method_observation",
+    "output_root_reservation_sha256": "method_observation",
+    "sealed_prediction_sha256": "case_unit",
+    "metric_schema_sha256": "method_companion_group"
+  },
+  "fingerprint_policy_map": {
+    "case_content_sha256": "strict_semantic_distinctness",
+    "state_snapshot_sha256": "strict_semantic_distinctness",
+    "route_signature_sha256": "strict_semantic_distinctness",
+    "parameter_tuple_sha256": "strict_semantic_distinctness",
+    "random_stream_manifest_sha256": "disjoint_random_substreams",
+    "output_root_reservation_sha256": "provenance_containment_only",
+    "sealed_prediction_sha256": "strict_semantic_distinctness",
+    "metric_schema_sha256": "controlled_schema_reuse"
+  },
+  "allowed_claim_predicates": [
+    "canonical_byte_distinctness",
+    "provenance_nonreuse",
+    "semantic_non_derivation",
+    "construction_process_separation",
+    "mechanism_diversity",
+    "random_process_independence",
+    "confirmation_blinding",
+    "bounded_nonreuse_admission"
+  ],
+  "typed_admission_contract": {
+    "version": "ims-deadlock/g6b-typed-admission-contract/v1",
+    "schema_tranche_role": "top_level_summary_only",
+    "full_machine_contract_reference": "row_families/structural_discovery_v1/retired_authority_fingerprint_schema.json#/typed_admission_contract",
+    "summary_does_not_establish_admission": true,
+    "replaces_unconditional_zero_overlap": true,
+    "semantic_projection_dimensions": [
+      "case_content_sha256",
+      "state_snapshot_sha256",
+      "route_signature_sha256",
+      "parameter_tuple_sha256",
+      "sealed_prediction_sha256"
+    ],
+    "semantic_projection_required_status": "pass_distinct",
+    "semantic_projection_scope": "every_comparable_unique_retired_lineage",
+    "semantic_lineage_audit_required": true,
+    "stochastic_random_stream_record_requires": "disjoint_stream_pass",
+    "exact_random_stream_record_requires": "not_applicable_by_protocol_pass",
+    "output_root_reservation_requires": "containment_separation_pass",
+    "metric_schema_requires_one_of": [
+      "pass_distinct",
+      "controlled_reuse_pass"
+    ],
+    "controlled_metric_reuse_requires_exact_record": true,
+    "controlled_metric_reuse_requires_companion_group_comparability_rationale": true,
+    "fail_closed_statuses": [
+      "overlap_hit",
+      "missing_source",
+      "unreconstructable",
+      "normalizer_error",
+      "semantic_lineage_ambiguous"
+    ],
+    "inherited_compared_requires_unique_ancestor_allowed_terminal_status": true,
+    "retired_alias_lineage_compared_once": true,
+    "retired_aliases_count_as_independent_authorities": false,
+    "admission_rule": "bounded_lineage_deduplicated_nonreuse",
+    "non_authorization_boundary": "schema_review_and_overlap_preflight_do_not_authorize_scientific_or_quantitative_execution",
+    "result_field_prohibition": "no_generic_independent_result"
+  },
+  "nonreuse_claim_lattice": {
+    "version": "ims-deadlock/g6b-nonreuse-claim-lattice/v1",
+    "claim_boundary": "predicates_remain_separate_no_status_upgrade",
+    "byte_distinctness_not_statistical_independence": true,
+    "output_root_not_case_identity": true,
+    "bounded_admission_not_eight_observations": true
+  },
+  "comparison_projection_contract": {
+    "version": "ims-deadlock/g6b-comparison-projection-contract/v1",
+    "subject_free_projection_kinds": [
+      "semantic_content",
+      "random_process",
+      "controlled_schema"
+    ],
+    "provenance_containment_logical_coordinates_allowed": true,
+    "provenance_containment_supports_semantic_distinctness": false,
+    "governance_only_changes_leave_subject_free_projection_unchanged": true,
+    "subject_free_projection_excludes": [
+      "bundle_id",
+      "case_unit_id",
+      "method_observation_id",
+      "method_companion_group_id",
+      "filenames",
+      "repo_paths",
+      "display_names",
+      "authors",
+      "timestamps",
+      "review_ids",
+      "new_g6b_provenance_labels"
+    ],
+    "unequal_record_provenance_hash_does_not_support_non_overlap": true,
+    "counting_rule": "exact_des_companions_share_one_case_unit_and_distinct_method_observations"
+  },
+  "provenance_envelope_contract": {
+    "version": "ims-deadlock/g6b-provenance-envelope-contract/v1",
+    "envelope_scope": "artifact_lineage_locks_paths_and_reservations",
+    "applicable_subject_ids_required": true,
+    "recorded_contexts": [
+      "subject",
+      "authority",
+      "stage",
+      "lineage",
+      "sources",
+      "derivation"
+    ],
+    "fingerprint_record_required_fields": [
+      "record_schema_version",
+      "record_id",
+      "dimension",
+      "projection_kind",
+      "subject_type",
+      "subject_id",
+      "owner_object_id",
+      "projection_schema_version",
+      "comparison_projection_ref_or_null",
+      "comparison_projection_sha256_or_null",
+      "canonicalization_version",
+      "source_authority_id",
+      "source_stage",
+      "source_method_role_or_null",
+      "source_run_role_or_null",
+      "source_artifact_refs",
+      "source_artifact_byte_hashes",
+      "normalizer_version",
+      "dimension_status",
+      "lineage_id",
+      "inherited_from_record_id_or_null",
+      "duplicate_lineage_of_record_id_or_null",
+      "depends_on_dimensions",
+      "correlated_with_dimensions",
+      "comparison_policy",
+      "applicability_reason_code_or_null",
+      "record_provenance_sha256"
+    ],
+    "separate_from_comparison_projection": true,
+    "unequal_envelope_hash_does_not_support_non_overlap": true,
+    "confirmation_boundary": "future_confirmation_tranche_only"
+  },
   "retired_authorities": {
     "G4": "historical_authority_only",
     "G5": "historical_authority_only",
@@ -32,53 +230,59 @@
   },
   "comparison_scopes": {
     "discovery_vs_retired": {
-      "description": "Every G6-B discovery row is compared against retired G4/G5/G6-R authorities.",
+      "description": "Every G6-B discovery row is compared against retired G4/G5/G6-R authorities through typed dimensions and lineage-deduplicated policies.",
       "compare_against": [
         "G4",
         "G5",
         "G6_R"
       ],
-      "zero_overlap_required": true,
-      "zero_overlap_dimensions": [
+      "typed_dimensions": [
         "case_content_sha256",
         "state_snapshot_sha256",
         "route_signature_sha256",
         "parameter_tuple_sha256",
         "random_stream_manifest_sha256",
-        "output_root",
+        "output_root_reservation_sha256",
         "sealed_prediction_sha256",
         "metric_schema_sha256"
       ],
-      "metric_schema_sha256_reuse": "prohibited_against_retired_authorities",
-      "sealed_prediction_sha256_reuse": "prohibited_against_retired_authorities"
+      "admission_predicate": "bounded_nonreuse_admission",
+      "lineage_deduplication_required": true
     },
     "discovery_internal": {
       "description": "This schema does not impose unconditional zero overlap across all admitted G6-B discovery rows.",
-      "zero_overlap_required": false,
+      "typed_dimensions": [
+        "case_content_sha256",
+        "state_snapshot_sha256",
+        "route_signature_sha256",
+        "parameter_tuple_sha256",
+        "random_stream_manifest_sha256",
+        "output_root_reservation_sha256",
+        "sealed_prediction_sha256",
+        "metric_schema_sha256"
+      ],
       "row_family_protocol_required": true,
-      "metric_schema_sha256_reuse": "not_refused_by_this_schema_without_row_family_rule",
-      "sealed_prediction_sha256_reuse": "not_refused_by_this_schema_without_row_family_rule"
+      "generic_independent_result_allowed": false
     },
     "future_confirmation_vs_retired_and_discovery": {
-      "description": "Future G6 confirmation rows must be independent from retired authorities and G6-B discovery case identity/provenance.",
+      "description": "Future G6 confirmation rows must preserve typed non-reuse from retired authorities and G6-B discovery case identity/provenance.",
       "compare_against": [
         "G4",
         "G5",
         "G6_R",
         "G6_B_discovery"
       ],
-      "zero_overlap_required": true,
-      "zero_overlap_dimensions": [
+      "typed_dimensions": [
         "case_content_sha256",
         "state_snapshot_sha256",
         "route_signature_sha256",
         "parameter_tuple_sha256",
         "random_stream_manifest_sha256",
-        "output_root",
+        "output_root_reservation_sha256",
         "sealed_prediction_sha256"
       ],
       "metric_schema_sha256": {
-        "zero_overlap_required": false,
+        "controlled_reuse_requires_preregistration": true,
         "reuse_allowed_only_if": [
           "explicitly_preregistered",
           "same_target_comparability",
@@ -92,7 +296,8 @@
     "parameter_shift_from_retired_authority": "prohibited",
     "case_snapshot_reuse": "prohibited",
     "random_stream_reuse": "prohibited",
-    "output_root_reuse": "prohibited",
-    "confirmation_use": "prohibited"
+    "output_root_materialization_reuse": "prohibited",
+    "confirmation_use": "prohibited",
+    "generic_independent_result": "prohibited"
   }
 }
