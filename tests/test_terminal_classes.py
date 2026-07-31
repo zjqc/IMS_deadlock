@@ -23,9 +23,11 @@ from ims_deadlock.terminal_classes import (
     ABSORPTION_DOMAIN_CERTIFICATE_VERSION,
     CERTIFIED_STATUS,
     DEFAULT_ESTIMAND_SPEC,
+    NO_POLICY_FILTER_DECLARATION,
     AbsorptionDomainCertificate,
     TerminalPartitionError,
     VersionedEstimandSpec,
+    certify_absorption_domain,
     partition_stable_lts,
 )
 
@@ -106,6 +108,135 @@ def _event(name: str, *, job_id: str = "j1") -> TransitionSpec:
         controllable=False,
         zero_time=False,
     )
+
+
+def _finish_event(
+    name: str = "finish", *, source_mode: str = "start"
+) -> TransitionSpec:
+    return TransitionSpec(
+        name=name,
+        kind=EventKind.SERVICE_COMPLETE,
+        job_id="j1",
+        source_mode=source_mode,
+        target_mode="completed",
+        controllable=False,
+        zero_time=False,
+        mark_complete=True,
+    )
+
+
+def _mode_event(name: str, *, source_mode: str, target_mode: str) -> TransitionSpec:
+    return TransitionSpec(
+        name=name,
+        kind=EventKind.DISPATCH,
+        job_id="j1",
+        source_mode=source_mode,
+        target_mode=target_mode,
+        controllable=False,
+        zero_time=False,
+    )
+
+
+def _state_id_by_mode(graph: StableLTS, mode: str) -> str:
+    matches = [
+        record.state_id
+        for record in graph.states
+        if record.state.mode_by_job.get("j1") == mode
+    ]
+    assert len(matches) == 1
+    return matches[0]
+
+
+def _branching_closed_fixture() -> tuple[
+    StableLTS,
+    tuple[TransitionSpec, ...],
+    str,
+    str,
+    str,
+]:
+    model = IMSModel(id="branching-ce-nb1", resources={}, jobs=("j1",))
+    initial = _state("initial", mode_by_job={"j1": "start"})
+    transitions = (
+        _finish_event("finish", source_mode="start"),
+        _mode_event("enter-closed", source_mode="start", target_mode="closed"),
+        _mode_event("closed-loop", source_mode="closed", target_mode="closed"),
+    )
+    graph = enumerate_stable_lts(model, initial, transitions, max_states=8)
+    assert graph.truncated is False
+    assert graph.unavailable_reasons == ()
+    start_state_id = _state_id_by_mode(graph, "start")
+    closed_state_id = _state_id_by_mode(graph, "closed")
+    assert len(graph.marked_state_ids) == 1
+    finish_state_id = graph.marked_state_ids[0]
+    return graph, transitions, start_state_id, closed_state_id, finish_state_id
+
+
+def _simple_finish_fixture() -> tuple[StableLTS, tuple[TransitionSpec, ...], str, str]:
+    model = IMSModel(id="simple-finish", resources={}, jobs=("j1",))
+    initial = _state("initial", mode_by_job={"j1": "start"})
+    finish = _finish_event(source_mode="start")
+    graph = enumerate_stable_lts(model, initial, (finish,), max_states=8)
+    assert graph.truncated is False
+    assert graph.unavailable_reasons == ()
+    return (
+        graph,
+        (finish,),
+        _state_id_by_mode(graph, "start"),
+        graph.marked_state_ids[0],
+    )
+
+
+def _detour_finish_fixture() -> tuple[StableLTS, tuple[TransitionSpec, ...], str, str]:
+    model = IMSModel(id="detour-finish", resources={}, jobs=("j1",))
+    initial = _state("initial", mode_by_job={"j1": "start"})
+    transitions = (
+        _finish_event("finish", source_mode="start"),
+        _mode_event("detour", source_mode="start", target_mode="middle"),
+        _finish_event("finish-middle", source_mode="middle"),
+    )
+    graph = enumerate_stable_lts(model, initial, transitions, max_states=8)
+    assert graph.truncated is False
+    assert graph.unavailable_reasons == ()
+    return (
+        graph,
+        transitions,
+        _state_id_by_mode(graph, "start"),
+        graph.marked_state_ids[0],
+    )
+
+
+def _empty_absorbing_fixture() -> tuple[StableLTS, tuple[TransitionSpec, ...], str]:
+    model = IMSModel(id="empty-absorbing", resources={}, jobs=())
+    initial = _state("complete", complete=True)
+    graph = enumerate_stable_lts(model, initial, (), max_states=4)
+    assert graph.truncated is False
+    assert graph.unavailable_reasons == ()
+    assert graph.marked_state_ids == ("s0",)
+    return graph, (), "s0"
+
+
+def _generated_global_deadlock_fixture() -> tuple[
+    StableLTS, tuple[TransitionSpec, ...]
+]:
+    model = IMSModel(
+        id="generated-global-deadlock",
+        resources={"r1": Resource("r1", 1), "r2": Resource("r2", 1)},
+        jobs=("j1", "j2"),
+    )
+    initial = _state(
+        "deadlock",
+        holds=(Holding("j1", "r1", 1), Holding("j2", "r2", 1)),
+        requests={
+            "j1": (RequestAlternative((ResourceDemand("r2", 1),)),),
+            "j2": (RequestAlternative((ResourceDemand("r1", 1),)),),
+        },
+        mode_by_job={"j1": "waiting", "j2": "waiting"},
+    )
+    graph = enumerate_stable_lts(model, initial, (), max_states=4)
+    assert graph.truncated is False
+    assert graph.unavailable_reasons == ()
+    assert len(graph.states) == 1
+    return graph, ()
 
 
 def _certified_certificate(
@@ -946,3 +1077,454 @@ def test_estimand_spec_v2_uses_policy_analysis_class() -> None:
 
     with pytest.raises(ValueError, match="policy_analysis_class must be P_policy"):
         VersionedEstimandSpec(policy_analysis_class="custom_policy")
+
+
+def test_branching_closed_class_separates_s_reach_from_s_t() -> None:
+    graph, transitions, start_state_id, closed_state_id, finish_state_id = (
+        _branching_closed_fixture()
+    )
+    partition = partition_stable_lts(
+        IMSModel(id="branching-ce-nb1", resources={}, jobs=("j1",)),
+        graph,
+        transitions,
+        event_rates={transition.name: 1.0 for transition in transitions},
+        verify_generated_lts=True,
+    )
+
+    certificate = certify_absorption_domain(
+        partition,
+        graph,
+        {transition.name: 1.0 for transition in transitions},
+        selected_bad_state_ids=partition.selected_bad_state_ids,
+        selected_success_state_ids=(finish_state_id,),
+        policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+        require_global=False,
+    )
+
+    assert partition.selected_reachable_state_ids == (start_state_id,)
+    assert certificate.unselected_closed_sccs == ((closed_state_id,),)
+    assert certificate.closed_class_reverse_basin_state_ids == tuple(
+        sorted((closed_state_id, start_state_id))
+    )
+    assert certificate.s_t_state_ids == ()
+    assert certificate.non_almost_sure_absorbing_state_ids == tuple(
+        sorted((closed_state_id, start_state_id))
+    )
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        certify_absorption_domain(
+            partition,
+            graph,
+            {transition.name: 1.0 for transition in transitions},
+            selected_bad_state_ids=partition.selected_bad_state_ids,
+            selected_success_state_ids=(finish_state_id,),
+            policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+            require_global=True,
+        )
+    assert excinfo.value.code == "non_almost_sure_absorption_domain"
+    assert excinfo.value.details["certificate"] == certificate.to_json_dict()
+
+
+def test_full_positive_rate_domain_certifies_global_s_t() -> None:
+    graph, transitions, start_state_id, finish_state_id = _simple_finish_fixture()
+    partition = partition_stable_lts(
+        IMSModel(id="simple-finish", resources={}, jobs=("j1",)),
+        graph,
+        transitions,
+        event_rates={"finish": 1.0},
+        verify_generated_lts=True,
+    )
+
+    certificate = certify_absorption_domain(
+        partition,
+        graph,
+        {"finish": 1.0},
+        selected_bad_state_ids=(),
+        selected_success_state_ids=(finish_state_id,),
+        policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+        require_global=True,
+    )
+
+    assert certificate.certification_status == CERTIFIED_STATUS
+    assert certificate.unselected_closed_sccs == ()
+    assert certificate.closed_class_reverse_basin_state_ids == ()
+    assert certificate.s_t_state_ids == (start_state_id,)
+    assert certificate.non_almost_sure_absorbing_state_ids == ()
+
+
+def test_explicit_empty_manifest_certifies_empty_nonabsorbing_domain() -> None:
+    graph, transitions, finish_state_id = _empty_absorbing_fixture()
+    partition = partition_stable_lts(
+        IMSModel(id="empty-absorbing", resources={}, jobs=()),
+        graph,
+        transitions,
+        event_rates={},
+        verify_generated_lts=True,
+    )
+
+    certificate = certify_absorption_domain(
+        partition,
+        graph,
+        {},
+        selected_bad_state_ids=(),
+        selected_success_state_ids=(finish_state_id,),
+        policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+        require_global=True,
+    )
+
+    assert certificate.unselected_closed_sccs == ()
+    assert certificate.closed_class_reverse_basin_state_ids == ()
+    assert certificate.s_t_state_ids == ()
+    assert certificate.non_almost_sure_absorbing_state_ids == ()
+
+
+def test_missing_rate_manifest_fails_scientific_certification() -> None:
+    graph, transitions, _start_state_id, finish_state_id = _simple_finish_fixture()
+    partition = partition_stable_lts(
+        IMSModel(id="simple-finish", resources={}, jobs=("j1",)),
+        graph,
+        transitions,
+        event_rates={"finish": 1.0},
+        verify_generated_lts=True,
+    )
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        certify_absorption_domain(
+            partition,
+            graph,
+            None,
+            selected_bad_state_ids=(),
+            selected_success_state_ids=(finish_state_id,),
+            policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+            require_global=True,
+        )
+    assert excinfo.value.code == "missing_rate_manifest"
+
+
+@pytest.mark.parametrize("bad_rate", [True, 0.0, -1.0, float("nan"), float("inf")])
+def test_zero_rate_fails_scientific_certification(bad_rate: object) -> None:
+    graph, transitions, _start_state_id, finish_state_id = _simple_finish_fixture()
+    partition = partition_stable_lts(
+        IMSModel(id="simple-finish", resources={}, jobs=("j1",)),
+        graph,
+        transitions,
+        event_rates={"finish": 1.0},
+        verify_generated_lts=True,
+    )
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        certify_absorption_domain(
+            partition,
+            graph,
+            {"finish": cast(float, bad_rate)},
+            selected_bad_state_ids=(),
+            selected_success_state_ids=(finish_state_id,),
+            policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+            require_global=True,
+        )
+    assert excinfo.value.code == "invalid_event_rate"
+
+
+def test_extra_rate_event_fails_scientific_certification() -> None:
+    graph, transitions, _start_state_id, finish_state_id = _simple_finish_fixture()
+    partition = partition_stable_lts(
+        IMSModel(id="simple-finish", resources={}, jobs=("j1",)),
+        graph,
+        transitions,
+        event_rates={"finish": 1.0},
+        verify_generated_lts=True,
+    )
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        certify_absorption_domain(
+            partition,
+            graph,
+            {"finish": 1.0, "extra": 1.0},
+            selected_bad_state_ids=(),
+            selected_success_state_ids=(finish_state_id,),
+            policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+            require_global=True,
+        )
+    assert excinfo.value.code == "unexpected_event_rate"
+
+
+def test_truncated_lts_fails_scientific_certification() -> None:
+    graph, transitions, _start_state_id, finish_state_id = _simple_finish_fixture()
+    model = IMSModel(id="simple-finish", resources={}, jobs=("j1",))
+    partition = partition_stable_lts(
+        model,
+        graph,
+        transitions,
+        event_rates={"finish": 1.0},
+        verify_generated_lts=True,
+    )
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        certify_absorption_domain(
+            partition,
+            replace(graph, truncated=True),
+            {"finish": 1.0},
+            selected_bad_state_ids=(),
+            selected_success_state_ids=(finish_state_id,),
+            policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+            require_global=True,
+        )
+    assert excinfo.value.code == "incomplete_stable_lts"
+
+
+def test_unavailable_branch_fails_scientific_certification() -> None:
+    graph, transitions, _start_state_id, finish_state_id = _simple_finish_fixture()
+    partition = partition_stable_lts(
+        IMSModel(id="simple-finish", resources={}, jobs=("j1",)),
+        graph,
+        transitions,
+        event_rates={"finish": 1.0},
+        verify_generated_lts=True,
+    )
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        certify_absorption_domain(
+            partition,
+            replace(graph, unavailable_reasons=("branch_unavailable",)),
+            {"finish": 1.0},
+            selected_bad_state_ids=(),
+            selected_success_state_ids=(finish_state_id,),
+            policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+            require_global=True,
+        )
+    assert excinfo.value.code == "incomplete_stable_lts"
+
+
+def test_unverified_lts_provenance_fails_certification() -> None:
+    graph, transitions, _start_state_id, finish_state_id = _simple_finish_fixture()
+    partition = partition_stable_lts(
+        IMSModel(id="simple-finish", resources={}, jobs=("j1",)),
+        graph,
+        transitions,
+        event_rates={"finish": 1.0},
+        verify_generated_lts=False,
+    )
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        certify_absorption_domain(
+            partition,
+            graph,
+            {"finish": 1.0},
+            selected_bad_state_ids=(),
+            selected_success_state_ids=(finish_state_id,),
+            policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+            require_global=True,
+        )
+    assert excinfo.value.code == "unverified_lts_provenance"
+    assert excinfo.value.details["method"] == "caller_contract_only"
+
+
+def test_selected_target_drift_fails_certification() -> None:
+    graph, transitions, _start_state_id, finish_state_id = _simple_finish_fixture()
+    partition = partition_stable_lts(
+        IMSModel(id="simple-finish", resources={}, jobs=("j1",)),
+        graph,
+        transitions,
+        event_rates={"finish": 1.0},
+        verify_generated_lts=True,
+    )
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        certify_absorption_domain(
+            partition,
+            graph,
+            {"finish": 1.0},
+            selected_bad_state_ids=(finish_state_id,),
+            selected_success_state_ids=(finish_state_id,),
+            policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+            require_global=True,
+        )
+    assert excinfo.value.code == "selected_target_drift"
+
+
+def test_policy_filter_drift_fails_certification() -> None:
+    graph, transitions, _start_state_id, finish_state_id = _simple_finish_fixture()
+    partition = partition_stable_lts(
+        IMSModel(id="simple-finish", resources={}, jobs=("j1",)),
+        graph,
+        transitions,
+        event_rates={"finish": 1.0},
+        verify_generated_lts=True,
+    )
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        certify_absorption_domain(
+            partition,
+            graph,
+            {"finish": 1.0},
+            selected_bad_state_ids=(),
+            selected_success_state_ids=(finish_state_id,),
+            policy_filter_declaration={"mode": "custom"},
+            require_global=True,
+        )
+    assert excinfo.value.code == "policy_filter_drift"
+
+
+def test_absorption_hash_binds_target_support_and_closed_basin() -> None:
+    graph, transitions, _start_state_id, _closed_state_id, finish_state_id = (
+        _branching_closed_fixture()
+    )
+    model = IMSModel(id="branching-ce-nb1", resources={}, jobs=("j1",))
+    rates = {transition.name: 1.0 for transition in transitions}
+    partition = partition_stable_lts(
+        model, graph, transitions, event_rates=rates, verify_generated_lts=True
+    )
+    base = certify_absorption_domain(
+        partition,
+        graph,
+        rates,
+        selected_bad_state_ids=(),
+        selected_success_state_ids=(finish_state_id,),
+        policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+        require_global=False,
+    )
+    changed_rate_partition = partition_stable_lts(
+        model,
+        graph,
+        transitions,
+        event_rates={**rates, "finish": 2.0},
+        verify_generated_lts=True,
+    )
+    changed_rates = certify_absorption_domain(
+        changed_rate_partition,
+        graph,
+        {**rates, "finish": 2.0},
+        selected_bad_state_ids=(),
+        selected_success_state_ids=(finish_state_id,),
+        policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+        require_global=False,
+    )
+    detour_graph, detour_transitions, _detour_start_id, detour_finish_id = (
+        _detour_finish_fixture()
+    )
+    detour_model = IMSModel(id="detour-finish", resources={}, jobs=("j1",))
+    detour_rates = {transition.name: 1.0 for transition in detour_transitions}
+    detour_partition = partition_stable_lts(
+        detour_model,
+        detour_graph,
+        detour_transitions,
+        event_rates=detour_rates,
+        verify_generated_lts=True,
+    )
+    detour = certify_absorption_domain(
+        detour_partition,
+        detour_graph,
+        detour_rates,
+        selected_bad_state_ids=(),
+        selected_success_state_ids=(detour_finish_id,),
+        policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+        require_global=True,
+    )
+    deadlock_graph, deadlock_transitions = _generated_global_deadlock_fixture()
+    deadlock_model = IMSModel(
+        id="generated-global-deadlock",
+        resources={"r1": Resource("r1", 1), "r2": Resource("r2", 1)},
+        jobs=("j1", "j2"),
+    )
+    selected_deadlock = partition_stable_lts(
+        deadlock_model,
+        deadlock_graph,
+        deadlock_transitions,
+        event_rates={},
+        estimand_spec=VersionedEstimandSpec(selected_bad_classes=("D_global",)),
+        verify_generated_lts=True,
+    )
+    unselected_deadlock = partition_stable_lts(
+        deadlock_model,
+        deadlock_graph,
+        deadlock_transitions,
+        event_rates={},
+        estimand_spec=VersionedEstimandSpec(selected_bad_classes=("D_local",)),
+        verify_generated_lts=True,
+    )
+    selected_deadlock_certificate = certify_absorption_domain(
+        selected_deadlock,
+        deadlock_graph,
+        {},
+        selected_bad_state_ids=selected_deadlock.selected_bad_state_ids,
+        selected_success_state_ids=(),
+        policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+        require_global=True,
+    )
+    unselected_deadlock_certificate = certify_absorption_domain(
+        unselected_deadlock,
+        deadlock_graph,
+        {},
+        selected_bad_state_ids=unselected_deadlock.selected_bad_state_ids,
+        selected_success_state_ids=(),
+        policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+        require_global=False,
+    )
+
+    assert base.positive_rate_graph_hash != detour.positive_rate_graph_hash
+    assert base.absorption_domain_hash != detour.absorption_domain_hash
+    assert base.positive_rate_graph_hash == changed_rates.positive_rate_graph_hash
+    assert base.rate_manifest_hash != changed_rates.rate_manifest_hash
+    assert base.absorption_domain_hash == changed_rates.absorption_domain_hash
+    assert partition.with_absorption_domain_certificate(base).estimand_id != (
+        changed_rate_partition.with_absorption_domain_certificate(
+            changed_rates
+        ).estimand_id
+    )
+    assert selected_deadlock.partition_hash == unselected_deadlock.partition_hash
+    assert selected_deadlock_certificate.absorption_domain_hash != (
+        unselected_deadlock_certificate.absorption_domain_hash
+    )
+    assert (
+        selected_deadlock.with_absorption_domain_certificate(
+            selected_deadlock_certificate
+        ).estimand_id
+        != unselected_deadlock.with_absorption_domain_certificate(
+            unselected_deadlock_certificate
+        ).estimand_id
+    )
+
+
+def test_attached_certificate_marks_positive_rate_reachability_verified() -> None:
+    graph, transitions, start_state_id, finish_state_id = _simple_finish_fixture()
+    partition = partition_stable_lts(
+        IMSModel(id="simple-finish", resources={}, jobs=("j1",)),
+        graph,
+        transitions,
+        event_rates={"finish": 1.0},
+        verify_generated_lts=True,
+    )
+    certificate = certify_absorption_domain(
+        partition,
+        graph,
+        {"finish": 1.0},
+        selected_bad_state_ids=(),
+        selected_success_state_ids=(finish_state_id,),
+        policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+        require_global=True,
+    )
+
+    attached = partition.with_absorption_domain_certificate(certificate)
+    payload = attached.to_json_dict()
+    hashes = cast(dict[str, object], payload["hashes"])
+    derived_state_sets = cast(dict[str, object], payload["derived_state_sets"])
+    s_reach = cast(dict[str, object], derived_state_sets["S_reach"])
+
+    assert partition.estimand_id is None
+    assert attached.estimand_id is not None
+    assert attached.absorption_domain_certificate == certificate
+    assert attached.positive_rate_graph_hash == certificate.positive_rate_graph_hash
+    assert attached.policy_filter_hash == certificate.policy_filter_hash
+    assert attached.absorption_domain_hash == certificate.absorption_domain_hash
+    assert hashes["estimand_id"] == attached.estimand_id
+    assert s_reach["positive_rate_verified"] is True
+    assert derived_state_sets["S_T"] == {
+        "state_ids": [start_state_id],
+        "certification_status": CERTIFIED_STATUS,
+        "reason_codes": [],
+    }
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        partition.with_absorption_domain_certificate(
+            partition.absorption_domain_certificate
+        )
+    assert excinfo.value.code == "uncertified_absorption_domain_certificate"

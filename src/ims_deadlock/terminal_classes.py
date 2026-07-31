@@ -6,7 +6,7 @@ import hashlib
 import json
 from collections import deque
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from math import isfinite
 from typing import NoReturn
 
@@ -185,6 +185,24 @@ class AbsorptionDomainCertificate:
             "certification_status": self.certification_status,
             "reason_codes": list(self.reason_codes),
             "selected_absorbing_state_ids": list(self.selected_absorbing_state_ids),
+            "unselected_closed_sccs": (
+                [list(component) for component in self.unselected_closed_sccs]
+                if self.unselected_closed_sccs is not None
+                else None
+            ),
+            "closed_class_reverse_basin_state_ids": (
+                list(self.closed_class_reverse_basin_state_ids)
+                if self.closed_class_reverse_basin_state_ids is not None
+                else None
+            ),
+            "s_t_state_ids": (
+                list(self.s_t_state_ids) if self.s_t_state_ids is not None else None
+            ),
+            "non_almost_sure_absorbing_state_ids": (
+                list(self.non_almost_sure_absorbing_state_ids)
+                if self.non_almost_sure_absorbing_state_ids is not None
+                else None
+            ),
             "identity": {
                 "state_space_hash": self.state_space_hash,
                 "partition_hash": self.partition_hash,
@@ -252,6 +270,9 @@ class TerminalStoppingPartition:
     local_certificates: dict[str, list[dict[str, object]]] = field(default_factory=dict)
 
     def to_json_dict(self) -> dict[str, object]:
+        absorption_certified = (
+            self.absorption_domain_certificate.certification_status == CERTIFIED_STATUS
+        )
         return {
             "classification_version": self.classification_version,
             "estimand": self.estimand_spec.to_json_dict(),
@@ -272,7 +293,7 @@ class TerminalStoppingPartition:
                         self.unreachable_nonabsorbing_state_ids
                     ),
                     "graph_semantics": SUPPORT_GRAPH_SEMANTICS,
-                    "positive_rate_verified": False,
+                    "positive_rate_verified": absorption_certified,
                 },
                 "S_T": {
                     "state_ids": (
@@ -378,6 +399,74 @@ class TerminalStoppingPartition:
         """Compatibility alias for the full plant LTS arcs."""
 
         return self.plant_arcs
+
+    def with_absorption_domain_certificate(
+        self, certificate: AbsorptionDomainCertificate
+    ) -> TerminalStoppingPartition:
+        """Attach a verified absorption-domain certificate immutably."""
+
+        if certificate.certification_status != CERTIFIED_STATUS:
+            _raise(
+                "uncertified_absorption_domain_certificate",
+                "only certified absorption-domain certificates can be attached",
+                {"certification_status": certificate.certification_status},
+            )
+        if (
+            not certificate.rate_manifest_hash
+            or not certificate.positive_rate_graph_hash
+            or not certificate.policy_filter_hash
+            or not certificate.absorption_domain_hash
+        ):
+            _raise(
+                "invalid_absorption_domain_certificate",
+                "certified absorption-domain certificate is missing identity hashes",
+                certificate.to_json_dict(),
+            )
+        expected_selected = tuple(
+            sorted(set(self.selected_bad_state_ids) | set(self.f_state_ids))
+        )
+        mismatches: dict[str, object] = {}
+        if certificate.state_space_hash != self.state_space_hash:
+            mismatches["state_space_hash"] = certificate.state_space_hash
+        if certificate.partition_hash != self.partition_hash:
+            mismatches["partition_hash"] = certificate.partition_hash
+        if certificate.rate_manifest_hash != self.rate_manifest_hash:
+            mismatches["rate_manifest_hash"] = certificate.rate_manifest_hash
+        if certificate.selected_absorbing_state_ids != expected_selected:
+            mismatches["selected_absorbing_state_ids"] = list(
+                certificate.selected_absorbing_state_ids
+            )
+        if mismatches:
+            _raise(
+                "absorption_certificate_identity_mismatch",
+                "absorption-domain certificate does not match the partition identity",
+                {
+                    **mismatches,
+                    "expected_selected_absorbing_state_ids": list(expected_selected),
+                },
+            )
+
+        estimand_id = _canonical_sha256(
+            {
+                "state_space_hash": self.state_space_hash,
+                "partition_hash": self.partition_hash,
+                "rate_manifest_hash": certificate.rate_manifest_hash,
+                "positive_rate_graph_hash": certificate.positive_rate_graph_hash,
+                "policy_filter_hash": certificate.policy_filter_hash,
+                "absorption_domain_hash": certificate.absorption_domain_hash,
+                "stopping_rule_hash": self.stopping_rule_hash,
+                "des_stopping_rule_hash": self.des_stopping_rule_hash,
+            }
+        )
+        return replace(
+            self,
+            rate_manifest_hash=certificate.rate_manifest_hash,
+            positive_rate_graph_hash=certificate.positive_rate_graph_hash,
+            policy_filter_hash=certificate.policy_filter_hash,
+            absorption_domain_hash=certificate.absorption_domain_hash,
+            estimand_id=estimand_id,
+            absorption_domain_certificate=certificate,
+        )
 
 
 ClosedClassPartition = TerminalStoppingPartition
@@ -680,6 +769,225 @@ def partition_stable_lts(
         global_certificates=dict(sorted(global_payloads.items())),
         local_certificates=dict(sorted(local_payloads.items())),
     )
+
+
+def certify_absorption_domain(
+    partition: TerminalStoppingPartition,
+    stable_lts: StableLTS,
+    event_rates: Mapping[str, float] | None,
+    *,
+    selected_bad_state_ids: Iterable[str],
+    selected_success_state_ids: Iterable[str],
+    policy_filter_declaration: Mapping[str, object],
+    require_global: bool,
+) -> AbsorptionDomainCertificate:
+    """Certify the finite stopped positive-rate absorption domain."""
+
+    if partition.classification_version != TERMINAL_CLASSIFICATION_VERSION:
+        _raise(
+            "classification_version_mismatch",
+            "absorption certification requires a v3 terminal partition",
+            {"classification_version": partition.classification_version},
+        )
+    if stable_lts.truncated or stable_lts.truncated_arcs:
+        _raise(
+            "incomplete_stable_lts",
+            "absorption certification requires a complete nontruncated stable LTS",
+            {
+                "truncated": stable_lts.truncated,
+                "truncated_arc_count": len(stable_lts.truncated_arcs),
+            },
+        )
+    if stable_lts.unavailable_reasons:
+        _raise(
+            "incomplete_stable_lts",
+            "absorption certification requires an LTS without unavailable branches",
+            {"unavailable_reasons": list(stable_lts.unavailable_reasons)},
+        )
+
+    provenance = partition.lts_provenance_audit
+    if (
+        provenance.get("method") != "deterministic_reenumeration_from_stable_initial_v1"
+        or provenance.get("verified") is not True
+    ):
+        _raise(
+            "unverified_lts_provenance",
+            "absorption certification requires deterministic verified LTS provenance",
+            dict(provenance),
+        )
+
+    state_ids = tuple(record.state_id for record in stable_lts.states)
+    sorted_state_ids = tuple(sorted(state_ids))
+    state_space_hash = _canonical_sha256(_state_space_payload(stable_lts))
+    plant_arcs = tuple(
+        sorted((arc.source, arc.event, arc.target) for arc in stable_lts.transitions)
+    )
+    if (
+        state_space_hash != partition.state_space_hash
+        or plant_arcs != partition.plant_arcs
+    ):
+        _raise(
+            "stable_lts_identity_drift",
+            "stable LTS identity does not match the terminal partition",
+            {
+                "state_space_hash": state_space_hash,
+                "partition_state_space_hash": partition.state_space_hash,
+                "plant_arcs_match": plant_arcs == partition.plant_arcs,
+            },
+        )
+
+    selected_bad = tuple(sorted(str(state_id) for state_id in selected_bad_state_ids))
+    selected_success = tuple(
+        sorted(str(state_id) for state_id in selected_success_state_ids)
+    )
+    if (
+        selected_bad != partition.selected_bad_state_ids
+        or selected_success != partition.f_state_ids
+    ):
+        _raise(
+            "selected_target_drift",
+            "selected bad/success targets do not match the terminal partition",
+            {
+                "selected_bad_state_ids": list(selected_bad),
+                "expected_selected_bad_state_ids": list(
+                    partition.selected_bad_state_ids
+                ),
+                "selected_success_state_ids": list(selected_success),
+                "expected_selected_success_state_ids": list(partition.f_state_ids),
+            },
+        )
+    if dict(policy_filter_declaration) != NO_POLICY_FILTER_DECLARATION:
+        _raise(
+            "policy_filter_drift",
+            "absorption certification supports only no-filter declarations",
+            {"policy_filter_declaration": dict(policy_filter_declaration)},
+        )
+    if event_rates is None:
+        _raise(
+            "missing_rate_manifest",
+            "absorption certification requires an explicit event-rate manifest",
+            {
+                "declared_transition_event_names": list(
+                    partition.declared_transition_event_names
+                )
+            },
+        )
+    rate_manifest = _validated_rate_manifest_for_certification(
+        event_rates,
+        declared_transition_event_names=partition.declared_transition_event_names,
+    )
+    rate_manifest_hash = _canonical_sha256(rate_manifest)
+    if rate_manifest_hash != partition.rate_manifest_hash:
+        _raise(
+            "rate_manifest_drift",
+            "event-rate manifest identity does not match the terminal partition",
+            {
+                "rate_manifest_hash": rate_manifest_hash,
+                "partition_rate_manifest_hash": partition.rate_manifest_hash,
+            },
+        )
+
+    selected_ids = tuple(sorted(set(selected_bad) | set(selected_success)))
+    selected_set = set(selected_ids)
+    stopped_arcs = tuple(
+        sorted(
+            arc
+            for arc in plant_arcs
+            if arc[0] not in selected_set and rate_manifest[arc[1]] > 0.0
+        )
+    )
+    positive_rate_graph_hash = _canonical_sha256(
+        {
+            "version": "ims-deadlock/g6-positive-rate-stopped-graph/v1",
+            "state_ids": list(sorted_state_ids),
+            "selected_absorbing_state_ids": list(selected_ids),
+            "arcs": [list(arc) for arc in stopped_arcs],
+        }
+    )
+    transient_ids = tuple(
+        state_id for state_id in sorted_state_ids if state_id not in selected_set
+    )
+    transient_set = set(transient_ids)
+    adjacency = {state_id: set[str]() for state_id in transient_ids}
+    reverse: dict[str, set[str]] = {state_id: set() for state_id in transient_ids}
+    for source, _event, target in stopped_arcs:
+        if source in transient_set and target in transient_set:
+            adjacency[source].add(target)
+            reverse[target].add(source)
+
+    components = _strong_components(adjacency)
+    component_by_state = {
+        state_id: index
+        for index, component in enumerate(components)
+        for state_id in component
+    }
+    closed_sccs = tuple(
+        component
+        for index, component in enumerate(components)
+        if not any(
+            source in component
+            and (target in selected_set or component_by_state.get(target) != index)
+            for source, _event, target in stopped_arcs
+        )
+    )
+    closed_basin_set = {state_id for component in closed_sccs for state_id in component}
+    stack = list(closed_basin_set)
+    while stack:
+        current = stack.pop()
+        for source in sorted(reverse.get(current, ())):
+            if source in closed_basin_set:
+                continue
+            closed_basin_set.add(source)
+            stack.append(source)
+    closed_basin = tuple(sorted(closed_basin_set))
+    s_t_state_ids = tuple(
+        state_id for state_id in transient_ids if state_id not in closed_basin_set
+    )
+    non_almost_sure_absorbing_state_ids = closed_basin
+    policy_filter_hash = _canonical_sha256(NO_POLICY_FILTER_DECLARATION)
+    absorption_domain_hash = _canonical_sha256(
+        {
+            "version": ABSORPTION_DOMAIN_ALGORITHM_VERSION,
+            "state_space_hash": partition.state_space_hash,
+            "partition_hash": partition.partition_hash,
+            "positive_rate_graph_hash": positive_rate_graph_hash,
+            "policy_filter_hash": policy_filter_hash,
+            "selected_absorbing_state_ids": list(selected_ids),
+            "unselected_closed_sccs": [list(component) for component in closed_sccs],
+            "closed_class_reverse_basin_state_ids": list(closed_basin),
+            "S_T": list(s_t_state_ids),
+        }
+    )
+    certificate = AbsorptionDomainCertificate(
+        version=ABSORPTION_DOMAIN_CERTIFICATE_VERSION,
+        algorithm_version=ABSORPTION_DOMAIN_ALGORITHM_VERSION,
+        certification_status=CERTIFIED_STATUS,
+        reason_codes=(),
+        selected_absorbing_state_ids=selected_ids,
+        unselected_closed_sccs=closed_sccs,
+        closed_class_reverse_basin_state_ids=closed_basin,
+        s_t_state_ids=s_t_state_ids,
+        non_almost_sure_absorbing_state_ids=non_almost_sure_absorbing_state_ids,
+        finite_state_space_verified=True,
+        complete_nontruncated_lts_verified=True,
+        lts_generation_provenance_verified=True,
+        positive_finite_rate_manifest_verified=True,
+        selected_target_identity_verified=True,
+        policy_filter_identity_verified=True,
+        state_space_hash=partition.state_space_hash,
+        partition_hash=partition.partition_hash,
+        rate_manifest_hash=rate_manifest_hash,
+        positive_rate_graph_hash=positive_rate_graph_hash,
+        policy_filter_hash=policy_filter_hash,
+        absorption_domain_hash=absorption_domain_hash,
+    )
+    if require_global and non_almost_sure_absorbing_state_ids:
+        _raise(
+            "non_almost_sure_absorption_domain",
+            "some nonabsorbing states do not hit selected absorption almost surely",
+            {"certificate": certificate.to_json_dict()},
+        )
+    return certificate
 
 
 def _verify_generated_lts(
@@ -996,6 +1304,45 @@ def _validated_rate_manifest(
             "unexpected_event_rate",
             "event rate manifest includes an undeclared transition event",
             {"event": event},
+        )
+    return rates
+
+
+def _validated_rate_manifest_for_certification(
+    event_rates: Mapping[str, float],
+    *,
+    declared_transition_event_names: tuple[str, ...],
+) -> dict[str, float]:
+    rates: dict[str, float] = {}
+    for event, rate in sorted(event_rates.items()):
+        if isinstance(rate, bool) or not isinstance(rate, int | float):
+            _raise(
+                "invalid_event_rate",
+                "event rate must be a positive finite number",
+                {"event": event, "rate": repr(rate)},
+            )
+        value = float(rate)
+        if not isfinite(value) or value <= 0.0:
+            _raise(
+                "invalid_event_rate",
+                "event rate must be a positive finite number",
+                {"event": event, "rate": repr(rate)},
+            )
+        rates[str(event)] = value
+    declared_events = set(declared_transition_event_names)
+    missing = sorted(set(declared_transition_event_names) - set(rates))
+    if missing:
+        _raise(
+            "missing_rate_manifest",
+            "event-rate manifest is missing declared transition events",
+            {"missing_event_names": missing},
+        )
+    extra = sorted(set(rates) - declared_events)
+    if extra:
+        _raise(
+            "unexpected_event_rate",
+            "event-rate manifest includes undeclared transition events",
+            {"event": extra[0], "extra_event_names": extra},
         )
     return rates
 
