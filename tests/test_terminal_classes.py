@@ -28,6 +28,7 @@ from ims_deadlock.terminal_classes import (
     TerminalPartitionError,
     TerminalStoppingPartition,
     VersionedEstimandSpec,
+    canonical_no_policy_filter_declaration,
     certify_absorption_domain,
     partition_stable_lts,
 )
@@ -1701,6 +1702,54 @@ def test_certifier_rejects_non_string_rate_manifest_keys(bad_event: object) -> N
         )
 
     assert excinfo.value.code == "invalid_event_rate_identity"
+
+
+def test_no_policy_filter_declaration_factory_returns_fresh_canonical_payload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first = canonical_no_policy_filter_declaration()
+    second = canonical_no_policy_filter_declaration()
+    expected = {
+        "version": "ims-deadlock/g6-policy-filter-declaration/v1",
+        "mode": "no_policy_filter",
+        "excluded_plant_arcs": [],
+    }
+
+    assert first == expected
+    assert second == expected
+    assert first is not second
+    assert first["excluded_plant_arcs"] is not second["excluded_plant_arcs"]
+
+    cast(list[object], first["excluded_plant_arcs"]).append(["s0", "finish", "s1"])
+    first["mode"] = "mutated"
+    monkeypatch.setitem(NO_POLICY_FILTER_DECLARATION, "mode", "legacy_mutated")
+    legacy_excluded = cast(
+        list[object], NO_POLICY_FILTER_DECLARATION["excluded_plant_arcs"]
+    )
+    legacy_excluded.append(["legacy", "arc", "mutation"])
+
+    later = canonical_no_policy_filter_declaration()
+    assert second == expected
+    assert later == expected
+    assert later is not first
+    assert later is not second
+    assert later["excluded_plant_arcs"] is not first["excluded_plant_arcs"]
+    assert later["excluded_plant_arcs"] is not second["excluded_plant_arcs"]
+
+    partition, certificate, graph, finish_state_id = (
+        _simple_certified_partition_and_certificate()
+    )
+    recertified = certify_absorption_domain(
+        partition,
+        graph,
+        {"finish": 1.0},
+        selected_bad_state_ids=(),
+        selected_success_state_ids=(finish_state_id,),
+        policy_filter_declaration=canonical_no_policy_filter_declaration(),
+        require_global=True,
+    )
+
+    assert recertified.policy_filter_hash == certificate.policy_filter_hash
 
 
 def test_policy_hash_ignores_mutated_public_no_policy_dict(

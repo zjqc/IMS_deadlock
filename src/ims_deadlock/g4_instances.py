@@ -27,6 +27,7 @@ from ims_deadlock.terminal_classes import (
     TerminalPartitionError,
     TerminalStoppingPartition,
     VersionedEstimandSpec,
+    canonical_no_policy_filter_declaration,
     certify_absorption_domain,
     partition_stable_lts,
 )
@@ -35,7 +36,6 @@ BIDIRECTIONAL_GENERATOR_ID = "bidirectional_bas_v1"
 MEDIUM_ISLAND_GENERATOR_ID = "three_island_bas_v1"
 ADVERSARIAL_GENERATOR_ID = "or_and_reservation_v1"
 
-_POLICY_FILTER_DECLARATION_VERSION = "ims-deadlock/g6-policy-filter-declaration/v1"
 _MEDIUM_ROUTE_IDS = ("ABG", "AG", "BAG")
 
 
@@ -457,7 +457,7 @@ def derive_absorbing_ctmc(
         built.event_rates,
         selected_bad_state_ids=partition.selected_bad_state_ids,
         selected_success_state_ids=partition.f_state_ids,
-        policy_filter_declaration=_no_policy_filter_declaration(),
+        policy_filter_declaration=canonical_no_policy_filter_declaration(),
         require_global=True,
     )
     partition = partition.with_absorption_domain_certificate(certificate)
@@ -658,14 +658,6 @@ def _build_bas_route_case(
         state_bound=state_bound,
         generator_id=generator_id,
     )
-
-
-def _no_policy_filter_declaration() -> dict[str, object]:
-    return {
-        "version": _POLICY_FILTER_DECLARATION_VERSION,
-        "mode": "no_policy_filter",
-        "excluded_plant_arcs": [],
-    }
 
 
 def _demands(resource_ids: tuple[str, ...]) -> tuple[ResourceDemand, ...]:

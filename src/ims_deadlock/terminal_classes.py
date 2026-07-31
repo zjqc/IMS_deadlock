@@ -903,7 +903,7 @@ def certify_absorption_domain(
                 "expected_selected_success_state_ids": list(partition.f_state_ids),
             },
         )
-    if dict(policy_filter_declaration) != _no_policy_filter_declaration_payload():
+    if dict(policy_filter_declaration) != canonical_no_policy_filter_declaration():
         _raise(
             "policy_filter_drift",
             "absorption certification supports only no-filter declarations",
@@ -975,7 +975,7 @@ def certify_absorption_domain(
     return certificate
 
 
-def _no_policy_filter_declaration_payload() -> dict[str, object]:
+def canonical_no_policy_filter_declaration() -> dict[str, object]:
     return {
         "version": _NO_POLICY_FILTER_DECLARATION_VERSION,
         "mode": "no_policy_filter",
@@ -1129,7 +1129,7 @@ def _certify_absorption_domain_from_support(
     s_t_state_ids = tuple(
         state_id for state_id in transient_ids if state_id not in closed_basin_set
     )
-    policy_filter_hash = _canonical_sha256(_no_policy_filter_declaration_payload())
+    policy_filter_hash = _canonical_sha256(canonical_no_policy_filter_declaration())
     absorption_domain_hash = _canonical_sha256(
         {
             "version": ABSORPTION_DOMAIN_ALGORITHM_VERSION,
