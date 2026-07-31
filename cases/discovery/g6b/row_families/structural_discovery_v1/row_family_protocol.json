@@ -1,0 +1,27 @@
+{
+  "schema_version": "ims-deadlock/g6b-row-family-protocol/v1",
+  "study_role": "discovery_only",
+  "confirmation_use": "prohibited",
+  "scientific_execution_authorized": false,
+  "case_creation_authorized": false,
+  "protocol_id": "G6-B-ROW-FAMILY-STRUCTURAL-DISCOVERY-V1",
+  "adversarial_review_status": "PENDING",
+  "bundle_role": "schema_only",
+  "source_design": "docs/superpowers/specs/2026-07-31-g6b-row-family-design.md",
+  "artifact_paths": [
+    "cases/discovery/g6b/row_families/structural_discovery_v1/identity_schema.json",
+    "cases/discovery/g6b/row_families/structural_discovery_v1/row_family_matrix.json",
+    "cases/discovery/g6b/row_families/structural_discovery_v1/reuse_matrix.json",
+    "cases/discovery/g6b/row_families/structural_discovery_v1/overlap_report_schema.json",
+    "cases/discovery/g6b/row_families/structural_discovery_v1/runtime_lock_schema.json",
+    "cases/discovery/g6b/row_families/structural_discovery_v1/review_state.json",
+    "cases/discovery/g6b/row_families/structural_discovery_v1/failure_ledger.json"
+  ],
+  "execution_boundary": {
+    "case_creation": "prohibited",
+    "enumeration": "prohibited",
+    "ctmc": "prohibited",
+    "des": "prohibited",
+    "output_inspection": "prohibited"
+  }
+}

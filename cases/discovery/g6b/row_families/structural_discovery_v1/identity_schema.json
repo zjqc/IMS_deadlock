@@ -1,0 +1,42 @@
+{
+  "schema_version": "ims-deadlock/g6b-row-family-identity/v1",
+  "study_role": "discovery_only",
+  "confirmation_use": "prohibited",
+  "scientific_execution_authorized": false,
+  "case_creation_authorized": false,
+  "identity_levels": [
+    "family_id",
+    "case_unit_id",
+    "method_observation_id"
+  ],
+  "canonical_dimensions": [
+    "case_content_sha256",
+    "state_snapshot_sha256",
+    "route_signature_sha256",
+    "parameter_tuple_sha256",
+    "random_stream_manifest_sha256",
+    "output_root",
+    "sealed_prediction_sha256",
+    "metric_schema_sha256"
+  ],
+  "fingerprint_record_keys": [
+    "dimension",
+    "applicability_status",
+    "artifact_role",
+    "sha256_or_null"
+  ],
+  "no_stochastic_method_manifest": {
+    "allowed": true,
+    "must_be_case_unit_specific": true,
+    "shared_global_sentinel_prohibited": true,
+    "proves_provenance_only": true,
+    "proves_stochastic_independence": false
+  },
+  "method_roles": [
+    "exact_companion",
+    "des_companion",
+    "schema_only_refusal",
+    "review_only_placeholder"
+  ],
+  "method_observations_are_independent_cases": false
+}

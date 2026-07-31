@@ -1,0 +1,23 @@
+{
+  "schema_version": "ims-deadlock/g6b-row-family-failure-ledger/v1",
+  "study_role": "discovery_only",
+  "confirmation_use": "prohibited",
+  "scientific_execution_authorized": false,
+  "case_creation_authorized": false,
+  "append_only": true,
+  "entries": [],
+  "empty_entries_meaning": "no row-family admission or execution attempt has occurred",
+  "empty_entries_do_not_mean_no_historical_failures": true,
+  "required_future_reason_codes": [
+    "schema_drift",
+    "ontology_drift",
+    "target_drift",
+    "overlap_hit",
+    "missing_hash",
+    "failed_negative_control",
+    "incomplete_LTS_audit",
+    "outcome_leakage",
+    "unauthorized_case_creation_attempt",
+    "unauthorized_science_execution_attempt"
+  ]
+}
