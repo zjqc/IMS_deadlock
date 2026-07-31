@@ -1,6 +1,6 @@
 # G6-B Ontology and Absorption-Domain Correction Design
 
-Status: `APPROVED DIRECTION / WRITTEN SPEC REVIEW REQUIRED / EXECUTION-DISABLED`.
+Status: `APPROVED SPEC / IMPLEMENTATION PLANNING / EXECUTION-DISABLED`.
 
 This design corrects a theory-to-schema and theory-to-runtime mismatch found
 while designing G6-B case construction. It is a prerequisite correction, not a
