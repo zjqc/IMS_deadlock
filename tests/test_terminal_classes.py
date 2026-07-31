@@ -1,5 +1,5 @@
 from dataclasses import replace
-from typing import cast
+from typing import Any, cast
 
 import pytest
 
@@ -26,6 +26,7 @@ from ims_deadlock.terminal_classes import (
     NO_POLICY_FILTER_DECLARATION,
     AbsorptionDomainCertificate,
     TerminalPartitionError,
+    TerminalStoppingPartition,
     VersionedEstimandSpec,
     certify_absorption_domain,
     partition_stable_lts,
@@ -213,6 +214,36 @@ def _empty_absorbing_fixture() -> tuple[StableLTS, tuple[TransitionSpec, ...], s
     assert graph.unavailable_reasons == ()
     assert graph.marked_state_ids == ("s0",)
     return graph, (), "s0"
+
+
+def _simple_certified_partition_and_certificate() -> tuple[
+    TerminalStoppingPartition,
+    AbsorptionDomainCertificate,
+    StableLTS,
+    str,
+]:
+    graph, transitions, _start_state_id, finish_state_id = _simple_finish_fixture()
+    partition = partition_stable_lts(
+        IMSModel(id="simple-finish", resources={}, jobs=("j1",)),
+        graph,
+        transitions,
+        event_rates={"finish": 1.0},
+        verify_generated_lts=True,
+    )
+    certificate = certify_absorption_domain(
+        partition,
+        graph,
+        {"finish": 1.0},
+        selected_bad_state_ids=(),
+        selected_success_state_ids=(finish_state_id,),
+        policy_filter_declaration={
+            "version": "ims-deadlock/g6-policy-filter-declaration/v1",
+            "mode": "no_policy_filter",
+            "excluded_plant_arcs": [],
+        },
+        require_global=True,
+    )
+    return partition, certificate, graph, finish_state_id
 
 
 def _generated_global_deadlock_fixture() -> tuple[
@@ -1528,3 +1559,183 @@ def test_attached_certificate_marks_positive_rate_reachability_verified() -> Non
             partition.absorption_domain_certificate
         )
     assert excinfo.value.code == "uncertified_absorption_domain_certificate"
+
+
+@pytest.mark.parametrize(
+    ("field_name", "forged_value"),
+    [
+        ("s_t_state_ids", ("forged",)),
+        ("closed_class_reverse_basin_state_ids", ("forged",)),
+        ("unselected_closed_sccs", (("forged",),)),
+        ("policy_filter_hash", "forged-policy-hash"),
+        ("positive_rate_graph_hash", "forged-positive-graph-hash"),
+        ("absorption_domain_hash", "forged-absorption-domain-hash"),
+    ],
+)
+def test_attachment_rejects_forged_certificate_derived_fields(
+    field_name: str,
+    forged_value: object,
+) -> None:
+    partition, certificate, _graph, _finish_state_id = (
+        _simple_certified_partition_and_certificate()
+    )
+
+    assert partition.with_absorption_domain_certificate(certificate).estimand_id
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        partition.with_absorption_domain_certificate(
+            replace(certificate, **cast(Any, {field_name: forged_value}))
+        )
+
+    assert excinfo.value.code == "absorption_certificate_identity_mismatch"
+    assert partition.estimand_id is None
+
+
+def test_attachment_rejects_verified_certificate_on_unverified_partition() -> None:
+    verified_partition, certificate, graph, _finish_state_id = (
+        _simple_certified_partition_and_certificate()
+    )
+    unverified_partition = partition_stable_lts(
+        IMSModel(id="simple-finish", resources={}, jobs=("j1",)),
+        graph,
+        (_finish_event(source_mode="start"),),
+        event_rates={"finish": 1.0},
+        verify_generated_lts=False,
+    )
+
+    assert verified_partition.partition_hash == unverified_partition.partition_hash
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        unverified_partition.with_absorption_domain_certificate(certificate)
+
+    assert excinfo.value.code == "unverified_lts_provenance"
+
+
+class _StringLikeStateId:
+    def __init__(self, value: str) -> None:
+        self.value = value
+
+    def __str__(self) -> str:
+        return self.value
+
+
+@pytest.mark.parametrize("bad_id", [True, 1, _StringLikeStateId("s1")])
+def test_certifier_rejects_non_string_selected_success_ids(bad_id: object) -> None:
+    partition, _certificate, graph, _finish_state_id = (
+        _simple_certified_partition_and_certificate()
+    )
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        certify_absorption_domain(
+            partition,
+            graph,
+            {"finish": 1.0},
+            selected_bad_state_ids=(),
+            selected_success_state_ids=cast(tuple[str, ...], (bad_id,)),
+            policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+            require_global=True,
+        )
+
+    assert excinfo.value.code == "invalid_selected_state_id"
+
+
+@pytest.mark.parametrize("bad_id", [False, 1, _StringLikeStateId("s0")])
+def test_certifier_rejects_non_string_selected_bad_ids(bad_id: object) -> None:
+    graph, transitions = _generated_global_deadlock_fixture()
+    model = IMSModel(
+        id="generated-global-deadlock",
+        resources={"r1": Resource("r1", 1), "r2": Resource("r2", 1)},
+        jobs=("j1", "j2"),
+    )
+    partition = partition_stable_lts(
+        model,
+        graph,
+        transitions,
+        event_rates={},
+        estimand_spec=VersionedEstimandSpec(selected_bad_classes=("D_global",)),
+        verify_generated_lts=True,
+    )
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        certify_absorption_domain(
+            partition,
+            graph,
+            {},
+            selected_bad_state_ids=cast(tuple[str, ...], (bad_id,)),
+            selected_success_state_ids=(),
+            policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+            require_global=True,
+        )
+
+    assert excinfo.value.code == "invalid_selected_state_id"
+
+
+class _StringLikeEventName:
+    def __init__(self, value: str) -> None:
+        self.value = value
+
+    def __str__(self) -> str:
+        return self.value
+
+
+@pytest.mark.parametrize("bad_event", [True, 1, _StringLikeEventName("finish")])
+def test_partition_rejects_non_string_rate_manifest_keys(bad_event: object) -> None:
+    graph, transitions, _start_state_id, _finish_state_id = _simple_finish_fixture()
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        partition_stable_lts(
+            IMSModel(id="simple-finish", resources={}, jobs=("j1",)),
+            graph,
+            transitions,
+            event_rates=cast(dict[str, float], {bad_event: 1.0}),
+            verify_generated_lts=True,
+        )
+
+    assert excinfo.value.code == "invalid_event_rate_identity"
+
+
+@pytest.mark.parametrize("bad_event", [True, 1, _StringLikeEventName("finish")])
+def test_certifier_rejects_non_string_rate_manifest_keys(bad_event: object) -> None:
+    partition, _certificate, graph, finish_state_id = (
+        _simple_certified_partition_and_certificate()
+    )
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        certify_absorption_domain(
+            partition,
+            graph,
+            cast(dict[str, float], {bad_event: 1.0}),
+            selected_bad_state_ids=(),
+            selected_success_state_ids=(finish_state_id,),
+            policy_filter_declaration=NO_POLICY_FILTER_DECLARATION,
+            require_global=True,
+        )
+
+    assert excinfo.value.code == "invalid_event_rate_identity"
+
+
+def test_policy_hash_ignores_mutated_public_no_policy_dict(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    partition, certificate, graph, finish_state_id = (
+        _simple_certified_partition_and_certificate()
+    )
+    canonical_policy = {
+        "version": "ims-deadlock/g6-policy-filter-declaration/v1",
+        "mode": "no_policy_filter",
+        "excluded_plant_arcs": [],
+    }
+
+    monkeypatch.setitem(NO_POLICY_FILTER_DECLARATION, "mode", "mutated")
+    excluded = cast(list[object], NO_POLICY_FILTER_DECLARATION["excluded_plant_arcs"])
+    excluded.append(["s0", "finish", "s1"])
+
+    recertified = certify_absorption_domain(
+        partition,
+        graph,
+        {"finish": 1.0},
+        selected_bad_state_ids=(),
+        selected_success_state_ids=(finish_state_id,),
+        policy_filter_declaration=canonical_policy,
+        require_global=True,
+    )
+
+    assert recertified.policy_filter_hash == certificate.policy_filter_hash
