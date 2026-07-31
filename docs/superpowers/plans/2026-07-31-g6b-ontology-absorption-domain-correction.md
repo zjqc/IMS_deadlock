@@ -505,13 +505,20 @@ certified certificate. Add the nonoptional certificate slot and nullable hash
 fields to `TerminalStoppingPartition`, and change `hashes_json_dict()` to
 `dict[str, str | None]` in the same RED/GREEN slice.
 
-- [ ] **Step 4: Rename the estimand policy field and remove the misleading gate**
+- [ ] **Step 4: Rename the estimand policy field and preserve a green cutover**
 
 Rename `plant_policy_class` to `policy_analysis_class` in the dataclass,
-validation, JSON, and stopping-rule hash payload. Remove
-`require_selected_absorption` from `partition_stable_lts` and delete the unused
-`_validate_selected_absorption` helper. The only strict probability-one gate
-will be `certify_absorption_domain` in Task 3.
+validation, JSON, and stopping-rule hash payload.
+
+Do not remove `require_selected_absorption` or
+`_validate_selected_absorption` in this task. `g4_instances.py` still passes
+the keyword, so early deletion would make this intermediate commit fail at
+runtime even if the terminal-only tests stayed green. Preserve the legacy
+behavior unchanged as a compatibility refusal surface, add no new caller, and
+do not treat it as a v3 probability-one certificate. Task 4 removes the
+parameter, helper, last call site, and legacy gate test atomically when
+`certify_absorption_domain(require_global=True)` becomes the sole scientific
+authority.
 
 - [ ] **Step 5: Split structural serialization into exact namespaces**
 
@@ -537,12 +544,23 @@ Use reason `rate_manifest_absent` for `None` and
 attached. Update the old rate-drift test to include a declared and realized arc
 instead of assigning a rate to a nonexistent event.
 
-- [ ] **Step 7: Run the full terminal-class test file and repair only v3 drift**
+- [ ] **Step 7: Run terminal tests and an end-to-end G4 compatibility smoke**
 
 Run `pytest -p no:cacheprovider -q tests/test_terminal_classes.py` through SSH.
 Update the old `classes["S_T"]` assertion to inspect `S_reach`; do not weaken
 the existing local-first-hit, LTS-completeness, rate-validation, SCC, or
 partition-invariance tests.
+
+Then run:
+
+```text
+pytest -p no:cacheprovider -q tests/test_g4_protocol.py -k "development_grid_derives or medium_protocol_payload"
+```
+
+Update only the expected nested terminal version/shape needed for the v3
+structural payload. Both existing G4 derivation paths must pass, proving the
+compatibility keyword and renamed estimand field remain integration-safe until
+the strict Task 4 cutover.
 
 - [ ] **Step 8: Run targeted Ruff and strict mypy**
 
@@ -776,6 +794,8 @@ feat:certify-g6-almost-sure-absorption-domain
 
 **Files:**
 
+- Modify: `tests/test_terminal_classes.py`
+- Modify: `src/ims_deadlock/terminal_classes.py`
 - Modify: `tests/test_g4_protocol.py`
 - Modify: `src/ims_deadlock/g4_instances.py`
 - Inspect: `src/ims_deadlock/g4_protocol.py`; the expected implementation leaves
@@ -827,23 +847,29 @@ Run `pytest -p no:cacheprovider -q tests/test_g4_protocol.py -k
 "development_grid_derives or medium_protocol_payload or pre_generator"`
 through SSH.
 
-Expected: v2 payload or absent certificate assertions fail; the new monkeypatch
-test fails because the certifier is not yet called directly.
+Expected: the Task 2 v3 structural payload is still uncertified, so certified
+payload assertions fail; the new monkeypatch test fails because the certifier
+is not yet called directly.
 
 - [ ] **Step 4: Replace the existential post-check with strict certification**
 
 In `derive_absorbing_ctmc`:
 
-1. enumerate and validate the complete stable LTS as before;
-2. build the v3 structural partition with the explicit frozen event-rate map;
-3. preserve the `D_global`-only refusal when a verified `D_local` exists;
-4. call `certify_absorption_domain` with exact partition bad/success IDs,
+1. remove the last `require_selected_absorption=False` call-site keyword;
+2. remove the compatibility parameter and `_validate_selected_absorption`
+   helper from `terminal_classes.py`, and remove or replace its legacy
+   true-gate unit test;
+3. enumerate and validate the complete stable LTS as before;
+4. build the v3 structural partition with the explicit frozen event-rate map;
+5. preserve the `D_global`-only refusal when a verified `D_local` exists;
+6. call `certify_absorption_domain` with exact partition bad/success IDs,
    `NO_POLICY_FILTER_DECLARATION`, and `require_global=True`;
-5. attach the certificate;
-6. only then derive transient, completion, and deadlock rates and instantiate
+7. attach the certificate;
+8. only then derive transient, completion, and deadlock rates and instantiate
    `AbsorbingCTMC`.
 
-Delete the old `unreachable_nonabsorbing_state_ids` scientific gate. Structural
+Delete the old `unreachable_nonabsorbing_state_ids` scientific gate in the
+same change. Structural
 support reachability remains diagnostic and cannot authorize generator
 construction. `certify_absorption_domain(require_global=True)` becomes the sole
 probability-one absorption authority before generator construction; the
