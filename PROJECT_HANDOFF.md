@@ -69,7 +69,8 @@ bundle：没有创建 discovery case，没有运行 enumeration、CTMC 或 DES�
   passed on 22 source files; strict mypy `src+tests` passed on 41 source files;
   five protocol JSON parse checks passed; targeted protocol tests
   `52 passed in 2.48s`; `git diff --check` passed.
-- Row-family Phase A validation evidence before this documentation edit:
+- Earlier row-family Phase A validation evidence before the first documentation
+  commit:
   locked worktree `D:\worktree\IMS_deadlock-g6b-discovery`, branch
   `codex/g6b-discovery-estimand-lock`, HEAD
   `4fda4896d2284c360f3021e48475f7678b0f37fd`, no upstream, with the Task 8
@@ -98,6 +99,26 @@ bundle：没有创建 discovery case，没有运行 enumeration、CTMC 或 DES�
   summary, enumeration, CTMC, or DES artifact was introduced. Task-owned mypy
   cache directories `D:\worktree\_task8_mypy_src_cache` and
   `D:\worktree\_task8_mypy_src_tests_cache` are absent.
+- Row-family Phase C post-commit verification evidence on committed HEAD
+  `13adc15e8b7b8047a25ab5a340880621ee3ad0bd`:
+  locked worktree `D:\worktree\IMS_deadlock-g6b-discovery`, branch
+  `codex/g6b-discovery-estimand-lock`, `NO_UPSTREAM`, clean; Python
+  `D:\worktree\IMS_deadlock-final-integration\.venv\Scripts\python.exe`
+  version 3.13.9; full pytest `1307 passed in 144.93s (0:02:24)`;
+  Ruff check passed; Ruff format `43 files already formatted`; strict mypy
+  `src` passed on 23 source files; strict mypy `src tests` passed on 43
+  source files; `git diff --check` passed; foundation suite
+  `52 passed in 9.87s`; canonical row-family test `1 passed in 0.09s`;
+  8/8 nested JSON parsed; top-level JSON set exact five; nested row-family
+  JSON set exact eight; foundation validator valid/errors0/science false/
+  `PENDING`/hashes5; row-family validator valid/errors0/science false/case
+  false/`PENDING`/`ROW_FAMILY_BUNDLE_IMPLEMENTED`/hashes8; recursive
+  13-JSON scan `non_false_auth=0` and `non_pending_status=0`; base diff
+  forbidden paths=0 and actual marker hits=0; relevant output roots absent;
+  task mypy cache dirs absent; three verdicts recorded. This is post-commit
+  evidence for `13adc15...`; any later evidence-only closure-doc commit will
+  create a new HEAD and must be re-locked/revalidated before being externally
+  claimed complete.
 
 若本文件已发布到 `main`，包含它的提交会是上述 source baseline 的后继。
 下一进程不得把交接前 SHA 当作当前 SHA，必须重新运行锁定命令。实际包含
@@ -208,7 +229,7 @@ IMS-RAS^CW 稳定语义
 | G3 算法门 | PASS | 稳定 LTS、证书、Petri/refusal、阈值、CTMC、监督器、G4/G5/G6 审计；全库 341 tests | 枚举只核验证明，不替代证明 |
 | G4 案例冻结门 | PASS（历史 seal） | 九个 held-out 案例在结果检查前冻结，并在 G5 原样执行 | 该面板已退役，不能再次作为 held-out |
 | G5 论文门 | FAIL（evidence closed） | 9/9 primary/repro 精确一致，失败、反例和 inconclusive 已固定 | 不得补跑、改 sealed input、重调参或宣称通过 |
-| G6 恢复门 | IN PROGRESS | G6-A 和 G6-R 通过；G6-B protocol foundation、row-family nested bundle 和 validator 在 feature branch 完成且 execution disabled/PENDING；locked worktree `D:\worktree\IMS_deadlock-g6b-discovery` at HEAD `4fda4896d2284c360f3021e48475f7678b0f37fd` 已通过 full pytest `1307 passed in 150.84s`、Ruff、format check、strict mypy、eight nested JSON parse checks、52 top-level foundation tests、canonical row-family test、canonical row-family validator 和 `git diff --check`；row-family independent reviews 完成：specification compliance `APPROVED`、code quality `APPROVED` 且无 Critical/Important/Minor blockers、scientific boundary `PASS PROTOCOL ONLY` | G6-B 仍 OPEN；`adversarial_review_status=PENDING`、`scientific_execution_authorized=false`、`case_creation_authorized=false` 不变；actual overlap report、overlap-authority lock、execution-runtime lock、discovery outcomes、output root 和 row-family discovery-model/execution plan 仍开放；G6-C/D/E 未通过 |
+| G6 恢复门 | IN PROGRESS | G6-A 和 G6-R 通过；G6-B protocol foundation、row-family nested bundle 和 validator 在 feature branch 完成且 execution disabled/PENDING；earlier Phase A HEAD `4fda4896d2284c360f3021e48475f7678b0f37fd` 通过 row-family data-only checks；committed HEAD `13adc15e8b7b8047a25ab5a340880621ee3ad0bd` 已通过 full pytest `1307 passed in 144.93s (0:02:24)`、Ruff、format check、strict mypy、eight nested JSON parse checks、52 top-level foundation tests、canonical row-family test、foundation/row validators、recursive 13-JSON scan、base diff forbidden-path/actual-marker scan 和 `git diff --check`；row-family independent reviews 完成：specification compliance `APPROVED`、code quality `APPROVED` 且无 Critical/Important/Minor blockers、scientific boundary `PASS PROTOCOL ONLY` | G6-B 仍 OPEN；`adversarial_review_status=PENDING`、`scientific_execution_authorized=false`、`case_creation_authorized=false` 不变；actual overlap report、overlap-authority lock、execution-runtime lock、discovery outcomes、output root 和 row-family discovery-model/execution plan 仍开放；G6-C/D/E 未通过 |
 
 状态源：`docs/ROADMAP.md`。
 

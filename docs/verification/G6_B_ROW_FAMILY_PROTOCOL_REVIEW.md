@@ -2,11 +2,12 @@
 
 Date: 2026-07-31
 
-This document records Phase A state integration evidence for the G6-B
+This document records Phase A state integration evidence, Phase B independent
+review verdicts, and Phase C post-commit verification evidence for the G6-B
 row-family protocol. It is not a scientific result, not a case-construction
 authorization, and not an execution-runtime lock.
 
-## Target And Runtime
+## Earlier Phase A Target And Runtime
 
 ```text
 target path = D:\worktree\IMS_deadlock-g6b-discovery
@@ -26,7 +27,11 @@ Ruff = --no-cache
 mypy = --no-incremental
 ```
 
-## Verification Commands
+The `4fda4896d2284c360f3021e48475f7678b0f37fd` evidence above is earlier
+Phase A evidence from before the first documentation commit. It is retained for
+traceability and is not the current committed target.
+
+## Earlier Phase A Verification Commands
 
 | Check | Command | Result |
 | --- | --- | --- |
@@ -43,6 +48,43 @@ mypy = --no-incremental
 | Recursive authorization scan | exact-eight nested JSON scan | 8 scientific authorization occurrences all false; 18 case authorization occurrences all false; both review-status occurrences `PENDING` |
 | Task 1-7 implementation diff | `git diff --name-only a4897ab..4fda489` | only exact-eight nested JSON, `src/ims_deadlock/g6b_row_family_protocol.py`, and `tests/test_g6b_row_family_protocol.py` |
 | Task-owned mypy cache cleanup | directory absence check | `D:\worktree\_task8_mypy_src_cache` and `D:\worktree\_task8_mypy_src_tests_cache` absent |
+
+## Phase C Post-Commit Verification
+
+These checks were collected on committed HEAD
+`13adc15e8b7b8047a25ab5a340880621ee3ad0bd`, subject
+`docs: record G6-B row-family protocol gate`.
+
+```text
+target path = D:\worktree\IMS_deadlock-g6b-discovery
+branch = codex/g6b-discovery-estimand-lock
+HEAD = 13adc15e8b7b8047a25ab5a340880621ee3ad0bd
+upstream = NO_UPSTREAM
+dirty state = clean
+Python = D:\worktree\IMS_deadlock-final-integration\.venv\Scripts\python.exe
+Python version = 3.13.9
+```
+
+| Check | Result |
+| --- | --- |
+| Full pytest | `1307 passed in 144.93s (0:02:24)` |
+| Ruff check | `All checks passed!` |
+| Ruff format | `43 files already formatted` |
+| Strict mypy src | `Success: no issues found in 23 source files` |
+| Strict mypy src tests | `Success: no issues found in 43 source files` |
+| `git diff --check` | passed |
+| Top-level foundation suite | `52 passed in 9.87s` |
+| Canonical row-family test | `1 passed in 0.09s` |
+| Nested JSON parse | 8/8 parsed |
+| Top-level G6-B JSON set | exact five |
+| Nested row-family JSON set | exact eight |
+| Foundation validator | valid, 0 errors, science false, `PENDING`, 5 hashes |
+| Row-family validator | valid, 0 errors, science false, case false, `PENDING`, `ROW_FAMILY_BUNDLE_IMPLEMENTED`, 8 hashes |
+| Recursive 13-JSON scan | `non_false_auth=0`, `non_pending_status=0` |
+| Base diff forbidden paths and actual marker scan | `forbidden_paths=0`, `actual_marker_hits=0` |
+| Relevant output roots | absent |
+| Task mypy cache directories | absent |
+| Independent review verdicts | specification `APPROVED`; code quality `APPROVED`; scientific boundary `PASS PROTOCOL ONLY` |
 
 ## Artifact Inventory
 

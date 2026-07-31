@@ -1803,7 +1803,10 @@ git diff --check
 
 Expected: pass with no output.
 
-Phase A evidence recorded 2026-07-31 before final documentation reconciliation:
+Earlier Phase A evidence recorded 2026-07-31 before final documentation
+reconciliation. This evidence belongs to pre-commit HEAD
+`4fda4896d2284c360f3021e48475f7678b0f37fd`; it is retained for traceability
+and must not be presented as current post-commit evidence:
 
 ```text
 target path = D:\worktree\IMS_deadlock-g6b-discovery
@@ -1905,7 +1908,7 @@ execution authority, reproducibility, or handoff correctness.
 Phase B finding disposition: no Critical, Important, or Minor blockers were
 reported, so no fixes or review re-runs were required.
 
-- [ ] **Step 7: Commit bounded state integration**
+- [x] **Step 7: Commit bounded state integration**
 
 ```powershell
 git add docs/cases/CASE_CHANGE_LEDGER.md docs/ROADMAP.md PROJECT_HANDOFF.md `
@@ -1914,7 +1917,14 @@ git add docs/cases/CASE_CHANGE_LEDGER.md docs/ROADMAP.md PROJECT_HANDOFF.md `
 git commit -m "docs: record G6-B row-family protocol gate"
 ```
 
-- [ ] **Step 8: Re-lock and report final branch evidence**
+Phase B commit completed:
+
+```text
+HEAD = 13adc15e8b7b8047a25ab5a340880621ee3ad0bd
+subject = docs: record G6-B row-family protocol gate
+```
+
+- [x] **Step 8: Re-lock and report final branch evidence**
 
 Record:
 
@@ -1929,6 +1939,49 @@ full validation output
 review verdicts
 all still-open science gates
 ```
+
+Phase C post-commit verification on committed HEAD
+`13adc15e8b7b8047a25ab5a340880621ee3ad0bd`:
+
+```text
+target path = D:\worktree\IMS_deadlock-g6b-discovery
+branch = codex/g6b-discovery-estimand-lock
+HEAD = 13adc15e8b7b8047a25ab5a340880621ee3ad0bd
+upstream = NO_UPSTREAM
+dirty state = clean
+Python = D:\worktree\IMS_deadlock-final-integration\.venv\Scripts\python.exe
+Python version = 3.13.9
+full pytest = 1307 passed in 144.93s (0:02:24)
+ruff check = All checks passed!
+ruff format = 43 files already formatted
+mypy src = Success: no issues found in 23 source files
+mypy src tests = Success: no issues found in 43 source files
+git diff --check = pass
+foundation suite = 52 passed in 9.87s
+canonical row-family test = 1 passed in 0.09s
+nested JSON parse = 8/8 parsed
+top-level G6-B JSON set = exact five
+nested row-family JSON set = exact eight
+foundation validator = valid, errors=0, science=false, PENDING, hashes=5
+row-family validator = valid, errors=0, science=false, case=false, PENDING,
+  ROW_FAMILY_BUNDLE_IMPLEMENTED, hashes=8
+recursive 13-JSON scan = non_false_auth=0, non_pending_status=0
+base diff forbidden paths = 0
+actual marker hits = 0
+relevant output roots = absent
+task mypy cache dirs = absent
+review verdicts = specification APPROVED; code quality APPROVED;
+  scientific boundary PASS PROTOCOL ONLY
+open gates = G6-B OPEN; G6-C/D/E NOT STARTED; bundle PENDING;
+  case/science authorizations false; no cases, overlap values, current locks,
+  outputs, or science; only separately approved case-construction plan may
+  follow
+```
+
+The next edit may only be an evidence-only closure-doc commit. Because that
+commit will create a new HEAD, any external completion claim for that new HEAD
+must first re-lock and revalidate the new committed state; do not use this
+section as self-referential evidence for a later SHA.
 
 ## Canonical Document Appendix A
 
@@ -2443,20 +2496,20 @@ FAILURE_LEDGER = {
 
 Before any later case-construction plan:
 
-- [ ] Every Task 1-8 checkbox is truthfully complete.
-- [ ] Exact-eight nested JSON set passes the validator.
-- [ ] Existing exact-five top-level G6-B bundle still passes its 52-test suite.
-- [ ] No extra top-level JSON exists under `cases/discovery/g6b/`.
-- [ ] Full pytest, Ruff, both strict mypy commands, JSON parsing, and diff check
+- [x] Every Task 1-8 checkbox is truthfully complete.
+- [x] Exact-eight nested JSON set passes the validator.
+- [x] Existing exact-five top-level G6-B bundle still passes its 52-test suite.
+- [x] No extra top-level JSON exists under `cases/discovery/g6b/`.
+- [x] Full pytest, Ruff, both strict mypy commands, JSON parsing, and diff check
   pass on the exact locked worktree.
-- [ ] Specification, code-quality, and independent scientific-boundary reviews
+- [x] Specification, code-quality, and independent scientific-boundary reviews
   pass after all fixes.
-- [ ] `scientific_execution_authorized` remains false everywhere.
-- [ ] `case_creation_authorized` remains false everywhere.
-- [ ] `adversarial_review_status` remains `PENDING` in the implemented bundle;
+- [x] `scientific_execution_authorized` remains false everywhere.
+- [x] `case_creation_authorized` remains false everywhere.
+- [x] `adversarial_review_status` remains `PENDING` in the implemented bundle;
   the review verdict is stored separately as `PASS PROTOCOL ONLY`.
-- [ ] G6-B remains `OPEN`; G6-C/D/E remain not started.
-- [ ] No case artifact, actual overlap value, current lock, output root,
+- [x] G6-B remains `OPEN`; G6-C/D/E remain not started.
+- [x] No case artifact, actual overlap value, current lock, output root,
   enumeration, CTMC, DES, or science summary exists.
 
 Stop after this gate. The only permitted successor is a separately approved
