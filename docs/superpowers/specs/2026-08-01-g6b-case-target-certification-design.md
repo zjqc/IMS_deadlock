@@ -1,7 +1,8 @@
 # G6-B Case Construction and Target-Certification Authorization Design
 
-Status: `APPROVED CONCEPT / WRITTEN SPEC AWAITING USER REVIEW /
-EXECUTION-DISABLED / NO CASE CREATION`.
+Status: `APPROVED CONCEPT / WRITTEN SPEC APPROVED FOR
+SCHEMA-IMPLEMENTATION PLANNING ONLY / EXECUTION-DISABLED /
+NO CASE CREATION`.
 
 This specification records the approved concept-level staged G6-B design that
 repairs the case-construction, overlap-admission, target-certification, and
@@ -11,10 +12,10 @@ does not create a discovery case, enumerate an LTS, certify an absorption
 domain, construct or solve a CTMC, run DES, inspect scientific outputs, create
 a quantitative output root, authorize science, or mark G6-B as `PASS`.
 
-`APPROVED CONCEPT` means only that the design direction was approved for
-written specification. It is not approval of this written spec, an
-implementation plan, the future case-construction plan, any case artifact,
-target-certification preflight, or quantitative execution.
+`WRITTEN SPEC APPROVED FOR SCHEMA-IMPLEMENTATION PLANNING ONLY` means this
+document may be used to write a later schema-only implementation plan. It is
+not approval of that implementation plan, the future case-construction plan,
+any case artifact, target-certification preflight, or quantitative execution.
 
 The audited source base is commit
 `1f342baea755f7c85ef538c7403c52cfb9d610c4`. The current nested G6-B bundle
@@ -273,32 +274,116 @@ and superseded objects remain in all later accounting manifests.
 ## 7. Canonical Input and Provenance Fingerprints
 
 All canonical payloads use UTF-8 JSON, sorted keys, minimal separators, no
-duplicate keys, explicit payload version, explicit subject ID, no absolute
-machine paths, and no path-dependent serialization.
+duplicate keys, explicit payload version, no absolute machine paths, and no
+path-dependent serialization.
+
+The fingerprint contract has two layers:
+
+1. `subject_free_comparison_payload`: the dimension-specific payload used for
+   retired-authority comparison. Except for the containment-only output-root
+   reservation dimension, this payload must exclude new G6-B governance IDs,
+   filenames, repo paths, display names, authors, timestamps, review IDs, and
+   new provenance labels. Changing only those fields must not change the
+   comparison hash.
+2. `record_identity_envelope`: the auditable record that owns bundle, case,
+   method, companion-group, file path, source authority, lineage, derivation,
+   and projection references. Envelope hashes support traceability; they never
+   by themselves establish retired-authority non-reuse.
+
+The overlap admission algorithm compares subject-free projections, not
+envelope hashes. A renamed, rewrapped, or moved scientific input that preserves
+the same subject-free projection must be refused or linked as the same semantic
+lineage; it must not pass solely because the new record envelope differs.
 
 | Dimension | Subject | Required meaning |
 | --- | --- | --- |
-| `case_content_sha256` | case unit | Hash of the complete sealed case-spec payload, excluding generated reachable states and outputs. |
-| `state_snapshot_sha256` | case unit | Hash of the declared state-bearing input snapshot before enumeration; never the reachable state universe. |
-| `route_signature_sha256` | case unit | Hash of the canonical structural route/transition-registry signature, independent of filenames and display names. |
-| `parameter_tuple_sha256` | case unit | Hash of every frozen structural and numeric parameter that can affect semantics or target certification, including the state bound and rate-manifest reference. |
-| `random_stream_manifest_sha256` | method observation | Hash of the method-specific random-stream declaration; exact-only methods use a case-and-method-specific not-applicable provenance manifest. |
-| `output_root` | method observation | Canonical logical reservation identity for a later quantitative root; the path does not exist yet. |
-| `sealed_prediction_sha256` | case unit | Hash of the preregistered question, hypotheses, falsifiers, controls, and planned method roles before preflight. |
-| `metric_schema_sha256` | method companion group | Hash of the preregistered metric/scoring schema; controlled exact/DES or future-confirmation reuse requires an explicit reuse record. |
+| `case_content_sha256` | case unit | Hash of the complete subject-free sealed case-spec projection, excluding generated reachable states, outputs, case IDs, paths, and names. |
+| `state_snapshot_sha256` | case unit | Hash of the declared subject-free state-bearing input snapshot before enumeration; never the reachable state universe. |
+| `route_signature_sha256` | case unit | Hash of the canonical subject-free structural route/transition-registry signature, independent of filenames, display names, and case IDs. |
+| `parameter_tuple_sha256` | case unit | Hash of every subject-free frozen structural and numeric parameter that can affect semantics or target certification, including the state bound and rate-manifest content reference. |
+| `random_stream_manifest_sha256` | method observation | Hash of the method-role random-stream projection; exact-only methods use a subject-free not-applicable projection plus a method-owned envelope. |
+| `output_root_reservation_sha256` | method observation | Hash of the containment-only logical reservation projection for a later quantitative root; it is not evidence of semantic case non-reuse. |
+| `sealed_prediction_sha256` | case unit | Hash of the subject-free preregistered question, hypotheses, falsifiers, controls, planned method roles, scoring rule, and claim boundary before preflight. |
+| `metric_schema_sha256` | method companion group | Hash of the controlled metric/scoring schema projection; exact/DES or future-confirmation reuse requires an explicit companion-group reuse record. |
 
 An overlap report must record `fingerprint_subject_type` and
 `fingerprint_subject_id` for every comparison. A case unit is overlap-admissible
 only when every required case-level dimension and every planned method-level
 dimension is present and passes against the retired-authority scope. A method
-cannot borrow the passing random-stream or output-root record of its companion.
+cannot borrow the passing random-stream or output-root-reservation record of
+its companion.
+
+Every fingerprint record has exactly these common fields:
+`record_schema_version`, `record_id`, `dimension`, `projection_kind`,
+`subject_type`, `subject_id`, `owner_object_id`, `projection_schema_version`,
+`comparison_projection_ref_or_null`,
+`comparison_projection_sha256_or_null`, `canonicalization_version`,
+`source_authority_id`, `source_stage`, `source_method_role_or_null`,
+`source_run_role_or_null`, `source_artifact_refs`,
+`source_artifact_byte_hashes`, `normalizer_version`, `dimension_status`,
+`lineage_id`, `inherited_from_record_id_or_null`,
+`duplicate_lineage_of_record_id_or_null`, `depends_on_dimensions`,
+`correlated_with_dimensions`, `comparison_policy`,
+`applicability_reason_code_or_null`, and `record_provenance_sha256`.
+No additional field is permitted without a schema-version bump.
+
+`projection_kind` is exactly one of `semantic_content`, `random_process`,
+`controlled_schema`, or `provenance_containment`. The first three projection
+kinds are subject-free. `provenance_containment` may contain logical
+bundle/case/method/run coordinates for later output containment, but it cannot
+support a semantic non-reuse claim.
+
+`comparison_policy` is exactly one of `strict_semantic_distinctness`,
+`disjoint_random_substreams`, `controlled_schema_reuse`, or
+`provenance_containment_only`.
+
+The exact subject-free comparison payload schemas are:
+
+- `case_content_sha256`: `projection_schema_version`, `input_mode`,
+  `input_semantics_version`, `state_snapshot_sha256`,
+  `route_signature_sha256`, `parameter_tuple_sha256`,
+  `rate_manifest_content_sha256`, `policy_declaration_content_sha256`,
+  `selected_target_declaration_sha256`, and `control_declaration_sha256`;
+- `state_snapshot_sha256`: `projection_schema_version`, `input_mode`,
+  `state_payload_schema_version`, and `state_payload`;
+- `route_signature_sha256`: `projection_schema_version`, `input_mode`,
+  `route_semantics_version`, `typed_resource_roles`, `typed_route_graph`,
+  `transition_kinds`, `resource_demand_structure`, and
+  `mode_transition_structure`;
+- `parameter_tuple_sha256`: `projection_schema_version`,
+  `parameter_semantics_version`, `structural_parameter_entries`,
+  `numeric_parameter_entries`, `state_bound`,
+  `rate_manifest_content_sha256`, and `policy_declaration_content_sha256`;
+- stochastic `random_stream_manifest_sha256`: `projection_schema_version`,
+  `applicability_status`, `method_role`, `prng_family`,
+  `prng_version`, `seed_root_derivation`, `substream_id`,
+  `replicate_index_set`, and `sampling_plan_ref`;
+- exact-method `random_stream_manifest_sha256`: `projection_schema_version`,
+  `applicability_status`, `method_role`, and `reason_code`;
+- `output_root_reservation_sha256`: `projection_schema_version`, `bundle_id`,
+  `case_unit_id`, `method_observation_id`, `run_role`, `logical_root_id`,
+  `repo_relative_posix_path`, `reserved`, `materialized`, and
+  `reservation_sha256`; this projection is containment-only and
+  `reservation_sha256` is null in its own hash preimage;
+- `sealed_prediction_sha256`: `projection_schema_version`,
+  `research_question`, `hypotheses`, `falsifiers`, `controls`,
+  `method_roles`, `scoring_rule`, and `claim_boundary`; and
+- `metric_schema_sha256`: `projection_schema_version`, `estimand_schema`,
+  `metric_entries`, `aggregation`, `censoring`, `failure`, `scoring`, and
+  `comparability`.
+
+The overlap report must record `depends_on_dimensions` and
+`correlated_with_dimensions`. Nested dimensions such as `state_snapshot`,
+`route_signature`, and `parameter_tuple` may contribute audit coverage, but
+they are correlated projections of one case input and must not be counted as
+independent identity observations.
 
 ### 7.1 `state_snapshot_sha256`
 
 The v2 identity contract defines two mutually exclusive input modes:
 
 - `model_generated_lts`: the snapshot payload is the validated
-  `CaseSpec.initial_state` subtree plus its payload version and case-unit ID;
+  `CaseSpec.initial_state` subtree plus its payload version;
 - `explicit_finite_lts_input`: the snapshot payload is the declared, sealed
   input state/arc snapshot because that finite LTS is itself the input.
 
@@ -318,19 +403,24 @@ or turn one case input into two independent identity observations.
 
 ### 7.2 Random-stream not-applicable records
 
-An exact method without stochastic sampling uses a method-specific canonical
-manifest with `applicability_status = not_applicable_by_protocol`. A global
-shared sentinel is prohibited. The manifest proves explicit provenance only;
-it does not prove random-process independence.
+An exact method without stochastic sampling uses a method-owned envelope whose
+comparison projection has `applicability_status =
+not_applicable_by_protocol`. The subject-free projection may be equal for all
+exact methods with the same method role and reason code; that equality yields
+`not_applicable_by_protocol_pass`, not `pass_distinct` and not
+random-process independence. A global shared sentinel without a method-owned
+envelope is prohibited.
 
 ### 7.3 Output-root reservation
 
-The `output_root` dimension is a canonical logical reservation, not an existing
-directory and not a claim of case independence. It must include bundle, case,
-method, and run-role identity. Before quantitative authorization, validators
-must require both `reserved = true` and `materialized = false`, and must reject
+The `output_root_reservation_sha256` dimension is a canonical logical
+reservation, not an existing directory and not a claim of case independence. It
+must include bundle, case, method, and run-role identity because its only
+purpose is containment. Before quantitative authorization, validators must
+require both `reserved = true` and `materialized = false`, and must reject
 filesystem creation or inspection fields. Root uniqueness proves containment
-and provenance separation only.
+and provenance separation only. It cannot rescue copied case content, copied
+predictions, a renamed route signature, or any other semantic overlap.
 
 ## 8. Independence and Non-Reuse Claim Lattice
 
@@ -357,6 +447,13 @@ The report must never collapse these predicates into a single boolean named
 - G6-B discovery cannot be relabelled as held-out confirmation; and
 - future confirmation must establish its own case/provenance separation and
   blinding rather than inheriting a G6-B overlap result.
+
+Retired-authority admission is typed and lineage-deduplicated. If a G6-B
+projection equals, normalizes to, or is declared as a rename of a retired G4,
+G5, or G6-R projection, the result is not a new observation. It is either a
+controlled reuse under an explicit rule or a refusal with the old lineage
+retained. If semantic lineage is ambiguous, unreconstructable, or dependent on
+outcome-driven parameter changes, the audit fails closed.
 
 ## 9. Sealed Case-Construction Contract
 
@@ -404,6 +501,14 @@ per-dimension result. A report with missing subjects, missing dimensions, or
 `pending_count > 0` is incomplete and cannot advance. Refused units remain in
 the denominator and ledger. Revision after refusal requires a new identity or
 an explicit supersession record with old/new hashes and reason codes.
+
+Each comparison result must include the normalized retired-authority projection
+or a verifiable reference to it, the new subject-free projection, the lineage
+decision, and the reason code. `pass_distinct` is valid only when the projection
+differs from every comparable unique retired lineage and the semantic-lineage
+audit passed. `semantic_lineage_ambiguous` is terminal for that subject until a
+new reviewed construction record resolves it before any result-bearing
+operation.
 
 ## 11. Target-Certification Preflight Capability
 
@@ -463,8 +568,8 @@ authorized preflight command may change it to
 `materialized_by_target_certification_only`, after which its exact inventory is
 limited to per-case certificate/refusal records, the batch manifest, command
 transcript/stderr/exit-code captures, the filesystem manifest, and the hash
-manifest. This root is not the quantitative `output_root` dimension and cannot
-contain CTMC/DES/metric results.
+manifest. This root is not the quantitative output-root-reservation dimension
+and cannot contain CTMC/DES/metric results.
 
 ### 11.4 Allowed result fields
 
@@ -555,11 +660,19 @@ frozen `same_target_lock` that references:
 - certificate artifact hash and `estimand_id`;
 - exact and DES stopping-rule hashes;
 - shared metric-schema hash and its reuse authorization; and
-- distinct method-specific random-stream/output-root records.
+- distinct method-specific random-stream and output-root-reservation records.
 
 Exact/DES target mismatch is a method-level refusal. It cannot be hidden by a
 case-level or bundle-level pass and cannot be repaired in place after result
 inspection.
+
+The `same_target_lock` is a companion-group object. It is invalid unless it
+binds the exact and DES method observations to the same certified case unit,
+the same absorption-domain certificate, the same estimand, the same stopping
+semantics, and the controlled metric-schema reuse record. A method-level
+random-stream or output-root-reservation refusal propagates to the case unit
+unless the failed method is superseded before sealing and remains visible in
+the manifest.
 
 ## 13. Three-Level State Model
 
@@ -668,7 +781,10 @@ Required refusal codes include at least:
 - `overlap_hit`;
 - `missing_hash`;
 - `semantic_identity_reuse`;
+- `rename_shift_refused`;
 - `semantic_lineage_ambiguous`;
+- `subject_id_contaminated_projection`;
+- `path_contaminated_projection`;
 - `unauthorized_case_creation_attempt`;
 - `incomplete_stable_lts`;
 - `state_bound_truncation`;
@@ -682,6 +798,8 @@ Required refusal codes include at least:
 - `exact_des_target_mismatch`;
 - `unexpected_preflight_side_effect`;
 - `failed_negative_control`;
+- `metric_schema_reuse_without_companion_record`;
+- `output_root_renaming_used_as_identity_evidence`;
 - `unauthorized_quantitative_execution_attempt`; and
 - `outcome_leakage`.
 
@@ -835,7 +953,12 @@ Its top-level keys are exactly:
 | `sealed_bundle_manifest_required_fields` | Exact field-name array below |
 | `case_unit_required_fields` | Exact field-name array below |
 | `method_observation_required_fields` | Exact field-name array below |
+| `method_companion_group_required_fields` | Exact field-name array below |
+| `fingerprint_record_required_fields` | Exact common field-name array from Section 7 |
+| `fingerprint_payload_schemas` | Exact dimension-specific projection schemas from Section 7 |
 | `fingerprint_subject_map` | Exact eight-key subject map from Section 7 |
+| `dimension_dependence_contract` | Exact dependency/correlation rule from Section 7 |
+| `nested_field_contracts` | Reject undeclared nested instance data and reject subject IDs inside subject-free projections |
 | `allowed_input_modes` | Exactly `model_generated_lts`, `explicit_finite_lts_input` |
 | `output_root_reservation_contract` | Exact inert-reservation object below |
 | `prohibited_instance_fields` | Exact outcome/certificate/authorization blacklist below |
@@ -852,11 +975,13 @@ schema-only file contains no instance with `authorized = true`.
 `sealed_bundle_manifest_required_fields` is exactly:
 `schema_version`, `bundle_id`, `construction_authorization_hash`,
 `planned_case_unit_ids`, `planned_method_observation_ids`,
-`case_unit_record_hashes`, `method_observation_record_hashes`,
+`planned_method_companion_group_ids`, `case_unit_record_hashes`,
+`method_observation_record_hashes`, `method_companion_group_record_hashes`,
 `mandatory_control_ids`, `fingerprint_record_hashes`,
 `sealed_prediction_hashes`, `metric_schema_hashes`,
-`quantitative_output_root_reservations`, `planned_case_unit_count`,
-`planned_method_count`, and `manifest_sha256`.
+`quantitative_output_root_reservation_hashes`, `planned_case_unit_count`,
+`planned_method_count`, `planned_method_companion_group_count`, and
+`manifest_sha256`.
 
 `case_unit_required_fields` is exactly:
 `schema_version`, `bundle_id`, `case_unit_id`, `family_id`, `input_mode`,
@@ -869,11 +994,28 @@ schema-only file contains no instance with `authorized = true`.
 `method_observation_required_fields` is exactly:
 `schema_version`, `bundle_id`, `method_observation_id`, `case_unit_id`,
 `method_companion_group_id`, `method_role`,
-`random_stream_manifest_sha256`, `output_root`, `metric_schema_sha256`,
+`random_stream_manifest_sha256`, `output_root_reservation_sha256`,
+`metric_schema_sha256`,
 `stopping_rule_ref`, `des_stopping_rule_ref_or_null`, and `method_state`.
 
+`method_companion_group_required_fields` is exactly:
+`schema_version`, `bundle_id`, `method_companion_group_id`, `case_unit_id`,
+`member_method_observation_ids`, `member_method_roles`, `metric_schema_ref`,
+`metric_schema_sha256`, `same_target_required`,
+`allowed_reuse_reason_code`, `controlled_metric_reuse_record_hash_or_null`,
+`companion_group_state`, and `method_companion_group_sha256`.
+
+`fingerprint_record_required_fields` is exactly the common fingerprint-record
+field list in Section 7. The schema must reject any record where a
+subject-free comparison projection contains `bundle_id`, `case_unit_id`,
+`method_observation_id`, `method_companion_group_id`, filenames, repo paths,
+display names, authors, timestamps, review IDs, or new G6-B provenance labels.
+The only exception is `output_root_reservation_sha256`, whose projection kind
+is `provenance_containment` and whose comparison policy is
+`provenance_containment_only`.
+
 `output_root_reservation_contract` has exactly
-`logical_repo_independent_identity_required = true`,
+`provenance_containment_only = true`,
 `reserved = true`, `materialized = false`,
 `absolute_path_prohibited = true`, and
 `filesystem_inspection_before_quantitative_authorization = prohibited`.
@@ -903,6 +1045,10 @@ Its top-level keys are exactly:
 | `forbidden_result_fields` | Exact quantitative/scoring field array below |
 | `preflight_evidence_root_contract` | Exact two-state root contract from Section 11.3 |
 | `per_case_result_required_fields` | Exact field-name array below |
+| `semantic_lineage_audit_required_fields` | Exact field-name array below |
+| `source_projection_map_required_fields` | Exact retired-authority projection inventory fields below |
+| `lineage_deduplication_contract` | Compare each unique retired semantic lineage once and retain duplicates as lineage evidence |
+| `typed_admission_contract` | Exact per-dimension result status and fail-closed semantics from Sections 7, 8, and 10 |
 | `result_status_values` | Exactly `certified`, `refused` |
 | `batch_manifest_required_fields` | Exact field-name array below |
 | `batch_status_values` | Exactly `complete_all_certified`, `complete_with_refusals`, `incomplete_refused` |
@@ -974,6 +1120,21 @@ quantitative output root, and every manuscript/scientific-summary writer.
 `metric_observations`, `theorem_support`, `theorem_falsification`,
 `scientific_score`, `science_summary`, and `quantitative_output_root`.
 
+`semantic_lineage_audit_required_fields` is exactly:
+`schema_version`, `bundle_id`, `subject_type`, `subject_id`, `dimension`,
+`new_comparison_projection_sha256`, `retired_projection_ref`,
+`retired_lineage_id`, `normalizer_version`, `lineage_decision`,
+`lineage_reason_codes`, `isomorphic_renaming_detected`,
+`outcome_driven_transform_detected`, `audit_status`, and
+`semantic_lineage_audit_sha256`.
+
+`source_projection_map_required_fields` is exactly:
+`schema_version`, `source_authority_id`, `source_stage`,
+`retired_artifact_ref`, `retired_artifact_byte_hash`,
+`dimension`, `subject_type`, `projection_schema_version`,
+`comparison_projection_sha256`, `lineage_id`, `normalizer_version`, and
+`source_projection_record_sha256`.
+
 #### 16.3.3 `quantitative_authorization_schema.json` exact shape
 
 Its top-level keys are exactly:
@@ -989,7 +1150,7 @@ Its top-level keys are exactly:
 | `same_target_lock_required_fields` | Exact field-name array below |
 | `quantitative_runtime_lock_required_fields` | Exact field-name array below |
 | `quantitative_authorization_required_fields` | Exact field-name array below |
-| `authorized_scope_required_fields` | Exactly `case_unit_ids`, `method_observation_ids`, `certificate_hashes`, `same_target_lock_hashes`, `output_root_reservations` |
+| `authorized_scope_required_fields` | Exactly `case_unit_ids`, `method_observation_ids`, `certificate_hashes`, `same_target_lock_hashes`, `output_root_reservation_hashes` |
 | `allowed_method_roles` | Exactly `exact_companion`, `des_companion` |
 | `wildcard_scope_allowed` | `false` |
 | `survivor_scope_claim_contract` | Exact original-denominator and claim-boundary rule from Section 11.6 |
@@ -997,8 +1158,11 @@ Its top-level keys are exactly:
 | `schema_does_not_authorize_quantitative_execution` | `true` |
 
 `same_target_lock_required_fields` is exactly the identity fields listed in
-Section 12 plus `same_target_lock_id`, `bundle_id`, `lock_created_at_utc`, and
-`same_target_lock_sha256`.
+Section 12 plus `same_target_lock_id`, `bundle_id`,
+`method_companion_group_id`, `exact_method_observation_id`,
+`des_method_observation_id`, `output_root_reservation_hashes`,
+`metric_schema_reuse_authorization_hash`,
+`lock_created_at_utc`, and `same_target_lock_sha256`.
 
 `quantitative_runtime_lock_required_fields` is exactly:
 `schema_version`, `runtime_lock_id`, `source_head`, `source_tree_hash`,
@@ -1006,8 +1170,9 @@ Section 12 plus `same_target_lock_id`, `bundle_id`, `lock_created_at_utc`, and
 `target_certification_batch_manifest_hash`, `case_unit_ids`,
 `method_observation_ids`, `same_target_lock_hashes`, `python_executable`,
 `python_version`, `environment_identity_hash`, `allowed_command_manifest_hash`,
-`random_stream_manifest_hashes`, `output_root_reservations`, `resource_budget`,
-`run_retry_stop_policy`, `capture_policy`, `ledger_head_hash`,
+`random_stream_manifest_hashes`, `output_root_reservation_hashes`,
+`resource_budget`, `run_retry_stop_policy`, `capture_policy`,
+`ledger_head_hash`,
 `created_at_utc`, and `runtime_lock_sha256`.
 
 `quantitative_authorization_required_fields` is exactly:
@@ -1090,33 +1255,43 @@ for at least these contracts:
 3. fingerprints declare and enforce the correct subject type;
 4. `state_snapshot_sha256` is pre-enumeration and cannot be replaced by
    `state_space_hash`;
-5. exact methods require method-specific not-applicable random-stream
-   manifests;
-6. output-root reservations are inert and unmaterialized;
-7. byte distinctness cannot set statistical-independence fields;
-8. overlap reports cover every sealed case and method subject with no pending
+5. changing only bundle/case/method/companion IDs, paths, filenames, display
+   names, authors, timestamps, review IDs, or new provenance labels does not
+   change subject-free comparison hashes;
+6. the same retired scientific input renamed into a new G6-B wrapper produces
+   the same comparison projection and a refusal or lineage link, not a pass;
+7. changing scientific content changes the relevant subject-free projection;
+8. exact methods require method-owned not-applicable random-stream envelopes
+   whose equal subject-free projections yield `not_applicable_by_protocol_pass`;
+9. output-root reservations are inert, unmaterialized, and containment-only;
+10. byte distinctness cannot set statistical-independence fields;
+11. correlated subdimensions such as snapshot, route, and parameter hashes are
+    not counted as independent case identities;
+12. overlap reports cover every sealed case and method subject with no pending
    entries;
-9. refused/superseded objects cannot disappear from later manifests;
-10. preflight and quantitative runtime locks are distinct and neither embeds a
+13. refused/superseded objects cannot disappear from later manifests;
+14. preflight and quantitative runtime locks are distinct and neither embeds a
     future authorization circularly;
-11. preflight authorization names exact scope and a positive command allowlist;
-12. the preflight entrypoint stops after certificate/refusal, and runtime spies
+15. preflight authorization names exact scope and a positive command allowlist;
+16. the preflight entrypoint stops after certificate/refusal, and runtime spies
     fail if it imports or calls any exact `forbidden_calls` symbol, including
     `derive_absorbing_ctmc`, `AbsorbingCTMC.solve`, `engine.simulate`,
     `g4_protocol.run_after_freeze`, G5 scoring, historical replay, or
     quantitative-output writers;
-13. preflight artifacts reject committor, mean-time, sensitivity, Doob-h, DES,
+17. preflight artifacts reject committor, mean-time, sensitivity, Doob-h, DES,
     metrics, scoring, summary, and quantitative-output keys;
-14. every sealed overlap-passed case receives a certificate/refusal or the batch
+18. every sealed overlap-passed case receives a certificate/refusal or the batch
     is incomplete;
-15. certificate records require all runtime-derived hashes and `estimand_id`;
-16. exact/DES companions share one case, target, certificate, and
+19. certificate records require all runtime-derived hashes and `estimand_id`;
+20. exact/DES companions share one case, target, certificate, and
     `absorption_domain_hash` but remain distinct method observations;
-17. mandatory-control failure blocks quantitative authorization;
-18. quantitative authorization enumerates exact case/method/certificate/runtime
+21. metric-schema reuse is valid only through a method-companion-group controlled
+    reuse record;
+22. mandatory-control failure blocks quantitative authorization;
+23. quantitative authorization enumerates exact case/method/certificate/runtime
     scope;
-19. failed, refused, negative, and boundary evidence remains append-only; and
-20. no G6-B/G6-C/D/E status upgrade can be inferred from schema, overlap, or
+24. failed, refused, negative, and boundary evidence remains append-only; and
+25. no G6-B/G6-C/D/E status upgrade can be inferred from schema, overlap, or
     preflight completion.
 
 Mutation tests must remove, duplicate, reorder, drift, or substitute each
@@ -1187,6 +1362,9 @@ Forbidden examples:
 
 - "G6-B passed" from schema, overlap, or preflight completion;
 - "all cases are independent" based only on unequal hashes;
+- "zero overlap in eight independent dimensions" when nested projections,
+  controlled reuse, not-applicable random-stream projections, or
+  containment-only output reservations are present;
 - "exact and DES provide two independent cases" for one case unit;
 - "no failures occurred" when no attempt was authorized or refused objects
   were removed;
@@ -1210,8 +1388,8 @@ evidence root is not inert and isolated.
 Stop before quantitative execution if any scoped case lacks a reviewed target
 certificate, exact/DES identity drifts, a mandatory control fails, refused or
 superseded objects disappear, the quantitative runtime lock or authorization
-is absent/stale, output roots are already materialized, or the ledger/counts do
-not reconcile.
+is absent/stale, output reservations are already materialized, or the
+ledger/counts do not reconcile.
 
 Stop and retain evidence on any unauthorized operation, unexpected output,
 truncation, target/rate/policy drift, overlap hit, certificate refusal,
@@ -1224,10 +1402,15 @@ negative-control failure, runtime mismatch, or capability leak.
 - It describes the two authorization barriers without opening either barrier.
 - It resolves the absorption-hash and runtime-lock circularities.
 - It assigns every overlap dimension to the correct identity subject.
+- It separates subject-free comparison projections from record identity
+  envelopes and forbids governance IDs or paths from rescuing semantic reuse.
 - It defines pre-enumeration `state_snapshot_sha256` separately from runtime
   `state_space_hash`.
 - It separates byte distinctness, provenance, semantic lineage, construction
   process, mechanism diversity, random streams, and confirmation blinding.
+- It defines exact projection schemas, dimension-dependence records,
+  companion-group controlled metric reuse, and containment-only output-root
+  reservation semantics.
 - It defines sealed-case, overlap, preflight, same-target, quantitative, and
   refusal/revision contracts.
 - It defines bundle-, case-, and method-level states with explicit aggregation
@@ -1239,5 +1422,6 @@ negative-control failure, runtime mismatch, or capability leak.
 - It contains no unresolved placeholder, silent authorization, favorable
   result, actual case identity, scientific output, or G6-B status upgrade.
 
-After this file is committed, the next step is user review of the written spec.
-Only after that review passes may a detailed implementation plan be written.
+After this file is committed, the next step is a detailed schema-only
+implementation plan. That plan still cannot create cases, authorize target
+preflight, or authorize quantitative execution.
