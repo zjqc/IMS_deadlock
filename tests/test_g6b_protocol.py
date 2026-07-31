@@ -630,6 +630,60 @@ def test_g6b_theory_documents_lock_typed_absorption_domain() -> None:
     assert "L16" in probability_text
 
 
+def test_g6b_ontology_absorption_review_locks_domain_semantics() -> None:
+    review_path = Path(
+        "docs/verification/"
+        "G6_B_ONTOLOGY_ABSORPTION_DOMAIN_CORRECTION_REVIEW.md"
+    )
+    review_text = review_path.read_text(encoding="utf-8")
+    normalized_review_text = " ".join(review_text.split())
+
+    assert "Verification date: 2026-07-31" in review_text
+    assert "Record commit date: 2026-08-01" in review_text
+    assert (
+        "git log --diff-filter=A --format=%H -- "
+        "docs/verification/G6_B_ONTOLOGY_ABSORPTION_DOMAIN_CORRECTION_REVIEW.md"
+    ) in review_text
+    assert (
+        "git log -1 --format=%H -- "
+        "docs/verification/G6_B_ONTOLOGY_ABSORPTION_DOMAIN_CORRECTION_REVIEW.md"
+    ) in review_text
+
+    assert (
+        "`C_closed`: unselected closed SCC with membership "
+        "`C_closed subset T`; closedness is checked against every outgoing "
+        "positive-rate edge in the full stopped graph, including exits to "
+        "`A_stop`"
+    ) in normalized_review_text
+    assert "positive-rate graph induced by `T`" not in normalized_review_text
+
+    assert (
+        "Current production supports only the global `A_abs` certificate-or-"
+        "refusal protocol. It does not support a partial-domain quantitative "
+        "solve or payload; any such payload requires a separate versioned and "
+        "reviewed design."
+    ) in normalized_review_text
+    assert (
+        "Dropping only `C_closed` while retaining `B_closed \\ C_closed` is "
+        "also prohibited."
+    ) in normalized_review_text
+    assert (
+        "Partial-domain mathematics is documented as a possible future design "
+        "surface, but production payloads that drop `B_closed` while retaining "
+        "states that can reach it remain unsupported."
+    ) not in normalized_review_text
+
+    assert (
+        "Under the current global production protocol, this refuses with "
+        "`non_almost_sure_absorption_domain` before CTMC generator construction "
+        "or solve."
+    ) in normalized_review_text
+    assert (
+        "This is a protocol-domain refusal, not a mathematical claim that "
+        "partial-domain probabilities do not exist."
+    ) in normalized_review_text
+
+
 def _symbol_row(symbol_text: str, symbol: str) -> str:
     for line in symbol_text.splitlines():
         if line.startswith(f"| `{symbol}` |"):

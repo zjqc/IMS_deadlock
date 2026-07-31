@@ -1,6 +1,7 @@
 # G6-B Ontology And Absorption-Domain Correction Review
 
-Date: 2026-07-31
+Verification date: 2026-07-31
+Record commit date: 2026-08-01
 
 This document records the Task 8 governance, theory, and code correction review
 for the G6-B ontology and absorption-domain repair. It is not a scientific
@@ -8,9 +9,11 @@ result, not a case-construction authorization, not a G6-B PASS, and not a
 G6-C/D/E opening condition.
 
 The verification target below is the code/documentation state that was reviewed
-before this record was committed. The later commit containing this file is
-self-identifying through Git history; use `git log --format=%H -- docs/verification/G6_B_ONTOLOGY_ABSORPTION_DOMAIN_CORRECTION_REVIEW.md`
-to locate the publication commit.
+before this record was committed. The later commit that first created this file
+is self-identifying through Git history:
+`git log --diff-filter=A --format=%H -- docs/verification/G6_B_ONTOLOGY_ABSORPTION_DOMAIN_CORRECTION_REVIEW.md`.
+The latest commit that changes the current file content is:
+`git log -1 --format=%H -- docs/verification/G6_B_ONTOLOGY_ABSORPTION_DOMAIN_CORRECTION_REVIEW.md`.
 
 ## Verification Target
 
@@ -81,8 +84,9 @@ The corrected notation is:
 - `D_sel`: the selected bad stopped set, `D_global union D_local`;
 - `A_stop`: selected absorbing targets, `D_sel union F`;
 - `T`: nonabsorbing analysis states, `X_stop \ A_stop`;
-- `C_closed`: unselected closed SCCs inside the positive-rate graph induced by
-  `T`;
+- `C_closed`: unselected closed SCC with membership `C_closed subset T`;
+  closedness is checked against every outgoing positive-rate edge in the full
+  stopped graph, including exits to `A_stop`;
 - `B_closed`: reverse-reachable basin of `C_closed` inside `T`;
 - `S_T`: `T \ B_closed`, the states that hit `A_stop` with probability one
   under the finite complete finite-positive-rate stopped CTMC;
@@ -90,9 +94,11 @@ The corrected notation is:
   analysis states are in `S_T`.
 
 The accepted modality is finite, complete, nontruncated, finite-positive-rate
-stopped CTMC analysis. Partial-domain mathematics is documented as a possible
-future design surface, but production payloads that drop `B_closed` while
-retaining states that can reach it remain unsupported.
+stopped CTMC analysis. Current production supports only the global `A_abs`
+certificate-or-refusal protocol. It does not support a partial-domain
+quantitative solve or payload; any such payload requires a separate versioned
+and reviewed design. Dropping only `C_closed` while retaining
+`B_closed \ C_closed` is also prohibited.
 
 ## Versioned Contract
 
@@ -168,10 +174,12 @@ c -> c
 ```
 
 With unit rates, `P(hit F | s0) = 1/2`. Therefore `s0` has `S_reach = yes` but
-`S_T = no`. The closed basin is `B_closed = {s0, c}`. A global absorption-domain
-claim must refuse with `non_almost_sure_absorption_domain`; no committor, mean
-absorption time, case result, or science payload is produced from this global
-claim.
+`S_T = no`. The closed basin is `B_closed = {s0, c}`. Under the current global
+production protocol, this refuses with `non_almost_sure_absorption_domain`
+before CTMC generator construction or solve. This is a protocol-domain refusal,
+not a mathematical claim that partial-domain probabilities do not exist. No
+committor, mean absorption time, case result, or science payload is produced
+from this global claim.
 
 ## Main Verification Evidence
 
