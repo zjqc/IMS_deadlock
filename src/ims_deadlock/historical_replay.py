@@ -1252,6 +1252,8 @@ def _historical_certified_s_t_state_ids(
     certificate_unselected_closed = _historical_component_tuple(
         certificate.get("unselected_closed_sccs")
     )
+    if derived_unselected_closed is None or certificate_unselected_closed is None:
+        return None
     if derived_unselected_closed != certificate_unselected_closed:
         return None
     derived_closed_basin = _historical_string_tuple(

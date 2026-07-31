@@ -2059,6 +2059,54 @@ def test_v3_terminal_payload_rejects_certificate_derived_mirror_drift() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    "mirror_value",
+    [
+        None,
+        {"not": "a-component-list"},
+        [["s0", 7]],
+    ],
+)
+def test_v3_terminal_payload_rejects_missing_or_malformed_scc_mirrors(
+    mirror_value: Any,
+) -> None:
+    terminal = _v3_terminal_classification()
+    certificate = cast(dict[str, Any], terminal["absorption_domain_certificate"])
+    derived = cast(dict[str, Any], terminal["derived_state_sets"])
+    if mirror_value is None:
+        certificate.pop("unselected_closed_sccs")
+        derived.pop("unselected_closed_sccs")
+    else:
+        certificate["unselected_closed_sccs"] = mirror_value
+        derived["unselected_closed_sccs"] = mirror_value
+
+    assert (
+        replay.read_historical_terminal_classification(
+            {"terminal_classification": terminal}
+        )
+        is None
+    )
+
+
+def test_v3_mechanism_rejects_missing_scc_mirrors() -> None:
+    terminal = _v3_terminal_classification()
+    certificate = cast(dict[str, Any], terminal["absorption_domain_certificate"])
+    derived = cast(dict[str, Any], terminal["derived_state_sets"])
+    certificate.pop("unselected_closed_sccs")
+    derived.pop("unselected_closed_sccs")
+
+    result = _valid_result("G4_MEDIUM_ISLAND_REBUILD")
+    result["terminal_classification"] = terminal
+    mechanism = replay._mechanism_check(
+        "G4_MEDIUM_ISLAND_REBUILD",
+        result,
+        {"exit_code": 0, "timed_out": False, "estimand_ids": ["x"]},
+        BUNDLE_ROOT,
+    )
+    assert mechanism["status"] == "FAIL"
+    assert mechanism["terminal_d_local_verified"] is False
+
+
 def test_v3_terminal_payload_rejects_top_level_identity_hash_drift() -> None:
     terminal = _v3_terminal_classification()
     hashes = cast(dict[str, Any], terminal["hashes"])
