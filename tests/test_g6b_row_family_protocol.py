@@ -1,10 +1,14 @@
 import ast
 import hashlib
 import json
+import os
 import shutil
+import subprocess
+import sys
+from collections import Counter
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 import pytest
 
@@ -13,6 +17,20 @@ from ims_deadlock.g6b_row_family_protocol import (
 )
 
 PathPart = str | int
+
+
+class _SpecRequirementStatus(TypedDict):
+    schema_tranche: str
+    runtime_capability: str
+
+
+class _SpecRequirementEntry(TypedDict, total=False):
+    test_id: str
+    owner: str
+    task: str
+    aspect: str
+    labels: tuple[str, ...]
+
 
 BUNDLE = Path("cases/discovery/g6b/row_families/structural_discovery_v1")
 _NAMES = (
@@ -2789,3 +2807,769 @@ def test_invalid_floating_copy_is_rejected_without_mutation(tmp_path: Path) -> N
         "review_state.json: document must match" in error for error in result.errors
     )
     assert after == before
+
+
+_SPEC_17_3_TEST_FILES = (
+    Path("tests/test_g6b_canonical_json.py"),
+    Path("tests/test_g6b_schema_contracts.py"),
+    Path("tests/test_g6b_protocol.py"),
+    Path("tests/test_g6b_row_family_protocol.py"),
+)
+_SPEC_17_3_PREFIX = "test_spec_17_3_"
+_SPEC_17_3_STATUSES: dict[int, _SpecRequirementStatus] = {
+    number: {
+        "schema_tranche": (
+            "PASS_SCHEMA_GUARD_ONLY" if number in {15, 27} else "PASS_SCHEMA_TRANCHE"
+        ),
+        "runtime_capability": (
+            "DEFERRED_REQUIRES_SEPARATE_GATE"
+            if number in {15, 27}
+            else "NOT_REQUIRED_BY_THIS_SCHEMA_ITEM"
+        ),
+    }
+    for number in range(1, 45)
+}
+_SPEC_17_3_REQUIREMENT_MANIFEST: dict[
+    int,
+    tuple[_SpecRequirementEntry, ...],
+] = {
+    1: (
+        {
+            "test_id": (
+                "tests/test_g6b_protocol.py::test_spec_17_3_01_schema_state_order"
+            ),
+            "owner": "Task 2",
+            "task": "protocol_state_surface",
+            "aspect": (
+                "state order places normalization and preflight before quantitative "
+                "authorization"
+            ),
+        },
+    ),
+    2: (
+        {
+            "test_id": (
+                "tests/test_g6b_protocol.py::"
+                "test_spec_17_3_02_schema_only_capabilities_false"
+            ),
+            "owner": "Task 2",
+            "task": "protocol_state_surface",
+            "aspect": "current state remains pending and all four capabilities false",
+        },
+    ),
+    3: (
+        {
+            "test_id": (
+                "tests/test_g6b_canonical_json.py::"
+                "test_spec_17_3_03_schema_self_hash_and_dag"
+            ),
+            "owner": "Task 1",
+            "task": "canonical_json",
+            "aspect": "null-placeholder self-hash and DAG mutations fail",
+        },
+    ),
+    4: (
+        {
+            "test_id": (
+                "tests/test_g6b_canonical_json.py::"
+                "test_spec_17_3_04_schema_canonical_json_refusals"
+            ),
+            "owner": "Task 1",
+            "task": "canonical_json",
+            "aspect": "duplicate NFC number path and set-array mutations fail",
+        },
+    ),
+    5: (
+        {
+            "test_id": (
+                "tests/test_g6b_canonical_json.py::"
+                "test_spec_17_3_05_schema_historical_decimal_exactness"
+            ),
+            "owner": "Task 1",
+            "task": "canonical_json",
+            "aspect": "historical numeric tokens use exact Decimal conversion",
+        },
+    ),
+    6: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_06_schema_fingerprint_projection_relations"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "fingerprint subject projection payload dependency correlation "
+                "envelope relations are enforced"
+            ),
+        },
+    ),
+    7: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_07_schema_governance_only_projection_hash_invariance"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "governance-only ID path label timestamp changes leave subject-free "
+                "projection hashes invariant"
+            ),
+        },
+    ),
+    8: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_08_schema_renamed_retired_content_and_paraphrased_predictions_refuse"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "renamed retired content and paraphrased unchanged predictions refuse"
+            ),
+        },
+    ),
+    9: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_09_schema_scientific_content_mutations_keep_correlations_dependent"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "scientific content mutations change owning projection without "
+                "converting correlations into independent evidence"
+            ),
+        },
+    ),
+    10: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_10_schema_state_snapshot_is_pre_enumeration_parent_linked_subject_free"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "state_snapshot is pre-enumeration parent-linked subject-free and "
+                "cannot be replaced by state_space_hash"
+            ),
+        },
+    ),
+    11: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_11_schema_unknown_scientific_inputs_refuse"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "unknown scientific input fields refuse rather than hash silently"
+            ),
+        },
+    ),
+    12: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_12_schema_retired_inventory_fail_closed"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "retired inventory missing stale mismatched local-only unverified "
+                "states fail closed"
+            ),
+        },
+    ),
+    13: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_13_schema_inherited_g4_records_keep_one_lineage_and_count"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "G5 and G6-R inherited G4 records keep one lineage and one evidence "
+                "count"
+            ),
+        },
+    ),
+    14: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_14_schema_lineage_statuses_remain_distinct"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "direct derived inherited not-applicable unreconstructable statuses "
+                "remain distinct"
+            ),
+        },
+    ),
+    15: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_15_schema_normalizer_allowlist_guard"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "normalizer source analyzer rejects imports calls reads and outputs "
+                "outside exact data-only allowlist"
+            ),
+            "labels": ("SCHEMA_REPRESENTABILITY_ONLY",),
+        },
+    ),
+    16: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_16_schema_not_applicable_projection_pass_is_protocol_only"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "equal subject-free not-applicable projections yield only "
+                "not_applicable_by_protocol_pass"
+            ),
+        },
+    ),
+    17: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_17_schema_stochastic_streams_require_disjoint_substream_proof"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "stochastic streams require disjoint-substream proof and unequal "
+                "hashes alone do not pass"
+            ),
+        },
+    ),
+    18: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_18_schema_output_root_reservations_are_inert"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "output-root reservations are deterministic inert containment-only and "
+                "cannot rescue copied content"
+            ),
+        },
+    ),
+    19: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_19_schema_root_projection_boundaries"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "G4 root is not-applicable and G5 G6-R root projections exclude "
+                "absolute prefixes and output content"
+            ),
+        },
+    ),
+    20: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_20_schema_metric_reuse_requires_exact_companion_group_authorization"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "metric reuse requires one exact companion-group authorization and "
+                "preserves one-case two-method counting"
+            ),
+        },
+    ),
+    21: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_21_schema_method_refusal_propagates_to_case"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "method refusal propagates to its case and sealed methods cannot be "
+                "dropped"
+            ),
+        },
+    ),
+    22: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_22_schema_overlap_report_covers_every_object_and_dimension"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "overlap report covers every case method group unique lineage and "
+                "required dimension with zero pending for complete state"
+            ),
+        },
+    ),
+    23: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_23_schema_refused_and_superseded_objects_remain_in_manifests"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": "refused and superseded objects remain in later manifests",
+        },
+    ),
+    24: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_24_schema_forbidden_keys_reject_recursively"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "unknown forbidden keys are rejected recursively under every permitted "
+                "nested container"
+            ),
+        },
+    ),
+    25: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_25_schema_runtime_locks_have_no_downstream_authorization"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "preflight and quantitative locks are distinct and contain no "
+                "downstream authorization circularity"
+            ),
+        },
+    ),
+    26: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_26_schema_preflight_authorization_exact_scope_and_commands"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "preflight authorization has exact scope imports writers and tokenized "
+                "command records"
+            ),
+            "labels": ("SCHEMA_REPRESENTABILITY_ONLY",),
+        },
+    ),
+    27: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_27_schema_preflight_allowlist_guard"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "preflight source analyzer rejects hazardous imports calls and writers "
+                "while governance validator remains import-guarded from any runner"
+            ),
+        },
+    ),
+    28: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_28_schema_preflight_results_reject_quantitative_fields"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "preflight result fixtures reject quantitative scoring summary "
+                "output-root fields at every depth"
+            ),
+        },
+    ),
+    29: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_29_schema_every_preflight_case_is_terminal_or_incomplete"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "every declared preflight case is terminal or the batch is incomplete"
+            ),
+        },
+    ),
+    30: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_30_schema_terminal_partition_counts_reconcile"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "batch terminal sets are disjoint complete and counts hash-map keys "
+                "match"
+            ),
+        },
+    ),
+    31: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_31_schema_certified_records_require_runtime_hashes_and_estimand_id"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": "certified records require all runtime hashes and estimand_id",
+        },
+    ),
+    32: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_32_schema_exact_des_same_case_target_certificate_domain_metric"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "Exact and DES share one case target certificate domain hash and "
+                "metric schema while retaining distinct method IDs"
+            ),
+        },
+    ),
+    33: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_33_schema_failed_mandatory_control_blocks_quantitative_authorization"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": "failed mandatory control blocks quantitative authorization",
+        },
+    ),
+    34: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_34_schema_quantitative_scope_rejects_implicit_expansion"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "quantitative authorization rejects wildcard implicit prefix glob null "
+                "or expanded scope"
+            ),
+            "labels": ("SCHEMA_REPRESENTABILITY_ONLY",),
+        },
+    ),
+    35: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_35_schema_failure_refusal_negative_boundary_evidence_append_only"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": "failure refusal negative boundary evidence is append-only",
+        },
+    ),
+    36: (
+        {
+            "test_id": (
+                "tests/test_g6b_protocol.py::"
+                "test_spec_17_3_36_schema_no_status_upgrade_from_intermediate_state"
+            ),
+            "owner": "Task 2",
+            "task": "protocol_state_surface",
+            "aspect": (
+                "no schema normalization overlap or preflight state implies G6-B or "
+                "later-stage status upgrade"
+            ),
+        },
+    ),
+    37: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_37_schema_g4_manifest_freeze_sets_reconcile_exactly"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "G4 manifest freeze path ID hash sets reconcile exactly with missing "
+                "extra duplicate cross-ID wrong-base failures"
+            ),
+        },
+    ),
+    38: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_38_schema_deterministic_parent_owned_subunits_reject_renamed_enclosing_ids"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "grid cells L30 inequalities and B05 monitors expand as deterministic "
+                "parent-owned subunits"
+            ),
+        },
+    ),
+    39: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_39_schema_source_dimension_uses_exact_producer_row"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": "each retired dimension uses only its exact producer row",
+        },
+    ),
+    40: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_40_schema_source_selector_grants_one_use_only"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "each source selector grants one use only and result streams never "
+                "enter comparison projections"
+            ),
+        },
+    ),
+    41: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_41_schema_barrier_a_rejects_operation_and_role_drift"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "Barrier A rejects aliases wrong order schema role map cardinality "
+                "drift and duplicate file ownership"
+            ),
+        },
+    ),
+    42: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_42_schema_refusal_code_unions_are_gate_specific"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "each gate accepts exactly cross-gate union named-gate refusal codes"
+            ),
+        },
+    ),
+    43: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_43_schema_overlap_lock_rejects_admin_identity_drift"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "overlap lock rejects branch dirty non-linked tree admin-hash "
+                "privacy-path drift"
+            ),
+        },
+    ),
+    44: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_44_schema_command_manifest_hash_maps_and_placeholders"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "command manifests reconcile hashes maps placeholders environments and "
+                "cannot reference downstream locks or authorizations"
+            ),
+        },
+    ),
+}
+
+
+def _test_number(test_name: str) -> int:
+    prefix = _SPEC_17_3_PREFIX
+    assert test_name.startswith(prefix)
+    number_text = test_name[len(prefix) : len(prefix) + 2]
+    assert test_name[len(prefix) + 2 :].startswith("_schema_")
+    return int(number_text)
+
+
+def _test_id(path: Path, test_name: str) -> str:
+    return f"{path.as_posix()}::{test_name}"
+
+
+def _is_skip_or_xfail_decorator(decorator: ast.expr) -> bool:
+    target = decorator.func if isinstance(decorator, ast.Call) else decorator
+    if isinstance(target, ast.Attribute):
+        parts: list[str] = []
+        current: ast.expr = target
+        while isinstance(current, ast.Attribute):
+            parts.append(current.attr)
+            current = current.value
+        if isinstance(current, ast.Name):
+            parts.append(current.id)
+        return ".".join(reversed(parts)) in {
+            "pytest.mark.skip",
+            "pytest.mark.skipif",
+            "pytest.mark.xfail",
+        }
+    return isinstance(target, ast.Name) and target.id in {"skip", "skipif", "xfail"}
+
+
+def _collect_spec_17_3_tests() -> tuple[list[tuple[str, int]], list[str]]:
+    collected: list[tuple[str, int]] = []
+    decorated: list[str] = []
+    for path in _SPEC_17_3_TEST_FILES:
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+                continue
+            if not node.name.startswith(_SPEC_17_3_PREFIX):
+                continue
+            if not node.name[len(_SPEC_17_3_PREFIX) + 2 :].startswith("_schema_"):
+                continue
+            test_id = _test_id(path, node.name)
+            collected.append((test_id, _test_number(node.name)))
+            if any(_is_skip_or_xfail_decorator(item) for item in node.decorator_list):
+                decorated.append(test_id)
+    return collected, decorated
+
+
+def _collect_pytest_nodeids() -> set[str]:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-p",
+            "no:cacheprovider",
+            "--collect-only",
+            "-q",
+            *[path.as_posix() for path in _SPEC_17_3_TEST_FILES],
+        ],
+        check=False,
+        env={
+            **os.environ,
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONPATH": "src",
+        },
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    return {
+        line
+        for line in result.stdout.splitlines()
+        if "::" in line and not line.startswith("<")
+    }
+
+
+def test_spec_17_3_requirement_manifest_status_and_collection_are_mechanical() -> None:
+    assert set(_SPEC_17_3_REQUIREMENT_MANIFEST) == set(range(1, 45))
+    assert set(_SPEC_17_3_STATUSES) == set(range(1, 45))
+    for number, status in _SPEC_17_3_STATUSES.items():
+        if number in {15, 27}:
+            assert status == {
+                "schema_tranche": "PASS_SCHEMA_GUARD_ONLY",
+                "runtime_capability": "DEFERRED_REQUIRES_SEPARATE_GATE",
+            }
+        else:
+            assert status == {
+                "schema_tranche": "PASS_SCHEMA_TRANCHE",
+                "runtime_capability": "NOT_REQUIRED_BY_THIS_SCHEMA_ITEM",
+            }
+
+    manifest_entries = [
+        (number, entry)
+        for number, entries in _SPEC_17_3_REQUIREMENT_MANIFEST.items()
+        for entry in entries
+    ]
+    manifest_ids = [entry["test_id"] for _, entry in manifest_entries]
+    assert len(manifest_ids) == len(set(manifest_ids))
+    for number, entry in manifest_entries:
+        assert entry["test_id"].startswith("tests/test_g6b_")
+        assert f"::test_spec_17_3_{number:02d}_schema_" in entry["test_id"]
+        assert entry["owner"]
+        assert entry["task"]
+        assert entry["aspect"]
+        labels = entry.get("labels", ())
+        if labels:
+            assert labels == ("SCHEMA_REPRESENTABILITY_ONLY",)
+            assert _SPEC_17_3_STATUSES[number]["runtime_capability"] != (
+                "PASS_RUNTIME_CAPABILITY"
+            )
+
+    aspects_by_number = {
+        number: {(entry["owner"], entry["aspect"]) for entry in entries}
+        for number, entries in _SPEC_17_3_REQUIREMENT_MANIFEST.items()
+    }
+    for number, entries in _SPEC_17_3_REQUIREMENT_MANIFEST.items():
+        assert len(aspects_by_number[number]) == len(entries)
+
+    ast_collected, skip_or_xfail_ids = _collect_spec_17_3_tests()
+    ast_collected_ids = [test_id for test_id, _number in ast_collected]
+    ast_collected_numbers = {number for _test_id_value, number in ast_collected}
+    duplicate_ast_ids = [
+        test_id for test_id, count in Counter(ast_collected_ids).items() if count != 1
+    ]
+
+    pytest_nodeids = _collect_pytest_nodeids()
+    uncollected_manifest_ids = [
+        manifest_id
+        for manifest_id in manifest_ids
+        if manifest_id not in pytest_nodeids
+        and not any(nodeid.startswith(f"{manifest_id}[") for nodeid in pytest_nodeids)
+    ]
+    errors = {
+        "missing_requirement_numbers": sorted(
+            set(range(1, 45)) - ast_collected_numbers
+        ),
+        "missing_manifest_ids_from_ast": sorted(
+            set(manifest_ids) - set(ast_collected_ids)
+        ),
+        "orphan_ast_ids_not_in_manifest": sorted(
+            set(ast_collected_ids) - set(manifest_ids)
+        ),
+        "duplicate_ast_ids": duplicate_ast_ids,
+        "skip_skipif_xfail_ids": skip_or_xfail_ids,
+        "manifest_ids_not_collected_by_pytest": uncollected_manifest_ids,
+    }
+    errors = {key: value for key, value in errors.items() if value}
+    assert errors == {}, json.dumps(errors, indent=2, sort_keys=True)

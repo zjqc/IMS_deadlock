@@ -664,7 +664,7 @@ def test_independence_claim_lattice_predicate_drift_is_rejected(
         ),
     ],
 )
-def test_spec_17_3_36_no_status_upgrade_from_intermediate_state(
+def test_spec_17_3_36_schema_no_status_upgrade_from_intermediate_state(
     tmp_path: Path, path: tuple[str, ...], claim: str
 ) -> None:
     bundle = _copy_bundle(tmp_path)
