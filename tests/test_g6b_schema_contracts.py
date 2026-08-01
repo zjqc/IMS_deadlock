@@ -1000,6 +1000,244 @@ def test_spec_17_3_15_schema_normalizer_allowlist_guard() -> None:
             validate_normalizer_static_source(source)
 
 
+@pytest.mark.parametrize(
+    ("source", "code"),
+    [
+        (
+            _normalizer_source() + "\nwriter = open\nwriter('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source("import os")
+            + "\nrunner = os.system\nrunner('forbidden')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\nimp = __import__\nimp('subprocess')",
+            "capability_import_violation",
+        ),
+        (
+            _normalizer_source()
+            + "\nwriter: object = open\nwriter('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source("import os")
+            + "\nrunner = os.system\nalias = runner\nalias('forbidden')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\ndef _probe():\n    if (imp := __import__):\n"
+            "        imp('subprocess')",
+            "capability_import_violation",
+        ),
+        (
+            _normalizer_source()
+            + "\nwriter = __builtins__['open']\nwriter('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\ndef run(writer=open):\n"
+            "    writer('outside.json', 'w')\n"
+            "run()",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\ndef run(writer):\n"
+            "    writer('outside.json', 'w')\n"
+            "run(open)",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\nrun = open\nrun('outside.json', 'w')\nrun = len",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source("import functools")
+            + "\nwriter = functools.partial(open, 'outside.json', 'w')\n"
+            "writer()",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\nwriter = [open][0]\nwriter('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source()
+            + "\nwriter = {'x': open}['x']\nwriter('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\ndef make():\n"
+            "    return open\n"
+            "writer = make()\n"
+            "writer('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\ndef make():\n"
+            "    return open\n"
+            "def run(writer):\n"
+            "    writer('outside.json', 'w')\n"
+            "run(make())",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\nwriter = open if True else len\n"
+            "writer('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\nclass C:\n"
+            "    writer = open\n"
+            "C.writer('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source("from ims_deadlock.engine import *") + "\nsimulate({})",
+            "capability_import_violation",
+        ),
+        (
+            _normalizer_source() + "\nopen.__call__('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source("import ims_deadlock.engine as eng")
+            + "\neng.simulate.__call__({})",
+            "capability_import_violation",
+        ),
+        (
+            _normalizer_source("import builtins")
+            + "\nbuiltins.__import__('subprocess')",
+            "capability_import_violation",
+        ),
+        (
+            _normalizer_source("import builtins") + "\nbuiltins.eval('1 + 1')",
+            "capability_call_violation",
+        ),
+        (
+            _normalizer_source("import builtins") + "\nbuiltins.exec('x = 1')",
+            "capability_call_violation",
+        ),
+        (
+            _normalizer_source("import builtins") + "\nbuiltins.getattr(object(), 'x')",
+            "capability_call_violation",
+        ),
+        (
+            _normalizer_source("import builtins")
+            + "\nbuiltins.setattr(object(), 'x', 1)",
+            "capability_call_violation",
+        ),
+        (
+            _normalizer_source() + "\ndef make():\n"
+            "    return open, len\n"
+            "writer, other = make()\n"
+            "writer('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\nfor writer in [open]:\n"
+            "    writer('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source()
+            + "\n[writer('outside.json', 'w') for writer in [open]]",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\nmatch open:\n"
+            "    case writer:\n"
+            "        writer('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\ndef make_cm():\n"
+            "    return object()\n"
+            "with make_cm() as writer:\n"
+            "    writer('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source()
+            + "\nwriter, other = ((open, len) if True else (len, len))\n"
+            "writer('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\nfor writer in ([open] if True else [len]):\n"
+            "    writer('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\nfirst, *middle, writer = (len, len, len, open)\n"
+            "writer('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source("import os") + "\nclass Holder:\n"
+            "    tool = os\n"
+            "Holder.tool.system('forbidden')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source("import os") + "\nclass Holder:\n"
+            "    pass\n"
+            "holder = Holder()\n"
+            "holder.tool = os\n"
+            "holder.tool.system('forbidden')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source("import os") + "\nclass B:\n"
+            "    tool = os\n"
+            "A = B\n"
+            "A.tool.system('forbidden')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\n*writer, = [open]\nwriter('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source()
+            + "\nlist(map(lambda writer: writer('outside.json', 'w'), [len]))",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\ndef make():\n"
+            "    return [open]\n"
+            "items = make()\n"
+            "for writer in items:\n"
+            "    writer('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\ndef make():\n"
+            "    return open, len\n"
+            "pair = make()\n"
+            "writer, other = pair\n"
+            "writer('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+        (
+            _normalizer_source() + "\ndef make():\n"
+            "    return open, len\n"
+            "pair = make()\n"
+            "*writer, = pair\n"
+            "writer('outside.json', 'w')",
+            "retired_normalizer_error",
+        ),
+    ],
+)
+def test_normalizer_guard_rejects_local_callable_alias_bypasses(
+    source: str,
+    code: str,
+) -> None:
+    with pytest.raises(SchemaContractError, match=code):
+        validate_normalizer_static_source(source)
+
+
 def test_spec_17_3_37_schema_g4_manifest_freeze_sets_reconcile_exactly() -> None:
     rows = _g4_manifest_freeze_rows()
     freeze_hashes = {row["case_id"]: row["declared_sha256"] for row in rows}
@@ -1358,6 +1596,396 @@ def test_spec_17_3_27_schema_preflight_allowlist_guard() -> None:
     ):
         with pytest.raises(SchemaContractError, match=code):
             contracts.validate_preflight_static_source(source)
+
+
+@pytest.mark.parametrize(
+    ("source", "code"),
+    [
+        (
+            _preflight_source_fixture()
+            + "\nwriter = open\nwriter('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture("import os")
+            + "\nrunner = os.system\nrunner('forbidden')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture() + "\nimp = __import__\nimp('subprocess')",
+            "capability_import_violation",
+        ),
+        (
+            _preflight_source_fixture()
+            + "\nwriter: object = open\nwriter('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture("import os")
+            + "\nrunner = os.system\nalias = runner\nalias('forbidden')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture()
+            + "\ndef _probe():\n    if (imp := __import__):\n"
+            "        imp('subprocess')",
+            "capability_import_violation",
+        ),
+        (
+            _preflight_source_fixture()
+            + "\nwriter = __builtins__['open']\nwriter('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture() + "\ndef run(writer=open):\n"
+            "    writer('outside.json', 'w')\n"
+            "run()",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture() + "\ndef run(writer):\n"
+            "    writer('outside.json', 'w')\n"
+            "run(open)",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture("import ims_deadlock.engine as eng")
+            + "\nrun = eng.simulate\n"
+            "run({})\n"
+            "run = len",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture("import functools")
+            + "\nwriter = functools.partial(open, 'outside.json', 'w')\n"
+            "writer()",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture()
+            + "\nwriter = [open][0]\nwriter('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture()
+            + "\nwriter = {'x': open}['x']\nwriter('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture() + "\ndef make():\n"
+            "    return open\n"
+            "writer = make()\n"
+            "writer('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture() + "\ndef make():\n"
+            "    return open\n"
+            "def run(writer):\n"
+            "    writer('outside.json', 'w')\n"
+            "run(make())",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture() + "\nwriter = open if True else len\n"
+            "writer('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture() + "\nclass C:\n"
+            "    writer = open\n"
+            "C.writer('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture("from ims_deadlock.engine import *")
+            + "\nsimulate({})",
+            "capability_import_violation",
+        ),
+        (
+            _preflight_source_fixture() + "\nopen.__call__('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture("import ims_deadlock.engine as eng")
+            + "\neng.simulate.__call__({})",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture("import builtins")
+            + "\nbuiltins.__import__('subprocess')",
+            "capability_import_violation",
+        ),
+        (
+            _preflight_source_fixture("import builtins") + "\nbuiltins.eval('1 + 1')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture("import builtins") + "\nbuiltins.exec('x = 1')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture("import builtins")
+            + "\nbuiltins.getattr(object(), 'x')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture("import builtins")
+            + "\nbuiltins.setattr(object(), 'x', 1)",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture() + "\ndef make():\n"
+            "    return open, len\n"
+            "writer, other = make()\n"
+            "writer('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture() + "\nfor writer in [open]:\n"
+            "    writer('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture()
+            + "\n[writer('outside.json', 'w') for writer in [open]]",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture() + "\nmatch open:\n"
+            "    case writer:\n"
+            "        writer('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture() + "\ndef make_cm():\n"
+            "    return object()\n"
+            "with make_cm() as writer:\n"
+            "    writer('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture()
+            + "\nwriter, other = ((open, len) if True else (len, len))\n"
+            "writer('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture()
+            + "\nfor writer in ([open] if True else [len]):\n"
+            "    writer('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture()
+            + "\nfirst, *middle, writer = (len, len, len, open)\n"
+            "writer('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture("import os") + "\nclass Holder:\n"
+            "    tool = os\n"
+            "Holder.tool.system('forbidden')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture("import os") + "\nclass Holder:\n"
+            "    pass\n"
+            "holder = Holder()\n"
+            "holder.tool = os\n"
+            "holder.tool.system('forbidden')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture("import os") + "\nclass B:\n"
+            "    tool = os\n"
+            "A = B\n"
+            "A.tool.system('forbidden')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture("import ims_deadlock.engine as eng")
+            + "\n*rest, = [eng.simulate]\n"
+            "list(map(lambda f: f({}), rest))",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture()
+            + "\nlist(map(lambda writer: writer('outside.json', 'w'), [len]))",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture() + "\ndef make():\n"
+            "    return [open]\n"
+            "items = make()\n"
+            "for writer in items:\n"
+            "    writer('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture() + "\ndef make():\n"
+            "    return open, len\n"
+            "pair = make()\n"
+            "writer, other = pair\n"
+            "writer('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+        (
+            _preflight_source_fixture() + "\ndef make():\n"
+            "    return open, len\n"
+            "pair = make()\n"
+            "*writer, = pair\n"
+            "writer('outside.json', 'w')",
+            "capability_call_violation",
+        ),
+    ],
+)
+def test_preflight_guard_rejects_local_callable_alias_bypasses(
+    source: str,
+    code: str,
+) -> None:
+    with pytest.raises(SchemaContractError, match=code):
+        contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_allows_safe_record_get_method_call() -> None:
+    source = (
+        "def normalize(record):\n"
+        "    value = record.get('source_sha256', '')\n"
+        "    return {'source_sha256': value}\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_allows_safe_record_get_method_call() -> None:
+    source = (
+        "def validate_preflight(record):\n"
+        "    value = record.get('artifact_sha256', '')\n"
+        "    return {'artifact_sha256': value}\n"
+    )
+    contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_allows_safe_intermediate_data_call_argument() -> None:
+    source = (
+        "from hashlib import sha256\n"
+        "def normalize(source_bytes):\n"
+        "    digest_input = source_bytes.strip()\n"
+        "    return {'source_sha256': sha256(digest_input).hexdigest()}\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_allows_safe_intermediate_data_call_argument() -> None:
+    source = (
+        "def validate_preflight(record):\n"
+        "    copied = record.copy()\n"
+        "    field_count = len(copied)\n"
+        "    return {'artifact_sha256': record['artifact_sha256'], 'n': field_count}\n"
+    )
+    contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_allows_safe_parameter_data_method_extraction() -> None:
+    source = (
+        "def normalize(record):\n"
+        "    getter = record.get\n"
+        "    return {'source_sha256': getter('source_sha256', '')}\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_allows_safe_parameter_data_method_extraction() -> None:
+    source = (
+        "def validate_preflight(record):\n"
+        "    getter = record.get\n"
+        "    return {'artifact_sha256': getter('artifact_sha256', '')}\n"
+    )
+    contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_rejects_parameter_member_higher_order_dispatch() -> None:
+    source = (
+        _normalizer_source("import os")
+        + "\nlist(map(lambda runner: runner.system('forbidden'), [os]))"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_rejects_parameter_member_higher_order_dispatch() -> None:
+    source = (
+        _preflight_source_fixture("import os")
+        + "\nlist(map(lambda runner: runner.system('forbidden'), [os]))"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_rejects_parameter_member_extraction() -> None:
+    source = (
+        _normalizer_source("import os") + "\ndef run(runner):\n"
+        "    method = runner.system\n"
+        "    method('forbidden')\n"
+        "run(os)"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_rejects_parameter_member_extraction() -> None:
+    source = (
+        _preflight_source_fixture("import os") + "\ndef run(runner):\n"
+        "    method = runner.system\n"
+        "    method('forbidden')\n"
+        "run(os)"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_rejects_parameter_member_extraction_via_function_alias() -> (
+    None
+):
+    source = (
+        _normalizer_source("import os") + "\ndef run(runner):\n"
+        "    method = runner.system\n"
+        "    method('forbidden')\n"
+        "alias = run\n"
+        "list(map(alias, [os]))"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_rejects_parameter_member_extraction_via_function_alias() -> (
+    None
+):
+    source = (
+        _preflight_source_fixture("import os") + "\ndef run(runner):\n"
+        "    method = runner.system\n"
+        "    method('forbidden')\n"
+        "alias = run\n"
+        "list(map(alias, [os]))"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+@pytest.mark.parametrize("name", ["methodcaller", "attrgetter"])
+def test_normalizer_guard_rejects_operator_dynamic_member_dispatch(name: str) -> None:
+    source = _normalizer_source("import operator") + f"\noperator.{name}('system')"
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize("name", ["methodcaller", "attrgetter"])
+def test_preflight_guard_rejects_operator_dynamic_member_dispatch(name: str) -> None:
+    source = (
+        _preflight_source_fixture("import operator") + f"\noperator.{name}('system')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
 
 
 @pytest.mark.parametrize(

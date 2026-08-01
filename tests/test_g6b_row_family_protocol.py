@@ -43,6 +43,13 @@ _TASK6_DECLARED_CHANGED_PATHS = {
     "tests/test_g6b_protocol.py",
     "tests/test_g6b_row_family_protocol.py",
 }
+_TASK7_REPAIR_DECLARED_CHANGED_PATHS = {
+    "src/ims_deadlock/g6b_schema_contracts.py",
+    "tests/test_g6b_schema_contracts.py",
+}
+_FINAL_SCHEMA_REVIEW_DECLARED_CHANGED_PATHS = (
+    _TASK6_DECLARED_CHANGED_PATHS | _TASK7_REPAIR_DECLARED_CHANGED_PATHS
+)
 _TASK6_FORBIDDEN_EXACT_PATHS = {
     "docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md": (
         "approved_specification"
@@ -62,6 +69,11 @@ _TASK6_FORBIDDEN_PATH_PREFIXES = (
         "cases/discovery/g6b/row_families/structural_discovery_v1/case_units/",
         "case_instance_root",
     ),
+)
+_TASK6_BENIGN_IGNORED_ROOT_PREFIXES = (
+    ".mypy_cache/",
+    ".pytest_cache/",
+    ".ruff_cache/",
 )
 _NAMES = (
     "row_family_protocol.json",
@@ -1431,6 +1443,24 @@ def test_task4_review_state_uses_capability_reference_not_duplicate_booleans() -
     )
     assert "current_state_authorizes_case_creation" not in review_state
     assert "current_state_authorizes_science" not in review_state
+
+
+def test_spec_17_3_02_schema_row_family_typed_capabilities_all_false() -> None:
+    protocol = _load(BUNDLE, "row_family_protocol.json")
+    review_state = _load(BUNDLE, "review_state.json")
+
+    assert review_state["current_state"] == "ROW_FAMILY_BUNDLE_IMPLEMENTED"
+    assert review_state["adversarial_review_status"] == "PENDING"
+    assert protocol["typed_capabilities"] == EXPECTED_TYPED_CAPABILITIES
+    assert all(value is False for value in protocol["typed_capabilities"].values())
+    assert protocol["typed_capabilities_sha256"] == EXPECTED_TYPED_CAPABILITIES_SHA256
+    assert (
+        review_state["current_capability_reference"]
+        == "row_family_protocol.json#/typed_capabilities"
+    )
+    assert (
+        review_state["current_capability_sha256"] == EXPECTED_TYPED_CAPABILITIES_SHA256
+    )
 
 
 @pytest.mark.parametrize("name", CHANGED_SCHEMA_DOCUMENTS)
@@ -2886,6 +2916,18 @@ _SPEC_17_3_REQUIREMENT_MANIFEST: dict[
             "task": "protocol_state_surface",
             "aspect": "current state remains pending and all four capabilities false",
         },
+        {
+            "test_id": (
+                "tests/test_g6b_row_family_protocol.py::"
+                "test_spec_17_3_02_schema_row_family_typed_capabilities_all_false"
+            ),
+            "owner": "Task 4",
+            "task": "row_family_capability_surface",
+            "aspect": (
+                "row-family review state references the typed capability hash with "
+                "all four capabilities false"
+            ),
+        },
     ),
     3: (
         {
@@ -3613,9 +3655,16 @@ def _task6_scope_policy_category(path: str) -> str | None:
     for prefix, category in _TASK6_FORBIDDEN_PATH_PREFIXES:
         if normalized.startswith(prefix):
             return category
-    if normalized not in _TASK6_DECLARED_CHANGED_PATHS:
+    if normalized not in _FINAL_SCHEMA_REVIEW_DECLARED_CHANGED_PATHS:
         return "outside_task6_declared_files"
     return None
+
+
+def _task6_is_benign_ignored_path(path: str) -> bool:
+    normalized = path.replace("\\", "/").removeprefix("./")
+    if normalized.startswith(_TASK6_BENIGN_IGNORED_ROOT_PREFIXES):
+        return True
+    return "__pycache__" in normalized.split("/")
 
 
 def _task6_changed_and_untracked_paths() -> list[str]:
@@ -3661,10 +3710,49 @@ def _task6_changed_and_untracked_paths() -> list[str]:
     for line in ignored.stdout.splitlines():
         if not line:
             continue
-        category = _task6_scope_policy_category(line)
-        if category not in {None, "outside_task6_declared_files"}:
+        if not _task6_is_benign_ignored_path(line):
             changed.append(line)
     return sorted(set(changed))
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        (".mypy_cache/3.13/src.data.json", True),
+        (".pytest_cache/v/cache/nodeids", True),
+        (".ruff_cache/0.14.4/123456", True),
+        ("src/ims_deadlock/__pycache__/g6b.cpython-313.pyc", True),
+        ("evidence/g6b/.pytest_cache_like_result.json", False),
+        ("scratch/outside.json", False),
+    ],
+)
+def test_task6_ignored_scope_policy_only_excludes_benign_cache_paths(
+    path: str,
+    expected: bool,
+) -> None:
+    assert _task6_is_benign_ignored_path(path) is expected
+
+
+def test_task6_ignored_outside_declared_paths_remain_scope_violations() -> None:
+    path = "scratch/outside.json"
+
+    assert _task6_scope_policy_category(path) == "outside_task6_declared_files"
+    assert not _task6_is_benign_ignored_path(path)
+
+
+def test_task7_repair_scope_is_exact_and_keeps_future_capabilities_forbidden() -> None:
+    assert _TASK7_REPAIR_DECLARED_CHANGED_PATHS == {
+        "src/ims_deadlock/g6b_schema_contracts.py",
+        "tests/test_g6b_schema_contracts.py",
+    }
+    assert all(
+        _task6_scope_policy_category(path) is None
+        for path in _TASK7_REPAIR_DECLARED_CHANGED_PATHS
+    )
+    assert (
+        _task6_scope_policy_category("src/ims_deadlock/g6b_target_preflight.py")
+        == "outside_task6_declared_files"
+    )
 
 
 @pytest.mark.parametrize(
