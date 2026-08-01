@@ -25,16 +25,20 @@
 - 尚无完整论文主文件，也不能声称达到投稿或顶刊就绪状态。
 
 G6-B 当前为 schema-only governance v2 的 exact-twelve nested bundle，状态是
-`ROW_FAMILY_BUNDLE_IMPLEMENTED` 和 `OPEN/PENDING`。Task-5 schema-code subject
-commit 是 `9ef6fcec9e410b2ab7afc4144df8b948a238d95f`；批准规格 SHA-256 是
-`b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6`。
+`ROW_FAMILY_BUNDLE_IMPLEMENTED` 和 `OPEN/PENDING`。最终 Section 18 evidence
+subject commit 是 `948ff5746adcb66b68fb9c47e519f070dd2c96ba`；批准规格
+SHA-256 是 `b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6`，
+冻结 matrix raw SHA-256 是
+`487d81aa79a7bca681db81f19a4d6bd315668c43b1c4538c47f01f099d8e205f`。
 四个 capability 仍严格为 `case_construction_authorized=false`、
 `retired_authority_fingerprint_normalization_authorized=false`、
 `target_certification_preflight_authorized=false`、
 `quantitative_execution_authorized=false`。later instance roots 全部 absent；
 没有创建 case，没有运行 retired-authority normalization、Barrier-A preflight、
 CTMC 或 DES，没有检查 quantitative/scientific output，也没有 G6-B scientific
-verdict。下一门是 independent schema review，随后只能进入 separately approved
+verdict。Section 18 independent review 已完成并批准：ontology 无 P0-P2，
+scientific/boundary 无 P0-P2，code/capability P0-P3 为零；审稿时唯一指出的
+P3 evidence-publication sync 由本次文档更新关闭。first unchecked next step 只能是 separately approved
 case-construction plan，不能直接进入 science。
 
 ## 2. 权威目标与版本锁
@@ -52,18 +56,28 @@ case-construction plan，不能直接进入 science。
 - GitHub：`git@github.com:zjqc/IMS_deadlock.git`
 - 当前 G6-B v2 权威工作树：
   `D:\worktree\IMS_deadlock-g6b-spec-final-review`，branch
-  `codex/g6b-case-target-certification-final-review`，Task-5 schema-code subject
-  commit `9ef6fcec9e410b2ab7afc4144df8b948a238d95f`，已推送且提交后
+  `codex/g6b-case-target-certification-final-review`，最终 Section 18 evidence
+  subject commit `948ff5746adcb66b68fb9c47e519f070dd2c96ba`，已推送且提交后
   `HEAD...upstream = 0/0`、工作树 clean。
 - 当前批准规格：
   `docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md`，
   SHA-256
   `b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6`。
-- Task-5 权威远端证据：四文件集成 suite
+- Historical/pre-repair Task-5 权威远端证据：四文件集成 suite
   `1478 passed, 2 skipped in 2672.43s (0:44:32)`；schema suite
   `160 passed`；Section 17.3 requirements 1-44 的 manifest/collection audit
   `1 passed, 1108 deselected`；touched Python Ruff、format、mypy 和
   `git diff --check` 均通过。两个 skip 是既有受控 skip，不是 xfail 或隐藏失败。
+- Task-6 / final Section 18 权威远端证据：schema suite `356 passed`；
+  Git-scope audit `19 passed`；four-file suite `1695 passed, 2 skipped`；
+  full repository suite `2122 passed, 2 skipped`；retired focus `1 passed`；
+  manifest audit `1 passed`；Ruff full green；Ruff format `47 files already
+  formatted`；strict mypy `src` passed on 25 source files；strict mypy
+  `src tests` passed on 47 source/test files；tracked JSON parse/duplicate
+  checks covered `53 files`；sets check `5/12`；authorization fields `21` with
+  true count `0`；future roots/modules `0`；canonical vectors `19` matched on
+  remote Python 3.13.9, local Python 3.12.3, and local Python 3.13.5；diff
+  checks green。
 - `D:\worktree\IMS_deadlock-g6b-case-target-design@719194c` 是 stale
   exact-eleven plan 的隔离证据，不是代码源、测试 oracle 或当前状态依据；当前
   candidate diff 不得包含其路径或字节。
@@ -246,7 +260,7 @@ IMS-RAS^CW 稳定语义
 | G3 算法门 | PASS | 稳定 LTS、证书、Petri/refusal、阈值、CTMC、监督器、G4/G5/G6 审计；全库 341 tests | 枚举只核验证明，不替代证明 |
 | G4 案例冻结门 | PASS（历史 seal） | 九个 held-out 案例在结果检查前冻结，并在 G5 原样执行 | 该面板已退役，不能再次作为 held-out |
 | G5 论文门 | FAIL（evidence closed） | 9/9 primary/repro 精确一致，失败、反例和 inconclusive 已固定 | 不得补跑、改 sealed input、重调参或宣称通过 |
-| G6 恢复门 | IN PROGRESS | G6-A 和 G6-R 通过；G6-B schema-only governance v2 exact-twelve bundle 已在 Task-5 subject `9ef6fcec9e410b2ab7afc4144df8b948a238d95f` 实现；权威四文件 suite `1478 passed, 2 skipped`，schema `160 passed`，Ruff/format/mypy/diff check 通过 | G6-B 保持 `OPEN/PENDING`；四个 typed capabilities 全 false，later instance roots absent；无 case、normalization run、overlap instance、preflight、CTMC、DES、output inspection 或 scientific verdict；G6-C/D/E 未通过 |
+| G6 恢复门 | IN PROGRESS | G6-A 和 G6-R 通过；G6-B schema-only governance v2 exact-twelve bundle 已在 historical/pre-repair Task-5 subject `9ef6fcec9e410b2ab7afc4144df8b948a238d95f` 实现，并在 final Section 18 evidence subject `948ff5746adcb66b68fb9c47e519f070dd2c96ba` 完成 independent review publication；final evidence 包括 schema `356 passed`、Git-scope `19 passed`、four-file `1695 passed, 2 skipped`、full repo `2122 passed, 2 skipped`、JSON duplicate parse `53 files`、canonical `19` on three runtimes、Ruff/format/mypy/diff checks green；批准规格 SHA-256 与 frozen matrix raw SHA-256 均匹配 | G6-B 保持 `OPEN/PENDING`；四个 typed capabilities 全 false，later instance roots absent；无 case、normalization run、overlap instance、preflight、CTMC、DES、output inspection 或 scientific verdict；G6-C/D/E 未通过；first unchecked next step 只能是 separately approved case-construction plan |
 
 状态源：`docs/ROADMAP.md`。
 
@@ -609,7 +623,7 @@ git diff --check
 - tracked evidence JSON：10 files parsed
 - independent focused review：0 issues
 
-当前 G6-B v2 Task-5 候选在权威 Windows 工作树的提交前内容验证：
+Historical/pre-repair G6-B v2 Task-5 候选在权威 Windows 工作树的提交前内容验证：
 
 - four-file pytest：`1478 passed, 2 skipped in 2672.43s (0:44:32)`
 - schema pytest：`160 passed in 0.36s`
@@ -622,6 +636,45 @@ git diff --check
   upstream `0/0`、clean
 
 该证据验证 schema/guard 行为，不是 future runtime capability 或 G6-B science。
+
+当前 G6-B v2 final Section 18 evidence subject 在权威 Windows 工作树的验证：
+
+- authority worktree：
+  `D:\worktree\IMS_deadlock-g6b-spec-final-review`
+- branch：
+  `codex/g6b-case-target-certification-final-review`
+- subject commit：
+  `948ff5746adcb66b68fb9c47e519f070dd2c96ba`
+- push/dirty state：已推送，`HEAD...upstream = 0/0`，clean
+- schema suite：`356 passed`
+- Git-scope audit：`19 passed`
+- four-file suite：`1695 passed, 2 skipped`
+- full repository suite：`2122 passed, 2 skipped`
+- retired focus：`1 passed`
+- manifest audit：`1 passed`
+- Ruff full check：PASS
+- Ruff format check：`47 files already formatted`
+- strict mypy `src`：25 source files PASS
+- strict mypy `src tests`：47 source/test files PASS
+- tracked JSON parse/duplicate checks：`53 files parsed`
+- sets check：`5/12`
+- authorization fields：21 checked，true count `0`
+- future roots/modules：`0`
+- approved spec digest：
+  `b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6` matched
+- frozen matrix raw SHA-256：
+  `487d81aa79a7bca681db81f19a4d6bd315668c43b1c4538c47f01f099d8e205f` matched
+- canonical vector parity：19 vectors matched on remote Python 3.13.9,
+  local Python 3.12.3, and local Python 3.13.5
+- diff checks：green
+- independent reviews：ontology `APPROVE` with no P0-P2 findings；
+  scientific/boundary `APPROVE` with no P0-P2 findings；code/capability
+  `APPROVE` with zero P0-P3 findings；the sole P3 evidence-publication sync
+  noted during review is closed by this documentation update
+
+该证据完成 Section 18 schema/governance review publication，不创建 case，不运行
+retired-authority normalization、Barrier-A preflight、CTMC 或 DES，不检查输出根，
+也不形成 G6-B scientific verdict。
 
 文档-only 后继提交至少要重新运行 Markdown 固定检查、链接/路径检查、
 `git diff --check` 和目标锁；若 README 或源代码未变，可引用上一完整
@@ -645,10 +698,14 @@ git log -1 --format=%H -- PROJECT_HANDOFF.md
 ## 13. 下一硬门：G6-B
 
 下一进程不要继续重放 G4/G5，也不要先写成投稿稿件。当前 first unchecked
-gate 是 exact-twelve schema-only v2 的 independent schema review，不是案例构造
-或科学执行。Task-5 subject 是
-`9ef6fcec9e410b2ab7afc4144df8b948a238d95f`；top-level bundle 保持 exact-five，
-nested row-family bundle 为 exact-twelve，validator 为
+next step after evidence publication 只能是 separately approved
+case-construction plan，不是 normalization、preflight、CTMC、DES 或科学执行。
+Final Section 18 evidence subject 是
+`948ff5746adcb66b68fb9c47e519f070dd2c96ba`。Historical/pre-repair Task-5
+schema-code subject 是 `9ef6fcec9e410b2ab7afc4144df8b948a238d95f`，仅作为已保留
+的 schema-code baseline 和 pre-repair count evidence；不得把它当作当前继续
+入口。top-level bundle 保持 exact-five，nested row-family bundle 为 exact-twelve，
+validator 为
 `src/ims_deadlock/g6b_row_family_protocol.py` 和
 `src/ims_deadlock/g6b_schema_contracts.py`。
 
@@ -660,8 +717,9 @@ nested row-family bundle 为 exact-twelve，validator 为
 `adversarial_review_status=PENDING`；G6-B 保持 `OPEN/PENDING`，G6-C/D/E
 仍未开始。四个 later instance roots 和四个 future capability modules 均 absent。
 本 tranche 没有创建 case、运行 normalization/overlap/preflight/CTMC/DES 或检查
-科学输出。只有 independent schema review 通过后，才可提出 separately approved
-case-construction plan；两者都不自动授权 science。
+科学输出。independent schema review 已在 Section 18 final evidence subject 上
+通过；它只允许下一步提出 separately approved case-construction plan，不自动授权
+case construction、normalization、preflight 或 science。
 
 ### 13.1 G6-B 必须冻结前定义的内容
 
@@ -836,17 +894,19 @@ G6-B 推进期间可以建立诚实的 working manuscript skeleton，但必须�
 1. 从本地操作契约读取 SSH/远程路径并重锁
    `D:\worktree\IMS_deadlock-g6b-spec-final-review`、branch、HEAD、upstream、
    clean/expected-dirty scope 和批准规格 digest。
-2. 以 Task-5 subject `9ef6fcec9e410b2ab7afc4144df8b948a238d95f`
-   为 diff-scope 基线；拒绝 G4/G5/G6-R evidence、case-instance roots、scientific
-   artifact roots、批准规格或 task-declared files 之外的变更。
-3. 完成 `docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md` 的 independent
-   schema、ontology/boundary 和 code/capability review；Section 18 每行必须有
-   exact subject、命令/审稿人和 count/finding 后才可从 `NOT_RUN` 转态。
-4. 在最终提交上运行 targeted suite、full repository suite、Ruff、format、两组
-   strict mypy、tracked-JSON duplicate-member parse、cross-runtime canonical
-   vectors 和 `git diff --check`。
-5. G6-B 必须保持 `OPEN/PENDING`；schema review 通过后，下一步仍只是 separately
-   approved case-construction plan，不是 normalization、preflight 或 science。
+2. 以 final Section 18 evidence subject
+   `948ff5746adcb66b68fb9c47e519f070dd2c96ba` 为当前 schema/governance review
+   publication 基线；以 historical/pre-repair Task-5 subject
+   `9ef6fcec9e410b2ab7afc4144df8b948a238d95f` 只作为历史 diff/count evidence。
+   拒绝 G4/G5/G6-R evidence、case-instance roots、scientific artifact roots、
+   批准规格或 task-declared files 之外的变更。
+3. 确认 `docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md` Section 18
+   已完成 independent schema、ontology/boundary 和 code/capability review
+   publication：每行必须绑定 exact subject、命令/审稿人和 count/finding；不得把
+   review verdict 写回 JSON bundle state。
+4. G6-B 必须保持 `OPEN/PENDING`；schema review publication 之后，下一步仍只是
+   separately approved case-construction plan，不是 normalization、preflight 或
+   science。
 
 ## 17. 科学与工程停止条件
 

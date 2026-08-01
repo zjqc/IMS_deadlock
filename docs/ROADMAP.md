@@ -13,7 +13,7 @@
 | G3 算法门 | PASS（严格小有限模型 + P2c/P3d/P3e） | 原 G3 证据为 123 tests；加入 G4/G5/G6 协议、局部核/终端类恢复、replay 数值完整性和 post-R3 comparator fail-closed 回归后，Dell 项目 Python 3.13.9 全库 341 tests、Ruff check/format、strict mypy 通过；原 C0、BIX1/BIX2 结果不变 | 一般 plant/S3PR、结构案例物理速率、一般 persistent-buffer/AGV 阈值和风险预算/Pareto 算法仍开放 |
 | G4 案例冻结门 | PASS（historical C seal；已在 G5 原样执行） | A=`f9b9a5a5652c7a49053e7ef26d08911bd757f465`，B2=`58bbd4ab7da8c2c1d0bcdea4a12f2ae7c020d09a`，C=`e91be4d6d7511c76918093899269de4b78e69fd8`；封存时 checker 为 `FROZEN`、`errors=[]`、`confirmation_results_inspected=false`；随后只在 G5-B execution lock 下执行一次 primary 和一次 repro | G4/G5 九行已退役为历史 discovery/regression，不能再次充当 held-out；后续缺陷必须进入独立 successor freeze |
 | G5 论文门 | FAIL（evidence closed） | G5-A=`b5e5dc0494b23a54c78c420bbca50a3639de8bff`，G5-B=`8aa752804b885b79e5371c98e7961087c540f2a8`，G5-C=`ff281481068a2325cb0bde00e85fd7b753ba854a`；9/9 案例完成 primary/repro，raw/canonical/stderr hash 一致；锁定 scorer 为 `4/3/2`，透明 theorem audit 为 `6/1/2` 并另保留两项 minimality failure | CRP local bridge 预测失败；grid/medium 因 `D/F` 未穷尽 terminal classes 而确定性拒绝；不能形成完整 exact/DES 证据链或宣称论文门通过 |
-| G6 局部核—终端类恢复门 | IN PROGRESS / G6-A 与 G6-R PASS / G6-B `OPEN/PENDING` | R1/R2 失败和两项 minimality failure 原样保留；G6-B schema-only governance v2 在 Task-5 subject `9ef6fcec9e410b2ab7afc4144df8b948a238d95f` 实现 top-level exact-five、nested exact-twelve、pure validators 和 fail-closed guards；权威四文件 suite `1478 passed, 2 skipped`，schema suite `160 passed`，Ruff/format/mypy/diff check 通过；批准规格 SHA-256 为 `b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6` | `case_construction_authorized=false`、`retired_authority_fingerprint_normalization_authorized=false`、`target_certification_preflight_authorized=false`、`quantitative_execution_authorized=false`；later instance roots absent；无 case、normalization、actual overlap、preflight、CTMC、DES、output inspection 或 scientific verdict；下一门是 independent schema review，再后也只能提出 separately approved case-construction plan |
+| G6 局部核—终端类恢复门 | IN PROGRESS / G6-A 与 G6-R PASS / G6-B `OPEN/PENDING` | R1/R2 失败和两项 minimality failure 原样保留；G6-B schema-only governance v2 在 historical/pre-repair Task-5 subject `9ef6fcec9e410b2ab7afc4144df8b948a238d95f` 实现 top-level exact-five、nested exact-twelve、pure validators 和 fail-closed guards；final Section 18 evidence subject `948ff5746adcb66b68fb9c47e519f070dd2c96ba` 完成 independent review publication，证据包括 schema `356 passed`、Git-scope `19 passed`、four-file `1695 passed, 2 skipped`、full repo `2122 passed, 2 skipped`、JSON duplicate parse `53 files`、canonical `19` on Python remote3.13.9/local3.12.3/local3.13.5、Ruff/format/mypy/diff checks green；批准规格 SHA-256 与 frozen matrix raw SHA-256 均匹配 | `case_construction_authorized=false`、`retired_authority_fingerprint_normalization_authorized=false`、`target_certification_preflight_authorized=false`、`quantitative_execution_authorized=false`；later instance roots absent；无 case、normalization、actual overlap、preflight、CTMC、DES、output inspection 或 scientific verdict；first unchecked next step 只能是 separately approved case-construction plan |
 
 ## G0 仓库门
 
@@ -267,21 +267,38 @@ Bundle
 已完成：specification compliance 为 `APPROVED` 且无 blockers，code quality 为
 `APPROVED` 且无 Critical/Important/Minor blockers，scientific boundary 为
 `PASS PROTOCOL ONLY` 且无 blockers。这些 verdict 只批准
-protocol/spec/code/boundary，不授权 case construction 或 science。只有后续
-另行批准 case-construction plan 后，才可推进 case construction；
-只有 G6-B 独立审计通过后，才可创建 G6-C confirmation preregistration。
+protocol/spec/code/boundary，不授权 case construction 或 science。在该
+historical/pre-v2 阶段，后续仍需要另行批准 case-construction plan；当前 v2
+continuation rule 见下一段，不允许从 review verdict 直接跳到 G6-C
+confirmation preregistration。
 
 2026-08-01 current v2 状态取代上述 exact-eight 作为继续入口，但不改写其历史：
-Task-5 schema-code subject 为
-`9ef6fcec9e410b2ab7afc4144df8b948a238d95f`，nested bundle 是 exact-twelve，
+Historical/pre-repair Task-5 schema-code subject 为
+`9ef6fcec9e410b2ab7afc4144df8b948a238d95f`，nested bundle 是 exact-twelve。
+Final Section 18 evidence subject 为
+`948ff5746adcb66b68fb9c47e519f070dd2c96ba`，已完成 independent review
+publication：schema `356 passed`、Git-scope `19 passed`、four-file
+`1695 passed, 2 skipped`、full repo `2122 passed, 2 skipped`、retired focus
+`1 passed`、manifest `1 passed`、Ruff full green、format `47 files`、strict
+mypy `src` 25 和 `src tests` 47 pass、JSON duplicate parse `53 files`、sets `5/12`、
+auth fields 21 true0、future roots/modules0、canonical 19 on Python
+remote3.13.9/local3.12.3/local3.13.5、diff checks green；ontology review
+`APPROVE` 无 P0-P2，scientific/boundary review `APPROVE` 无 P0-P2，
+code/capability review `APPROVE` P0-P3 zero；review 唯一指出的 P3
+evidence-publication sync 由本次文档更新关闭。批准规格
+digest
+`b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6` 与 frozen
+matrix raw SHA
+`487d81aa79a7bca681db81f19a4d6bd315668c43b1c4538c47f01f099d8e205f` match。
 G6-B 保持 `OPEN/PENDING`。四个 typed capabilities 分别为
 `case_construction_authorized=false`、
 `retired_authority_fingerprint_normalization_authorized=false`、
 `target_certification_preflight_authorized=false`、
 `quantitative_execution_authorized=false`；later instance roots 均 absent。
 本 tranche 没有创建 case、运行 normalization/overlap/preflight/CTMC/DES、
-检查 output 或形成 scientific verdict。下一门是 independent schema review；
-其后也只能提出 separately approved case-construction plan，不能直接进入 science。
+检查 output 或形成 scientific verdict。First unchecked next step after evidence
+publication 只能是 separately approved case-construction plan，不能直接进入
+science。
 
 完整根因和 R3 证据见
 `docs/verification/G6_HARD_PROBLEM_ROOT_CAUSE_AND_R3_REPAIR.md`、

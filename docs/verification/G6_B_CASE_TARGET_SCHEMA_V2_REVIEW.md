@@ -53,7 +53,8 @@ not reported as runtime-capability evidence.
 Three Task-5 implementation reviews found no P0/P1 blocker in their scoped
 preflight/capability, retired-authority, and same-target/quantitative-schema
 passes. These are preliminary implementation-review facts, not substitutes for
-the three independent Section 18 reviews, which remain `NOT_RUN` below.
+the three independent Section 18 reviews recorded below for the exact review
+subject.
 
 ## Task-6 pre-commit candidate evidence
 
@@ -111,31 +112,41 @@ runtime-capability pass.
 
 ## Section 18 verification status
 
-Every row begins `NOT_RUN`. A row may change only after the exact subject
-commit, command or reviewer, and count or finding total are recorded.
+Section 18 review subject:
+`948ff5746adcb66b68fb9c47e519f070dd2c96ba`.
+
+The remote authority was re-locked at the subject state: expected path and
+branch, pushed clean, `HEAD...upstream` `0/0`. The documentation publication
+commit containing this record is a successor self-identifying evidence commit;
+it does not replace the Section 18 review subject above.
 
 | Section 18 gate | Status | Subject/evidence |
 | --- | --- | --- |
-| targeted G6-B protocol/row-family/new tests | NOT_RUN | not yet recorded |
-| state/subject/overlap/runtime/capability/refusal tests | NOT_RUN | not yet recorded |
-| full repository suite at exact commit | NOT_RUN | not yet recorded |
-| Ruff check and Python format check | NOT_RUN | not yet recorded |
-| strict mypy for source and source/tests | NOT_RUN | not yet recorded |
-| all tracked JSON duplicate-member parse | NOT_RUN | not yet recorded |
-| canonical/self-hash properties across qualified runtimes | NOT_RUN | not yet recorded |
-| every declared retired source and lineage-status fixture without outcome reads | NOT_RUN | not yet recorded |
-| exact top-level/nested file sets | NOT_RUN | not yet recorded |
-| git diff --check | NOT_RUN | not yet recorded |
-| independent ontology review | NOT_RUN | not yet recorded |
-| independent scientific/boundary review | NOT_RUN | not yet recorded |
-| independent code/capability review | NOT_RUN | not yet recorded |
-| final branch re-lock clean, pushed, 0/0 | NOT_RUN | not yet recorded |
+| targeted G6-B protocol/row-family/new tests | PASS_SCHEMA_ONLY | schema contract: `356 passed in 0.66s`; git-scope selection: `19 passed, 1109 deselected in 2.38s`; four-file suite: `1695 passed, 2 skipped in 2634.08s` |
+| state/subject/overlap/runtime/capability/refusal tests | PASS_SCHEMA_ONLY | authorization-field audit: `21` fields, `0` true; later roots absent: `0`; future modules absent: `0`; retired focus: `1 passed in 0.23s`; manifest: `1 passed in 1.80s` |
+| full repository suite at exact commit | PASS_SCHEMA_ONLY | `2122 passed, 2 skipped in 2684.70s` |
+| Ruff check and Python format check | PASS_SCHEMA_ONLY | full Ruff green; format check covered `47` files |
+| strict mypy for source and source/tests | PASS_SCHEMA_ONLY | strict source mypy covered `25` files; strict source-plus-tests mypy covered `47` files |
+| all tracked JSON duplicate-member parse | PASS_SCHEMA_ONLY | `53` tracked JSON files parsed for duplicate members |
+| canonical/self-hash properties across qualified runtimes | PASS_SCHEMA_ONLY | canonical `19` passed on remote Python 3.13.9, local Python 3.12.3, and local Python 3.13.5 |
+| every declared retired source and lineage-status fixture without outcome reads | PASS_SCHEMA_ONLY | retired-source focus: `1 passed in 0.23s`; spec digest `b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6` matched; frozen matrix raw SHA `487d81aa79a7bca681db81f19a4d6bd315668c43b1c4538c47f01f099d8e205f` matched |
+| exact top-level/nested file sets | PASS_SCHEMA_ONLY | exact top-level file set `5`; exact nested file set `12` |
+| git diff --check | PASS_SCHEMA_ONLY | remote working-tree and committed-range whitespace checks passed |
+| independent ontology review | APPROVE_SCHEMA_ONLY | no P0-P2 blockers; the noted P3 evidence-publication sync is closed by this documentation successor |
+| independent scientific/boundary review | APPROVE_SCHEMA_ONLY | no P0-P2 blockers; the noted P3 evidence-publication sync is closed here; explicitly confirmed schema evidence is not science |
+| independent code/capability review | APPROVE_SCHEMA_ONLY | P0/P1/P2/P3 finding counts all `0` |
+| final branch re-lock clean, pushed, 0/0 | PASS_SCHEMA_ONLY | remote authority path and branch were pushed clean with `HEAD...upstream` `0/0` |
 
-There is no broad Section 18 PASS status.
+There is no broad scientific PASS, no broad G6-B PASS, and no Section 18
+runtime-capability PASS. The evidence above is schema-only governance evidence
+for the exact subject commit.
 
 ## Claim boundary
 
 G6-B remains OPEN/PENDING. Exact-twelve schema validity does not establish case
 independence, confirmation, generality, robustness, or publication readiness.
-The next eligible gate is independent schema review, followed only by a
-separately approved case-construction plan. It is not scientific execution.
+All authorization flags remain false. No case construction, retired-authority
+normalization, overlap audit, Barrier-A preflight, CTMC solve, DES run, output
+inspection, or scientific verdict occurred in this tranche. Items 15 and 27
+remain runtime deferred. The next eligible gate is a separately approved
+case-construction plan. It is not scientific execution.
