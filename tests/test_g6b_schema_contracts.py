@@ -1291,9 +1291,7 @@ def test_spec_17_3_37_schema_g4_manifest_freeze_sets_reconcile_exactly() -> None
             )
 
 
-def test_spec_17_3_38_schema_deterministic_parent_owned_subunits_reject_renamed_enclosing_ids() -> (  # noqa: E501
-    None
-):
+def test_spec_17_3_38_schema_subunits_reject_renamed_enclosing_ids() -> None:
     records = [
         _subunit_record("bidirectional_island_grid", "grid-parent", "cell-a"),
         _subunit_record("supplied_l30_inequalities", "l30-parent", "ineq-a"),
@@ -1325,9 +1323,7 @@ def test_spec_17_3_38_schema_deterministic_parent_owned_subunits_reject_renamed_
         )
 
 
-def test_spec_18_schema_retired_authority_declared_sources_and_lineage_statuses_are_reproduced_without_outcome_reads() -> (  # noqa: E501
-    None
-):
+def test_spec_18_schema_retired_sources_reproduce_without_outcome_reads() -> None:
     schema = _load_retired_schema_definition()
     inventory = _retired_source_inventory()
     selectors = _retired_selector_rows()
@@ -1904,6 +1900,328 @@ def test_preflight_guard_allows_safe_parameter_data_method_extraction() -> None:
     contracts.validate_preflight_static_source(source)
 
 
+def test_normalizer_guard_allows_safe_path_call_result_methods() -> None:
+    source = (
+        "from pathlib import Path\n"
+        "def normalize(record):\n"
+        "    path = Path(record['path'])\n"
+        "    text = path.read_text(encoding='utf-8') if path.exists() else ''\n"
+        "    return {'source_sha256': text}\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_allows_safe_path_call_result_methods() -> None:
+    source = (
+        "from pathlib import Path\n"
+        "def validate_preflight(record):\n"
+        "    path = Path(record['path'])\n"
+        "    text = path.read_text(encoding='utf-8') if path.exists() else ''\n"
+        "    return {'artifact_sha256': text}\n"
+    )
+    contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_allows_safe_hash_call_result_method() -> None:
+    source = (
+        "from hashlib import sha256\n"
+        "def normalize(source_bytes):\n"
+        "    digest = sha256(source_bytes)\n"
+        "    return {'source_sha256': digest.hexdigest()}\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_allows_safe_hash_call_result_method() -> None:
+    source = (
+        "from hashlib import sha256\n"
+        "def validate_preflight(record):\n"
+        "    digest = sha256(b'artifact')\n"
+        "    return {'artifact_sha256': digest.hexdigest()}\n"
+    )
+    contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_allows_safe_json_call_result_method() -> None:
+    source = (
+        "import json\n"
+        "def normalize(source_text):\n"
+        "    document = json.loads(source_text)\n"
+        "    return {'source_sha256': document.get('source_sha256', '')}\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_allows_safe_json_call_result_method() -> None:
+    source = (
+        "import json\n"
+        "def validate_preflight(record):\n"
+        "    document = json.loads(record['payload'])\n"
+        "    return {'artifact_sha256': document.get('artifact_sha256', '')}\n"
+    )
+    contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_allows_safe_record_copy_call_result_method() -> None:
+    source = (
+        "def normalize(record):\n"
+        "    copied = record.copy()\n"
+        "    return {'source_sha256': copied.get('source_sha256', '')}\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_allows_safe_record_copy_call_result_method() -> None:
+    source = (
+        "def validate_preflight(record):\n"
+        "    copied = record.copy()\n"
+        "    return {'artifact_sha256': copied.get('artifact_sha256', '')}\n"
+    )
+    contracts.validate_preflight_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    [
+        "path.write_text('forbidden')",
+        "path.open('w')",
+    ],
+)
+def test_normalizer_guard_rejects_path_call_result_writes(suffix: str) -> None:
+    source = (
+        "from pathlib import Path\n"
+        "def normalize(record):\n"
+        "    path = Path(record['path'])\n"
+        f"    {suffix}\n"
+        "    return {'source_sha256': ''}\n"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    [
+        "path.write_text('forbidden')",
+        "path.open('w')",
+    ],
+)
+def test_preflight_guard_rejects_path_call_result_writes(suffix: str) -> None:
+    source = (
+        "from pathlib import Path\n"
+        "def validate_preflight(record):\n"
+        "    path = Path(record['path'])\n"
+        f"    {suffix}\n"
+        "    return {'artifact_sha256': record['artifact_sha256']}\n"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        (
+            "from hashlib import sha256\n"
+            "def normalize(source_bytes):\n"
+            "    digest = sha256(source_bytes)\n"
+            "    digest.update(b'x')\n"
+            "    return {'source_sha256': ''}\n"
+        ),
+        (
+            "import json\n"
+            "def normalize(source_text):\n"
+            "    document = json.loads(source_text)\n"
+            "    document.items()\n"
+            "    return {'source_sha256': ''}\n"
+        ),
+        (
+            "def normalize(record):\n"
+            "    copied = record.copy()\n"
+            "    copied.items()\n"
+            "    return {'source_sha256': ''}\n"
+        ),
+    ],
+)
+def test_normalizer_guard_rejects_unlisted_safe_call_result_methods(
+    source: str,
+) -> None:
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        (
+            "from hashlib import sha256\n"
+            "def validate_preflight(record):\n"
+            "    digest = sha256(b'artifact')\n"
+            "    digest.update(b'x')\n"
+            "    return {'artifact_sha256': ''}\n"
+        ),
+        (
+            "import json\n"
+            "def validate_preflight(record):\n"
+            "    document = json.loads(record['payload'])\n"
+            "    document.items()\n"
+            "    return {'artifact_sha256': ''}\n"
+        ),
+        (
+            "def validate_preflight(record):\n"
+            "    copied = record.copy()\n"
+            "    copied.items()\n"
+            "    return {'artifact_sha256': ''}\n"
+        ),
+    ],
+)
+def test_preflight_guard_rejects_unlisted_safe_call_result_methods(
+    source: str,
+) -> None:
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        (
+            "from hashlib import sha256\n"
+            "def normalize(source_bytes):\n"
+            "    sha256(source_bytes).update(b'x')\n"
+            "    return {'source_sha256': ''}\n"
+        ),
+        (
+            "import json\n"
+            "def normalize(source_text):\n"
+            "    json.loads(source_text).items()\n"
+            "    return {'source_sha256': ''}\n"
+        ),
+        (
+            "def normalize(record):\n"
+            "    record.copy().items()\n"
+            "    return {'source_sha256': ''}\n"
+        ),
+    ],
+)
+def test_normalizer_guard_rejects_direct_unlisted_safe_call_result_methods(
+    source: str,
+) -> None:
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        (
+            "from hashlib import sha256\n"
+            "def validate_preflight(record):\n"
+            "    sha256(b'artifact').update(b'x')\n"
+            "    return {'artifact_sha256': ''}\n"
+        ),
+        (
+            "import json\n"
+            "def validate_preflight(record):\n"
+            "    json.loads(record['payload']).items()\n"
+            "    return {'artifact_sha256': ''}\n"
+        ),
+        (
+            "def validate_preflight(record):\n"
+            "    record.copy().items()\n"
+            "    return {'artifact_sha256': ''}\n"
+        ),
+    ],
+)
+def test_preflight_guard_rejects_direct_unlisted_safe_call_result_methods(
+    source: str,
+) -> None:
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_allows_direct_listed_safe_call_result_methods() -> None:
+    source = (
+        "from hashlib import sha256\n"
+        "from pathlib import Path\n"
+        "import json\n"
+        "def normalize(record):\n"
+        "    text = Path(record['path']).read_text() "
+        "if Path(record['path']).exists() else ''\n"
+        '    value = json.loads(\'{"source_sha256": "abc"}\')'
+        ".get('source_sha256', '')\n"
+        "    digest = sha256(b'artifact').hexdigest()\n"
+        "    return {'source_sha256': digest or value or text}\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_allows_direct_listed_safe_call_result_methods() -> None:
+    source = (
+        "from hashlib import sha256\n"
+        "from pathlib import Path\n"
+        "import json\n"
+        "def validate_preflight(record):\n"
+        "    text = Path(record['path']).read_text() "
+        "if Path(record['path']).exists() else ''\n"
+        "    value = json.loads(record['payload']).get('artifact_sha256', '')\n"
+        "    copied = record.copy().get('artifact_sha256', '')\n"
+        "    digest = sha256(b'artifact').hexdigest()\n"
+        "    return {'artifact_sha256': digest or value or copied or text}\n"
+    )
+    contracts.validate_preflight_static_source(source)
+
+
+@pytest.mark.parametrize("member", ["system", "popen", "spawnv"])
+def test_normalizer_guard_rejects_user_reserved_safe_sentinel_members(
+    member: str,
+) -> None:
+    args = "(0, 'forbidden', [])" if member == "spawnv" else "('forbidden')"
+    source = (
+        "def normalize(record):\n"
+        f"    __g6b_safe_path_object__.{member}{args}\n"
+        "    return {'source_sha256': ''}\n"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize("member", ["system", "popen", "spawnv"])
+def test_preflight_guard_rejects_user_reserved_safe_sentinel_members(
+    member: str,
+) -> None:
+    args = "(0, 'forbidden', [])" if member == "spawnv" else "('forbidden')"
+    source = (
+        "def validate_preflight(record):\n"
+        f"    __g6b_safe_path_object__.{member}{args}\n"
+        "    return {'artifact_sha256': record['artifact_sha256']}\n"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_rejects_user_reserved_safe_sentinel_alias() -> None:
+    source = (
+        "def normalize(record):\n"
+        "    forged = __g6b_safe_path_object__\n"
+        "    forged.system('forbidden')\n"
+        "    return {'source_sha256': ''}\n"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_rejects_user_reserved_safe_sentinel_alias() -> None:
+    source = (
+        "def validate_preflight(record):\n"
+        "    forged = __g6b_safe_path_object__\n"
+        "    forged.system('forbidden')\n"
+        "    return {'artifact_sha256': record['artifact_sha256']}\n"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
 def test_normalizer_guard_rejects_parameter_member_higher_order_dispatch() -> None:
     source = (
         _normalizer_source("import os")
@@ -1972,6 +2290,522 @@ def test_preflight_guard_rejects_parameter_member_extraction_via_function_alias(
         contracts.validate_preflight_static_source(source)
 
 
+def test_normalizer_guard_rejects_call_returned_module_member_dispatch() -> None:
+    source = (
+        _normalizer_source("import os") + "\ndef make():\n"
+        "    return os\n"
+        "make().system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_rejects_call_returned_module_member_dispatch() -> None:
+    source = (
+        _preflight_source_fixture("import os") + "\ndef make():\n"
+        "    return os\n"
+        "make().system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_rejects_call_returned_module_member_extraction() -> None:
+    source = (
+        _normalizer_source("import os") + "\ndef make():\n"
+        "    return os\n"
+        "fn = make().system\n"
+        "fn('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_rejects_call_returned_module_member_extraction() -> None:
+    source = (
+        _preflight_source_fixture("import os") + "\ndef make():\n"
+        "    return os\n"
+        "fn = make().system\n"
+        "fn('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_rejects_call_returned_sensitive_callable() -> None:
+    source = (
+        _normalizer_source("import os") + "\ndef make():\n"
+        "    return os.system\n"
+        "fn = make()\n"
+        "fn('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_rejects_call_returned_sensitive_callable() -> None:
+    source = (
+        _preflight_source_fixture("import os") + "\ndef make():\n"
+        "    return os.system\n"
+        "fn = make()\n"
+        "fn('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_rejects_transitive_call_returned_module_member_dispatch() -> (
+    None
+):
+    source = (
+        _normalizer_source("import os") + "\ndef make():\n"
+        "    return os\n"
+        "def relay():\n"
+        "    return make()\n"
+        "relay().system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_rejects_transitive_call_returned_module_member_dispatch() -> (
+    None
+):
+    source = (
+        _preflight_source_fixture("import os") + "\ndef make():\n"
+        "    return os\n"
+        "def relay():\n"
+        "    return make()\n"
+        "relay().system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_rejects_transitive_call_returned_member_extraction() -> None:
+    source = (
+        _normalizer_source("import os") + "\ndef make():\n"
+        "    return os\n"
+        "def relay():\n"
+        "    return make()\n"
+        "fn = relay().system\n"
+        "fn('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_rejects_transitive_call_returned_member_extraction() -> None:
+    source = (
+        _preflight_source_fixture("import os") + "\ndef make():\n"
+        "    return os\n"
+        "def relay():\n"
+        "    return make()\n"
+        "fn = relay().system\n"
+        "fn('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_rejects_call_returned_module_unknown_member_chain() -> None:
+    source = (
+        _normalizer_source("import os") + "\ndef make():\n"
+        "    return os\n"
+        "make().path.system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_rejects_call_returned_module_unknown_member_chain() -> None:
+    source = (
+        _preflight_source_fixture("import os") + "\ndef make():\n"
+        "    return os\n"
+        "make().path.system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_rejects_return_call_cycle_member_dispatch() -> None:
+    source = (
+        _normalizer_source() + "\ndef make():\n"
+        "    return relay()\n"
+        "def relay():\n"
+        "    return make()\n"
+        "relay().system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_rejects_return_call_cycle_member_dispatch() -> None:
+    source = (
+        _preflight_source_fixture() + "\ndef make():\n"
+        "    return relay()\n"
+        "def relay():\n"
+        "    return make()\n"
+        "relay().system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_rejects_return_call_cycle_member_extraction() -> None:
+    source = (
+        _normalizer_source() + "\ndef make():\n"
+        "    return relay()\n"
+        "def relay():\n"
+        "    return make()\n"
+        "fn = relay().system\n"
+        "fn('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_rejects_return_call_cycle_member_extraction() -> None:
+    source = (
+        _preflight_source_fixture() + "\ndef make():\n"
+        "    return relay()\n"
+        "def relay():\n"
+        "    return make()\n"
+        "fn = relay().system\n"
+        "fn('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_rejects_conditional_return_call_cycle() -> None:
+    source = (
+        _normalizer_source() + "\ndef make(flag):\n"
+        "    return relay() if flag else relay()\n"
+        "def relay():\n"
+        "    return make(True)\n"
+        "relay().system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_rejects_conditional_return_call_cycle() -> None:
+    source = (
+        _preflight_source_fixture() + "\ndef make(flag):\n"
+        "    return relay() if flag else relay()\n"
+        "def relay():\n"
+        "    return make(True)\n"
+        "relay().system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_rejects_dynamic_subscript_return_member_dispatch() -> None:
+    source = (
+        _normalizer_source("import os") + "\ndef make(index):\n"
+        "    return [os][index]\n"
+        "make(0).system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_rejects_dynamic_subscript_return_member_dispatch() -> None:
+    source = (
+        _preflight_source_fixture("import os") + "\ndef make(index):\n"
+        "    return [os][index]\n"
+        "make(0).system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_rejects_dynamic_subscript_return_member_extraction() -> None:
+    source = (
+        _normalizer_source("import os") + "\ndef make(index):\n"
+        "    return [os][index]\n"
+        "fn = make(0).system\n"
+        "fn('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_rejects_dynamic_subscript_return_member_extraction() -> None:
+    source = (
+        _preflight_source_fixture("import os") + "\ndef make(index):\n"
+        "    return [os][index]\n"
+        "fn = make(0).system\n"
+        "fn('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    [
+        (
+            "class C:\n"
+            "    def make(self):\n"
+            "        return os\n"
+            "C().make().system('forbidden')"
+        ),
+        (
+            "class C:\n"
+            "    @staticmethod\n"
+            "    def make():\n"
+            "        return os\n"
+            "C.make().system('forbidden')"
+        ),
+        (
+            "class C:\n"
+            "    @classmethod\n"
+            "    def make(cls):\n"
+            "        return os\n"
+            "C.make().system('forbidden')"
+        ),
+        (
+            "class C:\n"
+            "    @property\n"
+            "    def tool(self):\n"
+            "        return os\n"
+            "C().tool.system('forbidden')"
+        ),
+        (
+            "class Outer:\n"
+            "    class C:\n"
+            "        def make(self):\n"
+            "            return os\n"
+            "Outer.C().make().system('forbidden')"
+        ),
+    ],
+)
+def test_normalizer_guard_rejects_class_member_return_bypasses(suffix: str) -> None:
+    source = _normalizer_source("import os") + "\n" + suffix
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    [
+        (
+            "class C:\n"
+            "    def make(self):\n"
+            "        return os\n"
+            "C().make().system('forbidden')"
+        ),
+        (
+            "class C:\n"
+            "    @staticmethod\n"
+            "    def make():\n"
+            "        return os\n"
+            "C.make().system('forbidden')"
+        ),
+        (
+            "class C:\n"
+            "    @classmethod\n"
+            "    def make(cls):\n"
+            "        return os\n"
+            "C.make().system('forbidden')"
+        ),
+        (
+            "class C:\n"
+            "    @property\n"
+            "    def tool(self):\n"
+            "        return os\n"
+            "C().tool.system('forbidden')"
+        ),
+        (
+            "class Outer:\n"
+            "    class C:\n"
+            "        def make(self):\n"
+            "            return os\n"
+            "Outer.C().make().system('forbidden')"
+        ),
+    ],
+)
+def test_preflight_guard_rejects_class_member_return_bypasses(suffix: str) -> None:
+    source = _preflight_source_fixture("import os") + "\n" + suffix
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+@pytest.mark.parametrize("module_name", ["posix", "nt"])
+def test_normalizer_guard_rejects_platform_side_effect_imports(
+    module_name: str,
+) -> None:
+    source = _normalizer_source(f"import {module_name}") + (
+        f"\n{module_name}.system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_import_violation"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize("module_name", ["posix", "nt"])
+def test_preflight_guard_rejects_platform_side_effect_imports(module_name: str) -> None:
+    source = _preflight_source_fixture(f"import {module_name}") + (
+        f"\n{module_name}.system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_import_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+@pytest.mark.parametrize("module_name", ["posix", "nt"])
+def test_normalizer_guard_rejects_platform_side_effect_import_aliases(
+    module_name: str,
+) -> None:
+    source = _normalizer_source(f"import {module_name} as platform_mod") + (
+        "\nplatform_mod.system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_import_violation"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize("module_name", ["posix", "nt"])
+def test_preflight_guard_rejects_platform_side_effect_import_aliases(
+    module_name: str,
+) -> None:
+    source = _preflight_source_fixture(f"import {module_name} as platform_mod") + (
+        "\nplatform_mod.system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_import_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+@pytest.mark.parametrize("module_name", ["posix", "nt"])
+def test_normalizer_guard_rejects_returned_platform_side_effect_modules(
+    module_name: str,
+) -> None:
+    source = _normalizer_source(f"import {module_name}") + (
+        f"\ndef make():\n    return {module_name}\nmake().system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_import_violation"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize("module_name", ["posix", "nt"])
+def test_preflight_guard_rejects_returned_platform_side_effect_modules(
+    module_name: str,
+) -> None:
+    source = _preflight_source_fixture(f"import {module_name}") + (
+        f"\ndef make():\n    return {module_name}\nmake().system('forbidden')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_import_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    [
+        "items = [os]\ntool = items[idx]\ntool.system('forbidden')",
+        "items = {'tool': os}\ntool = items[key]\ntool.system('forbidden')",
+        (
+            "items = [os]\ntool = items[0] if True else items[0]\n"
+            "tool.system('forbidden')"
+        ),
+        (
+            "def make():\n"
+            "    return [os]\n"
+            "items = make()\n"
+            "tool = items[0]\n"
+            "tool.system('forbidden')"
+        ),
+        "items = [os]\ntool = items[idx]\ntool.popen('forbidden')",
+        "items = [os]\ntool = items[idx]\ntool.spawnv(0, 'forbidden', [])",
+    ],
+)
+def test_normalizer_guard_rejects_container_alias_member_dispatch(
+    suffix: str,
+) -> None:
+    source = _normalizer_source("import os") + "\nidx = 0\nkey = 'tool'\n" + suffix
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    [
+        "items = [os]\ntool = items[idx]\ntool.system('forbidden')",
+        "items = {'tool': os}\ntool = items[key]\ntool.system('forbidden')",
+        (
+            "items = [os]\ntool = items[0] if True else items[0]\n"
+            "tool.system('forbidden')"
+        ),
+        (
+            "def make():\n"
+            "    return [os]\n"
+            "items = make()\n"
+            "tool = items[0]\n"
+            "tool.system('forbidden')"
+        ),
+        "items = [os]\ntool = items[idx]\ntool.popen('forbidden')",
+        "items = [os]\ntool = items[idx]\ntool.spawnv(0, 'forbidden', [])",
+    ],
+)
+def test_preflight_guard_rejects_container_alias_member_dispatch(
+    suffix: str,
+) -> None:
+    source = (
+        _preflight_source_fixture("import os") + "\nidx = 0\nkey = 'tool'\n" + suffix
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+def test_normalizer_guard_rejects_container_alias_member_extraction() -> None:
+    source = (
+        _normalizer_source("import os")
+        + "\nidx = 0\nitems = [os]\ntool = items[idx]\nfn = tool.system\nfn('x')"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_preflight_guard_rejects_container_alias_member_extraction() -> None:
+    source = (
+        _preflight_source_fixture("import os")
+        + "\nidx = 0\nitems = [os]\ntool = items[idx]\nfn = tool.system\nfn('x')"
+    )
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    [
+        "items = [os]\nfn = items[0].system\nfn('forbidden')",
+        "items = [os]\nfn = items[idx].system\nfn('forbidden')",
+        "items = [[os]]\nfn = items[0][0].system\nfn('forbidden')",
+    ],
+)
+def test_normalizer_guard_rejects_subscript_member_extraction(
+    suffix: str,
+) -> None:
+    source = _normalizer_source("import os") + "\nidx = 0\n" + suffix
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    [
+        "items = [os]\nfn = items[0].system\nfn('forbidden')",
+        "items = [os]\nfn = items[idx].system\nfn('forbidden')",
+        "items = [[os]]\nfn = items[0][0].system\nfn('forbidden')",
+    ],
+)
+def test_preflight_guard_rejects_subscript_member_extraction(
+    suffix: str,
+) -> None:
+    source = _preflight_source_fixture("import os") + "\nidx = 0\n" + suffix
+    with pytest.raises(SchemaContractError, match="capability_call_violation"):
+        contracts.validate_preflight_static_source(source)
+
+
 @pytest.mark.parametrize("name", ["methodcaller", "attrgetter"])
 def test_normalizer_guard_rejects_operator_dynamic_member_dispatch(name: str) -> None:
     source = _normalizer_source("import operator") + f"\noperator.{name}('system')"
@@ -2016,9 +2850,7 @@ def test_spec_17_3_28_schema_preflight_results_reject_quantitative_fields() -> N
         contracts.validate_preflight_result_payload(payload)
 
 
-def test_spec_17_3_31_schema_certified_records_require_runtime_hashes_and_estimand_id() -> (  # noqa: E501
-    None
-):
+def test_spec_17_3_31_schema_certified_records_require_runtime_hashes() -> None:
     record = _certified_record_fixture()
     contracts.validate_certified_record_runtime_evidence(record)
     record.pop("estimand_id")
@@ -2039,9 +2871,7 @@ def test_spec_17_3_32_schema_exact_des_same_case_target_certificate_domain_metri
         contracts.validate_same_target_lock(pair)
 
 
-def test_spec_17_3_33_schema_failed_mandatory_control_blocks_quantitative_authorization() -> (  # noqa: E501
-    None
-):
+def test_spec_17_3_33_schema_failed_control_blocks_quant_authorization() -> None:
     authorization = _quantitative_authorization_fixture()
     command_manifest, command_records = _valid_quantitative_command_manifest(
         authorization["authorized_scope"]
@@ -2066,9 +2896,7 @@ def test_spec_17_3_33_schema_failed_mandatory_control_blocks_quantitative_author
         )
 
 
-def test_spec_17_3_35_schema_failure_refusal_negative_boundary_evidence_append_only() -> (  # noqa: E501
-    None
-):
+def test_spec_17_3_35_schema_failure_refusal_evidence_append_only() -> None:
     schema = json.loads(
         (_ROW_FAMILY_ROOT / "failure_ledger.json").read_text(encoding="utf-8")
     )
@@ -2389,9 +3217,7 @@ def test_spec_17_3_07_schema_governance_only_projection_hash_invariance() -> Non
         )
 
 
-def test_spec_17_3_08_schema_renamed_retired_content_and_paraphrased_predictions_refuse() -> (  # noqa: E501
-    None
-):
+def test_spec_17_3_08_schema_renamed_content_predictions_refuse() -> None:
     record = _valid_dimension_comparison_record(dimension="sealed_prediction_sha256")
     _validate_dimension_comparison_positive(record)
     record["retired_authority_id"] = "retired-authority-renamed"
@@ -2408,9 +3234,7 @@ def test_spec_17_3_08_schema_renamed_retired_content_and_paraphrased_predictions
         )
 
 
-def test_spec_17_3_09_schema_scientific_content_mutations_keep_correlations_dependent() -> (  # noqa: E501
-    None
-):
+def test_spec_17_3_09_schema_content_mutations_keep_correlations() -> None:
     record = _valid_dimension_comparison_record(dimension="case_content_sha256")
     _validate_dimension_comparison_positive(record)
 
@@ -2418,9 +3242,7 @@ def test_spec_17_3_09_schema_scientific_content_mutations_keep_correlations_depe
         validate_dimension_comparison_record(record)
 
 
-def test_spec_17_3_10_schema_state_snapshot_is_pre_enumeration_parent_linked_subject_free() -> (  # noqa: E501
-    None
-):
+def test_spec_17_3_10_schema_state_snapshot_parent_link_free() -> None:
     record = _valid_dimension_comparison_record(dimension="state_snapshot_sha256")
     _validate_dimension_comparison_positive(record)
     record["comparison_policy"] = "provenance_containment_only"
@@ -2587,9 +3409,7 @@ def test_spec_17_3_19_schema_root_projection_boundaries() -> None:
         validate_output_root_reservation(injected_result_content)
 
 
-def test_spec_17_3_20_schema_metric_reuse_requires_exact_companion_group_authorization() -> (  # noqa: E501
-    None
-):
+def test_spec_17_3_20_schema_metric_reuse_requires_companion_auth() -> None:
     record = _valid_dimension_comparison_record(
         dimension="metric_schema_sha256",
         status="controlled_reuse_pass",

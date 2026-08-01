@@ -46,6 +46,7 @@ _TASK6_DECLARED_CHANGED_PATHS = {
 _TASK7_REPAIR_DECLARED_CHANGED_PATHS = {
     "src/ims_deadlock/g6b_schema_contracts.py",
     "tests/test_g6b_schema_contracts.py",
+    "tests/test_g6b_row_family_protocol.py",
 }
 _FINAL_SCHEMA_REVIEW_DECLARED_CHANGED_PATHS = (
     _TASK6_DECLARED_CHANGED_PATHS | _TASK7_REPAIR_DECLARED_CHANGED_PATHS
@@ -2994,7 +2995,7 @@ _SPEC_17_3_REQUIREMENT_MANIFEST: dict[
         {
             "test_id": (
                 "tests/test_g6b_schema_contracts.py::"
-                "test_spec_17_3_08_schema_renamed_retired_content_and_paraphrased_predictions_refuse"
+                "test_spec_17_3_08_schema_renamed_content_predictions_refuse"
             ),
             "owner": "Task 5",
             "task": "schema_contracts",
@@ -3007,7 +3008,7 @@ _SPEC_17_3_REQUIREMENT_MANIFEST: dict[
         {
             "test_id": (
                 "tests/test_g6b_schema_contracts.py::"
-                "test_spec_17_3_09_schema_scientific_content_mutations_keep_correlations_dependent"
+                "test_spec_17_3_09_schema_content_mutations_keep_correlations"
             ),
             "owner": "Task 5",
             "task": "schema_contracts",
@@ -3021,7 +3022,7 @@ _SPEC_17_3_REQUIREMENT_MANIFEST: dict[
         {
             "test_id": (
                 "tests/test_g6b_schema_contracts.py::"
-                "test_spec_17_3_10_schema_state_snapshot_is_pre_enumeration_parent_linked_subject_free"
+                "test_spec_17_3_10_schema_state_snapshot_parent_link_free"
             ),
             "owner": "Task 5",
             "task": "schema_contracts",
@@ -3161,7 +3162,7 @@ _SPEC_17_3_REQUIREMENT_MANIFEST: dict[
         {
             "test_id": (
                 "tests/test_g6b_schema_contracts.py::"
-                "test_spec_17_3_20_schema_metric_reuse_requires_exact_companion_group_authorization"
+                "test_spec_17_3_20_schema_metric_reuse_requires_companion_auth"
             ),
             "owner": "Task 5",
             "task": "schema_contracts",
@@ -3312,7 +3313,7 @@ _SPEC_17_3_REQUIREMENT_MANIFEST: dict[
         {
             "test_id": (
                 "tests/test_g6b_schema_contracts.py::"
-                "test_spec_17_3_31_schema_certified_records_require_runtime_hashes_and_estimand_id"
+                "test_spec_17_3_31_schema_certified_records_require_runtime_hashes"
             ),
             "owner": "Task 5",
             "task": "schema_contracts",
@@ -3337,7 +3338,7 @@ _SPEC_17_3_REQUIREMENT_MANIFEST: dict[
         {
             "test_id": (
                 "tests/test_g6b_schema_contracts.py::"
-                "test_spec_17_3_33_schema_failed_mandatory_control_blocks_quantitative_authorization"
+                "test_spec_17_3_33_schema_failed_control_blocks_quant_authorization"
             ),
             "owner": "Task 5",
             "task": "schema_contracts",
@@ -3363,7 +3364,7 @@ _SPEC_17_3_REQUIREMENT_MANIFEST: dict[
         {
             "test_id": (
                 "tests/test_g6b_schema_contracts.py::"
-                "test_spec_17_3_35_schema_failure_refusal_negative_boundary_evidence_append_only"
+                "test_spec_17_3_35_schema_failure_refusal_evidence_append_only"
             ),
             "owner": "Task 5",
             "task": "schema_contracts",
@@ -3402,7 +3403,7 @@ _SPEC_17_3_REQUIREMENT_MANIFEST: dict[
         {
             "test_id": (
                 "tests/test_g6b_schema_contracts.py::"
-                "test_spec_17_3_38_schema_deterministic_parent_owned_subunits_reject_renamed_enclosing_ids"
+                "test_spec_17_3_38_schema_subunits_reject_renamed_enclosing_ids"
             ),
             "owner": "Task 5",
             "task": "schema_contracts",
@@ -3744,6 +3745,7 @@ def test_task7_repair_scope_is_exact_and_keeps_future_capabilities_forbidden() -
     assert _TASK7_REPAIR_DECLARED_CHANGED_PATHS == {
         "src/ims_deadlock/g6b_schema_contracts.py",
         "tests/test_g6b_schema_contracts.py",
+        "tests/test_g6b_row_family_protocol.py",
     }
     assert all(
         _task6_scope_policy_category(path) is None

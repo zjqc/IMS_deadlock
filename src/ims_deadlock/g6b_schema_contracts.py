@@ -15,6 +15,10 @@ JsonValue: TypeAlias = (
     None | bool | int | float | str | list["JsonValue"] | dict[str, "JsonValue"]
 )
 _UNKNOWN_CALLABLE_ALIAS = "__g6b_unknown_callable__"
+_SAFE_PATH_OBJECT_ALIAS = "__g6b_safe_path_object__"
+_SAFE_HASH_OBJECT_ALIAS = "__g6b_safe_hash_object__"
+_SAFE_JSON_OBJECT_ALIAS = "__g6b_safe_json_object__"
+_SAFE_MAPPING_OBJECT_ALIAS = "__g6b_safe_mapping_object__"
 _SAFE_PARAMETER_DATA_METHODS = frozenset(
     {
         ("record", "copy"),
@@ -22,6 +26,22 @@ _SAFE_PARAMETER_DATA_METHODS = frozenset(
         ("source_bytes", "strip"),
     }
 )
+_SAFE_CALL_RESULT_OBJECTS: Mapping[str, str] = {
+    "pathlib.Path": _SAFE_PATH_OBJECT_ALIAS,
+    "Path": _SAFE_PATH_OBJECT_ALIAS,
+    "hashlib.sha256": _SAFE_HASH_OBJECT_ALIAS,
+    "sha256": _SAFE_HASH_OBJECT_ALIAS,
+    "json.loads": _SAFE_JSON_OBJECT_ALIAS,
+    "json.load": _SAFE_JSON_OBJECT_ALIAS,
+    "record.copy": _SAFE_MAPPING_OBJECT_ALIAS,
+}
+_SAFE_OBJECT_METHODS: Mapping[str, frozenset[str]] = {
+    _SAFE_PATH_OBJECT_ALIAS: frozenset({"exists", "read_text"}),
+    _SAFE_HASH_OBJECT_ALIAS: frozenset({"hexdigest"}),
+    _SAFE_JSON_OBJECT_ALIAS: frozenset({"get"}),
+    _SAFE_MAPPING_OBJECT_ALIAS: frozenset({"get"}),
+}
+_RESERVED_SAFE_ALIAS_NAMES = frozenset(_SAFE_OBJECT_METHODS)
 
 
 class SchemaContractError(ValueError):
@@ -1014,6 +1034,8 @@ SIDE_EFFECT_IMPORT_ROOTS = frozenset(
         "ftplib",
         "http.client",
         "multiprocessing",
+        "nt",
+        "posix",
         "requests",
         "shutil",
         "socket",
@@ -1774,6 +1796,10 @@ def validate_normalizer_source_guard(source: str) -> None:
         tree = ast.parse(source)
     except SyntaxError as exc:
         raise SchemaContractError("retired_normalizer_error") from exc
+    if any(isinstance(node, ast.ClassDef) for node in ast.walk(tree)):
+        raise SchemaContractError("retired_normalizer_error")
+    if _uses_reserved_safe_alias_name(tree):
+        raise SchemaContractError("retired_normalizer_error")
     aliases: dict[str, set[str]] = {}
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -1795,10 +1821,12 @@ def validate_normalizer_source_guard(source: str) -> None:
     _extend_callable_assignment_aliases(tree, aliases)
     for node in ast.walk(tree):
         if isinstance(node, ast.Call):
-            raw_call_name = _ast_call_name(node.func)
-            if not raw_call_name:
+            if isinstance(node.func, ast.Subscript):
                 raise SchemaContractError("capability_call_violation")
-            for call_name in _resolve_imported_symbols(raw_call_name, aliases):
+            call_names = _ast_callable_value_names(node.func, aliases)
+            if not call_names:
+                raise SchemaContractError("capability_call_violation")
+            for call_name in call_names:
                 if _is_unknown_callable_alias(call_name):
                     raise SchemaContractError("retired_normalizer_error", call_name)
                 _validate_normalizer_call(call_name, node)
@@ -2447,6 +2475,10 @@ def validate_preflight_static_source(source: str) -> None:
         tree = ast.parse(source)
     except SyntaxError as exc:
         raise SchemaContractError("capability_call_violation") from exc
+    if any(isinstance(node, ast.ClassDef) for node in ast.walk(tree)):
+        raise SchemaContractError("capability_call_violation")
+    if _uses_reserved_safe_alias_name(tree):
+        raise SchemaContractError("capability_call_violation")
     aliases: dict[str, set[str]] = {}
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -2467,10 +2499,12 @@ def validate_preflight_static_source(source: str) -> None:
     _extend_callable_assignment_aliases(tree, aliases)
     for node in ast.walk(tree):
         if isinstance(node, ast.Call):
-            raw_call_name = _ast_call_name(node.func)
-            if not raw_call_name:
+            if isinstance(node.func, ast.Subscript):
                 raise SchemaContractError("capability_call_violation")
-            for call_name in _resolve_imported_symbols(raw_call_name, aliases):
+            call_names = _ast_callable_value_names(node.func, aliases)
+            if not call_names:
+                raise SchemaContractError("capability_call_violation")
+            for call_name in call_names:
                 if _is_unknown_callable_alias(call_name):
                     raise SchemaContractError("capability_call_violation", call_name)
                 if _is_dynamic_import_call(call_name) or _is_dynamic_builtin_call(
@@ -2482,6 +2516,10 @@ def validate_preflight_static_source(source: str) -> None:
                         else "capability_call_violation"
                     )
                     raise SchemaContractError(code, call_name)
+                if _is_safe_object_method(call_name):
+                    continue
+                if _is_unlisted_safe_object_method(call_name):
+                    raise SchemaContractError("capability_call_violation", call_name)
                 if call_name in PREFLIGHT_FORBIDDEN_CALLS or any(
                     call_name.endswith(f".{forbidden.rsplit('.', 1)[-1]}")
                     for forbidden in PREFLIGHT_FORBIDDEN_CALLS
@@ -3520,6 +3558,10 @@ def _validate_normalizer_call(call_name: str, node: ast.Call) -> None:
         raise SchemaContractError("capability_import_violation", call_name)
     if _is_dynamic_builtin_call(call_name):
         raise SchemaContractError("capability_call_violation", call_name)
+    if _is_safe_object_method(call_name):
+        return
+    if _is_unlisted_safe_object_method(call_name):
+        raise SchemaContractError("retired_normalizer_error", call_name)
     _reject_unapproved_side_effect_call(
         call_name,
         node,
@@ -3588,6 +3630,8 @@ def _reject_unapproved_side_effect_call(
         ("write_", "append_")
     ):
         raise SchemaContractError(error_code, call_name)
+    if call_name.startswith("os."):
+        raise SchemaContractError(error_code, call_name)
     if any(call_name.startswith(prefix) for prefix in SIDE_EFFECT_CALL_PREFIXES):
         raise SchemaContractError(error_code, call_name)
 
@@ -3634,6 +3678,14 @@ def _ast_callable_value_names(
     node: ast.expr,
     aliases: Mapping[str, set[str]],
 ) -> set[str]:
+    if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Call):
+        base_names = _safe_call_result_object_names(node.value, aliases)
+        if base_names:
+            return {f"{base_name}.{node.attr}" for base_name in base_names}
+    if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Subscript):
+        base_names = _ast_callable_value_names(node.value, aliases)
+        if base_names:
+            return {f"{base_name}.{node.attr}" for base_name in base_names}
     if isinstance(node, ast.IfExp):
         return _ast_callable_value_names(
             node.body, aliases
@@ -3669,10 +3721,58 @@ def _ast_callable_value_names(
             and isinstance(node.slice.value, str)
         ):
             return {node.slice.value}
+        if base_name in aliases:
+            return _resolve_imported_symbols(base_name, aliases)
+        if isinstance(node.value, ast.Subscript):
+            return _ast_callable_value_names(node.value, aliases)
     call_name = _ast_call_name(node)
     if call_name:
         return _resolve_imported_symbols(call_name, aliases)
     return set()
+
+
+def _safe_call_result_object_names(
+    node: ast.expr,
+    aliases: Mapping[str, set[str]],
+) -> set[str]:
+    if not isinstance(node, ast.Call):
+        return set()
+    raw_call_name = _ast_call_name(node.func)
+    if not raw_call_name:
+        return set()
+    resolved_names = _resolve_imported_symbols(raw_call_name, aliases)
+    if not resolved_names:
+        return set()
+    safe_names: set[str] = set()
+    for call_name in resolved_names:
+        safe_name = _SAFE_CALL_RESULT_OBJECTS.get(call_name)
+        if safe_name is None:
+            return set()
+        safe_names.add(safe_name)
+    return safe_names
+
+
+def _is_safe_object_method(call_name: str) -> bool:
+    base_name, separator, method_name = call_name.rpartition(".")
+    if not separator:
+        return False
+    return method_name in _SAFE_OBJECT_METHODS.get(base_name, frozenset())
+
+
+def _is_unlisted_safe_object_method(call_name: str) -> bool:
+    base_name, separator, method_name = call_name.rpartition(".")
+    return bool(
+        separator
+        and base_name in _SAFE_OBJECT_METHODS
+        and method_name not in _SAFE_OBJECT_METHODS[base_name]
+    )
+
+
+def _uses_reserved_safe_alias_name(tree: ast.AST) -> bool:
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name) and node.id in _RESERVED_SAFE_ALIAS_NAMES:
+            return True
+    return False
 
 
 def _literal_container_subscript_value(node: ast.Subscript) -> ast.expr | None:
@@ -3699,6 +3799,14 @@ def _literal_container_subscript_value(node: ast.Subscript) -> ast.expr | None:
 def _value_may_produce_unknown_callable(node: ast.expr) -> bool:
     if isinstance(node, ast.Call | ast.Lambda):
         return True
+    if isinstance(node, ast.Attribute):
+        return _value_may_produce_unknown_callable(node.value)
+    if isinstance(node, ast.IfExp):
+        return _value_may_produce_unknown_callable(
+            node.body
+        ) or _value_may_produce_unknown_callable(node.orelse)
+    if isinstance(node, ast.BoolOp):
+        return any(_value_may_produce_unknown_callable(value) for value in node.values)
     if isinstance(node, ast.Subscript):
         return True
     if isinstance(node, ast.List | ast.Tuple | ast.Set | ast.Dict):
@@ -3729,9 +3837,6 @@ def _extend_callable_assignment_aliases(
             for call_name in called_names
         )
 
-    def target_is_direct_called(target_name: str) -> bool:
-        return target_name in called_names
-
     source_names: set[str] = set()
 
     def collect_source_names(value: ast.expr) -> None:
@@ -3741,13 +3846,31 @@ def _extend_callable_assignment_aliases(
                 if source_name:
                     source_names.add(source_name)
 
+    def collect_extraction_source_names(value: ast.expr) -> None:
+        if isinstance(value, ast.Call):
+            return
+        if isinstance(value, ast.Name | ast.Attribute):
+            source_name = _ast_call_name(value)
+            if source_name:
+                source_names.add(source_name)
+            return
+        for child in ast.iter_child_nodes(value):
+            if isinstance(child, ast.expr):
+                collect_extraction_source_names(child)
+
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign):
             if any(isinstance(target, ast.Tuple | ast.List) for target in node.targets):
                 collect_source_names(node.value)
+            else:
+                collect_extraction_source_names(node.value)
         elif isinstance(node, ast.AnnAssign):
             if isinstance(node.target, ast.Tuple | ast.List) and node.value is not None:
                 collect_source_names(node.value)
+            elif node.value is not None:
+                collect_extraction_source_names(node.value)
+        elif isinstance(node, ast.NamedExpr):
+            collect_extraction_source_names(node.value)
         elif isinstance(node, ast.For | ast.AsyncFor | ast.comprehension):
             collect_source_names(node.iter)
         elif isinstance(node, ast.Match):
@@ -3838,10 +3961,12 @@ def _extend_callable_assignment_aliases(
             return
         target_name = _ast_call_name(target)
         value_names = _ast_callable_value_names(value, aliases)
+        if target_name and not value_names:
+            value_names = _safe_call_result_object_names(value, aliases)
         if (
             target_name
             and not value_names
-            and (target_is_direct_called(target_name) or target_is_source(target_name))
+            and (target_is_called(target_name) or target_is_source(target_name))
             and _value_may_produce_unknown_callable(value)
         ):
             value_names = {_UNKNOWN_CALLABLE_ALIAS}
@@ -3901,6 +4026,42 @@ def _extend_callable_assignment_aliases(
 
     def positional_args(args: ast.arguments) -> list[ast.arg]:
         return [*args.posonlyargs, *args.args]
+
+    def returned_callable_value_names(value: ast.expr) -> set[str]:
+        if isinstance(value, ast.IfExp):
+            return returned_callable_value_names(
+                value.body
+            ) | returned_callable_value_names(value.orelse)
+        if isinstance(value, ast.BoolOp):
+            value_names: set[str] = set()
+            for item in value.values:
+                value_names.update(returned_callable_value_names(item))
+            return value_names
+        if isinstance(value, ast.List | ast.Tuple | ast.Set):
+            value_names = set()
+            for element in value.elts:
+                value_names.update(returned_callable_value_names(element))
+            return value_names
+        if isinstance(value, ast.Dict):
+            value_names = set()
+            for key, item in zip(value.keys, value.values, strict=False):
+                if key is not None:
+                    value_names.update(returned_callable_value_names(key))
+                value_names.update(returned_callable_value_names(item))
+            return value_names
+        if isinstance(value, ast.Subscript):
+            selected_value = _literal_container_subscript_value(value)
+            if selected_value is not None:
+                return returned_callable_value_names(selected_value)
+            value_names = returned_callable_value_names(value.value)
+            return value_names or {_UNKNOWN_CALLABLE_ALIAS}
+        if isinstance(value, ast.Call):
+            value_names = _ast_callable_value_names(value.func, aliases)
+            raw_call_name = _ast_call_name(value.func)
+            if raw_call_name:
+                value_names.add(raw_call_name)
+            return value_names
+        return _ast_callable_value_names(value, aliases)
 
     def add_parameter_taints(args: ast.arguments, body: ast.AST) -> None:
         positional = positional_args(args)
@@ -3967,6 +4128,15 @@ def _extend_callable_assignment_aliases(
         if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
             function_defs[node.name] = node
             add_parameter_taints(node.args, node)
+            for return_node in ast.walk(node):
+                if return_node is node or not isinstance(return_node, ast.Return):
+                    continue
+                if return_node.value is not None:
+                    _add_callable_alias(
+                        pending_aliases,
+                        node.name,
+                        returned_callable_value_names(return_node.value),
+                    )
         elif isinstance(node, ast.Lambda):
             add_parameter_taints(node.args, node.body)
 
@@ -4056,7 +4226,7 @@ def _resolve_imported_symbols(
 ) -> set[str]:
     def resolve_exact(name: str, seen: set[str]) -> set[str]:
         if name in seen:
-            return {name}
+            return {_UNKNOWN_CALLABLE_ALIAS}
         targets = aliases.get(name)
         if not targets:
             return {name}
@@ -4118,11 +4288,15 @@ def _is_dynamic_builtin_call(call_name: str) -> bool:
 def _is_sensitive_callable_value(call_name: str) -> bool:
     if _is_unknown_callable_alias(call_name):
         return True
+    if _is_unlisted_safe_object_method(call_name):
+        return True
     if _is_dynamic_import_call(call_name) or _is_dynamic_builtin_call(call_name):
         return True
     if call_name in {"open", "io.open"}:
         return True
     leaf_name = call_name.rsplit(".", 1)[-1]
+    if call_name.startswith("os."):
+        return True
     if leaf_name in FILESYSTEM_MUTATOR_NAMES:
         return True
     if any(call_name.startswith(prefix) for prefix in SIDE_EFFECT_CALL_PREFIXES):
