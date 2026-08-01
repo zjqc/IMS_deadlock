@@ -7,6 +7,43 @@ import pytest
 
 from ims_deadlock.g6b_protocol import validate_g6b_protocol_bundle
 
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_TASK6_LATER_INSTANCE_ROOTS = (
+    "cases/discovery/g6b/row_families/structural_discovery_v1/governance",
+    "cases/discovery/g6b/row_families/structural_discovery_v1/case_units",
+    "evidence/g6b",
+    "evidence/g6b/target_certification",
+    "artifacts/g6b",
+    "artifacts/g6b/quantitative",
+)
+_TASK6_DEFERRED_CAPABILITY_MODULES = (
+    "g6b_retired_normalizer.py",
+    "g6b_target_preflight.py",
+    "g6b_target_artifacts.py",
+    "g6b_quantitative_runner.py",
+)
+_TASK6_TYPED_CAPABILITY_FALSE_MARKERS = (
+    "case_construction_authorized=false",
+    "retired_authority_fingerprint_normalization_authorized=false",
+    "target_certification_preflight_authorized=false",
+    "quantitative_execution_authorized=false",
+)
+_TASK6_APPROVED_SPEC_SHA256 = (
+    "b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6"
+)
+_TASK6_REVIEW_PATH = "docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md"
+_TASK6_LEDGER_MARKER = "| 2026-08-01 | G6-B schema-only governance v2 | exact-twelve"
+_TASK6_FORBIDDEN_CURRENT_CLAIMS = (
+    "g6-b passed",
+    "g6-b = pass",
+    "all cases independent",
+    "eight independent dimensions",
+    "exact and des are two independent cases",
+    "preflight is non-scientific",
+    "g6-b is confirmation-ready",
+    "g6-b is top-journal ready",
+)
+
 _DOCUMENT_TOP_LEVEL_KEYS = {
     "protocol.json": "protocol_id",
     "estimand_schema.json": "future_required_hashes",
@@ -577,6 +614,46 @@ def test_spec_17_3_02_schema_only_capabilities_false(tmp_path: Path) -> None:
     protocol["scientific_execution_authorized"] = True
     _write(bundle, "protocol.json", protocol)
     _assert_invalid(bundle, "protocol.json: scientific execution")
+
+
+def test_task6_capability_modules_and_later_instance_roots_remain_absent() -> None:
+    for relative in _TASK6_LATER_INSTANCE_ROOTS:
+        assert not (_REPO_ROOT / relative).exists(), relative
+
+    source_root = _REPO_ROOT / "src/ims_deadlock"
+    for module_name in _TASK6_DEFERRED_CAPABILITY_MODULES:
+        assert not (source_root / module_name).exists(), module_name
+
+
+def test_task6_current_documents_record_exact_twelve_open_pending_boundary() -> None:
+    handoff = (_REPO_ROOT / "PROJECT_HANDOFF.md").read_text(encoding="utf-8")
+    roadmap = (_REPO_ROOT / "docs/ROADMAP.md").read_text(encoding="utf-8")
+    ledger = (_REPO_ROOT / "docs/cases/CASE_CHANGE_LEDGER.md").read_text(
+        encoding="utf-8"
+    )
+    review_path = _REPO_ROOT / _TASK6_REVIEW_PATH
+    assert review_path.is_file()
+    review = review_path.read_text(encoding="utf-8")
+    handoff_normalized = " ".join(handoff.split())
+
+    for current_document in (handoff, roadmap):
+        assert "exact-twelve" in current_document
+        assert "G6-B" in current_document
+        assert "OPEN/PENDING" in current_document
+        for marker in _TASK6_TYPED_CAPABILITY_FALSE_MARKERS:
+            assert marker in current_document
+    for changed_document in (handoff, roadmap, ledger, review):
+        normalized_casefolded = " ".join(changed_document.split()).casefold()
+        for forbidden_claim in _TASK6_FORBIDDEN_CURRENT_CLAIMS:
+            assert forbidden_claim not in normalized_casefolded
+
+    assert _TASK6_APPROVED_SPEC_SHA256 in handoff
+    assert "g6b_schema_contracts.py" in handoff
+    assert "independent schema review" in handoff_normalized
+    assert "separately approved case-construction plan" in handoff_normalized
+    assert _TASK6_LEDGER_MARKER in ledger
+    assert "Section 18 verification status" in review
+    assert "G6-B remains OPEN/PENDING" in review
 
 
 @pytest.mark.parametrize(

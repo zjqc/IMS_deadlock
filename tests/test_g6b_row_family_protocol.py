@@ -32,7 +32,37 @@ class _SpecRequirementEntry(TypedDict, total=False):
     labels: tuple[str, ...]
 
 
+_REPO_ROOT = Path(__file__).resolve().parents[1]
 BUNDLE = Path("cases/discovery/g6b/row_families/structural_discovery_v1")
+_TASK5_SCHEMA_CODE_SUBJECT_COMMIT = "9ef6fcec9e410b2ab7afc4144df8b948a238d95f"
+_TASK6_DECLARED_CHANGED_PATHS = {
+    "PROJECT_HANDOFF.md",
+    "docs/ROADMAP.md",
+    "docs/cases/CASE_CHANGE_LEDGER.md",
+    "docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md",
+    "tests/test_g6b_protocol.py",
+    "tests/test_g6b_row_family_protocol.py",
+}
+_TASK6_FORBIDDEN_EXACT_PATHS = {
+    "docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md": (
+        "approved_specification"
+    ),
+}
+_TASK6_FORBIDDEN_PATH_PREFIXES = (
+    ("cases/confirmation/g4/", "retired_g4_evidence"),
+    ("evidence/g5/", "retired_g5_evidence"),
+    ("evidence/g6/", "retired_g6r_evidence"),
+    ("evidence/g6b/", "target_certification_evidence"),
+    ("artifacts/", "scientific_artifact_root"),
+    (
+        "cases/discovery/g6b/row_families/structural_discovery_v1/governance/",
+        "case_governance_instance_root",
+    ),
+    (
+        "cases/discovery/g6b/row_families/structural_discovery_v1/case_units/",
+        "case_instance_root",
+    ),
+)
 _NAMES = (
     "row_family_protocol.json",
     "identity_schema.json",
@@ -3573,3 +3603,125 @@ def test_spec_17_3_requirement_manifest_status_and_collection_are_mechanical() -
     }
     errors = {key: value for key, value in errors.items() if value}
     assert errors == {}, json.dumps(errors, indent=2, sort_keys=True)
+
+
+def _task6_scope_policy_category(path: str) -> str | None:
+    normalized = path.replace("\\", "/").removeprefix("./")
+    exact_category = _TASK6_FORBIDDEN_EXACT_PATHS.get(normalized)
+    if exact_category is not None:
+        return exact_category
+    for prefix, category in _TASK6_FORBIDDEN_PATH_PREFIXES:
+        if normalized.startswith(prefix):
+            return category
+    if normalized not in _TASK6_DECLARED_CHANGED_PATHS:
+        return "outside_task6_declared_files"
+    return None
+
+
+def _task6_changed_and_untracked_paths() -> list[str]:
+    diff = subprocess.run(
+        [
+            "git",
+            "diff",
+            "--name-status",
+            "--no-renames",
+            _TASK5_SCHEMA_CODE_SUBJECT_COMMIT,
+            "--",
+        ],
+        cwd=_REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert diff.returncode == 0, diff.stdout + diff.stderr
+    changed: list[str] = []
+    for line in diff.stdout.splitlines():
+        parts = line.split("\t")
+        assert len(parts) == 2, f"unexpected git diff --name-status row: {line!r}"
+        changed.append(parts[1])
+
+    untracked = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard"],
+        cwd=_REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert untracked.returncode == 0, untracked.stdout + untracked.stderr
+    changed.extend(line for line in untracked.stdout.splitlines() if line)
+
+    ignored = subprocess.run(
+        ["git", "ls-files", "--others", "--ignored", "--exclude-standard"],
+        cwd=_REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert ignored.returncode == 0, ignored.stdout + ignored.stderr
+    for line in ignored.stdout.splitlines():
+        if not line:
+            continue
+        category = _task6_scope_policy_category(line)
+        if category not in {None, "outside_task6_declared_files"}:
+            changed.append(line)
+    return sorted(set(changed))
+
+
+@pytest.mark.parametrize(
+    ("path", "expected_category"),
+    [
+        (
+            "cases/confirmation/g4/FREEZE_ENTRY.json",
+            "retired_g4_evidence",
+        ),
+        ("evidence/g5/G5_RESULT_SUMMARY.json", "retired_g5_evidence"),
+        (
+            "evidence/g6/G6_HISTORICAL_REPLAY_R3_REPORT.json",
+            "retired_g6r_evidence",
+        ),
+        (
+            "evidence/g6b/target_certification/case.json",
+            "target_certification_evidence",
+        ),
+        ("artifacts/g6b/quantitative/result.json", "scientific_artifact_root"),
+        (
+            (
+                "cases/discovery/g6b/row_families/structural_discovery_v1/"
+                "governance/authorization.json"
+            ),
+            "case_governance_instance_root",
+        ),
+        (
+            (
+                "cases/discovery/g6b/row_families/structural_discovery_v1/"
+                "case_units/case.json"
+            ),
+            "case_instance_root",
+        ),
+        (
+            (
+                "docs/superpowers/specs/"
+                "2026-08-01-g6b-case-target-certification-design.md"
+            ),
+            "approved_specification",
+        ),
+        ("src/ims_deadlock/g6b_quantitative_runner.py", "outside_task6_declared_files"),
+    ],
+)
+def test_task6_diff_scope_policy_rejects_forbidden_paths(
+    path: str,
+    expected_category: str,
+) -> None:
+    assert _task6_scope_policy_category(path) == expected_category
+
+
+def test_task6_git_diff_scope_excludes_science_and_capability_surfaces() -> None:
+    changed_paths = _task6_changed_and_untracked_paths()
+    assert changed_paths
+    assert "docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md" in changed_paths
+    violations = [
+        (path, category)
+        for path in changed_paths
+        if (category := _task6_scope_policy_category(path)) is not None
+    ]
+    assert violations == [], violations[0] if violations else None
