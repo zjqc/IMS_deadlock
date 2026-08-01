@@ -1,9 +1,70 @@
 {
-  "schema_version": "ims-deadlock/g6b-row-family-review-state/v1",
+  "schema_version": "ims-deadlock/g6b-row-family-review-state/v2",
   "study_role": "discovery_only",
   "confirmation_use": "prohibited",
-  "scientific_execution_authorized": false,
-  "case_creation_authorized": false,
+  "schema_role": "schema_only",
+  "canonicalization_contract": {
+    "version": "ims-deadlock/g6b-canonical-json/v2",
+    "duplicate_members": "reject_at_every_depth",
+    "unicode_normalization": {
+      "member_names": "require_nfc_reject_non_nfc",
+      "string_values": "require_nfc_reject_non_nfc",
+      "silent_normalization": "prohibited"
+    },
+    "object_key_order": "unicode_code_point",
+    "array_order_policy": {
+      "declared_array_order": "preserve",
+      "schema_declared_set_like_arrays": "unique_and_already_sorted"
+    },
+    "utf8_serialization": {
+      "encoding": "utf-8",
+      "ensure_ascii": false,
+      "sort_keys": true,
+      "separators": [
+        ",",
+        ":"
+      ],
+      "allow_nan": false
+    },
+    "numeric_policy": {
+      "json_nan_infinity_negative_zero_float": "prohibited",
+      "counts_and_integral_budgets": "json_integers",
+      "non_integral_values": {
+        "encoding": "canonical_decimal_string",
+        "grammar": "^-?(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+        "negative_zero": "prohibited",
+        "exponent": "prohibited"
+      },
+      "historical_json_numbers": "parse_lexical_token_as_exact_decimal_not_binary_float"
+    },
+    "path_policy": {
+      "committed_paths": "case_sensitive_repo_relative_posix",
+      "drive_letter_leading_slash_backslash_empty_dot_dotdot": "prohibited",
+      "symlink_dependent_resolution": "prohibited",
+      "runtime_executables": "logical_id_plus_byte_and_environment_hashes_not_absolute_path"
+    },
+    "timestamp_policy": {
+      "timezone": "utc",
+      "format": "YYYY-MM-DDTHH:MM:SSZ",
+      "precision": "seconds"
+    }
+  },
+  "self_hash_finalization_contract": {
+    "version": "ims-deadlock/g6b-self-hash-finalization/v2",
+    "placeholder_value": null,
+    "replaced_field_count": 1,
+    "omitted_field_allowed": false,
+    "prepopulated_digest_allowed": false,
+    "excluded_field_escape_hatch_allowed": false,
+    "cross_record_reference_order": {
+      "graph": "directed_acyclic_lifecycle_order",
+      "record_may_reference": "already_finalized_upstream_records_only",
+      "upstream_embeds_downstream_back_reference": "prohibited",
+      "self_hash_field": "schema_fixed"
+    },
+    "digest_algorithm": "sha256",
+    "digest_encoding": "lowercase_hexadecimal"
+  },
   "current_state": "ROW_FAMILY_BUNDLE_IMPLEMENTED",
   "allowed_states_in_order": [
     "SPEC_DRAFTED",
@@ -11,14 +72,87 @@
     "DATA_ONLY_VALIDATION_PASSED",
     "ADVERSARIAL_ROW_FAMILY_REVIEW_PASSED",
     "CASE_CONSTRUCTION_PLAN_APPROVED",
-    "CASE_ARTIFACTS_SEALED_NO_SCIENCE",
-    "OVERLAP_AUTHORITY_LOCK_RECORDED",
-    "ACTUAL_OVERLAP_REPORT_PASSED",
-    "EXECUTION_RUNTIME_LOCK_RECORDED",
-    "EXPLICIT_SCIENCE_AUTHORIZATION_RECORDED"
+    "CASE_INPUTS_SEALED_NO_EXECUTION",
+    "RETIRED_AUTHORITY_NORMALIZATION_AUTHORIZATION_RECORDED",
+    "RETIRED_AUTHORITY_NORMALIZATION_COMPLETE",
+    "INPUT_OVERLAP_AUDIT_COMPLETE",
+    "TARGET_CERTIFICATION_RUNTIME_LOCK_RECORDED",
+    "TARGET_CERTIFICATION_PREFLIGHT_AUTHORIZATION_RECORDED",
+    "TARGET_CERTIFICATION_PREFLIGHT_COMPLETE",
+    "QUANTITATIVE_RUNTIME_LOCK_COMPLETE",
+    "QUANTITATIVE_EXECUTION_AUTHORIZATION_RECORDED",
+    "QUANTITATIVE_EXECUTION_RECORDED",
+    "BUNDLE_CLOSED_WITH_FAILURES",
+    "BUNDLE_ELIGIBLE_FOR_BOUNDARY_REVIEW"
+  ],
+  "case_state_values": [
+    "CASE_UNIT_PLANNED",
+    "CASE_UNIT_SEALED_NO_EXECUTION",
+    "CASE_UNIT_OVERLAP_PASSED",
+    "CASE_UNIT_OVERLAP_REFUSED",
+    "CASE_UNIT_TARGET_PREFLIGHT_AUTHORIZED",
+    "CASE_UNIT_TARGET_CERTIFIED",
+    "CASE_UNIT_TARGET_REFUSED",
+    "CASE_UNIT_RUNTIME_LOCKED",
+    "CASE_UNIT_QUANT_AUTHORIZED",
+    "CASE_UNIT_EXECUTED",
+    "CASE_UNIT_RETAINED_REFUSED",
+    "CASE_UNIT_REVISED_SUPERSEDED"
+  ],
+  "method_state_values": [
+    "METHOD_PLANNED",
+    "METHOD_SEALED_NO_OUTPUT",
+    "METHOD_TARGET_MATCH_VERIFIED",
+    "METHOD_TARGET_MISMATCH_REFUSED",
+    "METHOD_RUNTIME_READY",
+    "METHOD_AUTHORIZED",
+    "METHOD_EXECUTED",
+    "METHOD_RETAINED_REFUSED",
+    "METHOD_REVISED_SUPERSEDED"
   ],
   "adversarial_review_status": "PENDING",
   "forward_only": true,
-  "current_state_authorizes_case_creation": false,
-  "current_state_authorizes_science": false
+  "aggregate_predicates": {
+    "bundle_schema_valid": [
+      "exact_schema_files_validate",
+      "no_actual_case_or_science_claim"
+    ],
+    "bundle_sealed": [
+      "all_manifest_case_units_and_methods_sealed",
+      "no_planned_object_missing",
+      "manifest_hash_frozen"
+    ],
+    "overlap_audit_complete": [
+      "every_sealed_subject_terminal",
+      "normalization_manifest_complete_and_authorized",
+      "unique_lineages_deduplicated",
+      "every_refusal_ledgered",
+      "pending_case_count_zero",
+      "pending_method_count_zero",
+      "pending_companion_group_count_zero"
+    ],
+    "preflight_scope_ready": [
+      "runtime_lock_matches_sealed_bundle_scope_and_ledger",
+      "preflight_authorization_matches_command_manifest_and_evidence_root"
+    ],
+    "target_preflight_complete": [
+      "preflight_scope_ready_at_launch",
+      "every_overlap_passed_case_certified_or_refused",
+      "every_result_ledger_linked",
+      "pending_count_zero"
+    ],
+    "execution_scope_ready": [
+      "only_certified_cases_and_target_matched_methods_scoped",
+      "all_controls_satisfy_frozen_guards",
+      "refused_and_superseded_objects_retained_outside_scope"
+    ],
+    "bundle_boundary_review_eligible": [
+      "all_planned_objects_terminal",
+      "counts_reconcile",
+      "ledgers_current",
+      "no_unauthorized_output_field"
+    ]
+  },
+  "current_capability_reference": "row_family_protocol.json#/typed_capabilities",
+  "current_capability_sha256": "21ad3b3663fe1a693a7f64c19a91010c6eb1bc2ac3f3018b8c54de38997135fc"
 }

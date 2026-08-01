@@ -1,0 +1,1550 @@
+{
+  "schema_version": "ims-deadlock/g6b-retired-authority-fingerprint-schema/v1",
+  "study_role": "discovery_only",
+  "confirmation_use": "prohibited",
+  "schema_role": "schema_only",
+  "canonicalization_contract": {
+    "version": "ims-deadlock/g6b-canonical-json/v2",
+    "duplicate_members": "reject_at_every_depth",
+    "unicode_normalization": {
+      "member_names": "require_nfc_reject_non_nfc",
+      "string_values": "require_nfc_reject_non_nfc",
+      "silent_normalization": "prohibited"
+    },
+    "object_key_order": "unicode_code_point",
+    "array_order_policy": {
+      "declared_array_order": "preserve",
+      "schema_declared_set_like_arrays": "unique_and_already_sorted"
+    },
+    "utf8_serialization": {
+      "encoding": "utf-8",
+      "ensure_ascii": false,
+      "sort_keys": true,
+      "separators": [
+        ",",
+        ":"
+      ],
+      "allow_nan": false
+    },
+    "numeric_policy": {
+      "json_nan_infinity_negative_zero_float": "prohibited",
+      "counts_and_integral_budgets": "json_integers",
+      "non_integral_values": {
+        "encoding": "canonical_decimal_string",
+        "grammar": "^-?(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+        "negative_zero": "prohibited",
+        "exponent": "prohibited"
+      },
+      "historical_json_numbers": "parse_lexical_token_as_exact_decimal_not_binary_float"
+    },
+    "path_policy": {
+      "committed_paths": "case_sensitive_repo_relative_posix",
+      "drive_letter_leading_slash_backslash_empty_dot_dotdot": "prohibited",
+      "symlink_dependent_resolution": "prohibited",
+      "runtime_executables": "logical_id_plus_byte_and_environment_hashes_not_absolute_path"
+    },
+    "timestamp_policy": {
+      "timezone": "utc",
+      "format": "YYYY-MM-DDTHH:MM:SSZ",
+      "precision": "seconds"
+    }
+  },
+  "self_hash_finalization_contract": {
+    "version": "ims-deadlock/g6b-self-hash-finalization/v2",
+    "placeholder_value": null,
+    "replaced_field_count": 1,
+    "omitted_field_allowed": false,
+    "prepopulated_digest_allowed": false,
+    "excluded_field_escape_hatch_allowed": false,
+    "cross_record_reference_order": {
+      "graph": "directed_acyclic_lifecycle_order",
+      "record_may_reference": "already_finalized_upstream_records_only",
+      "upstream_embeds_downstream_back_reference": "prohibited",
+      "self_hash_field": "schema_fixed"
+    },
+    "digest_algorithm": "sha256",
+    "digest_encoding": "lowercase_hexadecimal"
+  },
+  "retired_authority_ids": [
+    "G4_FREEZE",
+    "G5_EXECUTION",
+    "G6_R_REPLAY_R3"
+  ],
+  "expected_source_inventory": [
+    "cases/confirmation/g4/FREEZE_ENTRY.json",
+    "cases/confirmation/g4/case_manifest.json",
+    "cases/confirmation/g4/cases/{case_id}.json",
+    "cases/confirmation/g4/baseline_applicability.json",
+    "cases/confirmation/g4/exclusions.json",
+    "cases/confirmation/g4/experiment_scripts_manifest.json",
+    "cases/confirmation/g4/metrics_schema.json",
+    "cases/confirmation/g4/predictions.json",
+    "cases/confirmation/g4/random_stream_manifest.json",
+    "cases/confirmation/g4/runtime_lock.json",
+    "cases/confirmation/g4/theory_manifest.json",
+    "evidence/g5/G5_EXECUTION_LOCK.json",
+    "evidence/g5/G5_RAW_HASH_MANIFEST.json",
+    "evidence/g5/G5_RESULT_SUMMARY.json",
+    "evidence/g5/G5_SCORING_ERRATUM.json",
+    "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
+    "evidence/g6/G6_HISTORICAL_REPLAY_FAILURE_LEDGER.json",
+    "evidence/g6/G6_HISTORICAL_REPLAY_R3_RAW_HASH_MANIFEST.json",
+    "evidence/g6/G6_HISTORICAL_REPLAY_R3_REPORT.json"
+  ],
+  "authority_lock_record_required_fields": [
+    "authority_id",
+    "origin_remote",
+    "origin_commit_or_null",
+    "origin_tree_hash_or_null",
+    "origin_lock_artifact_ref",
+    "origin_artifact_inventory_hash",
+    "current_merged_copy_tree_hash",
+    "identity_verification_status",
+    "authority_lock_record_sha256"
+  ],
+  "authority_source_record_required_fields": [
+    "authority_id",
+    "authority_stage",
+    "authority_lock_record_sha256",
+    "repo_relative_path",
+    "raw_byte_sha256",
+    "declared_historical_hash_or_null",
+    "declared_hash_algorithm_or_null",
+    "declared_hash_verified",
+    "allowed_projection_uses",
+    "contains_outcome_fields"
+  ],
+  "fingerprint_record_required_fields": [
+    "record_schema_version",
+    "record_id",
+    "dimension",
+    "projection_kind",
+    "subject_type",
+    "subject_id",
+    "owner_object_id",
+    "projection_schema_version",
+    "comparison_projection_ref_or_null",
+    "comparison_projection_sha256_or_null",
+    "canonicalization_version",
+    "source_authority_id",
+    "source_stage",
+    "source_method_role_or_null",
+    "source_run_role_or_null",
+    "source_artifact_refs",
+    "source_artifact_byte_hashes",
+    "normalizer_version",
+    "dimension_status",
+    "lineage_id",
+    "inherited_from_record_id_or_null",
+    "duplicate_lineage_of_record_id_or_null",
+    "depends_on_dimensions",
+    "correlated_with_dimensions",
+    "comparison_policy",
+    "applicability_reason_code_or_null",
+    "record_provenance_sha256"
+  ],
+  "fingerprint_payload_schemas": {
+    "case_content_sha256": {
+      "projection_kind": "semantic_content",
+      "subject_type": "case_unit",
+      "required_fields": [
+        "projection_schema_version",
+        "input_mode",
+        "input_semantics_version",
+        "state_snapshot_sha256",
+        "route_signature_sha256",
+        "parameter_tuple_sha256",
+        "rate_manifest_content_sha256",
+        "policy_declaration_content_sha256",
+        "selected_target_declaration_sha256",
+        "control_declaration_sha256"
+      ],
+      "set_like_array_paths": [],
+      "nested_field_contracts": {
+        "rate_manifest": {
+          "required_fields": [
+            "schema_version",
+            "rate_units",
+            "event_rate_entries"
+          ],
+          "event_rate_entry_fields": [
+            "event_role",
+            "canonical_rate",
+            "rate_source_code"
+          ],
+          "additional_properties": false
+        },
+        "policy_declaration": {
+          "required_fields": [
+            "schema_version",
+            "mode",
+            "excluded_plant_arc_roles",
+            "filter_rule_code"
+          ],
+          "additional_properties": false
+        },
+        "selected_target_declaration": {
+          "required_fields": [
+            "target_schema_version",
+            "selected_bad_classes",
+            "success_class",
+            "exact_stopping_rule",
+            "des_stopping_rule",
+            "policy_analysis_class"
+          ],
+          "additional_properties": false
+        },
+        "control_declaration": {
+          "required_fields": [
+            "schema_version",
+            "mandatory_control_roles",
+            "expected_guard_codes",
+            "failure_effect_codes"
+          ],
+          "additional_properties": false
+        }
+      },
+      "additional_properties": false,
+      "prohibited_fields": [
+        "authors",
+        "bundle_id",
+        "case_unit_id",
+        "certificate_fields",
+        "display_names",
+        "filenames",
+        "method_companion_group_id",
+        "method_observation_id",
+        "new_g6b_provenance_labels",
+        "observed_results",
+        "repo_paths",
+        "review_ids",
+        "timestamps"
+      ]
+    },
+    "state_snapshot_sha256": {
+      "projection_kind": "semantic_content",
+      "subject_type": "case_unit",
+      "required_fields": [
+        "projection_schema_version",
+        "input_mode",
+        "state_payload_schema_version",
+        "state_payload"
+      ],
+      "set_like_array_paths": [
+        "state_payload.holds",
+        "state_payload.marked_states",
+        "state_payload.mode_by_job",
+        "state_payload.requests",
+        "state_payload.stage_by_job",
+        "state_payload.states",
+        "state_payload.transitions"
+      ],
+      "nested_field_contracts": {
+        "state_payload": {
+          "discriminator": "input_mode",
+          "model_generated_lts_fields": [
+            "stable",
+            "complete",
+            "event_calendar_empty",
+            "holds",
+            "requests",
+            "mode_by_job",
+            "stage_by_job"
+          ],
+          "explicit_finite_lts_input_fields": [
+            "states",
+            "initial_state",
+            "marked_states",
+            "transitions"
+          ],
+          "hold_record_fields": [
+            "job_role",
+            "resource_role",
+            "amount"
+          ],
+          "request_record_fields": [
+            "job_role",
+            "alternatives"
+          ],
+          "request_alternative_demand_fields": [
+            "resource_role",
+            "amount"
+          ],
+          "mode_record_fields": [
+            "job_role",
+            "value"
+          ],
+          "stage_record_fields": [
+            "job_role",
+            "value"
+          ],
+          "transition_fields": [
+            "source",
+            "event_kind",
+            "target"
+          ],
+          "additional_properties": false
+        }
+      },
+      "additional_properties": false,
+      "prohibited_fields": [
+        "S_T",
+        "S_reach",
+        "authors",
+        "certificate_fields",
+        "display_names",
+        "external_state_id",
+        "filenames",
+        "generated_state_counts",
+        "new_g6b_provenance_labels",
+        "observed_results",
+        "reachability_results",
+        "repo_paths",
+        "review_ids",
+        "state_space_hash",
+        "terminal_classes",
+        "timestamps"
+      ]
+    },
+    "route_signature_sha256": {
+      "projection_kind": "semantic_content",
+      "subject_type": "case_unit",
+      "required_fields": [
+        "projection_schema_version",
+        "input_mode",
+        "route_semantics_version",
+        "typed_resource_roles",
+        "typed_route_graph",
+        "transition_kinds",
+        "resource_demand_structure",
+        "mode_transition_structure"
+      ],
+      "set_like_array_paths": [
+        "mode_transition_structure",
+        "resource_demand_structure",
+        "transition_kinds",
+        "typed_resource_roles",
+        "typed_route_graph"
+      ],
+      "nested_field_contracts": {
+        "typed_resource_role_fields": [
+          "resource_role",
+          "resource_kind",
+          "capacity_parameter_name"
+        ],
+        "typed_route_graph_fields": [
+          "route_role",
+          "ordered_stage_roles"
+        ],
+        "transition_kind_fields": [
+          "transition_role",
+          "event_kind",
+          "source_mode",
+          "target_mode"
+        ],
+        "resource_demand_fields": [
+          "transition_role",
+          "acquire_demands",
+          "release_demands"
+        ],
+        "mode_transition_fields": [
+          "job_role",
+          "source_stage",
+          "event_kind",
+          "target_stage"
+        ],
+        "route_stage_order_policy": "ordered_stage_roles_order_is_scientific_and_preserved",
+        "additional_properties": false
+      },
+      "additional_properties": false,
+      "prohibited_fields": [
+        "authors",
+        "certificate_fields",
+        "display_names",
+        "external_filenames",
+        "filenames",
+        "new_g6b_provenance_labels",
+        "observed_results",
+        "repo_paths",
+        "review_ids",
+        "timestamps"
+      ]
+    },
+    "parameter_tuple_sha256": {
+      "projection_kind": "semantic_content",
+      "subject_type": "case_unit",
+      "required_fields": [
+        "projection_schema_version",
+        "parameter_semantics_version",
+        "structural_parameter_entries",
+        "numeric_parameter_entries",
+        "state_bound",
+        "rate_manifest_content_sha256",
+        "policy_declaration_content_sha256"
+      ],
+      "set_like_array_paths": [
+        "numeric_parameter_entries",
+        "structural_parameter_entries"
+      ],
+      "nested_field_contracts": {
+        "parameter_entry_fields": [
+          "name",
+          "value_type",
+          "value"
+        ],
+        "value_type_values": [
+          "integer",
+          "canonical_decimal_string",
+          "boolean",
+          "enum",
+          "string",
+          "content_sha256",
+          "ordered_tuple"
+        ],
+        "entry_sort_key": "name",
+        "unclassified_scientific_input_policy": "validation_refusal_not_ignored_extra",
+        "additional_properties": false
+      },
+      "additional_properties": false,
+      "prohibited_fields": [
+        "authors",
+        "certificate_fields",
+        "display_names",
+        "filenames",
+        "new_g6b_provenance_labels",
+        "observed_results",
+        "repo_paths",
+        "review_ids",
+        "timestamps"
+      ]
+    },
+    "random_stream_manifest_sha256": {
+      "projection_kind": "random_process",
+      "subject_type": "method_observation",
+      "required_fields": {
+        "stochastic": [
+          "projection_schema_version",
+          "applicability_status",
+          "method_role",
+          "prng_family",
+          "prng_version",
+          "seed_root_commitment",
+          "seed_derivation_rule",
+          "substream_allocation",
+          "replicate_plan",
+          "sampling_plan"
+        ],
+        "exact": [
+          "projection_schema_version",
+          "applicability_status",
+          "method_role",
+          "reason_code"
+        ]
+      },
+      "set_like_array_paths": [
+        "substream_allocation"
+      ],
+      "nested_field_contracts": {
+        "substream_allocation_fields": [
+          "stream_role",
+          "derivation_label_sha256",
+          "start_counter",
+          "stop_counter_exclusive",
+          "stride"
+        ],
+        "substream_allocation_order": "sorted_by_stream_role",
+        "substream_allocation_disjointness": "required_for_stochastic_methods",
+        "replicate_plan_fields": [
+          "planned_replicates",
+          "replicate_index_start",
+          "replicate_index_stop_exclusive"
+        ],
+        "sampling_plan_fields": [
+          "stopping_rule_sha256",
+          "draw_budget_per_replication",
+          "common_random_numbers_group_or_null",
+          "antithetic_policy"
+        ],
+        "exact_method_projection_policy": "not_applicable_by_protocol_with_method_specific_provenance_envelope",
+        "additional_properties": false
+      },
+      "additional_properties": false,
+      "prohibited_fields": [
+        "authors",
+        "bundle_id",
+        "case_unit_id",
+        "certificate_fields",
+        "display_names",
+        "filenames",
+        "global_shared_exact_not_applicable_record",
+        "new_g6b_provenance_labels",
+        "observed_results",
+        "repo_paths",
+        "review_ids",
+        "timestamps"
+      ]
+    },
+    "output_root_reservation_sha256": {
+      "projection_kind": "provenance_containment",
+      "subject_type": "method_observation",
+      "required_fields": [
+        "projection_schema_version",
+        "bundle_id",
+        "case_unit_id",
+        "method_observation_id",
+        "run_role",
+        "logical_root_id",
+        "repo_relative_posix_path",
+        "reserved",
+        "materialized",
+        "reservation_sha256"
+      ],
+      "set_like_array_paths": [],
+      "nested_field_contracts": {
+        "reservation_sha256": "null_in_hash_preimage",
+        "reserved": true,
+        "materialized": false,
+        "path_policy": "deterministic_v2_root_template_repo_relative_posix_path",
+        "comparison_meaning": "provenance_containment_only_never_semantic_case_distinctness",
+        "additional_properties": false
+      },
+      "additional_properties": false,
+      "prohibited_fields": [
+        "absolute_path",
+        "authors",
+        "certificate_fields",
+        "display_names",
+        "fallback_path",
+        "filenames",
+        "filesystem_inspection_field",
+        "new_g6b_provenance_labels",
+        "observed_results",
+        "pre_existing_root",
+        "repo_paths",
+        "retired_materialized_logical_root_reuse",
+        "review_ids",
+        "timestamps"
+      ]
+    },
+    "sealed_prediction_sha256": {
+      "projection_kind": "semantic_content",
+      "subject_type": "case_unit",
+      "required_fields": [
+        "projection_schema_version",
+        "research_question",
+        "directional_hypotheses",
+        "falsifiers",
+        "mandatory_control_roles",
+        "planned_method_roles",
+        "scoring_rule",
+        "claim_boundary"
+      ],
+      "set_like_array_paths": [
+        "claim_boundary.forbidden_upgrade_codes",
+        "directional_hypotheses",
+        "falsifiers",
+        "mandatory_control_roles",
+        "planned_method_roles",
+        "scoring_rule.required_input_roles"
+      ],
+      "nested_field_contracts": {
+        "directional_hypothesis_fields": [
+          "hypothesis_role",
+          "statement",
+          "direction",
+          "estimand_id",
+          "scope_code",
+          "falsifier_roles"
+        ],
+        "falsifier_fields": [
+          "falsifier_role",
+          "condition_code",
+          "affected_hypothesis_roles"
+        ],
+        "statement_policy": "bounded_nfc_text_not_identity_manufacturing_embedded_json_or_post_outcome_rationale",
+        "scoring_rule_fields": [
+          "scoring_rule_id",
+          "required_input_roles",
+          "decision_table_sha256",
+          "failure_handling_code"
+        ],
+        "claim_boundary_fields": [
+          "study_role",
+          "confirmation_use",
+          "estimand_scope_code",
+          "population_scope_code",
+          "forbidden_upgrade_codes"
+        ],
+        "additional_properties": false
+      },
+      "additional_properties": false,
+      "prohibited_fields": [
+        "authors",
+        "certificate_fields",
+        "display_names",
+        "filenames",
+        "new_g6b_provenance_labels",
+        "observed_results",
+        "outcome_observation",
+        "post_outcome_rationale",
+        "repo_paths",
+        "review_ids",
+        "timestamps"
+      ]
+    },
+    "metric_schema_sha256": {
+      "projection_kind": "controlled_schema",
+      "subject_type": "method_companion_group",
+      "required_fields": [
+        "projection_schema_version",
+        "estimand_schema_version",
+        "metric_entries",
+        "aggregation_rules",
+        "censoring_rules",
+        "failure_rules",
+        "scoring_rules",
+        "comparability_scope"
+      ],
+      "set_like_array_paths": [
+        "aggregation_rules",
+        "censoring_rules",
+        "failure_rules",
+        "metric_entries",
+        "scoring_rules"
+      ],
+      "nested_field_contracts": {
+        "metric_entry_fields": [
+          "metric_id",
+          "estimand_id",
+          "unit",
+          "domain",
+          "direction",
+          "aggregation_rule_id",
+          "censoring_rule_id",
+          "failure_rule_id",
+          "scoring_rule_id",
+          "applicability_rule"
+        ],
+        "metric_entry_sort_key": "metric_id",
+        "rule_arrays": "exact_keyed_records_with_no_free_form_objects",
+        "reuse_meaning": "controlled_schema_reuse_for_exact_des_comparability_not_case_distinctness",
+        "additional_properties": false
+      },
+      "additional_properties": false,
+      "prohibited_fields": [
+        "authors",
+        "certificate_fields",
+        "display_names",
+        "filenames",
+        "new_g6b_provenance_labels",
+        "observed_results",
+        "repo_paths",
+        "review_ids",
+        "timestamps"
+      ]
+    }
+  },
+  "dimension_status_values": [
+    "direct_stored",
+    "derived_by_versioned_normalizer",
+    "inherited_from_authority",
+    "not_applicable_by_protocol",
+    "not_applicable_retired_stage",
+    "unreconstructable_refuse"
+  ],
+  "comparison_status_values": [
+    "pass_distinct",
+    "overlap_hit",
+    "controlled_reuse_pass",
+    "disjoint_stream_pass",
+    "not_applicable_by_protocol_pass",
+    "containment_separation_pass",
+    "inherited_compared",
+    "missing_source",
+    "unreconstructable",
+    "normalizer_error",
+    "semantic_lineage_ambiguous"
+  ],
+  "normalization_manifest_required_fields": [
+    "schema_version",
+    "manifest_id",
+    "source_remote",
+    "source_head",
+    "source_tree_hash",
+    "source_dirty_state",
+    "authority_ids",
+    "expected_file_manifest",
+    "verified_file_byte_hashes",
+    "frozen_hash_validation_results",
+    "historical_canonicalization_versions",
+    "projection_canonicalization_version",
+    "normalizer_version",
+    "normalizer_code_sha256",
+    "normalization_authorization_sha256",
+    "authority_lock_record_hashes",
+    "authority_source_record_hashes",
+    "fingerprint_record_hashes",
+    "unique_lineage_map",
+    "dimension_status_counts",
+    "missing_source_records",
+    "unreconstructable_records",
+    "comparison_eligibility",
+    "created_at_utc",
+    "manifest_sha256"
+  ],
+  "normalization_authorization_required_fields": [
+    "schema_version",
+    "authorization_id",
+    "capability",
+    "authorized",
+    "source_head",
+    "source_tree_hash",
+    "authority_ids",
+    "expected_file_manifest_hash",
+    "allowed_source_paths",
+    "allowed_json_fields_by_source",
+    "allowed_historical_builder_symbols",
+    "normalizer_code_sha256",
+    "allowed_operations",
+    "allowed_project_imports",
+    "forbidden_imports",
+    "forbidden_calls",
+    "allowed_output_schema",
+    "allowed_output_root",
+    "review_artifact_hash",
+    "issued_at_utc",
+    "invalidated_by_identity_drift",
+    "authorization_sha256"
+  ],
+  "allowed_use_values": [
+    "authority_identity",
+    "source_hash_validation",
+    "case_content_projection",
+    "prediction_projection",
+    "metric_projection",
+    "random_stream_projection",
+    "lineage_link",
+    "method_stage_projection",
+    "output_root_source_equality_validation",
+    "output_root_containment_projection"
+  ],
+  "allowed_json_fields_by_source": [
+    {
+      "source_path_pattern": "cases/confirmation/g4/FREEZE_ENTRY.json",
+      "selector_kind": "exact_pointer_set",
+      "selectors": [
+        "/schema_version",
+        "/freeze_id",
+        "/implementation_commit",
+        "/preregistration_commit",
+        "/confirmation_results_inspected"
+      ],
+      "allowed_use": "authority_identity"
+    },
+    {
+      "source_path_pattern": "cases/confirmation/g4/FREEZE_ENTRY.json",
+      "selector_kind": "prefix_set",
+      "selectors": [
+        "/artifact_hashes",
+        "/case_json_sha256_by_id"
+      ],
+      "allowed_use": "source_hash_validation"
+    },
+    {
+      "source_path_pattern": "cases/confirmation/g4/FREEZE_ENTRY.json",
+      "selector_kind": "exact_pointer_set",
+      "selectors": [
+        "/freeze_id",
+        "/implementation_commit",
+        "/preregistration_commit",
+        "/included_cases",
+        "/excluded_cases"
+      ],
+      "allowed_use": "lineage_link"
+    },
+    {
+      "source_path_pattern": "cases/confirmation/g4/cases/{case_id}.json",
+      "selector_kind": "exact_pointer_set",
+      "selectors": [
+        "/schema_version",
+        "/case_id",
+        "/family",
+        "/protocol",
+        "/contamination/derived_from_discovery_case",
+        "/contamination/excluded_discovery_case_ids",
+        "/contamination/excluded_discovery_family_ids",
+        "/contamination/provenance"
+      ],
+      "allowed_use": "lineage_link"
+    },
+    {
+      "source_path_pattern": "cases/confirmation/g4/cases/{case_id}.json",
+      "selector_kind": "prefix_set",
+      "selectors": [
+        "/input_payload",
+        "/expected_outputs_schema"
+      ],
+      "allowed_use": "case_content_projection"
+    },
+    {
+      "source_path_pattern": "cases/confirmation/g4/case_manifest.json",
+      "selector_kind": "element_pointer_pattern_set",
+      "selectors": [
+        "/schema_version",
+        "/cases/*/case_id",
+        "/cases/*/family",
+        "/cases/*/path",
+        "/cases/*/hash_mode",
+        "/cases/*/sha256"
+      ],
+      "allowed_use": "authority_identity"
+    },
+    {
+      "source_path_pattern": "cases/confirmation/g4/case_manifest.json",
+      "selector_kind": "element_pointer_pattern_set",
+      "selectors": [
+        "/cases/*/path",
+        "/cases/*/hash_mode",
+        "/cases/*/sha256"
+      ],
+      "allowed_use": "source_hash_validation"
+    },
+    {
+      "source_path_pattern": "cases/confirmation/g4/case_manifest.json",
+      "selector_kind": "element_pointer_pattern_set",
+      "selectors": [
+        "/cases/*/case_id",
+        "/cases/*/family",
+        "/cases/*/path"
+      ],
+      "allowed_use": "lineage_link"
+    },
+    {
+      "source_path_pattern": "cases/confirmation/g4/predictions.json",
+      "selector_kind": "prefix_set",
+      "selectors": [
+        "/schema_version",
+        "/predictions"
+      ],
+      "allowed_use": "prediction_projection"
+    },
+    {
+      "source_path_pattern": "cases/confirmation/g4/metrics_schema.json",
+      "selector_kind": "prefix_set",
+      "selectors": [
+        "/schema_version",
+        "/metrics"
+      ],
+      "allowed_use": "metric_projection"
+    },
+    {
+      "source_path_pattern": "cases/confirmation/g4/random_stream_manifest.json",
+      "selector_kind": "prefix_set",
+      "selectors": [
+        "/schema_version",
+        "/streams_by_case"
+      ],
+      "allowed_use": "random_stream_projection"
+    },
+    {
+      "source_path_pattern": "cases/confirmation/g4/{baseline_applicability.json,exclusions.json,experiment_scripts_manifest.json,runtime_lock.json,theory_manifest.json}",
+      "selector_kind": "raw_bytes_only",
+      "selectors": [],
+      "allowed_use": "source_hash_validation"
+    },
+    {
+      "source_path_pattern": "evidence/g5/G5_EXECUTION_LOCK.json",
+      "selector_kind": "exact_pointer_set",
+      "selectors": [
+        "/schema_version",
+        "/lock_id",
+        "/created_at_utc",
+        "/contains_held_out_results",
+        "/confirmation_results_inspected",
+        "/target_worktree/branch",
+        "/target_worktree/pre_lock_head_commit",
+        "/target_worktree/required_execution_parent_commit",
+        "/target_worktree/dirty",
+        "/target_worktree/upstream_ahead",
+        "/target_worktree/upstream_behind",
+        "/runtime/runtime_lock_sha256",
+        "/runtime/python_version"
+      ],
+      "allowed_use": "authority_identity"
+    },
+    {
+      "source_path_pattern": "evidence/g5/G5_EXECUTION_LOCK.json",
+      "selector_kind": "prefix_set",
+      "selectors": [
+        "/source_plan/sha256",
+        "/g5a_tooling/tooling_commit",
+        "/runtime/runtime_lock_sha256",
+        "/g5a_tooling/file_hashes",
+        "/g4_seal/artifact_hashes",
+        "/g4_seal/case_json_sha256_by_id"
+      ],
+      "allowed_use": "source_hash_validation"
+    },
+    {
+      "source_path_pattern": "evidence/g5/G5_EXECUTION_LOCK.json",
+      "selector_kind": "prefix_set",
+      "selectors": [
+        "/source_plan/integrated_source_commit",
+        "/source_plan/implementation_commit_a",
+        "/source_plan/preregistration_commit_b2",
+        "/source_plan/seal_commit_c",
+        "/g4_seal"
+      ],
+      "allowed_use": "lineage_link"
+    },
+    {
+      "source_path_pattern": "evidence/g5/G5_EXECUTION_LOCK.json",
+      "selector_kind": "prefix_set",
+      "selectors": [
+        "/contains_held_out_results",
+        "/confirmation_results_inspected",
+        "/execution_schedule"
+      ],
+      "allowed_use": "method_stage_projection"
+    },
+    {
+      "source_path_pattern": "evidence/g5/G5_EXECUTION_LOCK.json",
+      "selector_kind": "prefix_set",
+      "selectors": [
+        "/output_roots/raw_output_root_relative",
+        "/output_roots/must_not_exist_before_execution",
+        "/output_roots/pre_execution_probe",
+        "/output_roots/must_be_outside_frozen_bundle",
+        "/output_roots/frozen_bundle_root_relative",
+        "/execution_schedule"
+      ],
+      "allowed_use": "output_root_containment_projection"
+    },
+    {
+      "source_path_pattern": "evidence/g5/G5_RAW_HASH_MANIFEST.json",
+      "selector_kind": "prefix_set",
+      "selectors": [
+        "/schema_version",
+        "/freeze_id",
+        "/case_count",
+        "/cases"
+      ],
+      "allowed_use": "source_hash_validation"
+    },
+    {
+      "source_path_pattern": "evidence/g5/G5_RESULT_SUMMARY.json",
+      "selector_kind": "raw_bytes_only",
+      "selectors": [],
+      "allowed_use": "source_hash_validation"
+    },
+    {
+      "source_path_pattern": "evidence/g5/G5_SCORING_ERRATUM.json",
+      "selector_kind": "exact_pointer_set",
+      "selectors": [
+        "/schema_version",
+        "/freeze_id",
+        "/locked_runtime_and_execution/branch",
+        "/locked_runtime_and_execution/g5_a_tooling_commit",
+        "/locked_runtime_and_execution/g5_b_execution_lock_commit",
+        "/locked_runtime_and_execution/post_execution_evidence_commit/full",
+        "/locked_runtime_and_execution/python_version"
+      ],
+      "allowed_use": "authority_identity"
+    },
+    {
+      "source_path_pattern": "evidence/g5/G5_SCORING_ERRATUM.json",
+      "selector_kind": "prefix_set",
+      "selectors": [
+        "/locked_hashes"
+      ],
+      "allowed_use": "source_hash_validation"
+    },
+    {
+      "source_path_pattern": "evidence/g5/G5_SCORING_ERRATUM.json",
+      "selector_kind": "exact_pointer_set",
+      "selectors": [
+        "/freeze_id",
+        "/locked_runtime_and_execution/g5_a_tooling_commit",
+        "/locked_runtime_and_execution/g5_b_execution_lock_commit",
+        "/locked_runtime_and_execution/post_execution_evidence_commit/full"
+      ],
+      "allowed_use": "lineage_link"
+    },
+    {
+      "source_path_pattern": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
+      "selector_kind": "exact_pointer_set",
+      "selectors": [
+        "/schema_version",
+        "/study_role",
+        "/no_confirmation_use",
+        "/runtime/python_version",
+        "/published_ref",
+        "/published_head",
+        "/published_tree"
+      ],
+      "allowed_use": "authority_identity"
+    },
+    {
+      "source_path_pattern": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
+      "selector_kind": "prefix_set",
+      "selectors": [
+        "/default_estimand_spec_sha256",
+        "/historical_g4/artifact_hashes",
+        "/g6_code_file_hashes",
+        "/original_g5"
+      ],
+      "allowed_use": "source_hash_validation"
+    },
+    {
+      "source_path_pattern": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
+      "selector_kind": "prefix_set",
+      "selectors": [
+        "/historical_g4",
+        "/original_g5"
+      ],
+      "allowed_use": "lineage_link"
+    },
+    {
+      "source_path_pattern": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
+      "selector_kind": "prefix_set",
+      "selectors": [
+        "/case_ids",
+        "/run_labels",
+        "/study_role",
+        "/no_confirmation_use",
+        "/retry_enabled",
+        "/third_run_allowed",
+        "/same_case_overlap_allowed",
+        "/nested_scientific_parallelism_allowed",
+        "/stale_lease_policy",
+        "/execution_schedule"
+      ],
+      "allowed_use": "method_stage_projection"
+    },
+    {
+      "source_path_pattern": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
+      "selector_kind": "prefix_set",
+      "selectors": [
+        "/default_estimand_spec_sha256",
+        "/default_estimand_spec"
+      ],
+      "allowed_use": "metric_projection"
+    },
+    {
+      "source_path_pattern": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
+      "selector_kind": "prefix_set",
+      "selectors": [
+        "/output_root",
+        "/case_ids",
+        "/run_labels",
+        "/retry_enabled",
+        "/third_run_allowed",
+        "/same_case_overlap_allowed",
+        "/nested_scientific_parallelism_allowed",
+        "/execution_schedule"
+      ],
+      "allowed_use": "output_root_containment_projection"
+    },
+    {
+      "source_path_pattern": "evidence/g6/G6_HISTORICAL_REPLAY_R3_RAW_HASH_MANIFEST.json",
+      "selector_kind": "exact_pointer_set",
+      "selectors": [
+        "/output_root"
+      ],
+      "allowed_use": "output_root_source_equality_validation"
+    },
+    {
+      "source_path_pattern": "evidence/g6/G6_HISTORICAL_REPLAY_R3_RAW_HASH_MANIFEST.json",
+      "selector_kind": "prefix_set",
+      "selectors": [
+        "/schema_version",
+        "/manifest_version",
+        "/study_role",
+        "/code/published_ref",
+        "/code/head",
+        "/code/tree",
+        "/code/dirty_state",
+        "/file_count",
+        "/total_bytes",
+        "/canonical_path_sha256_map_hash",
+        "/canonicalization",
+        "/excluded_files",
+        "/relative_path_to_sha256"
+      ],
+      "allowed_use": "source_hash_validation"
+    },
+    {
+      "source_path_pattern": "evidence/g6/{G6_HISTORICAL_REPLAY_FAILURE_LEDGER.json,G6_HISTORICAL_REPLAY_R3_REPORT.json}",
+      "selector_kind": "raw_bytes_only",
+      "selectors": [],
+      "allowed_use": "source_hash_validation"
+    }
+  ],
+  "input_overlap_authority_lock_required_fields": [
+    "schema_version",
+    "lock_id",
+    "source_remote",
+    "source_branch",
+    "source_head",
+    "source_tree_hash",
+    "source_dirty_state",
+    "source_worktree_identity",
+    "sealed_bundle_manifest_hash",
+    "normalization_authorization_sha256",
+    "normalization_manifest_sha256",
+    "authority_lock_record_hashes",
+    "unique_lineage_map_sha256",
+    "comparison_command_manifest_sha256",
+    "validator_code_hashes",
+    "canonicalization_versions",
+    "normalizer_version",
+    "planned_case_unit_ids",
+    "planned_method_observation_ids",
+    "planned_method_companion_group_ids",
+    "ledger_head_hash",
+    "created_at_utc",
+    "lock_sha256"
+  ],
+  "source_worktree_identity_required_fields": [
+    "logical_worktree_id",
+    "worktree_kind",
+    "gitdir_file_sha256_or_null",
+    "common_dir_identity_sha256",
+    "worktree_admin_identity_sha256",
+    "checked_out_tree_hash"
+  ],
+  "per_dimension_comparison_required_fields": [
+    "comparison_id",
+    "bundle_id",
+    "new_fingerprint_record_hash",
+    "retired_fingerprint_record_hash",
+    "dimension",
+    "projection_kind",
+    "new_subject_type",
+    "new_subject_id",
+    "retired_authority_id",
+    "retired_lineage_id",
+    "new_comparison_projection_sha256_or_null",
+    "retired_comparison_projection_sha256_or_null",
+    "comparison_policy",
+    "comparison_status",
+    "semantic_lineage_audit_ref_or_null",
+    "reuse_authorization_ref_or_null",
+    "refusal_reason_code_or_null",
+    "comparison_record_sha256"
+  ],
+  "semantic_lineage_audit_required_fields": [
+    "schema_version",
+    "audit_id",
+    "new_case_unit_id",
+    "retired_authority_id",
+    "retired_lineage_id",
+    "new_case_content_projection_sha256",
+    "retired_case_content_projection_sha256",
+    "lineage_declaration_sha256",
+    "typed_graph_canonicalizer_version",
+    "typed_graph_isomorphism_status",
+    "parameter_transform_audit_status",
+    "prediction_semantic_reuse_status",
+    "declared_provenance_consistency_status",
+    "outcome_driven_adjustment_status",
+    "construction_log_sha256",
+    "audit_status",
+    "reason_codes",
+    "review_artifact_hash",
+    "audit_record_sha256"
+  ],
+  "metric_schema_reuse_record_required_fields": [
+    "schema_version",
+    "reuse_record_id",
+    "dimension",
+    "retired_authority_id",
+    "retired_lineage_id",
+    "retired_metric_schema_sha256",
+    "new_metric_schema_sha256",
+    "method_companion_group_id",
+    "reuse_reason_code",
+    "comparability_requirement",
+    "permitted_claim_codes",
+    "forbidden_claim_codes",
+    "review_artifact_hash",
+    "reuse_record_sha256"
+  ],
+  "input_overlap_report_required_fields": [
+    "schema_version",
+    "report_id",
+    "bundle_id",
+    "input_overlap_authority_lock_sha256",
+    "sealed_bundle_manifest_sha256",
+    "normalization_manifest_sha256",
+    "declared_case_unit_ids",
+    "declared_method_observation_ids",
+    "declared_method_companion_group_ids",
+    "new_fingerprint_record_hashes",
+    "retired_fingerprint_record_hashes",
+    "comparison_record_hashes",
+    "semantic_lineage_audit_hashes",
+    "metric_schema_reuse_record_hashes",
+    "per_case_status",
+    "per_method_status",
+    "per_companion_group_status",
+    "unique_retired_lineage_count",
+    "inherited_record_count",
+    "duplicate_lineage_record_count",
+    "planned_case_count",
+    "passed_case_count",
+    "refused_case_count",
+    "pending_case_count",
+    "planned_method_count",
+    "passed_method_count",
+    "refused_method_count",
+    "pending_method_count",
+    "planned_companion_group_count",
+    "passed_companion_group_count",
+    "refused_companion_group_count",
+    "pending_companion_group_count",
+    "admission_policy_version",
+    "report_status",
+    "ledger_head_hash",
+    "report_sha256"
+  ],
+  "input_overlap_subject_status_values": [
+    "admitted",
+    "refused",
+    "pending"
+  ],
+  "input_overlap_report_status_values": [
+    "complete_all_admitted",
+    "complete_with_refusals",
+    "incomplete_refused"
+  ],
+  "retired_subject_type_values": [
+    "retired_case",
+    "retired_case_subunit",
+    "retired_method_observation",
+    "retired_method_companion_group"
+  ],
+  "retired_protocol_kind_by_case_id": {
+    "G4_ADVERSARIAL_BOUNDARY": "adversarial_snapshot",
+    "G4_B05_SUPERVISOR_COMPARATOR": "adapted_candidate_monitor_cover",
+    "G4_CRP_OUTSIDE_S4PR": "crp_evidence_audit",
+    "G4_CRP_S4PR_AGREE": "crp_evidence_audit",
+    "G4_CRP_UNREACHABLE_CANDIDATE": "crp_evidence_audit",
+    "G4_IMS_PARAMETER_GRID": "bidirectional_island_grid",
+    "G4_L30_RESOURCE_BASELINE": "supplied_l30_inequalities",
+    "G4_MEDIUM_ISLAND_REBUILD": "medium_island_rebuild",
+    "G4_RECORDER_TARGET_QUANTIFICATION": "fixed_recorder_target"
+  },
+  "retired_subject_expansion_contract": {
+    "retired_case_emission": "each of the exact nine G4 cases emits one retired_case",
+    "subunit_subject_type": "retired_case_subunit",
+    "owner_object_id_rule": "owner_object_id equals the parent case ID",
+    "subunit_selectors": [
+      {
+        "protocol_kind": "bidirectional_island_grid",
+        "selector": "/input_payload/protocol_input/cells/*",
+        "unique_key": "cell_id",
+        "subunit_id_component": "cell_id",
+        "parent_context_fields": [
+          "generator_id"
+        ]
+      },
+      {
+        "protocol_kind": "supplied_l30_inequalities",
+        "selector": "/input_payload/protocol_input/inequalities/*",
+        "unique_key": "name",
+        "subunit_id_component": "name",
+        "parent_context_fields": [
+          "capacities",
+          "finite_capacity_s3pr_ens3pr",
+          "inequality_provenance"
+        ]
+      },
+      {
+        "protocol_kind": "adapted_candidate_monitor_cover",
+        "selector": "/input_payload/protocol_input/candidate_monitors/*",
+        "unique_key": "monitor_id",
+        "subunit_id_component": "monitor_id",
+        "parent_context_fields": [
+          "finite_lts",
+          "legal_states",
+          "first_met_bad_states",
+          "state_bound"
+        ]
+      }
+    ],
+    "all_other_protocol_kinds": "no subunit",
+    "subject_id_projection_rule": "subject ID exists only in provenance envelope, never comparison projection",
+    "subunit_absence_status": "not_applicable_retired_stage where exact subunit transform declares a dimension structurally absent"
+  },
+  "source_projection_map": [
+    {
+      "authority_subject": "G4 whole case and compatible subunit",
+      "dimension": "case_content_sha256",
+      "source_pointer_or_inheritance": [
+        "case file /input_payload",
+        "case file /expected_outputs_schema",
+        "subunit selector plus declared parent context when applicable"
+      ],
+      "transform_or_status": "g4_case_content_projection/v1; derived_by_versioned_normalizer",
+      "missing_or_ambiguous_behavior": "retired_projection_unreconstructable"
+    },
+    {
+      "authority_subject": "G4 adapted_candidate_monitor_cover, crp_evidence_audit, or fixed_recorder_target whole/subunit",
+      "dimension": "state_snapshot_sha256",
+      "source_pointer_or_inheritance": [
+        "case file /input_payload/protocol_input/finite_lts"
+      ],
+      "transform_or_status": "g4_explicit_state_projection/v1; derived_by_versioned_normalizer",
+      "missing_or_ambiguous_behavior": "retired_projection_unreconstructable"
+    },
+    {
+      "authority_subject": "G4 adversarial_snapshot, bidirectional_island_grid, or medium_island_rebuild whole/subunit",
+      "dimension": "state_snapshot_sha256",
+      "source_pointer_or_inheritance": [
+        "case file /input_payload/protocol_input/generator_id",
+        "case file /input_payload/protocol_input/parameters",
+        "selected /input_payload/protocol_input/cells element when applicable"
+      ],
+      "transform_or_status": "g4_generated_state_projection/v1; derived_by_versioned_normalizer using reviewed static map only",
+      "missing_or_ambiguous_behavior": "retired_projection_unreconstructable"
+    },
+    {
+      "authority_subject": "G4 supplied_l30_inequalities whole/subunit",
+      "dimension": "state_snapshot_sha256",
+      "source_pointer_or_inheritance": [
+        "schema-declared absence"
+      ],
+      "transform_or_status": "no projection; not_applicable_retired_stage",
+      "missing_or_ambiguous_behavior": "retired_normalizer_error if any state is fabricated"
+    },
+    {
+      "authority_subject": "G4 adapted_candidate_monitor_cover, crp_evidence_audit, or fixed_recorder_target whole/subunit",
+      "dimension": "route_signature_sha256",
+      "source_pointer_or_inheritance": [
+        "case file /input_payload/protocol_input/finite_lts/transitions"
+      ],
+      "transform_or_status": "g4_explicit_route_projection/v1; derived_by_versioned_normalizer",
+      "missing_or_ambiguous_behavior": "retired_projection_unreconstructable"
+    },
+    {
+      "authority_subject": "G4 adversarial_snapshot, bidirectional_island_grid, or medium_island_rebuild whole/subunit",
+      "dimension": "route_signature_sha256",
+      "source_pointer_or_inheritance": [
+        "same generator/parameter or selected-cell pointers as generated-state row"
+      ],
+      "transform_or_status": "g4_generator_route_projection/v1; derived_by_versioned_normalizer using reviewed static map only",
+      "missing_or_ambiguous_behavior": "retired_projection_unreconstructable"
+    },
+    {
+      "authority_subject": "G4 supplied_l30_inequalities whole/subunit",
+      "dimension": "route_signature_sha256",
+      "source_pointer_or_inheritance": [
+        "schema-declared absence"
+      ],
+      "transform_or_status": "no projection; not_applicable_retired_stage",
+      "missing_or_ambiguous_behavior": "retired_normalizer_error if any route is fabricated"
+    },
+    {
+      "authority_subject": "every G4 whole case and subunit",
+      "dimension": "parameter_tuple_sha256",
+      "source_pointer_or_inheritance": [
+        "case file /input_payload/protocol_input narrowed by subunit rule when applicable"
+      ],
+      "transform_or_status": "g4_parameter_projection/v1; derived_by_versioned_normalizer",
+      "missing_or_ambiguous_behavior": "retired_projection_unreconstructable"
+    },
+    {
+      "authority_subject": "every G4 whole case",
+      "dimension": "sealed_prediction_sha256",
+      "source_pointer_or_inheritance": [
+        "predictions.json#/predictions select_unique(case_id,parent_case_id)"
+      ],
+      "transform_or_status": "g4_prediction_projection/v1; derived_by_versioned_normalizer",
+      "missing_or_ambiguous_behavior": "retired_projection_unreconstructable"
+    },
+    {
+      "authority_subject": "G4 grid subunit",
+      "dimension": "sealed_prediction_sha256",
+      "source_pointer_or_inheritance": [
+        "selected parent prediction plus /cell_predictions/{cell_id}"
+      ],
+      "transform_or_status": "g4_grid_cell_prediction_projection/v1; derived_by_versioned_normalizer",
+      "missing_or_ambiguous_behavior": "retired_projection_unreconstructable"
+    },
+    {
+      "authority_subject": "other G4 subunit",
+      "dimension": "sealed_prediction_sha256",
+      "source_pointer_or_inheritance": [
+        "schema-declared absence of subunit-specific frozen prediction"
+      ],
+      "transform_or_status": "no projection; not_applicable_retired_stage",
+      "missing_or_ambiguous_behavior": "retired_normalizer_error if parent-wide prediction is copied as subunit-specific"
+    },
+    {
+      "authority_subject": "every G4 case method subject",
+      "dimension": "random_stream_manifest_sha256",
+      "source_pointer_or_inheritance": [
+        "random_stream_manifest.json#/streams_by_case/{case_id}"
+      ],
+      "transform_or_status": "g4_stream_projection/v1; direct_stored after exact schema translation",
+      "missing_or_ambiguous_behavior": "retired_projection_unreconstructable"
+    },
+    {
+      "authority_subject": "every G4 case companion-group subject",
+      "dimension": "metric_schema_sha256",
+      "source_pointer_or_inheritance": [
+        "metrics_schema.json#/metrics/* retaining metric definition and /applicability_by_case/{case_id} only"
+      ],
+      "transform_or_status": "g4_metric_projection/v1; derived_by_versioned_normalizer",
+      "missing_or_ambiguous_behavior": "retired_projection_unreconstructable"
+    },
+    {
+      "authority_subject": "every G4 method subject",
+      "dimension": "output_root_reservation_sha256",
+      "source_pointer_or_inheritance": [
+        "schema-declared absence"
+      ],
+      "transform_or_status": "no projection; not_applicable_retired_stage",
+      "missing_or_ambiguous_behavior": "retired_normalizer_error if any root is fabricated"
+    },
+    {
+      "authority_subject": "every G5 case/method/companion subject",
+      "dimension": "case/state/route/parameter/prediction/random-stream/metric dimensions",
+      "source_pointer_or_inheritance": [
+        "exact G4 lineage named by G5_EXECUTION_LOCK.json#/g4_seal after all referenced hashes validate"
+      ],
+      "transform_or_status": "copy G4 lineage_id; inherited_from_authority; add G5 method-stage provenance only to envelope",
+      "missing_or_ambiguous_behavior": "retired_authority_hash_mismatch or retired_projection_unreconstructable"
+    },
+    {
+      "authority_subject": "each G5 (case_id, run_label) method subject",
+      "dimension": "output_root_reservation_sha256",
+      "source_pointer_or_inheritance": [
+        "G5_EXECUTION_LOCK.json#/output_roots/raw_output_root_relative",
+        "case IDs and run labels derived only from /execution_schedule"
+      ],
+      "transform_or_status": "g5_output_root_projection/v1; derived_by_versioned_normalizer",
+      "missing_or_ambiguous_behavior": "retired_projection_unreconstructable"
+    },
+    {
+      "authority_subject": "every G6-R case/method subject",
+      "dimension": "case/state/route/parameter/prediction/random-stream dimensions",
+      "source_pointer_or_inheritance": [
+        "exact selected G4/G5 lineage named by G6_HISTORICAL_REPLAY_LOCK_R3.json#/historical_g4 and /original_g5 after all referenced hashes validate"
+      ],
+      "transform_or_status": "copy unique ancestor lineage_id; inherited_from_authority; add replay-stage provenance only to envelope",
+      "missing_or_ambiguous_behavior": "retired_authority_hash_mismatch or retired_projection_unreconstructable"
+    },
+    {
+      "authority_subject": "every G6-R companion-group subject",
+      "dimension": "metric_schema_sha256",
+      "source_pointer_or_inheritance": [
+        "inherited G4 metric projection plus G6_HISTORICAL_REPLAY_LOCK_R3.json#/default_estimand_spec and /default_estimand_spec_sha256"
+      ],
+      "transform_or_status": "g6r_metric_overlay_projection/v1; derived_by_versioned_normalizer; retain G4 lineage as input lineage",
+      "missing_or_ambiguous_behavior": "retired_projection_unreconstructable"
+    },
+    {
+      "authority_subject": "each G6-R (case_id, run_label) method subject",
+      "dimension": "output_root_reservation_sha256",
+      "source_pointer_or_inheritance": [
+        "lock /output_root",
+        "/case_ids",
+        "/run_labels",
+        "/execution_schedule",
+        "raw manifest /output_root for equality validation only"
+      ],
+      "transform_or_status": "g6r_output_root_projection/v1; derived_by_versioned_normalizer",
+      "missing_or_ambiguous_behavior": "retired_projection_unreconstructable"
+    }
+  ],
+  "lineage_deduplication_contract": {
+    "lineage_id_preimage_keys": [
+      "origin_authority_id",
+      "origin_subject_type",
+      "origin_subject_id",
+      "origin_dimension",
+      "origin_comparison_projection_sha256_or_null",
+      "origin_source_artifact_byte_hashes"
+    ],
+    "lineage_id_prefix": "sha256:",
+    "inherited_record_rule": "copy ancestor lineage_id and name immediate ancestor; do not mint a stage-local lineage",
+    "unique_lineage_map": "key-closed map from lineage ID to one origin record and all inherited/duplicate record IDs",
+    "deduplicate_duplicate_subject_projection": true,
+    "count_once_across_authority_duplicates": true,
+    "independent_authority_not_implied": true
+  },
+  "typed_admission_contract": {
+    "case_content_sha256": "pass_distinct against every comparable unique retired lineage plus passed semantic-lineage audit",
+    "state_snapshot_sha256": "pass_distinct against every comparable unique retired lineage plus passed semantic-lineage audit",
+    "route_signature_sha256": "pass_distinct against every comparable unique retired lineage plus passed semantic-lineage audit",
+    "parameter_tuple_sha256": "pass_distinct against every comparable unique retired lineage plus passed semantic-lineage audit",
+    "sealed_prediction_sha256": "pass_distinct against every comparable unique retired lineage plus passed semantic-lineage audit",
+    "random_stream_manifest_sha256": {
+      "stochastic": "disjoint_stream_pass",
+      "exact": "not_applicable_by_protocol_pass"
+    },
+    "output_root_reservation_sha256": "containment_separation_pass only; provenance containment, never semantic distinctness",
+    "metric_schema_sha256": "pass_distinct or controlled_reuse_pass backed by exact reuse record and companion-group comparability rationale",
+    "fail_closed_statuses": [
+      "overlap_hit",
+      "missing_source",
+      "unreconstructable",
+      "normalizer_error",
+      "semantic_lineage_ambiguous"
+    ],
+    "inherited_compared_rule": "successful only when unique ancestor comparison has an allowed terminal status",
+    "batch_completeness_required": true
+  },
+  "recursive_prohibited_fields": [
+    "actual_overlap_result",
+    "authorization_id",
+    "authorized",
+    "bundle_id",
+    "case_unit_id",
+    "current_runtime_lock",
+    "des_output",
+    "exact_output",
+    "execution_result",
+    "method_observation_id",
+    "metric_value",
+    "observed_result",
+    "quantitative_execution_authorized",
+    "quantitative_output_root",
+    "science_summary",
+    "state_enumeration_result"
+  ],
+  "refusal_code_vocabulary_version": "ims-deadlock/g6b-refusal-codes/v1",
+  "refusal_reason_codes": [
+    "batch_incomplete",
+    "canonicalization_violation",
+    "capability_call_violation",
+    "capability_import_violation",
+    "duplicate_lineage_miscount",
+    "metric_reuse_unauthorized",
+    "missing_hash",
+    "missing_normalization_authorization",
+    "missing_retired_authority",
+    "outcome_leakage",
+    "output_root_reuse_or_materialized",
+    "overlap_hit",
+    "prediction_semantic_reuse",
+    "random_stream_disjointness_unproved",
+    "random_stream_overlap",
+    "rename_or_cosmetic_shift_detected",
+    "retired_authority_hash_mismatch",
+    "retired_normalizer_error",
+    "retired_projection_unreconstructable",
+    "runtime_identity_drift",
+    "sealed_input_drift",
+    "self_hash_mismatch",
+    "semantic_identity_reuse",
+    "semantic_lineage_ambiguous",
+    "source_field_read_violation",
+    "subject_id_contaminated_projection",
+    "unauthorized_retired_normalization_attempt",
+    "unclassified_scientific_input"
+  ],
+  "schema_does_not_authorize_normalization": true
+}

@@ -1,23 +1,191 @@
 {
-  "schema_version": "ims-deadlock/g6b-row-family-failure-ledger/v1",
+  "schema_version": "ims-deadlock/g6b-row-family-failure-ledger/v2",
   "study_role": "discovery_only",
   "confirmation_use": "prohibited",
-  "scientific_execution_authorized": false,
-  "case_creation_authorized": false,
+  "schema_role": "schema_only",
+  "canonicalization_contract": {
+    "version": "ims-deadlock/g6b-canonical-json/v2",
+    "duplicate_members": "reject_at_every_depth",
+    "unicode_normalization": {
+      "member_names": "require_nfc_reject_non_nfc",
+      "string_values": "require_nfc_reject_non_nfc",
+      "silent_normalization": "prohibited"
+    },
+    "object_key_order": "unicode_code_point",
+    "array_order_policy": {
+      "declared_array_order": "preserve",
+      "schema_declared_set_like_arrays": "unique_and_already_sorted"
+    },
+    "utf8_serialization": {
+      "encoding": "utf-8",
+      "ensure_ascii": false,
+      "sort_keys": true,
+      "separators": [
+        ",",
+        ":"
+      ],
+      "allow_nan": false
+    },
+    "numeric_policy": {
+      "json_nan_infinity_negative_zero_float": "prohibited",
+      "counts_and_integral_budgets": "json_integers",
+      "non_integral_values": {
+        "encoding": "canonical_decimal_string",
+        "grammar": "^-?(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+        "negative_zero": "prohibited",
+        "exponent": "prohibited"
+      },
+      "historical_json_numbers": "parse_lexical_token_as_exact_decimal_not_binary_float"
+    },
+    "path_policy": {
+      "committed_paths": "case_sensitive_repo_relative_posix",
+      "drive_letter_leading_slash_backslash_empty_dot_dotdot": "prohibited",
+      "symlink_dependent_resolution": "prohibited",
+      "runtime_executables": "logical_id_plus_byte_and_environment_hashes_not_absolute_path"
+    },
+    "timestamp_policy": {
+      "timezone": "utc",
+      "format": "YYYY-MM-DDTHH:MM:SSZ",
+      "precision": "seconds"
+    }
+  },
+  "self_hash_finalization_contract": {
+    "version": "ims-deadlock/g6b-self-hash-finalization/v2",
+    "placeholder_value": null,
+    "replaced_field_count": 1,
+    "omitted_field_allowed": false,
+    "prepopulated_digest_allowed": false,
+    "excluded_field_escape_hatch_allowed": false,
+    "cross_record_reference_order": {
+      "graph": "directed_acyclic_lifecycle_order",
+      "record_may_reference": "already_finalized_upstream_records_only",
+      "upstream_embeds_downstream_back_reference": "prohibited",
+      "self_hash_field": "schema_fixed"
+    },
+    "digest_algorithm": "sha256",
+    "digest_encoding": "lowercase_hexadecimal"
+  },
   "append_only": true,
   "entries": [],
-  "empty_entries_meaning": "no row-family admission or execution attempt has occurred",
+  "empty_entries_meaning": "no authorized current row-family attempt has occurred",
   "empty_entries_do_not_mean_no_historical_failures": true,
+  "refusal_code_vocabulary_version": "ims-deadlock/g6b-refusal-codes/v1",
   "required_future_reason_codes": [
-    "schema_drift",
-    "ontology_drift",
-    "target_drift",
-    "overlap_hit",
-    "missing_hash",
+    "batch_incomplete",
+    "canonicalization_violation",
+    "capability_call_violation",
+    "capability_import_violation",
+    "certificate_schema_violation",
+    "command_scope_violation",
+    "duplicate_lineage_miscount",
+    "exact_des_target_mismatch",
     "failed_negative_control",
-    "incomplete_LTS_audit",
+    "filesystem_scope_violation",
+    "incomplete_stable_lts",
+    "metric_reuse_unauthorized",
+    "missing_hash",
+    "missing_normalization_authorization",
+    "missing_retired_authority",
+    "non_almost_sure_absorption_domain",
     "outcome_leakage",
+    "output_root_reuse_or_materialized",
+    "overlap_hit",
+    "policy_filter_drift",
+    "prediction_semantic_reuse",
+    "quantitative_scope_violation",
+    "random_stream_disjointness_unproved",
+    "random_stream_overlap",
+    "rate_manifest_drift",
+    "rename_or_cosmetic_shift_detected",
+    "retired_authority_hash_mismatch",
+    "retired_normalizer_error",
+    "retired_projection_unreconstructable",
+    "retry_stop_policy_violation",
+    "runtime_identity_drift",
+    "same_target_lock_stale",
+    "sealed_input_drift",
+    "selected_target_drift",
+    "self_hash_mismatch",
+    "semantic_identity_reuse",
+    "semantic_lineage_ambiguous",
+    "source_field_read_violation",
+    "state_bound_truncation",
+    "subject_id_contaminated_projection",
     "unauthorized_case_creation_attempt",
-    "unauthorized_science_execution_attempt"
-  ]
+    "unauthorized_quantitative_execution_attempt",
+    "unauthorized_retired_normalization_attempt",
+    "unauthorized_target_certification_attempt",
+    "unavailable_transition_branch",
+    "unclassified_scientific_input",
+    "unexpected_preflight_side_effect",
+    "unverified_lts_provenance"
+  ],
+  "refusal_reason_code_groups": {
+    "cross_gate": [
+      "batch_incomplete",
+      "canonicalization_violation",
+      "missing_hash",
+      "outcome_leakage",
+      "runtime_identity_drift",
+      "sealed_input_drift",
+      "self_hash_mismatch"
+    ],
+    "construction": [
+      "output_root_reuse_or_materialized",
+      "subject_id_contaminated_projection",
+      "unauthorized_case_creation_attempt",
+      "unclassified_scientific_input"
+    ],
+    "normalization": [
+      "capability_call_violation",
+      "capability_import_violation",
+      "duplicate_lineage_miscount",
+      "missing_normalization_authorization",
+      "missing_retired_authority",
+      "retired_authority_hash_mismatch",
+      "retired_normalizer_error",
+      "retired_projection_unreconstructable",
+      "source_field_read_violation",
+      "unauthorized_retired_normalization_attempt"
+    ],
+    "overlap": [
+      "metric_reuse_unauthorized",
+      "overlap_hit",
+      "output_root_reuse_or_materialized",
+      "prediction_semantic_reuse",
+      "random_stream_disjointness_unproved",
+      "random_stream_overlap",
+      "rename_or_cosmetic_shift_detected",
+      "semantic_identity_reuse",
+      "semantic_lineage_ambiguous",
+      "subject_id_contaminated_projection",
+      "unclassified_scientific_input"
+    ],
+    "preflight": [
+      "capability_call_violation",
+      "capability_import_violation",
+      "certificate_schema_violation",
+      "command_scope_violation",
+      "filesystem_scope_violation",
+      "incomplete_stable_lts",
+      "non_almost_sure_absorption_domain",
+      "policy_filter_drift",
+      "rate_manifest_drift",
+      "selected_target_drift",
+      "state_bound_truncation",
+      "unauthorized_target_certification_attempt",
+      "unavailable_transition_branch",
+      "unexpected_preflight_side_effect",
+      "unverified_lts_provenance"
+    ],
+    "quantitative": [
+      "exact_des_target_mismatch",
+      "failed_negative_control",
+      "output_root_reuse_or_materialized",
+      "quantitative_scope_violation",
+      "retry_stop_policy_violation",
+      "same_target_lock_stale",
+      "unauthorized_quantitative_execution_attempt"
+    ]
+  }
 }

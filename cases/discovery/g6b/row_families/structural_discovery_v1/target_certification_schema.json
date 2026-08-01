@@ -1,0 +1,567 @@
+{
+  "schema_version": "ims-deadlock/g6b-target-certification-schema/v1",
+  "study_role": "discovery_only",
+  "confirmation_use": "prohibited",
+  "schema_role": "schema_only",
+  "current_capability_reference": "row_family_protocol.json#/typed_capabilities",
+  "prerequisite_bundle_states": [
+    "SPEC_DRAFTED",
+    "ROW_FAMILY_BUNDLE_IMPLEMENTED",
+    "DATA_ONLY_VALIDATION_PASSED",
+    "ADVERSARIAL_ROW_FAMILY_REVIEW_PASSED",
+    "CASE_CONSTRUCTION_PLAN_APPROVED",
+    "CASE_INPUTS_SEALED_NO_EXECUTION",
+    "RETIRED_AUTHORITY_NORMALIZATION_AUTHORIZATION_RECORDED",
+    "RETIRED_AUTHORITY_NORMALIZATION_COMPLETE",
+    "INPUT_OVERLAP_AUDIT_COMPLETE"
+  ],
+  "canonicalization_contract": {
+    "version": "ims-deadlock/g6b-canonical-json/v2",
+    "duplicate_members": "reject_at_every_depth",
+    "unicode_normalization": {
+      "member_names": "require_nfc_reject_non_nfc",
+      "string_values": "require_nfc_reject_non_nfc",
+      "silent_normalization": "prohibited"
+    },
+    "object_key_order": "unicode_code_point",
+    "array_order_policy": {
+      "declared_array_order": "preserve",
+      "schema_declared_set_like_arrays": "unique_and_already_sorted"
+    },
+    "utf8_serialization": {
+      "encoding": "utf-8",
+      "ensure_ascii": false,
+      "sort_keys": true,
+      "separators": [
+        ",",
+        ":"
+      ],
+      "allow_nan": false
+    },
+    "numeric_policy": {
+      "json_nan_infinity_negative_zero_float": "prohibited",
+      "counts_and_integral_budgets": "json_integers",
+      "non_integral_values": {
+        "encoding": "canonical_decimal_string",
+        "grammar": "^-?(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+        "negative_zero": "prohibited",
+        "exponent": "prohibited"
+      },
+      "historical_json_numbers": "parse_lexical_token_as_exact_decimal_not_binary_float"
+    },
+    "path_policy": {
+      "committed_paths": "case_sensitive_repo_relative_posix",
+      "drive_letter_leading_slash_backslash_empty_dot_dotdot": "prohibited",
+      "symlink_dependent_resolution": "prohibited",
+      "runtime_executables": "logical_id_plus_byte_and_environment_hashes_not_absolute_path"
+    },
+    "timestamp_policy": {
+      "timezone": "utc",
+      "format": "YYYY-MM-DDTHH:MM:SSZ",
+      "precision": "seconds"
+    }
+  },
+  "self_hash_finalization_contract": {
+    "version": "ims-deadlock/g6b-self-hash-finalization/v2",
+    "placeholder_value": null,
+    "replaced_field_count": 1,
+    "omitted_field_allowed": false,
+    "prepopulated_digest_allowed": false,
+    "excluded_field_escape_hatch_allowed": false,
+    "cross_record_reference_order": {
+      "graph": "directed_acyclic_lifecycle_order",
+      "record_may_reference": "already_finalized_upstream_records_only",
+      "upstream_embeds_downstream_back_reference": "prohibited",
+      "self_hash_field": "schema_fixed"
+    },
+    "digest_algorithm": "sha256",
+    "digest_encoding": "lowercase_hexadecimal"
+  },
+  "preflight_runtime_lock_required_fields": [
+    "schema_version",
+    "runtime_lock_id",
+    "source_head",
+    "source_tree_hash",
+    "source_dirty_state",
+    "sealed_bundle_manifest_hash",
+    "python_runtime_identity",
+    "pythonpath_source_hash",
+    "bytecode_cache_policy",
+    "entrypoint_hash",
+    "allowed_command_manifest_hash",
+    "target_certificate_schema_version",
+    "canonicalization_version",
+    "case_unit_ids",
+    "expected_input_hashes",
+    "preflight_evidence_root",
+    "resource_budget",
+    "capture_policy",
+    "failure_budget",
+    "ledger_head_hash",
+    "created_at_utc",
+    "runtime_lock_sha256"
+  ],
+  "preflight_authorization_required_fields": [
+    "schema_version",
+    "authorization_id",
+    "capability",
+    "authorized",
+    "bundle_id",
+    "case_unit_ids",
+    "sealed_bundle_manifest_hash",
+    "runtime_lock_sha256",
+    "allowed_entrypoint",
+    "allowed_command_manifest_hash",
+    "allowed_operations",
+    "allowed_output_schemas",
+    "forbidden_calls",
+    "forbidden_side_effects",
+    "resource_budget",
+    "stop_conditions",
+    "preflight_evidence_root",
+    "review_artifact_hash",
+    "issued_at_utc",
+    "invalidated_by_identity_drift",
+    "authorization_sha256"
+  ],
+  "allowed_command_manifest_required_fields": [
+    "schema_version",
+    "manifest_id",
+    "capability",
+    "source_head",
+    "source_tree_hash",
+    "sealed_bundle_manifest_hash",
+    "input_overlap_report_sha256",
+    "preflight_evidence_root_reservation_sha256",
+    "declared_command_ids",
+    "command_record_hashes",
+    "command_count",
+    "placeholder_vocabulary",
+    "environment_variable_name_allowlist",
+    "wildcard_scope_allowed",
+    "created_at_utc",
+    "manifest_sha256"
+  ],
+  "allowed_command_record_required_fields": [
+    "command_id",
+    "capability",
+    "executable_sha256",
+    "entrypoint",
+    "argv_tokens",
+    "working_directory_repo_relative",
+    "environment_variable_allowlist",
+    "stdin_policy",
+    "authorized_case_unit_ids",
+    "authorized_preflight_root_hash",
+    "command_record_sha256"
+  ],
+  "allowed_command_placeholder_codes": [
+    "case_scope_manifest",
+    "preflight_authorization",
+    "preflight_evidence_root",
+    "python_runtime",
+    "repo_source_root",
+    "sealed_bundle_manifest"
+  ],
+  "allowed_environment_variable_names": [
+    "PYTHONDONTWRITEBYTECODE",
+    "PYTHONPATH"
+  ],
+  "allowed_operations": [
+    "load_sealed_case_input",
+    "verify_input_hashes",
+    "enumerate_complete_bounded_stable_lts",
+    "verify_lts_provenance",
+    "partition_typed_terminal_stopping_classes",
+    "verify_rate_manifest",
+    "verify_policy_declaration",
+    "verify_selected_target_identity",
+    "certify_global_absorption_domain",
+    "emit_target_certificate_or_refusal",
+    "emit_command_capture",
+    "emit_filesystem_and_hash_manifests",
+    "append_preflight_failure_ledger",
+    "validate_preflight_artifacts_data_only"
+  ],
+  "allowed_output_schema_ids": [
+    "ims-deadlock/g6b-command-capture/v1",
+    "ims-deadlock/g6b-filesystem-manifest/v1",
+    "ims-deadlock/g6b-hash-manifest/v1",
+    "ims-deadlock/g6b-preflight-failure-ledger-entry/v1",
+    "ims-deadlock/g6b-target-certificate/v1",
+    "ims-deadlock/g6b-target-certification-batch-manifest/v1",
+    "ims-deadlock/g6b-target-certification-case-result/v1",
+    "ims-deadlock/g6b-target-refusal/v1"
+  ],
+  "allowed_file_roles": [
+    "batch_manifest",
+    "command_transcript",
+    "exit_code_capture",
+    "failure_ledger_entry",
+    "filesystem_after_manifest",
+    "filesystem_before_manifest",
+    "hash_manifest",
+    "per_case_result",
+    "stderr_capture",
+    "target_certificate",
+    "target_refusal"
+  ],
+  "file_role_to_schema_id": {
+    "batch_manifest": "ims-deadlock/g6b-target-certification-batch-manifest/v1",
+    "command_transcript": "ims-deadlock/g6b-command-capture/v1",
+    "exit_code_capture": "ims-deadlock/g6b-command-capture/v1",
+    "failure_ledger_entry": "ims-deadlock/g6b-preflight-failure-ledger-entry/v1",
+    "filesystem_after_manifest": "ims-deadlock/g6b-filesystem-manifest/v1",
+    "filesystem_before_manifest": "ims-deadlock/g6b-filesystem-manifest/v1",
+    "hash_manifest": "ims-deadlock/g6b-hash-manifest/v1",
+    "per_case_result": "ims-deadlock/g6b-target-certification-case-result/v1",
+    "stderr_capture": "ims-deadlock/g6b-command-capture/v1",
+    "target_certificate": "ims-deadlock/g6b-target-certificate/v1",
+    "target_refusal": "ims-deadlock/g6b-target-refusal/v1"
+  },
+  "file_role_cardinality_contract": {
+    "always_exactly_one": [
+      "batch_manifest",
+      "command_transcript",
+      "exit_code_capture",
+      "filesystem_after_manifest",
+      "filesystem_before_manifest",
+      "hash_manifest",
+      "stderr_capture"
+    ],
+    "per_case_exactly_one": [
+      "per_case_result"
+    ],
+    "certified_case_exactly_one": [
+      "target_certificate"
+    ],
+    "refused_case_exactly_one": [
+      "target_refusal"
+    ],
+    "failure_ledger_entry": "zero_or_more_exactly_matching_failure_ledger_entry_ids",
+    "unknown_roles": "refuse",
+    "duplicate_ownership": "refuse",
+    "schema_role_mismatch": "refuse"
+  },
+  "allowed_result_fields": [
+    "schema_version",
+    "bundle_id",
+    "case_unit_id",
+    "input_identity_hashes",
+    "runtime_lock_sha256",
+    "authorization_sha256",
+    "result_status",
+    "completeness_status",
+    "state_count",
+    "transition_count",
+    "selected_target_identity",
+    "state_space_hash",
+    "partition_hash",
+    "rate_manifest_hash",
+    "positive_rate_graph_hash",
+    "policy_filter_hash",
+    "absorption_domain_hash",
+    "estimand_id",
+    "certificate_version",
+    "certificate_status",
+    "certificate_payload_or_null",
+    "certificate_payload_sha256_or_null",
+    "refusal_reason_codes",
+    "refusal_details",
+    "command_transcript_sha256",
+    "stderr_sha256",
+    "exit_code",
+    "filesystem_before_manifest_sha256",
+    "filesystem_after_manifest_sha256",
+    "ledger_entry_ids"
+  ],
+  "allowed_project_imports": [
+    "ims_deadlock.g6b_target_preflight",
+    "ims_deadlock.g6b_target_artifacts",
+    "ims_deadlock.g6b_input_loader",
+    "ims_deadlock.g6b_lts",
+    "ims_deadlock.g6b_target_certificate",
+    "ims_deadlock.g6b_canonical_json",
+    "ims_deadlock.g6b_governance",
+    "ims_deadlock.model",
+    "ims_deadlock.engine",
+    "ims_deadlock.certificates"
+  ],
+  "allowed_writer_symbols": [
+    "ims_deadlock.g6b_target_artifacts.write_certificate_record",
+    "ims_deadlock.g6b_target_artifacts.write_refusal_record",
+    "ims_deadlock.g6b_target_artifacts.write_batch_manifest",
+    "ims_deadlock.g6b_target_artifacts.write_capture_record",
+    "ims_deadlock.g6b_target_artifacts.write_filesystem_manifest",
+    "ims_deadlock.g6b_target_artifacts.write_hash_manifest",
+    "ims_deadlock.g6b_target_artifacts.append_failure_ledger"
+  ],
+  "forbidden_imports": [
+    "ims_deadlock.cases",
+    "ims_deadlock.ctmc",
+    "ims_deadlock.g4_instances",
+    "ims_deadlock.g4_protocol",
+    "ims_deadlock.g5_scoring",
+    "ims_deadlock.historical_replay",
+    "ims_deadlock.confirmation",
+    "ims_deadlock.cli"
+  ],
+  "forbidden_calls": [
+    "ims_deadlock.g4_instances.derive_absorbing_ctmc",
+    "ims_deadlock.ctmc.AbsorbingCTMC.solve",
+    "ims_deadlock.engine.simulate",
+    "ims_deadlock.g4_protocol.run_after_freeze",
+    "ims_deadlock.g4_protocol.main",
+    "ims_deadlock.g5_scoring.score_case",
+    "ims_deadlock.g5_scoring.score_run",
+    "ims_deadlock.g5_scoring.main",
+    "ims_deadlock.historical_replay.main"
+  ],
+  "forbidden_result_fields": [
+    "committor",
+    "completion_probability",
+    "deadlock_probability",
+    "mean_absorption_time",
+    "sensitivity",
+    "doob_h",
+    "des_trajectory",
+    "des_estimate",
+    "metric_observations",
+    "theorem_support",
+    "theorem_falsification",
+    "scientific_score",
+    "science_summary",
+    "quantitative_output_root"
+  ],
+  "nested_field_contracts": {
+    "python_runtime_identity_required_fields": [
+      "logical_runtime_id",
+      "executable_byte_sha256",
+      "python_implementation",
+      "python_version",
+      "environment_identity_hash",
+      "package_lock_hash"
+    ],
+    "python_runtime_identity_privacy": "no_absolute_path_user_name_host_name_or_private_network_identifier",
+    "allowed_command_manifest_schema_version": "ims-deadlock/g6b-preflight-allowed-command-manifest/v1",
+    "allowed_command_manifest_capability": "target_certification_preflight",
+    "preflight_command_id_contract": "exactly_one_declared_preflight_command_id",
+    "allowed_entrypoint": "ims_deadlock.g6b_target_preflight.main",
+    "wildcard_scope_allowed": false,
+    "placeholder_token_union": [
+      {
+        "token_kind": "literal",
+        "value_contract": "single_argv_token_no_nul_cr_lf_shell_operator_redirection_or_command_substitution"
+      },
+      {
+        "token_kind": "placeholder",
+        "placeholder_code_contract": "member_of_allowed_command_placeholder_codes"
+      }
+    ],
+    "environment_variable_allowlist_contract": {
+      "PYTHONDONTWRITEBYTECODE": "literal_1_only",
+      "PYTHONPATH": "locked_repo_source_root_placeholder_only"
+    },
+    "forbidden_side_effects": [
+      "write_outside_preflight_root",
+      "materialize_quantitative_root",
+      "write_python_bytecode",
+      "mutate_retired_evidence",
+      "mutate_sealed_input",
+      "invoke_network",
+      "invoke_subprocess_outside_manifest",
+      "advance_quantitative_state",
+      "write_scientific_summary"
+    ],
+    "input_identity_hashes_required_fields": [
+      "case_content_sha256",
+      "state_snapshot_sha256",
+      "route_signature_sha256",
+      "parameter_tuple_sha256",
+      "sealed_prediction_sha256",
+      "fingerprint_record_hashes_sha256"
+    ],
+    "selected_target_identity_required_fields": [
+      "target_schema_version",
+      "selected_bad_classes",
+      "success_class",
+      "exact_stopping_rule",
+      "des_stopping_rule",
+      "policy_analysis_class",
+      "declaration_sha256"
+    ],
+    "resource_budget_required_fields": [
+      "max_wall_clock_seconds",
+      "max_cpu_seconds",
+      "max_memory_bytes",
+      "max_storage_bytes",
+      "max_states_per_case",
+      "max_transitions_per_case",
+      "max_cases",
+      "max_workers"
+    ],
+    "capture_policy_required_fields": [
+      "stdout_capture",
+      "stderr_capture",
+      "command_transcript",
+      "exit_code_capture",
+      "filesystem_before_manifest",
+      "filesystem_after_manifest",
+      "hash_manifest",
+      "bytecode_write_disabled"
+    ],
+    "failure_budget_required_fields": [
+      "max_case_refusals",
+      "max_unexpected_exceptions",
+      "abort_on_capability_leak",
+      "abort_on_identity_drift",
+      "abort_on_unexpected_file"
+    ],
+    "stop_conditions_contract": "unique_sorted_versioned_stop_condition_codes_only",
+    "refusal_details_variant_keys": [
+      "reason_code",
+      "phase",
+      "subject_type",
+      "subject_id",
+      "expected_hash_or_null",
+      "observed_hash_or_null",
+      "bound_name_or_null",
+      "bound_limit_or_null",
+      "observed_count_or_null",
+      "exception_class_or_null",
+      "message_code",
+      "evidence_refs"
+    ],
+    "certified_record_contract": "runtime_hashes_non_null_certificate_non_null_refusal_codes_empty_exit_code_zero",
+    "refused_record_contract": "unsafe_hashes_null_refusal_codes_nonempty_details_retained_exit_code_matches_refusal_contract",
+    "batch_partition_contract": "declared_certified_refused_pending_unique_sorted_disjoint_complete_counts_match_arrays",
+    "complete_all_certified_contract": "pending_count_zero_refused_count_zero_result_hashes_equal_declared",
+    "complete_with_refusals_contract": "pending_count_zero_refused_count_positive_result_hashes_equal_declared",
+    "incomplete_refused_contract": "cannot_advance_gate"
+  },
+  "recursive_prohibited_fields": [
+    "committor",
+    "completion_probability",
+    "deadlock_probability",
+    "mean_absorption_time",
+    "sensitivity",
+    "doob_h",
+    "des_trajectory",
+    "des_estimate",
+    "metric_observations",
+    "theorem_support",
+    "theorem_falsification",
+    "scientific_score",
+    "science_summary",
+    "quantitative_output_root",
+    "actual_overlap_result",
+    "execution_result",
+    "observed_result",
+    "state_enumeration_result"
+  ],
+  "preflight_evidence_root_contract": {
+    "required_fields": [
+      "root_schema_version",
+      "bundle_id",
+      "repo_relative_posix_path",
+      "state",
+      "allowed_file_roles",
+      "reservation_sha256"
+    ],
+    "states_in_order": [
+      "reserved_not_materialized",
+      "materialized_by_target_certification_only"
+    ],
+    "allowed_file_roles_reference": "target_certification_schema.json#/allowed_file_roles"
+  },
+  "per_case_result_required_fields": [
+    "schema_version",
+    "bundle_id",
+    "case_unit_id",
+    "input_identity_hashes",
+    "runtime_lock_sha256",
+    "authorization_sha256",
+    "result_status",
+    "completeness_status",
+    "state_count",
+    "transition_count",
+    "selected_target_identity",
+    "state_space_hash",
+    "partition_hash",
+    "rate_manifest_hash",
+    "positive_rate_graph_hash",
+    "policy_filter_hash",
+    "absorption_domain_hash",
+    "estimand_id",
+    "certificate_version",
+    "certificate_status",
+    "certificate_payload_or_null",
+    "certificate_payload_sha256_or_null",
+    "refusal_reason_codes",
+    "refusal_details",
+    "command_transcript_sha256",
+    "stderr_sha256",
+    "exit_code",
+    "filesystem_before_manifest_sha256",
+    "filesystem_after_manifest_sha256",
+    "ledger_entry_ids"
+  ],
+  "result_status_values": [
+    "certified",
+    "refused"
+  ],
+  "batch_manifest_required_fields": [
+    "schema_version",
+    "bundle_id",
+    "sealed_bundle_manifest_hash",
+    "runtime_lock_sha256",
+    "authorization_sha256",
+    "declared_case_unit_ids",
+    "per_case_result_hashes",
+    "certified_case_unit_ids",
+    "refused_case_unit_ids",
+    "pending_case_unit_ids",
+    "planned_count",
+    "certified_count",
+    "refused_count",
+    "pending_count",
+    "failure_ledger_entry_ids",
+    "failure_ledger_entry_count",
+    "batch_status",
+    "transcript_manifest_sha256",
+    "filesystem_manifest_sha256",
+    "ledger_head_hash",
+    "batch_manifest_sha256"
+  ],
+  "batch_status_values": [
+    "complete_all_certified",
+    "complete_with_refusals",
+    "incomplete_refused"
+  ],
+  "refusal_code_vocabulary_version": "ims-deadlock/g6b-refusal-codes/v1",
+  "refusal_reason_codes": [
+    "batch_incomplete",
+    "canonicalization_violation",
+    "capability_call_violation",
+    "capability_import_violation",
+    "certificate_schema_violation",
+    "command_scope_violation",
+    "filesystem_scope_violation",
+    "incomplete_stable_lts",
+    "missing_hash",
+    "non_almost_sure_absorption_domain",
+    "outcome_leakage",
+    "policy_filter_drift",
+    "rate_manifest_drift",
+    "runtime_identity_drift",
+    "sealed_input_drift",
+    "selected_target_drift",
+    "self_hash_mismatch",
+    "state_bound_truncation",
+    "unauthorized_target_certification_attempt",
+    "unavailable_transition_branch",
+    "unexpected_preflight_side_effect",
+    "unverified_lts_provenance"
+  ],
+  "schema_does_not_authorize_preflight": true
+}
