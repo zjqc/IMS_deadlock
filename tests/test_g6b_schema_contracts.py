@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from copy import deepcopy
 from pathlib import Path
@@ -9,7 +10,12 @@ from typing import Any, Literal, cast
 import pytest
 
 from ims_deadlock import g6b_schema_contracts as contracts
-from ims_deadlock.g6b_canonical_json import canonical_sha256_v2, finalized_self_hash
+from ims_deadlock.g6b_canonical_json import (
+    canonical_bytes_v2,
+    canonical_sha256_v2,
+    finalized_self_hash,
+    loads_v2,
+)
 from ims_deadlock.g6b_schema_contracts import (
     ALLOWED_FILE_ROLES,
     ALLOWED_OPERATIONS,
@@ -5689,3 +5695,375 @@ def test_typed_capability_mutations_are_fail_closed() -> None:
                 "scientific_execution_authorized": False,
             }
         )
+
+
+_CASE_CONSTRUCTION_SCHEMA_V3_TOP_LEVEL_KEYS = (
+    "schema_version",
+    "study_role",
+    "confirmation_use",
+    "schema_role",
+    "current_capability_reference",
+    "prerequisite_bundle_state",
+    "canonicalization_contract",
+    "self_hash_finalization_contract",
+    "estimand_id_scope_contract",
+    "governance_instance_root_template",
+    "case_unit_root_template",
+    "construction_authorization_required_fields",
+    "sealed_bundle_manifest_required_fields",
+    "case_unit_required_fields",
+    "method_observation_required_fields",
+    "method_companion_group_required_fields",
+    "semantic_lineage_declaration_required_fields",
+    "metric_schema_sharing_record_required_fields",
+    "fingerprint_record_required_fields",
+    "fingerprint_subject_map",
+    "fingerprint_payload_schemas",
+    "materialization_file_contracts",
+    "construction_log_contract",
+    "construction_ledger_contract",
+    "source_identity_contract",
+    "transient_path_contract",
+    "des_seed_contract",
+    "dimension_dependence_contract",
+    "allowed_input_modes",
+    "output_root_reservation_contract",
+    "nested_field_contracts",
+    "recursive_prohibited_fields",
+    "prohibited_instance_fields",
+    "refusal_code_vocabulary_version",
+    "refusal_reason_codes",
+    "schema_does_not_authorize_case_creation",
+)
+_CASE_CONSTRUCTION_V3_RELATIVE_PATHS = (
+    "case_input.json",
+    "declarations/control_declaration.json",
+    "declarations/policy_declaration.json",
+    "declarations/rate_manifest.json",
+    "declarations/selected_target_declaration.json",
+    "fingerprints/case_content_sha256.json",
+    "fingerprints/metric_schema_sha256.json",
+    "fingerprints/output_root_reservation_sha256_des.json",
+    "fingerprints/output_root_reservation_sha256_exact.json",
+    "fingerprints/parameter_tuple_sha256.json",
+    "fingerprints/random_stream_manifest_sha256_des.json",
+    "fingerprints/random_stream_manifest_sha256_exact.json",
+    "fingerprints/route_signature_sha256.json",
+    "fingerprints/sealed_prediction_sha256.json",
+    "fingerprints/state_snapshot_sha256.json",
+    "method_companion_group.json",
+    "method_observations/des.json",
+    "method_observations/exact.json",
+    "metric_schema.json",
+    "metric_schema_sharing.json",
+    "projections/case_content.json",
+    "projections/output_root_reservation_des.json",
+    "projections/output_root_reservation_exact.json",
+    "projections/parameter_tuple.json",
+    "projections/random_stream_manifest_des.json",
+    "projections/random_stream_manifest_exact.json",
+    "projections/route_signature.json",
+    "projections/state_snapshot.json",
+    "sealed_prediction.json",
+    "semantic_lineage_declaration.json",
+)
+_CASE_ARTIFACT_PATH_REQUIRED_KEYS_V3 = (
+    "case_input",
+    "case_content_projection",
+    "state_snapshot",
+    "route_signature",
+    "parameter_tuple",
+    "rate_manifest",
+    "policy_declaration",
+    "selected_target_declaration",
+    "control_declaration",
+    "sealed_prediction",
+    "semantic_lineage_declaration",
+    "method_observations",
+    "random_stream_manifests",
+    "output_root_reservations",
+    "metric_schema",
+    "metric_schema_sharing",
+    "fingerprint_records",
+)
+
+
+def _case_construction_schema() -> JsonObject:
+    return cast(
+        JsonObject,
+        json.loads((_ROW_FAMILY_ROOT / "case_construction_schema.json").read_text()),
+    )
+
+
+def test_case_construction_schema_v3_top_level_contract_is_exact() -> None:
+    schema = _case_construction_schema()
+
+    assert schema["schema_version"] == "ims-deadlock/g6b-case-construction-schema/v3"
+    assert tuple(schema) == _CASE_CONSTRUCTION_SCHEMA_V3_TOP_LEVEL_KEYS
+    assert tuple(contracts.CASE_CONSTRUCTION_SCHEMA_TOP_LEVEL_KEYS) == (
+        _CASE_CONSTRUCTION_SCHEMA_V3_TOP_LEVEL_KEYS
+    )
+    assert "metric_schema_reuse_record_required_fields" not in schema
+    for required_key in (
+        "materialization_file_contracts",
+        "construction_log_contract",
+        "construction_ledger_contract",
+        "source_identity_contract",
+        "transient_path_contract",
+        "des_seed_contract",
+        "metric_schema_sharing_record_required_fields",
+    ):
+        assert required_key in schema
+
+
+@pytest.mark.parametrize("relative_path", _CASE_CONSTRUCTION_V3_RELATIVE_PATHS)
+def test_case_construction_v3_materialization_contracts_are_closed(
+    relative_path: str,
+) -> None:
+    schema = _case_construction_schema()
+    contract = schema["materialization_file_contracts"][relative_path]
+    code_contract = contracts.CASE_MATERIALIZATION_FILE_CONTRACTS[relative_path]
+
+    assert schema["materialization_file_contracts"] == dict(
+        contracts.CASE_MATERIALIZATION_FILE_CONTRACTS
+    )
+    assert contract == code_contract
+    assert contract["schema_version_field_value"].startswith("ims-deadlock/g6b-")
+    assert contract["hash_meaning"] in {
+        "final_canonical_file_bytes_sha256",
+        "null_placeholder_self_hash",
+    }
+    if (
+        relative_path.startswith("projections/")
+        or relative_path == "metric_schema.json"
+    ):
+        assert contract["projection_subject"] in {
+            "case_unit",
+            "method_observation",
+            "method_companion_group",
+        }
+    if relative_path.startswith("fingerprints/"):
+        assert (
+            contract["direct_stored_fingerprint_target"]
+            in _CASE_CONSTRUCTION_V3_RELATIVE_PATHS
+        )
+
+
+def test_case_construction_v3_inventory_and_manifest_hash_closure() -> None:
+    schema = _case_construction_schema()
+
+    assert tuple(
+        schema["nested_field_contracts"]["case_artifact_paths_required_keys"]
+    ) == (_CASE_ARTIFACT_PATH_REQUIRED_KEYS_V3)
+    assert tuple(contracts.CASE_ARTIFACT_PATHS_REQUIRED_KEYS) == (
+        _CASE_ARTIFACT_PATH_REQUIRED_KEYS_V3
+    )
+    assert len(schema["materialization_file_contracts"]) == 30
+    assert "metric_schema_reuse.json" not in schema["materialization_file_contracts"]
+    for required_projection in (
+        "projections/case_content.json",
+        "projections/output_root_reservation_des.json",
+        "projections/output_root_reservation_exact.json",
+        "projections/random_stream_manifest_des.json",
+        "projections/random_stream_manifest_exact.json",
+    ):
+        assert required_projection in schema["materialization_file_contracts"]
+    assert schema["sealed_bundle_manifest_required_fields"][-6:] == [
+        "construction_log_sha256",
+        "construction_ledger_head_sha256",
+        "metric_schema_sharing_record_hashes",
+        "case_file_count",
+        "governance_file_count",
+        "total_file_count",
+    ]
+    assert schema["nested_field_contracts"]["sealed_manifest_v2_count_contract"] == {
+        "case_file_count": 390,
+        "governance_file_count": 4,
+        "total_file_count": 394,
+    }
+    assert schema["nested_field_contracts"]["manifest_sharing_hash_contract"] == {
+        "metric_schema_sharing_record_hashes": "final_canonical_file_bytes_sha256",
+        "sharing_record_sha256": "separate_null_placeholder_self_hash",
+    }
+
+
+def test_case_construction_v3_log_ledger_source_transient_and_sharing_constants() -> (
+    None
+):
+    schema = _case_construction_schema()
+
+    assert tuple(schema["construction_log_contract"]["required_fields"]) == (
+        contracts.CONSTRUCTION_LOG_REQUIRED_FIELDS
+    )
+    assert tuple(schema["construction_ledger_contract"]["entry_required_fields"]) == (
+        contracts.CONSTRUCTION_LEDGER_ENTRY_REQUIRED_FIELDS
+    )
+    assert schema["construction_ledger_contract"]["event_transitions"] == {
+        "EMPTY": ["PREWRITE_REFUSED", "WRITE_STARTED"],
+        "PREWRITE_REFUSED": ["PREWRITE_REFUSED", "WRITE_STARTED"],
+        "WRITE_STARTED": ["FILE_CREATED", "INTERRUPTED_PARTIAL"],
+        "FILE_CREATED": ["FILE_CREATED", "READY_TO_SEAL", "INTERRUPTED_PARTIAL"],
+        "READY_TO_SEAL": ["INTERRUPTED_PARTIAL"],
+    }
+    assert tuple(
+        schema["source_identity_contract"]["authorization_v2_required_fields"]
+    ) == (contracts.CONSTRUCTION_AUTHORIZATION_V2_REQUIRED_FIELDS)
+    assert tuple(
+        schema["source_identity_contract"]["authorized_source_file_paths"]
+    ) == (contracts.CONSTRUCTION_AUTHORIZATION_SOURCE_FILE_PATHS)
+    assert schema["transient_path_contract"]["covered_final_path_count"] == 393
+    assert (
+        schema["transient_path_contract"]["sealed_success_requires_all_absent"] is True
+    )
+    assert tuple(schema["metric_schema_sharing_record_required_fields"]) == (
+        contracts.METRIC_SCHEMA_SHARING_RECORD_REQUIRED_FIELDS
+    )
+    assert schema["nested_field_contracts"]["metric_schema_sharing_contract"][
+        "sharing_reason_code"
+    ] == ("same_preregistered_estimand_metric_and_scoring_contract")
+    assert schema["nested_field_contracts"]["metric_schema_sharing_contract"][
+        "review_artifact_hash"
+    ] == ("da6da7c2e513e11761e439f8b43ef6260556c912d3e730f94f15eae088d90ea0")
+
+
+def test_case_construction_v3_seed_derivation_has_golden_vectors() -> None:
+    seed_root = contracts.derive_des_seed_root_hex(
+        approved_plan_artifact_hash="81b93394233b8201ab4ba234952f17110c87398bf34a83883481ac017112a4f7",
+        case_recipe_registry_sha256="1" * 64,
+        plan_review_artifact_hash="da6da7c2e513e11761e439f8b43ef6260556c912d3e730f94f15eae088d90ea0",
+        source_head="26515fe4da5c02d4700a54a3882d3767ace88af8",
+        source_tree_hash="9b3f36e9943ed48db4d74057ef16991859ded8fd",
+    )
+    commitment = contracts.derive_des_seed_root_commitment(seed_root)
+
+    assert (
+        seed_root == "65434dbc332dda84d7b7b25950473ea1273af8a17ffa941e063940cef004f999"
+    )
+    assert (
+        commitment == "3d982bd054d17c6ece6600fc7ae7db14f1d3472ae590a4c4ae470bd1de625763"
+    )
+    assert (
+        contracts.derive_des_philox_key_hex(
+            seed_root_hex=seed_root,
+            case_content_sha256="2" * 64,
+            replicate_index=0,
+        )
+        == "9f06a4cb91cf40941294c9a15482b7ace96b32f52c5ce3231ea9a99c09203710"
+    )
+    assert (
+        contracts.derive_des_derivation_label_sha256(
+            case_content_sha256="2" * 64,
+            seed_root_commitment=commitment,
+        )
+        == "a7b1ceb7c0ddf26ec86ce651dfe66a5facd6c19bdde702b20944b1ce98eaf66d"
+    )
+
+
+def _ledger_entry(
+    event_code: str, index: int, prior: str | None, **updates: Any
+) -> JsonObject:
+    entry: JsonObject = {
+        "schema_version": "ims-deadlock/g6b-construction-ledger-entry/v1",
+        "bundle_id": "g6b_discovery_case_construction_v1",
+        "attempt_id": "g6b_discovery_case_construction_v1_unauthorized",
+        "entry_index": index,
+        "event_code": event_code,
+        "prior_entry_sha256_or_null": prior,
+        "construction_authorization_sha256_or_null": None,
+        "source_head_or_null": None,
+        "source_tree_hash_or_null": None,
+        "candidate_log_sha256_or_null": None,
+        "created_file_hashes": {},
+        "observed_partial_file_hashes": {},
+        "refusal_reason_codes": [],
+        "causal_entry_sha256_or_null": None,
+        "interrupted_fragments": [],
+        "entry_sha256": None,
+    }
+    entry.update(updates)
+    entry["entry_sha256"] = finalized_self_hash(entry, "entry_sha256")
+    return entry
+
+
+def _ledger_frame(entry: JsonObject) -> bytes:
+    return b"\x1e" + canonical_bytes_v2(entry) + b"\x0a"
+
+
+def test_construction_ledger_accepts_recorded_fragments() -> None:
+    first = _ledger_entry("WRITE_STARTED", 0, None)
+    fragment = b'\x1e{"schema_version":"ims-deadlock/g6b-construction-ledger-entry/v1"'
+    fragment_hash = hashlib.sha256(fragment).hexdigest()
+    recovery = _ledger_entry(
+        "INTERRUPTED_PARTIAL",
+        1,
+        first["entry_sha256"],
+        observed_partial_file_hashes={
+            "case_units/case-01/.g6b-tmp-token-case_input.json": "3" * 64
+        },
+        refusal_reason_codes=["ledger_append_interrupted"],
+        causal_entry_sha256_or_null=first["entry_sha256"],
+        interrupted_fragments=[
+            {
+                "fragment_index": 0,
+                "fragment_sha256": fragment_hash,
+                "fragment_byte_count": len(fragment),
+            }
+        ],
+    )
+    raw = _ledger_frame(first) + fragment + _ledger_frame(recovery)
+
+    result = contracts.validate_construction_ledger_bytes(raw)
+
+    assert result.entry_count == 2
+    assert result.interrupted_fragment_count == 1
+    assert result.ledger_head_sha256 == recovery["entry_sha256"]
+    with pytest.raises(ValueError):
+        loads_v2(raw.decode("utf-8"))
+
+
+def test_validate_construction_ledger_bytes_rejects_unrecorded_fragment() -> None:
+    first = _ledger_entry("WRITE_STARTED", 0, None)
+    fragment = b'\x1e{"schema_version":"ims-deadlock/g6b-construction-ledger-entry/v1"'
+    recovery = _ledger_entry(
+        "INTERRUPTED_PARTIAL",
+        1,
+        first["entry_sha256"],
+        refusal_reason_codes=["ledger_append_interrupted"],
+        causal_entry_sha256_or_null=first["entry_sha256"],
+    )
+
+    with pytest.raises(SchemaContractError, match="interrupted_fragment_unrecorded"):
+        contracts.validate_construction_ledger_bytes(
+            _ledger_frame(first) + fragment + _ledger_frame(recovery)
+        )
+
+
+def test_construction_v3_keeps_retired_reuse_only_in_overlap_schemas() -> None:
+    schema = _case_construction_schema()
+    overlap = json.loads((_ROW_FAMILY_ROOT / "overlap_report_schema.json").read_text())
+    retired = json.loads(
+        (_ROW_FAMILY_ROOT / "retired_authority_fingerprint_schema.json").read_text()
+    )
+
+    assert "metric_schema_reuse_record_required_fields" not in schema
+    assert tuple(schema["metric_schema_sharing_record_required_fields"]) == (
+        contracts.METRIC_SCHEMA_SHARING_RECORD_REQUIRED_FIELDS
+    )
+    assert tuple(overlap["metric_schema_reuse_record_required_fields"]) == (
+        contracts.METRIC_SCHEMA_REUSE_RECORD_REQUIRED_FIELDS
+    )
+    assert tuple(retired["metric_schema_reuse_record_required_fields"]) == (
+        contracts.METRIC_SCHEMA_REUSE_RECORD_REQUIRED_FIELDS
+    )
+    assert (
+        schema["refusal_code_vocabulary_version"] == "ims-deadlock/g6b-refusal-codes/v2"
+    )
+    for added_code in {
+        "ledger_append_interrupted",
+        "partial_bundle_terminal",
+        "post_seal_ledger_mutation",
+        "projection_file_missing",
+        "source_identity_phase_violation",
+        "unexpected_transient_path",
+    }:
+        assert added_code in schema["refusal_reason_codes"]

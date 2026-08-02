@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import ast
+import hashlib
 import re
 from collections import Counter
 from collections.abc import Collection, Mapping, Sequence
+from dataclasses import dataclass
 from datetime import datetime
 from types import MappingProxyType
-from typing import Literal, TypeAlias
+from typing import Literal, TypeAlias, cast
 
 from ims_deadlock import g6b_canonical_json
 
@@ -4987,3 +4989,687 @@ def _find_contaminated_keys(value: object) -> set[str]:
         for item in value:
             found.update(_find_contaminated_keys(item))
     return found
+
+
+CASE_CONSTRUCTION_SCHEMA_TOP_LEVEL_KEYS = (
+    "schema_version",
+    "study_role",
+    "confirmation_use",
+    "schema_role",
+    "current_capability_reference",
+    "prerequisite_bundle_state",
+    "canonicalization_contract",
+    "self_hash_finalization_contract",
+    "estimand_id_scope_contract",
+    "governance_instance_root_template",
+    "case_unit_root_template",
+    "construction_authorization_required_fields",
+    "sealed_bundle_manifest_required_fields",
+    "case_unit_required_fields",
+    "method_observation_required_fields",
+    "method_companion_group_required_fields",
+    "semantic_lineage_declaration_required_fields",
+    "metric_schema_sharing_record_required_fields",
+    "fingerprint_record_required_fields",
+    "fingerprint_subject_map",
+    "fingerprint_payload_schemas",
+    "materialization_file_contracts",
+    "construction_log_contract",
+    "construction_ledger_contract",
+    "source_identity_contract",
+    "transient_path_contract",
+    "des_seed_contract",
+    "dimension_dependence_contract",
+    "allowed_input_modes",
+    "output_root_reservation_contract",
+    "nested_field_contracts",
+    "recursive_prohibited_fields",
+    "prohibited_instance_fields",
+    "refusal_code_vocabulary_version",
+    "refusal_reason_codes",
+    "schema_does_not_authorize_case_creation",
+)
+CASE_CONSTRUCTION_SCHEMA_VERSION_V3 = "ims-deadlock/g6b-case-construction-schema/v3"
+CONSTRUCTION_AUTHORIZATION_V2_REQUIRED_FIELDS = (
+    "schema_version",
+    "artifact_id",
+    "capability",
+    "authorized",
+    "bundle_id",
+    "case_unit_ids",
+    "method_observation_ids",
+    "method_companion_group_ids",
+    "source_head",
+    "source_tree_hash",
+    "source_file_hashes",
+    "case_construction_schema_sha256",
+    "case_recipe_registry_sha256",
+    "frozen_row_family_matrix_sha256",
+    "approved_corrigendum_hash",
+    "approved_plan_artifact_hash",
+    "plan_review_artifact_hash",
+    "task2_review_artifact_hash",
+    "allowed_operations",
+    "forbidden_operations",
+    "issued_at_utc",
+    "invalidated_by_identity_drift",
+    "artifact_sha256",
+)
+CONSTRUCTION_AUTHORIZATION_SOURCE_FILE_PATHS = (
+    "cases/discovery/g6b/row_families/structural_discovery_v1/case_construction_schema.json",
+    "cases/discovery/g6b/row_families/structural_discovery_v1/row_family_protocol.json",
+    "docs/verification/G6_B_CASE_CONSTRUCTION_TASK2_SOURCE_REVIEW.md",
+    "src/ims_deadlock/g6b_case_materializer.py",
+    "src/ims_deadlock/g6b_row_family_protocol.py",
+    "src/ims_deadlock/g6b_schema_contracts.py",
+    "tests/test_g6b_case_materializer.py",
+    "tests/test_g6b_row_family_protocol.py",
+    "tests/test_g6b_schema_contracts.py",
+)
+SEALED_BUNDLE_MANIFEST_V2_ADDITIONAL_FIELDS = (
+    "construction_log_sha256",
+    "construction_ledger_head_sha256",
+    "metric_schema_sharing_record_hashes",
+    "case_file_count",
+    "governance_file_count",
+    "total_file_count",
+)
+CASE_ARTIFACT_PATHS_REQUIRED_KEYS = (
+    "case_input",
+    "case_content_projection",
+    "state_snapshot",
+    "route_signature",
+    "parameter_tuple",
+    "rate_manifest",
+    "policy_declaration",
+    "selected_target_declaration",
+    "control_declaration",
+    "sealed_prediction",
+    "semantic_lineage_declaration",
+    "method_observations",
+    "random_stream_manifests",
+    "output_root_reservations",
+    "metric_schema",
+    "metric_schema_sharing",
+    "fingerprint_records",
+)
+CONSTRUCTION_LOG_REQUIRED_FIELDS = (
+    "schema_version",
+    "log_id",
+    "bundle_id",
+    "construction_authorization_sha256",
+    "source_head",
+    "source_tree_hash",
+    "source_file_hashes",
+    "case_construction_schema_sha256",
+    "case_recipe_catalog_schema_version",
+    "case_recipe_registry_sha256",
+    "case_recipe_hashes",
+    "case_transform_records",
+    "candidate_case_unit_ids",
+    "candidate_method_observation_ids",
+    "candidate_method_companion_group_ids",
+    "planned_case_file_paths",
+    "write_order",
+    "forbidden_operation_checks",
+    "log_sha256",
+)
+CONSTRUCTION_LEDGER_ENTRY_REQUIRED_FIELDS = (
+    "schema_version",
+    "bundle_id",
+    "attempt_id",
+    "entry_index",
+    "event_code",
+    "prior_entry_sha256_or_null",
+    "construction_authorization_sha256_or_null",
+    "source_head_or_null",
+    "source_tree_hash_or_null",
+    "candidate_log_sha256_or_null",
+    "created_file_hashes",
+    "observed_partial_file_hashes",
+    "refusal_reason_codes",
+    "causal_entry_sha256_or_null",
+    "interrupted_fragments",
+    "entry_sha256",
+)
+CONSTRUCTION_LEDGER_EVENT_TRANSITIONS = MappingProxyType(
+    {
+        "EMPTY": ("PREWRITE_REFUSED", "WRITE_STARTED"),
+        "PREWRITE_REFUSED": ("PREWRITE_REFUSED", "WRITE_STARTED"),
+        "WRITE_STARTED": ("FILE_CREATED", "INTERRUPTED_PARTIAL"),
+        "FILE_CREATED": ("FILE_CREATED", "READY_TO_SEAL", "INTERRUPTED_PARTIAL"),
+        "READY_TO_SEAL": ("INTERRUPTED_PARTIAL",),
+    }
+)
+METRIC_SCHEMA_SHARING_RECORD_REQUIRED_FIELDS = (
+    "schema_version",
+    "sharing_record_id",
+    "bundle_id",
+    "method_companion_group_id",
+    "metric_schema_sha256",
+    "canonical_owner_method_companion_group_id",
+    "sharing_group_ids",
+    "sharing_reason_code",
+    "comparability_requirement",
+    "independent_case_evidence",
+    "retired_authority_reuse_claimed",
+    "retired_reuse_authorization_ref_or_null",
+    "review_artifact_hash",
+    "sharing_record_sha256",
+)
+METRIC_SCHEMA_REUSE_RECORD_REQUIRED_FIELDS = (
+    "schema_version",
+    "reuse_record_id",
+    "dimension",
+    "retired_authority_id",
+    "retired_lineage_id",
+    "retired_metric_schema_sha256",
+    "new_metric_schema_sha256",
+    "method_companion_group_id",
+    "reuse_reason_code",
+    "comparability_requirement",
+    "permitted_claim_codes",
+    "forbidden_claim_codes",
+    "review_artifact_hash",
+    "reuse_record_sha256",
+)
+CASE_CONSTRUCTION_V3_REFUSAL_REASON_CODES = tuple(
+    sorted(
+        {
+            "batch_incomplete",
+            "canonicalization_violation",
+            "missing_hash",
+            "outcome_leakage",
+            "output_root_reuse_or_materialized",
+            "runtime_identity_drift",
+            "sealed_input_drift",
+            "self_hash_mismatch",
+            "subject_id_contaminated_projection",
+            "unauthorized_case_creation_attempt",
+            "unclassified_scientific_input",
+            "ledger_append_interrupted",
+            "partial_bundle_terminal",
+            "post_seal_ledger_mutation",
+            "projection_file_missing",
+            "source_identity_phase_violation",
+            "unexpected_transient_path",
+        }
+    )
+)
+_DES_SEED_RULE_CODE = "g6b_philox_length_prefixed_sha256_v2"
+_G6B_CONSTRUCTION_BUNDLE_ID = "g6b_discovery_case_construction_v1"
+_FROZEN_ROW_FAMILY_MATRIX_SHA256 = (
+    "487d81aa79a7bca681db81f19a4d6bd315668c43b1c4538c47f01f099d8e205f"
+)
+
+
+def _file_contract(
+    *,
+    role: str,
+    schema_version_field_name: str,
+    schema_version_field_value: str,
+    required_fields_contract: str,
+    hash_meaning: str,
+    projection_subject: str | None = None,
+    direct_stored_fingerprint_target: str | None = None,
+) -> Mapping[str, object]:
+    return MappingProxyType(
+        {
+            "role": role,
+            "schema_version_field_name": schema_version_field_name,
+            "schema_version_field_value": schema_version_field_value,
+            "required_fields_contract": required_fields_contract,
+            "hash_meaning": hash_meaning,
+            "projection_subject": projection_subject,
+            "direct_stored_fingerprint_target": direct_stored_fingerprint_target,
+        }
+    )
+
+
+CASE_MATERIALIZATION_FILE_CONTRACTS = MappingProxyType(
+    {
+        "case_input.json": _file_contract(
+            role="case_unit_record",
+            schema_version_field_name="schema_version",
+            schema_version_field_value="ims-deadlock/g6b-case-unit/v1",
+            required_fields_contract="case_unit_required_fields",
+            hash_meaning="final_canonical_file_bytes_sha256",
+        ),
+        "declarations/control_declaration.json": _file_contract(
+            role="control_declaration",
+            schema_version_field_name="schema_version",
+            schema_version_field_value="ims-deadlock/g6b-control-declaration/v1",
+            required_fields_contract="fingerprint_payload_schemas.case_content_sha256.nested_field_contracts.control_declaration",
+            hash_meaning="final_canonical_file_bytes_sha256",
+        ),
+        "declarations/policy_declaration.json": _file_contract(
+            role="policy_declaration",
+            schema_version_field_name="schema_version",
+            schema_version_field_value="ims-deadlock/g6b-policy-declaration/v1",
+            required_fields_contract="fingerprint_payload_schemas.case_content_sha256.nested_field_contracts.policy_declaration",
+            hash_meaning="final_canonical_file_bytes_sha256",
+        ),
+        "declarations/rate_manifest.json": _file_contract(
+            role="rate_manifest",
+            schema_version_field_name="schema_version",
+            schema_version_field_value="ims-deadlock/g6b-rate-manifest/v1",
+            required_fields_contract="fingerprint_payload_schemas.case_content_sha256.nested_field_contracts.rate_manifest",
+            hash_meaning="final_canonical_file_bytes_sha256",
+        ),
+        "declarations/selected_target_declaration.json": _file_contract(
+            role="selected_target_declaration",
+            schema_version_field_name="schema_version",
+            schema_version_field_value="ims-deadlock/g6b-selected-target-declaration/v1",
+            required_fields_contract="fingerprint_payload_schemas.case_content_sha256.nested_field_contracts.selected_target_declaration",
+            hash_meaning="final_canonical_file_bytes_sha256",
+        ),
+        "fingerprints/case_content_sha256.json": _file_contract(
+            role="fingerprint_record",
+            schema_version_field_name="record_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-fingerprint-record/v2",
+            required_fields_contract="fingerprint_record_required_fields",
+            hash_meaning="null_placeholder_self_hash",
+            direct_stored_fingerprint_target="projections/case_content.json",
+        ),
+        "fingerprints/metric_schema_sha256.json": _file_contract(
+            role="fingerprint_record",
+            schema_version_field_name="record_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-fingerprint-record/v2",
+            required_fields_contract="fingerprint_record_required_fields",
+            hash_meaning="null_placeholder_self_hash",
+            direct_stored_fingerprint_target="metric_schema.json",
+        ),
+        "fingerprints/output_root_reservation_sha256_des.json": _file_contract(
+            role="fingerprint_record",
+            schema_version_field_name="record_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-fingerprint-record/v2",
+            required_fields_contract="fingerprint_record_required_fields",
+            hash_meaning="null_placeholder_self_hash",
+            direct_stored_fingerprint_target="projections/output_root_reservation_des.json",
+        ),
+        "fingerprints/output_root_reservation_sha256_exact.json": _file_contract(
+            role="fingerprint_record",
+            schema_version_field_name="record_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-fingerprint-record/v2",
+            required_fields_contract="fingerprint_record_required_fields",
+            hash_meaning="null_placeholder_self_hash",
+            direct_stored_fingerprint_target="projections/output_root_reservation_exact.json",
+        ),
+        "fingerprints/parameter_tuple_sha256.json": _file_contract(
+            role="fingerprint_record",
+            schema_version_field_name="record_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-fingerprint-record/v2",
+            required_fields_contract="fingerprint_record_required_fields",
+            hash_meaning="null_placeholder_self_hash",
+            direct_stored_fingerprint_target="projections/parameter_tuple.json",
+        ),
+        "fingerprints/random_stream_manifest_sha256_des.json": _file_contract(
+            role="fingerprint_record",
+            schema_version_field_name="record_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-fingerprint-record/v2",
+            required_fields_contract="fingerprint_record_required_fields",
+            hash_meaning="null_placeholder_self_hash",
+            direct_stored_fingerprint_target="projections/random_stream_manifest_des.json",
+        ),
+        "fingerprints/random_stream_manifest_sha256_exact.json": _file_contract(
+            role="fingerprint_record",
+            schema_version_field_name="record_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-fingerprint-record/v2",
+            required_fields_contract="fingerprint_record_required_fields",
+            hash_meaning="null_placeholder_self_hash",
+            direct_stored_fingerprint_target="projections/random_stream_manifest_exact.json",
+        ),
+        "fingerprints/route_signature_sha256.json": _file_contract(
+            role="fingerprint_record",
+            schema_version_field_name="record_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-fingerprint-record/v2",
+            required_fields_contract="fingerprint_record_required_fields",
+            hash_meaning="null_placeholder_self_hash",
+            direct_stored_fingerprint_target="projections/route_signature.json",
+        ),
+        "fingerprints/sealed_prediction_sha256.json": _file_contract(
+            role="fingerprint_record",
+            schema_version_field_name="record_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-fingerprint-record/v2",
+            required_fields_contract="fingerprint_record_required_fields",
+            hash_meaning="null_placeholder_self_hash",
+            direct_stored_fingerprint_target="sealed_prediction.json",
+        ),
+        "fingerprints/state_snapshot_sha256.json": _file_contract(
+            role="fingerprint_record",
+            schema_version_field_name="record_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-fingerprint-record/v2",
+            required_fields_contract="fingerprint_record_required_fields",
+            hash_meaning="null_placeholder_self_hash",
+            direct_stored_fingerprint_target="projections/state_snapshot.json",
+        ),
+        "method_companion_group.json": _file_contract(
+            role="method_companion_group_record",
+            schema_version_field_name="schema_version",
+            schema_version_field_value="ims-deadlock/g6b-method-companion-group/v1",
+            required_fields_contract="method_companion_group_required_fields",
+            hash_meaning="final_canonical_file_bytes_sha256",
+        ),
+        "method_observations/des.json": _file_contract(
+            role="method_observation_record",
+            schema_version_field_name="schema_version",
+            schema_version_field_value="ims-deadlock/g6b-method-observation/v1",
+            required_fields_contract="method_observation_required_fields",
+            hash_meaning="final_canonical_file_bytes_sha256",
+        ),
+        "method_observations/exact.json": _file_contract(
+            role="method_observation_record",
+            schema_version_field_name="schema_version",
+            schema_version_field_value="ims-deadlock/g6b-method-observation/v1",
+            required_fields_contract="method_observation_required_fields",
+            hash_meaning="final_canonical_file_bytes_sha256",
+        ),
+        "metric_schema.json": _file_contract(
+            role="metric_schema_projection",
+            schema_version_field_name="projection_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-metric-schema-projection/v1",
+            required_fields_contract="fingerprint_payload_schemas.metric_schema_sha256.required_fields",
+            hash_meaning="final_canonical_file_bytes_sha256",
+            projection_subject="method_companion_group",
+        ),
+        "metric_schema_sharing.json": _file_contract(
+            role="metric_schema_sharing_record",
+            schema_version_field_name="schema_version",
+            schema_version_field_value="ims-deadlock/g6b-metric-schema-sharing/v1",
+            required_fields_contract="metric_schema_sharing_record_required_fields",
+            hash_meaning="null_placeholder_self_hash",
+        ),
+        "projections/case_content.json": _file_contract(
+            role="case_content_projection",
+            schema_version_field_name="projection_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-case-content-projection/v1",
+            required_fields_contract="fingerprint_payload_schemas.case_content_sha256.required_fields",
+            hash_meaning="final_canonical_file_bytes_sha256",
+            projection_subject="case_unit",
+        ),
+        "projections/output_root_reservation_des.json": _file_contract(
+            role="output_root_reservation_projection",
+            schema_version_field_name="projection_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-output-root-reservation-projection/v1",
+            required_fields_contract="output_root_reservation_contract.instance_required_fields",
+            hash_meaning="null_placeholder_self_hash",
+            projection_subject="method_observation",
+        ),
+        "projections/output_root_reservation_exact.json": _file_contract(
+            role="output_root_reservation_projection",
+            schema_version_field_name="projection_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-output-root-reservation-projection/v1",
+            required_fields_contract="output_root_reservation_contract.instance_required_fields",
+            hash_meaning="null_placeholder_self_hash",
+            projection_subject="method_observation",
+        ),
+        "projections/parameter_tuple.json": _file_contract(
+            role="parameter_tuple_projection",
+            schema_version_field_name="projection_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-parameter-tuple-projection/v1",
+            required_fields_contract="fingerprint_payload_schemas.parameter_tuple_sha256.required_fields",
+            hash_meaning="final_canonical_file_bytes_sha256",
+            projection_subject="case_unit",
+        ),
+        "projections/random_stream_manifest_des.json": _file_contract(
+            role="random_stream_manifest_projection",
+            schema_version_field_name="projection_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-random-stream-manifest-projection/v1",
+            required_fields_contract="fingerprint_payload_schemas.random_stream_manifest_sha256.required_fields",
+            hash_meaning="final_canonical_file_bytes_sha256",
+            projection_subject="method_observation",
+        ),
+        "projections/random_stream_manifest_exact.json": _file_contract(
+            role="random_stream_manifest_projection",
+            schema_version_field_name="projection_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-random-stream-manifest-projection/v1",
+            required_fields_contract="fingerprint_payload_schemas.random_stream_manifest_sha256.required_fields",
+            hash_meaning="final_canonical_file_bytes_sha256",
+            projection_subject="method_observation",
+        ),
+        "projections/route_signature.json": _file_contract(
+            role="route_signature_projection",
+            schema_version_field_name="projection_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-route-signature-projection/v1",
+            required_fields_contract="fingerprint_payload_schemas.route_signature_sha256.required_fields",
+            hash_meaning="final_canonical_file_bytes_sha256",
+            projection_subject="case_unit",
+        ),
+        "projections/state_snapshot.json": _file_contract(
+            role="state_snapshot_projection",
+            schema_version_field_name="projection_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-state-snapshot-projection/v1",
+            required_fields_contract="fingerprint_payload_schemas.state_snapshot_sha256.required_fields",
+            hash_meaning="final_canonical_file_bytes_sha256",
+            projection_subject="case_unit",
+        ),
+        "sealed_prediction.json": _file_contract(
+            role="sealed_prediction_projection",
+            schema_version_field_name="projection_schema_version",
+            schema_version_field_value="ims-deadlock/g6b-sealed-prediction-projection/v1",
+            required_fields_contract="fingerprint_payload_schemas.sealed_prediction_sha256.required_fields",
+            hash_meaning="final_canonical_file_bytes_sha256",
+            projection_subject="case_unit",
+        ),
+        "semantic_lineage_declaration.json": _file_contract(
+            role="semantic_lineage_declaration",
+            schema_version_field_name="schema_version",
+            schema_version_field_value="ims-deadlock/g6b-semantic-lineage-declaration/v1",
+            required_fields_contract="semantic_lineage_declaration_required_fields",
+            hash_meaning="null_placeholder_self_hash",
+        ),
+    }
+)
+
+
+@dataclass(frozen=True)
+class ConstructionLedgerValidation:
+    entry_count: int
+    interrupted_fragment_count: int
+    ledger_head_sha256: str
+
+
+def derive_des_seed_root_hex(
+    *,
+    approved_plan_artifact_hash: str,
+    case_recipe_registry_sha256: str,
+    plan_review_artifact_hash: str,
+    source_head: str,
+    source_tree_hash: str,
+) -> str:
+    for label, digest in {
+        "approved_plan_artifact_hash": approved_plan_artifact_hash,
+        "case_recipe_registry_sha256": case_recipe_registry_sha256,
+        "plan_review_artifact_hash": plan_review_artifact_hash,
+    }.items():
+        _validate_lower_sha256(digest, label=label)
+    for label, git_oid in {
+        "source_head": source_head,
+        "source_tree_hash": source_tree_hash,
+    }.items():
+        if (
+            not isinstance(git_oid, str)
+            or len(git_oid) != 40
+            or any(char not in LOWER_SHA256_HEX_DIGITS for char in git_oid)
+        ):
+            raise SchemaContractError("invalid_git_object_id", label)
+    return g6b_canonical_json.canonical_sha256_v2(
+        {
+            "approved_plan_artifact_hash": approved_plan_artifact_hash,
+            "bundle_id": _G6B_CONSTRUCTION_BUNDLE_ID,
+            "case_recipe_registry_sha256": case_recipe_registry_sha256,
+            "frozen_row_family_matrix_sha256": _FROZEN_ROW_FAMILY_MATRIX_SHA256,
+            "plan_review_artifact_hash": plan_review_artifact_hash,
+            "schema_version": "ims-deadlock/g6b-des-seed-root-material/v1",
+            "source_head": source_head,
+            "source_tree_hash": source_tree_hash,
+        }
+    )
+
+
+def derive_des_seed_root_commitment(seed_root_hex: str) -> str:
+    _validate_lower_sha256(seed_root_hex, label="seed_root_hex")
+    return g6b_canonical_json.canonical_sha256_v2(
+        {
+            "schema_version": "ims-deadlock/g6b-des-seed-root-commitment/v1",
+            "seed_root_hex": seed_root_hex,
+        }
+    )
+
+
+def derive_des_philox_key_hex(
+    *,
+    seed_root_hex: str,
+    case_content_sha256: str,
+    replicate_index: int,
+) -> str:
+    _validate_lower_sha256(seed_root_hex, label="seed_root_hex")
+    _validate_lower_sha256(case_content_sha256, label="case_content_sha256")
+    if replicate_index < 0:
+        raise SchemaContractError("invalid_replicate_index")
+    fields = (
+        "g6b_des_stream_v2",
+        seed_root_hex,
+        "Philox",
+        "v1",
+        case_content_sha256,
+        "des_companion",
+        "primary",
+        str(replicate_index),
+    )
+    preimage = b"".join(
+        len(field.encode("utf-8")).to_bytes(8, "big") + field.encode("utf-8")
+        for field in fields
+    )
+    return hashlib.sha256(preimage).hexdigest()
+
+
+def derive_des_derivation_label_sha256(
+    *,
+    case_content_sha256: str,
+    seed_root_commitment: str,
+) -> str:
+    _validate_lower_sha256(case_content_sha256, label="case_content_sha256")
+    _validate_lower_sha256(seed_root_commitment, label="seed_root_commitment")
+    return g6b_canonical_json.canonical_sha256_v2(
+        {
+            "case_content_sha256": case_content_sha256,
+            "derivation_rule": _DES_SEED_RULE_CODE,
+            "method_role": "des_companion",
+            "prng_family": "Philox",
+            "prng_version": "v1",
+            "replicate_index_start": 0,
+            "replicate_index_stop_exclusive": 4096,
+            "schema_version": "ims-deadlock/g6b-des-derivation-domain/v1",
+            "seed_root_commitment": seed_root_commitment,
+            "stream_role": "primary",
+        }
+    )
+
+
+def _validate_ledger_entry(
+    entry: Mapping[str, JsonValue],
+    *,
+    expected_index: int,
+    prior_event: str,
+    prior_hash: str | None,
+    pending_fragments: Sequence[bytes],
+) -> str:
+    validate_exact_keys(
+        entry, CONSTRUCTION_LEDGER_ENTRY_REQUIRED_FIELDS, label="ledger_entry"
+    )
+    if entry.get("schema_version") != "ims-deadlock/g6b-construction-ledger-entry/v1":
+        raise SchemaContractError("wrong_ledger_schema_version")
+    if entry.get("entry_index") != expected_index:
+        raise SchemaContractError("ledger_index_gap")
+    if entry.get("prior_entry_sha256_or_null") != prior_hash:
+        raise SchemaContractError("ledger_prior_hash_mismatch")
+    event = entry.get("event_code")
+    if not isinstance(
+        event, str
+    ) or event not in CONSTRUCTION_LEDGER_EVENT_TRANSITIONS.get(prior_event, ()):
+        raise SchemaContractError("ledger_transition_invalid")
+    try:
+        g6b_canonical_json.verify_finalized_self_hash(dict(entry), "entry_sha256")
+    except Exception as exc:
+        raise SchemaContractError("ledger_entry_self_hash_invalid") from exc
+    interrupted = entry.get("interrupted_fragments")
+    if not isinstance(interrupted, Sequence) or isinstance(interrupted, str | bytes):
+        raise SchemaContractError("interrupted_fragment_contract_invalid")
+    if pending_fragments:
+        if event != "INTERRUPTED_PARTIAL":
+            raise SchemaContractError("interrupted_fragment_unrecorded")
+        if len(interrupted) != len(pending_fragments):
+            raise SchemaContractError("interrupted_fragment_unrecorded")
+        for index, (record, fragment) in enumerate(
+            zip(interrupted, pending_fragments, strict=True)
+        ):
+            if not isinstance(record, Mapping):
+                raise SchemaContractError("interrupted_fragment_contract_invalid")
+            if record.get("fragment_index") != index:
+                raise SchemaContractError("interrupted_fragment_contract_invalid")
+            if record.get("fragment_byte_count") != len(fragment):
+                raise SchemaContractError("interrupted_fragment_unrecorded")
+            if record.get("fragment_sha256") != hashlib.sha256(fragment).hexdigest():
+                raise SchemaContractError("interrupted_fragment_unrecorded")
+        refusal_codes = entry.get("refusal_reason_codes")
+        if (
+            not isinstance(refusal_codes, Sequence)
+            or "ledger_append_interrupted" not in refusal_codes
+        ):
+            raise SchemaContractError("interrupted_fragment_unrecorded")
+    elif len(interrupted) != 0:
+        raise SchemaContractError("interrupted_fragment_unexpected")
+    return str(entry["entry_sha256"])
+
+
+def validate_construction_ledger_bytes(raw: bytes) -> ConstructionLedgerValidation:
+    if not raw:
+        raise SchemaContractError("empty_ledger")
+    pos = 0
+    expected_index = 0
+    prior_event = "EMPTY"
+    prior_hash: str | None = None
+    pending_fragments: list[bytes] = []
+    interrupted_fragment_count = 0
+    while pos < len(raw):
+        if raw[pos] != 0x1E:
+            raise SchemaContractError("ledger_frame_missing_rs")
+        next_lf = raw.find(b"\x0a", pos + 1)
+        next_rs = raw.find(b"\x1e", pos + 1)
+        if next_lf != -1 and (next_rs == -1 or next_lf < next_rs):
+            payload = raw[pos + 1 : next_lf]
+            try:
+                loaded = g6b_canonical_json.loads_v2(payload.decode("utf-8"))
+            except Exception as exc:
+                raise SchemaContractError("ledger_frame_json_invalid") from exc
+            if not isinstance(loaded, Mapping):
+                raise SchemaContractError("ledger_entry_not_object")
+            entry = cast(Mapping[str, JsonValue], loaded)
+            if g6b_canonical_json.canonical_bytes_v2(dict(entry)) != payload:
+                raise SchemaContractError("ledger_frame_noncanonical")
+            prior_hash = _validate_ledger_entry(
+                entry,
+                expected_index=expected_index,
+                prior_event=prior_event,
+                prior_hash=prior_hash,
+                pending_fragments=pending_fragments,
+            )
+            prior_event = str(loaded["event_code"])
+            interrupted_fragment_count += len(pending_fragments)
+            pending_fragments.clear()
+            expected_index += 1
+            pos = next_lf + 1
+        else:
+            end = next_rs if next_rs != -1 else len(raw)
+            pending_fragments.append(raw[pos:end])
+            pos = end
+    if pending_fragments:
+        raise SchemaContractError("interrupted_fragment_unrecorded")
+    if prior_hash is None:
+        raise SchemaContractError("empty_ledger")
+    return ConstructionLedgerValidation(
+        entry_count=expected_index,
+        interrupted_fragment_count=interrupted_fragment_count,
+        ledger_head_sha256=prior_hash,
+    )

@@ -20,6 +20,7 @@
     "cases/discovery/g6b/row_families/structural_discovery_v1/target_certification_schema.json",
     "cases/discovery/g6b/row_families/structural_discovery_v1/quantitative_authorization_schema.json"
   ],
+  "artifact_manifest_sha256": "cd547730d7922a5e9e218872f1c53b561086bc34f9aaace6dd47f73890ad3012",
   "canonicalization_contract": {
     "version": "ims-deadlock/g6b-canonical-json/v2",
     "duplicate_members": "reject_at_every_depth",
