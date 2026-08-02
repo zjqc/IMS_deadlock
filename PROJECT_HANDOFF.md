@@ -88,6 +88,12 @@ RED（`1 failed`，两条路径均为 `outside_task6_declared_files`）。测试
 final direct 为 `2 passed`，Task-6 selection 为
 `17 passed, 1112 deselected`，测试文件 Ruff/format/strict mypy 和 diff check
 均通过。该测试后继不允许 production/schema/case/evidence/artifact 路径。
+计划发布 subject 是 `bb312fc8db94e977f5c483043715c805fafc86c7`，已推送到
+`codex/g6b-case-construction-plan` 并建立堆叠 Draft PR #5：
+`https://github.com/zjqc/IMS_deadlock/pull/5`；base 是 PR #4 的
+`codex/g6b-case-target-certification-final-review`；包含当前 PR 状态文档后继后，
+#5 显示 2 commits / 5
+paths。PR #5 的 draft/merge 状态不改变 `USER_APPROVAL_PENDING`。
 
 ### 1.1 2026-08-02 当前接管快照
 
@@ -101,7 +107,7 @@ final direct 为 `2 passed`，Task-6 selection 为
 | Barrier B quantitative science | `NOT AUTHORIZED / NOT RUN` | exact/DES same-target locks 与单独定量授权完成后，才可运行 CTMC/DES |
 | G6-C/D/E | 全部 `NOT STARTED / NOT PASSED` | 只有 G6-B 全条件通过后才能进入 confirmation preregistration、freeze、一次性执行 |
 | 论文 | 无统一主稿，paper gate 未通过 | 保留 G5 FAIL、R1/R2 failure、R3 historical-only 与 minimality failures；G6-E 后重建 paper gate |
-| Git 集成 | Draft PR #4 `https://github.com/zjqc/IMS_deadlock/pull/4` 已建立并更新到 documentation successor `004bc7d3ffb73801a70fdc8d4067ad9375c67ec0`；`main` 仍是 `9c707ce3d990541847aee745bec211bb55c74f6b`；plan publication 使用独立分支 `codex/g6b-case-construction-plan` | 保持 PR #4 和 plan PR 为 draft；不得在未获 merge authority 时合并，且 merge 不构成 plan 批准 |
+| Git 集成 | Draft PR #4 `https://github.com/zjqc/IMS_deadlock/pull/4` 已更新到 `004bc7d3...`；stacked Draft PR #5 `https://github.com/zjqc/IMS_deadlock/pull/5` 发布 plan subject `bb312fc8...`，base 为 PR #4 分支；`main` 仍是 `9c707ce3d990541847aee745bec211bb55c74f6b` | 保持 #4/#5 为 draft；不得在未获 merge authority 时合并，且 merge 不构成 plan exact-bytes 批准 |
 | 非阻塞工程卫生 | 批准门 `ruff format --check src tests` 为 47 files green；更宽的 `ruff format --check .` 仍会对 3 个历史 plan 文档代码块提出格式建议 | 作为历史文档格式债保留；若清理，必须单独审查且不得改动批准规格 digest、冻结协议或证据 bytes |
 
 当前没有代码运行失败，也不是因理论—实现比较得出矛盾而停机。最近的停顿发生
@@ -197,6 +203,11 @@ case-construction plan 和三路审查已经发布；当前真正的 first unche
   Draft PR #4 已建立：`https://github.com/zjqc/IMS_deadlock/pull/4`。它尚未
   merge，也没有获得 merge authority；已知 pre-case blocker 和计划审批门关闭前
   必须保持 draft，不能写成已进入 `main`。
+- 计划发布分支 `codex/g6b-case-construction-plan` 已在 subject
+  `bb312fc8db94e977f5c483043715c805fafc86c7` 建立 stacked Draft PR #5：
+  `https://github.com/zjqc/IMS_deadlock/pull/5`，base 为
+  `codex/g6b-case-target-certification-final-review`。该堆叠结构只隔离 diff，
+  不赋予 merge authority 或 exact-bytes approval。
 - 历史交接编写前锁定 `main@235b69a189a869578d9760fcc5585fbfe21a7808`
   和 tree `9ffa5974ced053e3ffd9943f34e163c4606eddf2` 仅是旧交接快照，
   不再是当前 G6-B continuation 的目标锁。
@@ -1048,9 +1059,11 @@ G6-B 推进期间可以建立诚实的 working manuscript skeleton，但必须�
 9. G6-D freeze 与 G6-E 一次性执行；
 10. 重建 paper gate，完成主稿、claim-evidence audit、复现包和投稿元数据。
 
-Git 管理可与“写新计划”并行但不改变科学顺序：按已批准方式 2 为当前分支创建
-PR 到 `main`。不得在未核对 PR diff、review subject 和负证据保留情况时直接
-merge；PR/merge 状态必须在下一次交接中实时更新。
+Git 管理不改变科学顺序：PR #4 以 `main` 为 base；计划分支 PR #5 堆叠在
+PR #4 的 final-review 分支上；包含 PR 状态文档后继后，计划 diff 限定为
+2 commits / 5 paths。
+不得在未核对 PR diff、review subject、负证据保留情况和 merge authority 时
+merge；即使 merge，也不替代 plan exact-bytes approval。
 
 ## 17. 科学与工程停止条件
 

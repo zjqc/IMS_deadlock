@@ -7,7 +7,7 @@
 
 | Gate | 状态 | 当前证据 | 未关闭项 |
 | --- | --- | --- | --- |
-| G0 仓库门 | PASS | Dell 目标路径、GitHub SSH、干净集成 worktree 和项目专用 Python 3.13.9 已核验；污染历史保持隔离；历史整合状态已进入 `main@9c707ce3d990541847aee745bec211bb55c74f6b`；当前 G6-B final-review 分支仍隔离，Draft PR #4 为 `https://github.com/zjqc/IMS_deadlock/pull/4`，已推送 documentation successor `004bc7d3...`；计划发布使用独立分支 `codex/g6b-case-construction-plan` | PR #4 与计划 PR 均无 merge authority；merge 不构成 plan exact-bytes approval，两个 PR 在批准门关闭前保持 draft |
+| G0 仓库门 | PASS | Dell 目标路径、GitHub SSH、干净集成 worktree 和项目专用 Python 3.13.9 已核验；污染历史保持隔离；历史整合状态已进入 `main@9c707ce3d990541847aee745bec211bb55c74f6b`；Draft PR #4 `https://github.com/zjqc/IMS_deadlock/pull/4` 已推送 `004bc7d3...`；plan subject `bb312fc8...` 已在独立分支通过 stacked Draft PR #5 `https://github.com/zjqc/IMS_deadlock/pull/5` 发布，base 为 PR #4 分支；包含 PR 状态文档后继后 diff 为 2 commits / 5 paths | PR #4/#5 均无 merge authority；merge 不构成 plan exact-bytes approval，两个 PR 在批准门关闭前保持 draft |
 | G1 文献门 | PASS（scope-bounded） | 六条文献链、43 项审计矩阵、20 个全文/全文审计锚点、迁移卡；L30-L35 与 B05 七篇审计已纳入比较边界；R7/R8 类别饱和保持 | 不支持首创性、系统综述或一般 IMS/Petri 等价；G4 必须检验 CRP、recorder、SBA、L30/B05 comparator 边界 |
 | G2 理论门 | PASS（严格受限主链） | P1 有限 LTS/reachability-net；P2 capacity-mediated 封闭核 iff；P2c `IMS-SIP^1` 诊断虹吸双向桥；P3 偏序充分条件；P3d `BIX1-SAT` 可达阈值；P3e `BIX2-PERSIST` 三资源 ring 精确阈值与同语义 DAG 修复；P4 CTMC；P5 supervisor；P6 复杂性边界 | plant-level structured Petri/S3PR 桥、替代/AND/AGV/预约/多 persistent-buffer 一般岛阈值、一般紧凑 IMS 精确复杂性和 risk-budget 控制仍开放 |
 | G3 算法门 | PASS（严格小有限模型 + P2c/P3d/P3e） | 原 G3 证据为 123 tests；加入 G4/G5/G6 协议、局部核/终端类恢复、replay 数值完整性和 post-R3 comparator fail-closed 回归后，Dell 项目 Python 3.13.9 全库 341 tests、Ruff check/format、strict mypy 通过；原 C0、BIX1/BIX2 结果不变 | 一般 plant/S3PR、结构案例物理速率、一般 persistent-buffer/AGV 阈值和风险预算/Pareto 算法仍开放 |
