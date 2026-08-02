@@ -6133,15 +6133,31 @@ def test_construction_ledger_ready_to_seal_requires_exact_391_hashes() -> None:
             _ledger_frame(first) + _ledger_frame(created) + _ledger_frame(ready)
         )
 
-    complete = {
-        f"case_units/case-{index:03d}/case_input.json": "5" * 64 for index in range(391)
-    }
+    prior_created: list[JsonObject] = [created]
+    prior = created
+    complete = {"case_units/case-000/case_input.json": "4" * 64}
+    for index in range(1, 391):
+        path = f"case_units/case-{index:03d}/case_input.json"
+        prior = _ledger_entry(
+            "FILE_CREATED",
+            index + 1,
+            prior["entry_sha256"],
+            created_file_hashes={path: "5" * 64},
+        )
+        prior_created.append(prior)
+        complete[path] = "5" * 64
     ready = _ledger_entry(
-        "READY_TO_SEAL", 2, created["entry_sha256"], created_file_hashes=complete
+        "READY_TO_SEAL", 392, prior["entry_sha256"], created_file_hashes=complete
     )
 
     result = contracts.validate_construction_ledger_bytes(
-        _ledger_frame(first) + _ledger_frame(created) + _ledger_frame(ready)
+        b"".join(
+            [
+                _ledger_frame(first),
+                *map(_ledger_frame, prior_created),
+                _ledger_frame(ready),
+            ]
+        )
     )
 
     assert result.ledger_head_sha256 == ready["entry_sha256"]
@@ -6214,3 +6230,161 @@ def test_des_philox_key_accepts_replicate_domain_boundaries() -> None:
             replicate_index=replicate_index,
         )
         assert len(digest) == 64
+
+
+def _file_created_entry(
+    index: int,
+    prior: JsonObject,
+    path: str,
+    digest: str,
+) -> JsonObject:
+    return _ledger_entry(
+        "FILE_CREATED",
+        index,
+        prior["entry_sha256"],
+        created_file_hashes={path: digest},
+    )
+
+
+def _ready_entry(index: int, prior: JsonObject, created: dict[str, str]) -> JsonObject:
+    return _ledger_entry(
+        "READY_TO_SEAL",
+        index,
+        prior["entry_sha256"],
+        created_file_hashes=created,
+    )
+
+
+def _ledger_with_two_file_creates(
+    *,
+    second_path: str,
+    second_digest: str,
+) -> bytes:
+    first = _ledger_entry("WRITE_STARTED", 0, None)
+    created_0 = _file_created_entry(
+        1,
+        first,
+        "case_units/case-000/case_input.json",
+        "4" * 64,
+    )
+    created_1 = _file_created_entry(2, created_0, second_path, second_digest)
+    return _ledger_frame(first) + _ledger_frame(created_0) + _ledger_frame(created_1)
+
+
+@pytest.mark.parametrize("second_digest", ["4" * 64, "5" * 64])
+def test_construction_ledger_rejects_repeated_file_created_path(
+    second_digest: str,
+) -> None:
+    raw = _ledger_with_two_file_creates(
+        second_path="case_units/case-000/case_input.json",
+        second_digest=second_digest,
+    )
+
+    with pytest.raises(SchemaContractError, match="file_created_path_repeated"):
+        contracts.validate_construction_ledger_bytes(raw)
+
+
+def test_construction_ledger_ready_rejects_prior_hash_drift() -> None:
+    first = _ledger_entry("WRITE_STARTED", 0, None)
+    prior_created: list[JsonObject] = []
+    prior = first
+    cumulative: dict[str, str] = {}
+    for index in range(391):
+        path = f"case_units/case-{index:03d}/case_input.json"
+        digest = "4" * 64 if index == 0 else "5" * 64
+        prior = _file_created_entry(index + 1, prior, path, digest)
+        prior_created.append(prior)
+        cumulative[path] = digest
+    cumulative["case_units/case-000/case_input.json"] = "5" * 64
+    ready = _ready_entry(392, prior, cumulative)
+
+    with pytest.raises(
+        SchemaContractError, match="ready_to_seal_created_hashes_mismatch"
+    ):
+        contracts.validate_construction_ledger_bytes(
+            b"".join(
+                [
+                    _ledger_frame(first),
+                    *map(_ledger_frame, prior_created),
+                    _ledger_frame(ready),
+                ]
+            )
+        )
+
+
+def test_construction_ledger_ready_rejects_missing_prior_path_even_with_391_count() -> (
+    None
+):
+    first = _ledger_entry("WRITE_STARTED", 0, None)
+    prior_created: list[JsonObject] = []
+    prior = first
+    cumulative: dict[str, str] = {}
+    for index in range(391):
+        path = f"case_units/case-{index:03d}/case_input.json"
+        prior = _file_created_entry(index + 1, prior, path, "5" * 64)
+        prior_created.append(prior)
+        cumulative[path] = "5" * 64
+    cumulative.pop("case_units/case-000/case_input.json")
+    cumulative["case_units/case-999/case_input.json"] = "5" * 64
+    ready = _ready_entry(392, prior, cumulative)
+
+    with pytest.raises(
+        SchemaContractError, match="ready_to_seal_created_hashes_mismatch"
+    ):
+        contracts.validate_construction_ledger_bytes(
+            b"".join(
+                [
+                    _ledger_frame(first),
+                    *map(_ledger_frame, prior_created),
+                    _ledger_frame(ready),
+                ]
+            )
+        )
+
+
+def test_construction_ledger_ready_accepts_exact_cumulative_391_created_files() -> None:
+    first = _ledger_entry("WRITE_STARTED", 0, None)
+    prior_created: list[JsonObject] = []
+    prior = first
+    cumulative: dict[str, str] = {}
+    for index in range(391):
+        path = f"case_units/case-{index:03d}/case_input.json"
+        digest = f"{index % 10}" * 64
+        prior = _file_created_entry(index + 1, prior, path, digest)
+        prior_created.append(prior)
+        cumulative[path] = digest
+    ready = _ready_entry(392, prior, cumulative)
+
+    result = contracts.validate_construction_ledger_bytes(
+        b"".join(
+            [
+                _ledger_frame(first),
+                *map(_ledger_frame, prior_created),
+                _ledger_frame(ready),
+            ]
+        )
+    )
+
+    assert result.ledger_head_sha256 == ready["entry_sha256"]
+
+
+def test_construction_ledger_ready_rejects_before_391_cumulative_files() -> None:
+    first = _ledger_entry("WRITE_STARTED", 0, None)
+    created = _file_created_entry(
+        1,
+        first,
+        "case_units/case-000/case_input.json",
+        "4" * 64,
+    )
+    ready_map = {
+        f"case_units/case-{index:03d}/case_input.json": "5" * 64 for index in range(391)
+    }
+    ready_map["case_units/case-000/case_input.json"] = "4" * 64
+    ready = _ready_entry(2, created, ready_map)
+
+    with pytest.raises(
+        SchemaContractError, match="ready_to_seal_created_history_incomplete"
+    ):
+        contracts.validate_construction_ledger_bytes(
+            _ledger_frame(first) + _ledger_frame(created) + _ledger_frame(ready)
+        )

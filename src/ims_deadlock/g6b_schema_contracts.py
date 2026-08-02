@@ -5595,7 +5595,7 @@ def _validate_ledger_event_semantics(
     event: str,
     prior_hash: str | None,
     pending_fragments: Sequence[bytes],
-) -> None:
+) -> Mapping[str, str]:
     created = _validate_ledger_hash_map(
         entry.get("created_file_hashes"), label="created_file_hashes"
     )
@@ -5653,6 +5653,7 @@ def _validate_ledger_event_semantics(
             raise SchemaContractError("causal_entry_required")
     else:
         raise SchemaContractError("ledger_transition_invalid")
+    return created
 
 
 def _validate_ledger_entry(
@@ -5662,7 +5663,7 @@ def _validate_ledger_entry(
     prior_event: str,
     prior_hash: str | None,
     pending_fragments: Sequence[bytes],
-) -> str:
+) -> tuple[str, str, Mapping[str, str]]:
     validate_exact_keys(
         entry, CONSTRUCTION_LEDGER_ENTRY_REQUIRED_FIELDS, label="ledger_entry"
     )
@@ -5681,7 +5682,7 @@ def _validate_ledger_entry(
         g6b_canonical_json.verify_finalized_self_hash(dict(entry), "entry_sha256")
     except Exception as exc:
         raise SchemaContractError("ledger_entry_self_hash_invalid") from exc
-    _validate_ledger_event_semantics(
+    created_file_hashes = _validate_ledger_event_semantics(
         entry,
         event=event,
         prior_hash=prior_hash,
@@ -5714,7 +5715,7 @@ def _validate_ledger_entry(
             raise SchemaContractError("interrupted_fragment_unrecorded")
     elif len(interrupted) != 0:
         raise SchemaContractError("interrupted_fragment_unexpected")
-    return str(entry["entry_sha256"])
+    return str(entry["entry_sha256"]), event, created_file_hashes
 
 
 def validate_construction_ledger_bytes(raw: bytes) -> ConstructionLedgerValidation:
@@ -5726,6 +5727,7 @@ def validate_construction_ledger_bytes(raw: bytes) -> ConstructionLedgerValidati
     prior_hash: str | None = None
     pending_fragments: list[bytes] = []
     interrupted_fragment_count = 0
+    cumulative_created_file_hashes: dict[str, str] = {}
     while pos < len(raw):
         if raw[pos] != 0x1E:
             raise SchemaContractError("ledger_frame_missing_rs")
@@ -5742,14 +5744,26 @@ def validate_construction_ledger_bytes(raw: bytes) -> ConstructionLedgerValidati
             entry = cast(Mapping[str, JsonValue], loaded)
             if g6b_canonical_json.canonical_bytes_v2(dict(entry)) != payload:
                 raise SchemaContractError("ledger_frame_noncanonical")
-            prior_hash = _validate_ledger_entry(
+            prior_hash, event, created_file_hashes = _validate_ledger_entry(
                 entry,
                 expected_index=expected_index,
                 prior_event=prior_event,
                 prior_hash=prior_hash,
                 pending_fragments=pending_fragments,
             )
-            prior_event = str(loaded["event_code"])
+            if event == "FILE_CREATED":
+                created_path, created_hash = next(iter(created_file_hashes.items()))
+                if created_path in cumulative_created_file_hashes:
+                    raise SchemaContractError("file_created_path_repeated")
+                cumulative_created_file_hashes[created_path] = created_hash
+            elif event == "READY_TO_SEAL":
+                if len(cumulative_created_file_hashes) != 391:
+                    raise SchemaContractError(
+                        "ready_to_seal_created_history_incomplete"
+                    )
+                if dict(created_file_hashes) != cumulative_created_file_hashes:
+                    raise SchemaContractError("ready_to_seal_created_hashes_mismatch")
+            prior_event = event
             interrupted_fragment_count += len(pending_fragments)
             pending_fragments.clear()
             expected_index += 1
