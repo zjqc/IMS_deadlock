@@ -120,6 +120,11 @@ branch, pushed clean, `HEAD...upstream` `0/0`. The documentation publication
 commit containing this record is a successor self-identifying evidence commit;
 it does not replace the Section 18 review subject above.
 
+The initial evidence-publication successor was
+`8336131af19dfa98fceda80fc79dd349b43f19a9`. Later handoff-only documentation
+successors must be located from live Git history and likewise do not replace
+the review subject.
+
 | Section 18 gate | Status | Subject/evidence |
 | --- | --- | --- |
 | targeted G6-B protocol/row-family/new tests | PASS_SCHEMA_ONLY | schema contract: `356 passed in 0.66s`; git-scope selection: `19 passed, 1109 deselected in 2.38s`; four-file suite: `1695 passed, 2 skipped in 2634.08s` |

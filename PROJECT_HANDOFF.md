@@ -25,9 +25,10 @@
 - 尚无完整论文主文件，也不能声称达到投稿或顶刊就绪状态。
 
 G6-B 当前为 schema-only governance v2 的 exact-twelve nested bundle，状态是
-`ROW_FAMILY_BUNDLE_IMPLEMENTED` 和 `OPEN/PENDING`。本次 handoff-cleanup 前的
-发布 HEAD 是 `8336131af19dfa98fceda80fc79dd349b43f19a9`，它是
-evidence-only 文档后继；包含本文件的实际当前文档提交必须用
+`ROW_FAMILY_BUNDLE_IMPLEMENTED` 和 `OPEN/PENDING`。初始 Section 18
+evidence-publication successor 是
+`8336131af19dfa98fceda80fc79dd349b43f19a9`；其后的 handoff 修订仍只是
+document-only successor。包含本文件的实际当前文档提交必须用
 `git log -1 --format=%H -- PROJECT_HANDOFF.md` 重新定位。最终 Section 18
 evidence subject commit 仍是
 `948ff5746adcb66b68fb9c47e519f070dd2c96ba`；批准规格
@@ -45,6 +46,50 @@ scientific/boundary 无 P0-P2，code/capability P0-P3 为零；审稿时唯一�
 P3 evidence-publication sync 由本次文档更新关闭。first unchecked next step 只能是 separately approved
 case-construction plan，不能直接进入 science。
 
+### 1.1 2026-08-02 当前接管快照
+
+| 工作面 | 当前状态 | 下一动作 |
+| --- | --- | --- |
+| Section 18 schema/governance v2 | `COMPLETE / PASS_SCHEMA_ONLY`；代码审查对象固定为 `948ff5746adcb66b68fb9c47e519f070dd2c96ba` | 不再重跑 Task 1-7；仅在代码/schema/冻结协议/证据对象变化时重跑完整验证 |
+| G6-B case construction | `NOT STARTED`；`case_construction_authorized=false` | 先新写 case-construction plan，独立审查并获得另行批准；批准前不得造 case |
+| retired-authority normalization | `NOT AUTHORIZED / NOT RUN` | case sealing 后另开 data-only authorization；不得读取历史 outcome 反推案例 |
+| overlap audit | `NOT RUN` | 仅在 sealed inputs 完成后运行；hash 不等同于语义独立性证明 |
+| Barrier A target preflight | `NOT AUTHORIZED / NOT RUN` | overlap PASS 后另行授权，只能产出 certificate/refusal/preflight evidence |
+| Barrier B quantitative science | `NOT AUTHORIZED / NOT RUN` | exact/DES same-target locks 与单独定量授权完成后，才可运行 CTMC/DES |
+| G6-C/D/E | 全部 `NOT STARTED / NOT PASSED` | 只有 G6-B 全条件通过后才能进入 confirmation preregistration、freeze、一次性执行 |
+| 论文 | 无统一主稿，paper gate 未通过 | 保留 G5 FAIL、R1/R2 failure、R3 historical-only 与 minimality failures；G6-E 后重建 paper gate |
+| Git 集成 | 当前 final-review 分支已推送；`main` 仍是 `9c707ce3d990541847aee745bec211bb55c74f6b` | 用户已批准分支处置方式 2（推送并创建 PR）；push 已完成，当前分支 PR 创建/审查/合并仍待完成 |
+
+当前没有代码运行失败，也不是因理论—实现比较得出矛盾而停机。最近的停顿发生
+在交接状态审查层：文档一度混淆 review subject、document successor 与 `main`
+基线，并把本地不完整镜像缺少的 plan 文件误判为远程权威仓库缺失。远程仓库
+实际保有 `docs/superpowers/plans/` 下的历史执行计划；本文件已按远程事实恢复
+索引。该问题不改变代码 tree 或科学结论。
+
+### 1.2 状态源层级与两个冻结旧字段
+
+下一进程必须按以下优先级解释状态，低层记录不得覆盖高层实时证据：
+
+1. 实时远程 Git 锁：exact worktree、branch、HEAD、upstream、dirty state、
+   `main...HEAD` 与 task-owned diff；
+2. 科学身份锁：批准规格 digest、冻结 matrix digest、Section 18 review subject；
+3. 当前状态文档：本交接、`docs/ROADMAP.md`、Section 18 review record 和 ledger；
+4. 历史 implementation plan 的 checkbox、旧标题或旧 footer，仅说明当时的写作
+   状态，不是当前 progress oracle。
+
+批准规格 `docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md`
+内部仍有 `HARDENED REVISION AWAITING USER REVIEW` 及同义 footer。这是批准前
+写入、现被冻结在 SHA-256
+`b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6`
+中的历史 metadata；用户后来批准的是这组 exact bytes。外部批准记录覆盖该旧
+状态文字，但不授权修改规格 bytes。若修改该规格，digest 会改变，必须重新审查
+和批准。
+
+`docs/superpowers/plans/2026-08-01-g6b-schema-only-governance-v2-implementation.md`
+中的 checkbox 仍为未勾选，不能据此重跑 Task 1。Tasks 1-7 已实施并由 Section 18
+证据关闭；该文件是历史 execution instruction，不是进度账本。当前真正的 first
+unchecked task 是创建一份新的、单独审查和批准的 case-construction plan。
+
 ## 2. 权威目标与版本锁
 
 ### 2.1 权威仓库
@@ -60,15 +105,15 @@ case-construction plan，不能直接进入 science。
 - GitHub：`git@github.com:zjqc/IMS_deadlock.git`
 - 当前 G6-B v2 权威工作树：
   `D:\worktree\IMS_deadlock-g6b-spec-final-review`，branch
-  `codex/g6b-case-target-certification-final-review`。本次 handoff-cleanup 前的
-  发布 HEAD 是 `8336131af19dfa98fceda80fc79dd349b43f19a9`，已推送且提交后
-  `HEAD...upstream = 0/0`、工作树 clean；它相对最终 Section 18 evidence
-  subject commit `948ff5746adcb66b68fb9c47e519f070dd2c96ba` 只改四个文档：
+  `codex/g6b-case-target-certification-final-review`。初始 Section 18 发布 HEAD
+  `8336131af19dfa98fceda80fc79dd349b43f19a9` 已推送且提交后
+  `HEAD...upstream = 0/0`、工作树 clean；它相对最终 Section 18 evidence subject
+  `948ff5746adcb66b68fb9c47e519f070dd2c96ba` 只改四个文档：
   `PROJECT_HANDOFF.md`、`docs/ROADMAP.md`、
   `docs/cases/CASE_CHANGE_LEDGER.md` 和
   `docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md`。包含本文件的当前
-  continuation commit 是上述发布 HEAD 的后继，必须实时锁定，不应硬编码成
-  scientific review subject。
+  continuation commit 是上述发布 HEAD 的 document-only 后继，必须实时锁定，
+  不应硬编码成 scientific review subject。
 - 当前批准规格：
   `docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md`，
   SHA-256
@@ -93,7 +138,13 @@ case-construction plan，不能直接进入 science。
   candidate diff 不得包含其路径或字节。
 - 当前主线对照基线：`main@9c707ce3d990541847aee745bec211bb55c74f6b`。
   当前 G6-B 发布分支相对其保持隔离，不得把 feature 分支 HEAD 误写成主线
-  通过状态。
+  通过状态。2026-08-02 本次最终交接纠偏前，分支在
+  `f4a1be3c975768abee0e7a4200557805c8556169`，相对 `main...HEAD = 0/65`、
+  `HEAD...upstream = 0/0`、clean；包含本文件的后继提交会使领先数增加，下一
+  进程必须实时重算。
+- 分支处置方式已由用户选择为方式 2：推送当前 feature branch 并创建 PR。
+  分支 push 已完成；远端 `refs/pull/*/head` 当前没有指向本 final-review branch
+  HEAD，因此 PR 创建/审查/合并仍是工程管理待办，不能写成已进入 `main`。
 - 历史交接编写前锁定 `main@235b69a189a869578d9760fcc5585fbfe21a7808`
   和 tree `9ffa5974ced053e3ffd9943f34e163c4606eddf2` 仅是旧交接快照，
   不再是当前 G6-B continuation 的目标锁。
@@ -918,9 +969,32 @@ G6-B 推进期间可以建立诚实的 working manuscript skeleton，但必须�
    已完成 independent schema、ontology/boundary 和 code/capability review
    publication：每行必须绑定 exact subject、命令/审稿人和 count/finding；不得把
    review verdict 写回 JSON bundle state。
-4. G6-B 必须保持 `OPEN/PENDING`；schema review publication 之后，下一步仍只是
-   separately approved case-construction plan，不是 normalization、preflight 或
-   science。
+4. 核验批准规格内的 `AWAITING USER REVIEW` 和历史 implementation plan 未勾选
+   checkbox 均按第 1.2 节解释，不得修改批准规格 bytes，不得重跑已关闭的
+   schema Tasks 1-7。
+5. 新建一份独立的 G6-B case-construction plan，至少冻结候选来源、sealed input
+   schema、prediction/negative-control schema、metric schema、provenance/nonreuse
+   义务、拒绝状态、允许写路径、测试形状与 stop condition；该批次只写计划，
+   不创建 case、normalization、overlap 值、preflight lock、CTMC/DES 或输出。
+6. 对新计划做 ontology、scientific-boundary、code/capability 三路审查；只有用户
+   对 exact plan 明确批准后，才可进入 case materialization。
+
+后续依赖顺序不得并行越门：
+
+1. approved case-construction plan；
+2. materialize sealed case inputs/predictions/controls/metric schemas，仍不执行科学；
+3. 单独授权并完成 retired-authority data-only normalization；
+4. sealing 后做 input-level overlap audit；
+5. overlap PASS 后另行授权 Barrier A target-certification preflight；
+6. review target certificate/refusal evidence，并建立 exact/DES same-target locks；
+7. 另行授权 Barrier B 后才可运行 CTMC、DES、metric observation 和定量输出；
+8. G6-B 全条件通过后才进入 G6-C confirmation preregistration；
+9. G6-D freeze 与 G6-E 一次性执行；
+10. 重建 paper gate，完成主稿、claim-evidence audit、复现包和投稿元数据。
+
+Git 管理可与“写新计划”并行但不改变科学顺序：按已批准方式 2 为当前分支创建
+PR 到 `main`。不得在未核对 PR diff、review subject 和负证据保留情况时直接
+merge；PR/merge 状态必须在下一次交接中实时更新。
 
 ## 17. 科学与工程停止条件
 
@@ -947,9 +1021,12 @@ G6-B 推进期间可以建立诚实的 working manuscript skeleton，但必须�
 
 - `README.md`
 - `docs/ROADMAP.md`
+- `docs/superpowers/plans/2026-07-30-g6-local-core-terminal-class-recovery.md`
+- `docs/superpowers/plans/2026-07-30-g6b-protocol-foundation.md`
 - `docs/theory/G6_LOCAL_FIRST_HIT_AND_STOPPING_THEOREMS.md`
 - `docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md`
 - `docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md`
+- `docs/superpowers/plans/2026-08-01-g6b-schema-only-governance-v2-implementation.md`
 - `docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md`
 
 ### 理论
