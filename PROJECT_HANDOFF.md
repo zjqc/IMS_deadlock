@@ -1,6 +1,6 @@
 # IMS Deadlock 当前项目交接
 
-更新时间：2026-08-01（Asia/Shanghai）
+更新时间：2026-08-02（Asia/Shanghai）
 
 本文件是下一 Codex 进程接管 `IMS_deadlock` 的单一入口。它汇总当前权威
 版本、已经成立的受限结论、失败与负证据、可复现实验状态、尚未通过的硬门、
@@ -25,8 +25,10 @@
 - 尚无完整论文主文件，也不能声称达到投稿或顶刊就绪状态。
 
 G6-B 当前为 schema-only governance v2 的 exact-twelve nested bundle，状态是
-`ROW_FAMILY_BUNDLE_IMPLEMENTED` 和 `OPEN/PENDING`。最终 Section 18 evidence
-subject commit 是 `948ff5746adcb66b68fb9c47e519f070dd2c96ba`；批准规格
+`ROW_FAMILY_BUNDLE_IMPLEMENTED` 和 `OPEN/PENDING`。当前发布 HEAD 是
+`8336131af19dfa98fceda80fc79dd349b43f19a9`，它是 evidence-only 文档后继；
+最终 Section 18 evidence subject commit 仍是
+`948ff5746adcb66b68fb9c47e519f070dd2c96ba`；批准规格
 SHA-256 是 `b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6`，
 冻结 matrix raw SHA-256 是
 `487d81aa79a7bca681db81f19a4d6bd315668c43b1c4538c47f01f099d8e205f`。
@@ -56,9 +58,13 @@ case-construction plan，不能直接进入 science。
 - GitHub：`git@github.com:zjqc/IMS_deadlock.git`
 - 当前 G6-B v2 权威工作树：
   `D:\worktree\IMS_deadlock-g6b-spec-final-review`，branch
-  `codex/g6b-case-target-certification-final-review`，最终 Section 18 evidence
-  subject commit `948ff5746adcb66b68fb9c47e519f070dd2c96ba`，已推送且提交后
-  `HEAD...upstream = 0/0`、工作树 clean。
+  `codex/g6b-case-target-certification-final-review`，当前发布 HEAD
+  `8336131af19dfa98fceda80fc79dd349b43f19a9`，已推送且提交后
+  `HEAD...upstream = 0/0`、工作树 clean；它相对最终 Section 18 evidence
+  subject commit `948ff5746adcb66b68fb9c47e519f070dd2c96ba` 只改四个文档：
+  `PROJECT_HANDOFF.md`、`docs/ROADMAP.md`、
+  `docs/cases/CASE_CHANGE_LEDGER.md` 和
+  `docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md`。
 - 当前批准规格：
   `docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md`，
   SHA-256
@@ -81,11 +87,12 @@ case-construction plan，不能直接进入 science。
 - `D:\worktree\IMS_deadlock-g6b-case-target-design@719194c` 是 stale
   exact-eleven plan 的隔离证据，不是代码源、测试 oracle 或当前状态依据；当前
   candidate diff 不得包含其路径或字节。
-- 交接编写前实时锁定：
-  `main@235b69a189a869578d9760fcc5585fbfe21a7808`
-- 交接编写前 tree：
-  `9ffa5974ced053e3ffd9943f34e163c4606eddf2`
-- 交接编写前状态：clean，`HEAD...origin/main = 0/0`
+- 当前主线对照基线：`main@9c707ce3d990541847aee745bec211bb55c74f6b`。
+  当前 G6-B 发布分支相对其保持隔离，不得把 feature 分支 HEAD 误写成主线
+  通过状态。
+- 历史交接编写前锁定 `main@235b69a189a869578d9760fcc5585fbfe21a7808`
+  和 tree `9ffa5974ced053e3ffd9943f34e163c4606eddf2` 仅是旧交接快照，
+  不再是当前 G6-B continuation 的目标锁。
 - G6-B protocol foundation feature-branch pre-integration evidence:
   worktree `D:\worktree\IMS_deadlock-g6b-discovery`, branch
   `codex/g6b-discovery-estimand-lock`, base
@@ -151,9 +158,10 @@ case-construction plan，不能直接进入 science。
   create a new HEAD and must be re-locked/revalidated before being externally
   claimed complete.
 
-若本文件已发布到 `main`，包含它的提交会是上述 source baseline 的后继。
-下一进程不得把交接前 SHA 当作当前 SHA，必须重新运行锁定命令。实际包含
-本文件的提交可用以下命令定位：
+若本文件已发布为 feature 分支上的 evidence-only 文档后继，包含它的提交会
+是上述 Section 18 evidence subject 的后继，但不替代该 evidence subject。
+下一进程不得把交接前 SHA 或 review subject SHA 当作当前发布 HEAD，必须重新
+运行锁定命令。实际包含本文件的提交可用以下命令定位：
 
 ```bash
 git log -1 --format=%H -- PROJECT_HANDOFF.md
@@ -196,15 +204,16 @@ protocol 可解析九个案例且返回 `valid=true`，但本地 `g4_freeze chec
 建议的只读锁定命令：
 
 ```bash
-# <SSH_ALIAS> 和 <REMOTE_PROJECT_PATH> 必须取自本地操作契约。
+# <SSH_ALIAS> 必须取自本地操作契约。
 ssh -o BatchMode=yes -o ConnectTimeout=10 <SSH_ALIAS> \
   "echo SSH_OK && hostname && whoami"
 ssh -o BatchMode=yes -o ConnectTimeout=10 <SSH_ALIAS> \
-  "cd /d <REMOTE_PROJECT_PATH> && git rev-parse --show-toplevel && git branch --show-current && git rev-parse HEAD && git status --short && git remote get-url origin && git rev-list --left-right --count HEAD...origin/main && git worktree list --porcelain"
+  "cd /d D:\worktree\IMS_deadlock-g6b-spec-final-review && git rev-parse --show-toplevel && git branch --show-current && git rev-parse HEAD && git status --short && git remote get-url origin && git rev-list --left-right --count @{u}...HEAD && git worktree list --porcelain"
 ```
 
-若本地契约要求单独的 Tailscale 连通性检查，按契约中的当前目标执行；不要
-把私有网络地址复制进仓库文档。
+若任务不是继续当前 G6-B publication/review 分支，才按
+`REMOTE_PROJECT_OPERATIONS.md` 重新选择对应远程路径；不要把私有网络地址
+复制进仓库文档。
 
 任何结论中都应记录：
 
@@ -894,9 +903,10 @@ G6-B 推进期间可以建立诚实的 working manuscript skeleton，但必须�
 1. 从本地操作契约读取 SSH/远程路径并重锁
    `D:\worktree\IMS_deadlock-g6b-spec-final-review`、branch、HEAD、upstream、
    clean/expected-dirty scope 和批准规格 digest。
-2. 以 final Section 18 evidence subject
-   `948ff5746adcb66b68fb9c47e519f070dd2c96ba` 为当前 schema/governance review
-   publication 基线；以 historical/pre-repair Task-5 subject
+2. 以当前发布 HEAD `8336131af19dfa98fceda80fc79dd349b43f19a9` 作为文档
+   continuation 基线；以 final Section 18 evidence subject
+   `948ff5746adcb66b68fb9c47e519f070dd2c96ba` 作为 schema/governance review
+   evidence subject；以 historical/pre-repair Task-5 subject
    `9ef6fcec9e410b2ab7afc4144df8b948a238d95f` 只作为历史 diff/count evidence。
    拒绝 G4/G5/G6-R evidence、case-instance roots、scientific artifact roots、
    批准规格或 task-declared files 之外的变更。
@@ -933,10 +943,9 @@ G6-B 推进期间可以建立诚实的 working manuscript skeleton，但必须�
 
 - `README.md`
 - `docs/ROADMAP.md`
-- `docs/superpowers/plans/2026-07-30-g6-local-core-terminal-class-recovery.md`
-- `docs/superpowers/plans/2026-07-30-g6b-protocol-foundation.md`
+- `docs/theory/G6_LOCAL_FIRST_HIT_AND_STOPPING_THEOREMS.md`
+- `docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md`
 - `docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md`
-- `docs/superpowers/plans/2026-08-01-g6b-schema-only-governance-v2-implementation.md`
 - `docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md`
 
 ### 理论

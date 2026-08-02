@@ -306,8 +306,10 @@ science。
 `evidence/g6/G6_HISTORICAL_REPLAY_R3_REPORT.json` 与
 `evidence/g6/G6_HISTORICAL_REPLAY_R3_RAW_HASH_MANIFEST.json`。
 
-详细执行契约见
-`docs/superpowers/plans/2026-07-30-g6-local-core-terminal-class-recovery.md`。
+详细恢复理论和边界审查见
+`docs/theory/G6_LOCAL_FIRST_HIT_AND_STOPPING_THEOREMS.md`、
+`docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md` 与
+`docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md`。
 
 ## 科学停止条件
 
