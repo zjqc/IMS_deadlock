@@ -59,12 +59,18 @@ case-construction plan，不能直接进入 science。
 | G6-C/D/E | 全部 `NOT STARTED / NOT PASSED` | 只有 G6-B 全条件通过后才能进入 confirmation preregistration、freeze、一次性执行 |
 | 论文 | 无统一主稿，paper gate 未通过 | 保留 G5 FAIL、R1/R2 failure、R3 historical-only 与 minimality failures；G6-E 后重建 paper gate |
 | Git 集成 | 当前 final-review 分支已推送；`main` 仍是 `9c707ce3d990541847aee745bec211bb55c74f6b` | 用户已批准分支处置方式 2（推送并创建 PR）；push 已完成，当前分支 PR 创建/审查/合并仍待完成 |
+| 非阻塞工程卫生 | 批准门 `ruff format --check src tests` 为 47 files green；更宽的 `ruff format --check .` 仍会对 3 个历史 plan 文档代码块提出格式建议 | 作为历史文档格式债保留；若清理，必须单独审查且不得改动批准规格 digest、冻结协议或证据 bytes |
 
 当前没有代码运行失败，也不是因理论—实现比较得出矛盾而停机。最近的停顿发生
 在交接状态审查层：文档一度混淆 review subject、document successor 与 `main`
 基线，并把本地不完整镜像缺少的 plan 文件误判为远程权威仓库缺失。远程仓库
 实际保有 `docs/superpowers/plans/` 下的历史执行计划；本文件已按远程事实恢复
 索引。该问题不改变代码 tree 或科学结论。
+
+上述 3 处 broad-format 建议不是 Python 代码失败、测试失败或科学不一致，也不能
+包装成全仓 format clean。它们目前不阻塞 case-construction plan，但下一进程在
+报告质量门时必须区分“批准的 `src tests` scope green”和“历史 Markdown plan
+代码块仍有格式建议”。
 
 ### 1.2 状态源层级与两个冻结旧字段
 
