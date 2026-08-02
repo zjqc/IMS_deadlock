@@ -4530,6 +4530,65 @@ def test_case_construction_estimand_scope_rejects_forbidden_placements(
         validate_subject_free_projection(dimension, payload)
 
 
+@pytest.mark.parametrize(
+    ("dimension", "mutate"),
+    [
+        pytest.param(
+            "sealed_prediction_sha256",
+            lambda payload, value: payload["directional_hypotheses"].append(
+                {
+                    "hypothesis_role": "hypothesis-invalid-type",
+                    "statement": "predeclared discovery-only hypothesis",
+                    "direction": "case_specific_predeclared",
+                    "estimand_id": value,
+                    "scope_code": "single_case_discovery_only",
+                    "falsifier_roles": [],
+                }
+            ),
+            id="directional_hypothesis",
+        ),
+        pytest.param(
+            "metric_schema_sha256",
+            lambda payload, value: payload["metric_entries"].append(
+                {
+                    "metric_id": "metric-invalid-type",
+                    "estimand_id": value,
+                    "unit": "probability",
+                    "domain": "closed_unit_interval",
+                    "direction": "case_specific_predeclared",
+                    "aggregation_rule_id": "aggregation-v1",
+                    "censoring_rule_id": "censoring-v1",
+                    "failure_rule_id": "failure-v1",
+                    "scoring_rule_id": "scoring-v1",
+                    "applicability_rule": "target_certified_and_same_target_locked_v1",
+                }
+            ),
+            id="metric_entry",
+        ),
+    ],
+)
+@pytest.mark.parametrize(
+    "estimand_id",
+    [
+        pytest.param([], id="list"),
+        pytest.param({}, id="dict"),
+        pytest.param(1, id="int"),
+        pytest.param(None, id="null"),
+        pytest.param(True, id="bool"),
+        pytest.param(1.25, id="float"),
+        pytest.param("theta-post-outcome-drift", id="wrong_string"),
+    ],
+)
+def test_case_construction_estimand_scope_rejects_non_string_value_codes(
+    dimension: str, mutate: Any, estimand_id: Any
+) -> None:
+    payload = _projection_for_dimension(dimension)
+    mutate(payload, estimand_id)
+
+    with pytest.raises(SchemaContractError, match="estimand_id_scope_violation"):
+        validate_subject_free_projection(dimension, payload)
+
+
 def test_random_stream_projection_accepts_exact_stochastic_branch_only() -> None:
     validate_subject_free_projection(
         "random_stream_manifest_sha256",

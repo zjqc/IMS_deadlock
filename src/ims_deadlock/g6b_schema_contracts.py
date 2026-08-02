@@ -1461,7 +1461,7 @@ def _validate_estimand_id_scope(
     for path, value in _find_estimand_id_paths(payload):
         if not _is_allowed_estimand_id_path(projection_role, path):
             raise SchemaContractError("estimand_id_scope_violation", _format_path(path))
-        if value not in G6B_ALLOWED_ESTIMAND_IDS:
+        if not isinstance(value, str) or value not in G6B_ALLOWED_ESTIMAND_IDS:
             raise SchemaContractError("estimand_id_scope_violation", _format_path(path))
 
 
