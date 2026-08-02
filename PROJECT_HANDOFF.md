@@ -43,8 +43,9 @@ SHA-256 是 `b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6`�
 CTMC 或 DES，没有检查 quantitative/scientific output，也没有 G6-B scientific
 verdict。Section 18 independent review 已完成并批准：ontology 无 P0-P2，
 scientific/boundary 无 P0-P2，code/capability P0-P3 为零；审稿时唯一指出的
-P3 evidence-publication sync 由本次文档更新关闭。first unchecked next step 只能是 separately approved
-case-construction plan，不能直接进入 science。
+P3 evidence-publication sync 由本次文档更新关闭。当时的 first unchecked next
+step 是 separately approved case-construction plan；该 plan-only 批次现已完成，
+但 exact-bytes 用户批准仍未获得，不能直接进入 construction 或 science。
 
 2026-08-02 的 PR 独立审查随后发现两个工程/治理授权缺口：缺少显式 fail-closed
 Barrier-A preflight authorization validator，以及 retired-normalization
@@ -68,19 +69,39 @@ allowlist/精确集合断言。未列入新文档时 scope guard 按预期 RED
 check 均通过；无 production code/schema 变化。`2145` 项 full suite 仍精确
 绑定 `b2f2f285...`，不得误写成文档后继自身的 full-suite count。
 
+G6-B case-construction 计划已发布为
+`docs/superpowers/plans/2026-08-02-g6b-case-construction.md`，exact SHA-256 为
+`c20393328f8f98e7b35a6507fd6e993b2f17e068d977c3dc6253b05e9a75de5f`；三路
+独立审查记录是
+`docs/verification/G6_B_CASE_CONSTRUCTION_PLAN_REVIEW.md`，exact SHA-256 为
+`297a69382347e16e894af63e70f8fa95807407048b2e89c45701410a4e9289e1`。
+ontology/estimand、scientific-boundary/nonreuse、architecture/code/capability
+三路均为 `APPROVE`，Critical/High/Medium 均为 0。该计划冻结 13 case units、
+26 method observations、13 companion groups，并把 `estimand_id` 矛盾限定为
+Task 1 的 exact two-path corrigendum；这些是计划内容，不是实例或结果。当前
+唯一 first unchecked task 是用户明确批准上述 plan hash 和 review hash；在此
+之前不得创建 construction authorization 或任何 case byte。
+
+计划发布的 fail-closed changed-path guard 在两个新文档路径尚未声明时按预期
+RED（`1 failed`，两条路径均为 `outside_task6_declared_files`）。测试后继只新增
+这两个计划文档的精确集合及断言，并继续显式拒绝 governance-instance 路径；
+final direct 为 `2 passed`，Task-6 selection 为
+`17 passed, 1112 deselected`，测试文件 Ruff/format/strict mypy 和 diff check
+均通过。该测试后继不允许 production/schema/case/evidence/artifact 路径。
+
 ### 1.1 2026-08-02 当前接管快照
 
 | 工作面 | 当前状态 | 下一动作 |
 | --- | --- | --- |
 | Section 18 schema/governance v2 | `COMPLETE / PASS_SCHEMA_ONLY`；代码审查对象固定为 `948ff5746adcb66b68fb9c47e519f070dd2c96ba` | 不再重跑 Task 1-7；仅在代码/schema/冻结协议/证据对象变化时重跑完整验证 |
-| G6-B case construction | `NOT STARTED`；`case_construction_authorized=false`；已定位 `estimand_id` future-instance scope blocker | 发布 exact case-construction plan/corrigendum，完成三路独立审查并获得用户对 exact hashes 的另行批准；批准前不得造 case |
+| G6-B case construction | `PLAN PUBLISHED / USER APPROVAL PENDING / CONSTRUCTION NOT STARTED`；plan SHA `c2039332...`，review SHA `297a6938...`，三路 `APPROVE` 0 Critical/High/Medium；`case_construction_authorized=false` | 仅等待用户对两个 exact SHA-256 的明确批准；批准前不得写 construction authorization 或 case byte |
 | retired-authority normalization | `NOT AUTHORIZED / NOT RUN` | case sealing 后另开 data-only authorization；不得读取历史 outcome 反推案例 |
 | overlap audit | `NOT RUN` | 仅在 sealed inputs 完成后运行；hash 不等同于语义独立性证明 |
 | Barrier A target preflight | `NOT AUTHORIZED / NOT RUN` | overlap PASS 后另行授权，只能产出 certificate/refusal/preflight evidence |
 | Barrier B quantitative science | `NOT AUTHORIZED / NOT RUN` | exact/DES same-target locks 与单独定量授权完成后，才可运行 CTMC/DES |
 | G6-C/D/E | 全部 `NOT STARTED / NOT PASSED` | 只有 G6-B 全条件通过后才能进入 confirmation preregistration、freeze、一次性执行 |
 | 论文 | 无统一主稿，paper gate 未通过 | 保留 G5 FAIL、R1/R2 failure、R3 historical-only 与 minimality failures；G6-E 后重建 paper gate |
-| Git 集成 | Draft PR #4 `https://github.com/zjqc/IMS_deadlock/pull/4` 已建立；`main` 仍是 `9c707ce3d990541847aee745bec211bb55c74f6b`；授权门 remediation subject 为 `b2f2f285a68793ce9ca4cb1b47a05dd7a3cfb9bb` | 保持 PR #4 为 draft，核对 remediation/full-suite/docs successor 后推送；不得在已知 pre-case blocker 或未获 merge authority 时合并 |
+| Git 集成 | Draft PR #4 `https://github.com/zjqc/IMS_deadlock/pull/4` 已建立并更新到 documentation successor `004bc7d3ffb73801a70fdc8d4067ad9375c67ec0`；`main` 仍是 `9c707ce3d990541847aee745bec211bb55c74f6b`；plan publication 使用独立分支 `codex/g6b-case-construction-plan` | 保持 PR #4 和 plan PR 为 draft；不得在未获 merge authority 时合并，且 merge 不构成 plan 批准 |
 | 非阻塞工程卫生 | 批准门 `ruff format --check src tests` 为 47 files green；更宽的 `ruff format --check .` 仍会对 3 个历史 plan 文档代码块提出格式建议 | 作为历史文档格式债保留；若清理，必须单独审查且不得改动批准规格 digest、冻结协议或证据 bytes |
 
 当前没有代码运行失败，也不是因理论—实现比较得出矛盾而停机。最近的停顿发生
@@ -115,8 +136,9 @@ check 均通过；无 production code/schema 变化。`2145` 项 full suite 仍�
 
 `docs/superpowers/plans/2026-08-01-g6b-schema-only-governance-v2-implementation.md`
 中的 checkbox 仍为未勾选，不能据此重跑 Task 1。Tasks 1-7 已实施并由 Section 18
-证据关闭；该文件是历史 execution instruction，不是进度账本。当前真正的 first
-unchecked task 是创建一份新的、单独审查和批准的 case-construction plan。
+证据关闭；该文件是历史 execution instruction，不是进度账本。新的
+case-construction plan 和三路审查已经发布；当前真正的 first unchecked task 是
+用户对 plan SHA `c2039332...` 与 review SHA `297a6938...` 的明确批准。
 
 ## 2. 权威目标与版本锁
 
@@ -791,9 +813,12 @@ git log -1 --format=%H -- PROJECT_HANDOFF.md
 
 ## 13. 下一硬门：G6-B
 
-下一进程不要继续重放 G4/G5，也不要先写成投稿稿件。当前 first unchecked
-next step after evidence publication 只能是 separately approved
-case-construction plan，不是 normalization、preflight、CTMC、DES 或科学执行。
+下一进程不要继续重放 G4/G5，也不要先写成投稿稿件。case-construction plan
+及其三路审查现已发布；当前 first unchecked next step 只能是用户明确批准
+plan SHA `c20393328f8f98e7b35a6507fd6e993b2f17e068d977c3dc6253b05e9a75de5f`
+和 review SHA
+`297a69382347e16e894af63e70f8fa95807407048b2e89c45701410a4e9289e1`，不是
+normalization、preflight、CTMC、DES 或科学执行。
 Final Section 18 evidence subject 是
 `948ff5746adcb66b68fb9c47e519f070dd2c96ba`。Historical/pre-repair Task-5
 schema-code subject 是 `9ef6fcec9e410b2ab7afc4144df8b948a238d95f`，仅作为已保留
@@ -812,8 +837,9 @@ validator 为
 仍未开始。四个 later instance roots 和四个 future capability modules 均 absent。
 本 tranche 没有创建 case、运行 normalization/overlap/preflight/CTMC/DES 或检查
 科学输出。independent schema review 已在 Section 18 final evidence subject 上
-通过；它只允许下一步提出 separately approved case-construction plan，不自动授权
-case construction、normalization、preflight 或 science。
+通过；后继 case-construction plan 的三路 independent review 也已对同一 exact
+plan hash 通过，但状态仍为 `USER_APPROVAL_PENDING`，不自动授权 case
+construction、normalization、preflight 或 science。
 
 ### 13.1 G6-B 必须冻结前定义的内容
 
@@ -1002,12 +1028,12 @@ G6-B 推进期间可以建立诚实的 working manuscript skeleton，但必须�
 4. 核验批准规格内的 `AWAITING USER REVIEW` 和历史 implementation plan 未勾选
    checkbox 均按第 1.2 节解释，不得修改批准规格 bytes，不得重跑已关闭的
    schema Tasks 1-7。
-5. 新建一份独立的 G6-B case-construction plan，至少冻结候选来源、sealed input
-   schema、prediction/negative-control schema、metric schema、provenance/nonreuse
-   义务、拒绝状态、允许写路径、测试形状与 stop condition；该批次只写计划，
-   不创建 case、normalization、overlap 值、preflight lock、CTMC/DES 或输出。
-6. 对新计划做 ontology、scientific-boundary、code/capability 三路审查；只有用户
-   对 exact plan 明确批准后，才可进入 case materialization。
+5. 定位已经发布的 G6-B case-construction plan 与 review artifact，重新计算并
+   核对 plan SHA `c2039332...`、review SHA `297a6938...`，以及三路 review 的
+   `APPROVE`/0 Critical/High/Medium；不得修改 exact plan bytes 后沿用旧审查。
+6. 只有用户对这两个 exact SHA-256 明确批准后，才可按 plan 新建独立
+   implementation worktree 并从 Task 0/Task 1 开始；普通“继续推进”或 PR merge
+   不等同于 exact-bytes approval。
 
 后续依赖顺序不得并行越门：
 
@@ -1181,6 +1207,7 @@ G6-B remains `OPEN/PENDING`; `case_creation_authorized=false` and
 started; immutable G4/G5/G6 evidence is unchanged.
 
 The next first action after normal push is to re-lock the pushed branch and
-confirm HEAD/upstream/status. The next scientific successor remains a separately
-reviewed and approved case-construction plan, not execution and not a
-partial-domain production solve.
+confirm HEAD/upstream/status. The case-construction plan and three independent
+reviews are published, but the next transition is still exact-bytes user
+approval of plan SHA `c2039332...` and review SHA `297a6938...`, not execution
+and not a partial-domain production solve.

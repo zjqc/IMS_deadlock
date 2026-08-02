@@ -7,13 +7,13 @@
 
 | Gate | 状态 | 当前证据 | 未关闭项 |
 | --- | --- | --- | --- |
-| G0 仓库门 | PASS | Dell 目标路径、GitHub SSH、干净集成 worktree 和项目专用 Python 3.13.9 已核验；污染历史保持隔离；历史整合状态已进入 `main@9c707ce3d990541847aee745bec211bb55c74f6b`；当前 G6-B final-review 分支仍隔离，Draft PR #4 为 `https://github.com/zjqc/IMS_deadlock/pull/4` | PR #4 尚未 merge 且无 merge authority；已知 pre-case blocker 与精确计划审批门关闭前保持 draft |
+| G0 仓库门 | PASS | Dell 目标路径、GitHub SSH、干净集成 worktree 和项目专用 Python 3.13.9 已核验；污染历史保持隔离；历史整合状态已进入 `main@9c707ce3d990541847aee745bec211bb55c74f6b`；当前 G6-B final-review 分支仍隔离，Draft PR #4 为 `https://github.com/zjqc/IMS_deadlock/pull/4`，已推送 documentation successor `004bc7d3...`；计划发布使用独立分支 `codex/g6b-case-construction-plan` | PR #4 与计划 PR 均无 merge authority；merge 不构成 plan exact-bytes approval，两个 PR 在批准门关闭前保持 draft |
 | G1 文献门 | PASS（scope-bounded） | 六条文献链、43 项审计矩阵、20 个全文/全文审计锚点、迁移卡；L30-L35 与 B05 七篇审计已纳入比较边界；R7/R8 类别饱和保持 | 不支持首创性、系统综述或一般 IMS/Petri 等价；G4 必须检验 CRP、recorder、SBA、L30/B05 comparator 边界 |
 | G2 理论门 | PASS（严格受限主链） | P1 有限 LTS/reachability-net；P2 capacity-mediated 封闭核 iff；P2c `IMS-SIP^1` 诊断虹吸双向桥；P3 偏序充分条件；P3d `BIX1-SAT` 可达阈值；P3e `BIX2-PERSIST` 三资源 ring 精确阈值与同语义 DAG 修复；P4 CTMC；P5 supervisor；P6 复杂性边界 | plant-level structured Petri/S3PR 桥、替代/AND/AGV/预约/多 persistent-buffer 一般岛阈值、一般紧凑 IMS 精确复杂性和 risk-budget 控制仍开放 |
 | G3 算法门 | PASS（严格小有限模型 + P2c/P3d/P3e） | 原 G3 证据为 123 tests；加入 G4/G5/G6 协议、局部核/终端类恢复、replay 数值完整性和 post-R3 comparator fail-closed 回归后，Dell 项目 Python 3.13.9 全库 341 tests、Ruff check/format、strict mypy 通过；原 C0、BIX1/BIX2 结果不变 | 一般 plant/S3PR、结构案例物理速率、一般 persistent-buffer/AGV 阈值和风险预算/Pareto 算法仍开放 |
 | G4 案例冻结门 | PASS（historical C seal；已在 G5 原样执行） | A=`f9b9a5a5652c7a49053e7ef26d08911bd757f465`，B2=`58bbd4ab7da8c2c1d0bcdea4a12f2ae7c020d09a`，C=`e91be4d6d7511c76918093899269de4b78e69fd8`；封存时 checker 为 `FROZEN`、`errors=[]`、`confirmation_results_inspected=false`；随后只在 G5-B execution lock 下执行一次 primary 和一次 repro | G4/G5 九行已退役为历史 discovery/regression，不能再次充当 held-out；后续缺陷必须进入独立 successor freeze |
 | G5 论文门 | FAIL（evidence closed） | G5-A=`b5e5dc0494b23a54c78c420bbca50a3639de8bff`，G5-B=`8aa752804b885b79e5371c98e7961087c540f2a8`，G5-C=`ff281481068a2325cb0bde00e85fd7b753ba854a`；9/9 案例完成 primary/repro，raw/canonical/stderr hash 一致；锁定 scorer 为 `4/3/2`，透明 theorem audit 为 `6/1/2` 并另保留两项 minimality failure | CRP local bridge 预测失败；grid/medium 因 `D/F` 未穷尽 terminal classes 而确定性拒绝；不能形成完整 exact/DES 证据链或宣称论文门通过 |
-| G6 局部核—终端类恢复门 | IN PROGRESS / G6-A 与 G6-R PASS / G6-B `OPEN/PENDING` | R1/R2 失败和两项 minimality failure 原样保留；G6-B schema-only governance v2 在 historical/pre-repair Task-5 subject `9ef6fcec9e410b2ab7afc4144df8b948a238d95f` 实现 top-level exact-five、nested exact-twelve；final Section 18 evidence subject `948ff5746adcb66b68fb9c47e519f070dd2c96ba` 完成 independent review publication；PR review 后的授权门 remediation subject `b2f2f285a68793ce9ca4cb1b47a05dd7a3cfb9bb` 增加 fail-closed preflight authorization validator 并修复 normalization true/no-drift 语义，focused schema `379 passed`、preflight `20 passed`、fresh full repository `2145 passed, 2 skipped`、Ruff/format/mypy/diff green | 四 capability 仍 false，later roots absent；另有 predeclared `estimand_id` required/prohibited 的 pre-case schema 矛盾；无 case、normalization、actual overlap、preflight、CTMC、DES、output inspection 或 scientific verdict；first unchecked next step 只能是 exact separately approved case-construction plan/corrigendum |
+| G6 局部核—终端类恢复门 | IN PROGRESS / G6-A 与 G6-R PASS / G6-B `OPEN/PENDING` | R1/R2 失败和两项 minimality failure 原样保留；G6-B schema-only governance v2 在 historical/pre-repair Task-5 subject `9ef6fcec9e410b2ab7afc4144df8b948a238d95f` 实现 top-level exact-five、nested exact-twelve；final Section 18 evidence subject `948ff5746adcb66b68fb9c47e519f070dd2c96ba` 完成 independent review publication；授权门 remediation subject `b2f2f285a68793ce9ca4cb1b47a05dd7a3cfb9bb` focused schema `379 passed`、preflight `20 passed`、fresh full repository `2145 passed, 2 skipped`；case-construction plan SHA `c2039332...` 与 review SHA `297a6938...` 已发布并获三路 `APPROVE` 0 Critical/High/Medium | 四 capability 仍 false，later roots absent；计划把 `estimand_id` 矛盾限定为 exact two-path corrigendum，但尚未实施；无 case、normalization、actual overlap、preflight、CTMC、DES、output inspection 或 scientific verdict；first unchecked next step 仅为用户批准两个 exact SHA-256 |
 
 ## G0 仓库门
 
@@ -296,9 +296,15 @@ G6-B 保持 `OPEN/PENDING`。四个 typed capabilities 分别为
 `target_certification_preflight_authorized=false`、
 `quantitative_execution_authorized=false`；later instance roots 均 absent。
 本 tranche 没有创建 case、运行 normalization/overlap/preflight/CTMC/DES、
-检查 output 或形成 scientific verdict。First unchecked next step after evidence
-publication 只能是 separately approved case-construction plan，不能直接进入
-science。
+检查 output 或形成 scientific verdict。case-construction plan SHA
+`c20393328f8f98e7b35a6507fd6e993b2f17e068d977c3dc6253b05e9a75de5f`
+与 review SHA
+`297a69382347e16e894af63e70f8fa95807407048b2e89c45701410a4e9289e1`
+已发布，三路审查均通过；First unchecked next step 只能是用户对这两个 exact
+SHA-256 的明确批准，不能直接进入 construction 或 science。
+计划发布作用域守卫在新路径未声明时按预期 RED，随后仅允许两个精确计划文档
+路径并保持 governance-instance 路径拒绝；final direct `2 passed`、Task-6
+selection `17 passed, 1112 deselected`，Ruff/format/strict mypy/diff green。
 
 完整根因和 R3 证据见
 `docs/verification/G6_HARD_PROBLEM_ROOT_CAUSE_AND_R3_REPAIR.md`、
