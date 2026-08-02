@@ -1136,7 +1136,8 @@ approval：
    publication HEAD/tree、upstream `0/0` 和 clean state。
 2. 重新计算 corrigendum SHA `ff469d9c...`、v2 plan SHA `81b93394...` 与
    independent review SHA `da6da7c2...`；核验 Draft PR #7 的 base/head、Draft、
-   three commits/five files，且 review 保持 `PLAN-ONLY / NO IMPLEMENTATION AUTHORITY`。
+   exact five-file diff and live commit count，且 review 保持
+   `PLAN-ONLY / NO IMPLEMENTATION AUTHORITY`。
 3. 只读重锁旧
    `D:\worktree\IMS_deadlock-g6b-case-construction`，确认 HEAD `01cf48c...`、
    exactly four dirty draft paths 和 canonical instance roots absent；不得 clean、
@@ -1163,7 +1164,8 @@ approval：
 
 Git 管理不改变科学顺序：PR #4 以 `main` 为 base；原计划 PR #5 堆叠在
 PR #4 上；Task1 PR #6 堆叠在 PR #5 上；v2 contract/review PR #7 堆叠在
-PR #6 上，当前 publication diff 精确为 3 commits / 5 paths。
+PR #6 上，当前 publication diff 精确为 5 paths；commit count 必须从 live PR
+或 `git rev-list` 重新锁定，不能由本文件自引用固定。
 不得在未核对 PR diff、review subject、负证据保留情况和 merge authority 时
 merge；即使 merge，也不替代 plan exact-bytes approval。
 
@@ -1321,8 +1323,9 @@ G6-B remains `OPEN/PENDING`; `case_creation_authorized=false` and
 `scientific_execution_authorized=false` remain in force; G6-C/D/E are not
 started; immutable G4/G5/G6 evidence is unchanged.
 
-The next first action after normal push is to re-lock the pushed branch and
-confirm HEAD/upstream/status. The case-construction plan and three independent
-reviews are published, but the next transition is still exact-bytes user
-approval of plan SHA `c2039332...` and review SHA `297a6938...`, not execution
-and not a partial-domain production solve.
+Historical publication note: after that earlier push, the next action was to
+re-lock HEAD/upstream/status and obtain exact approval of the then-current old
+plan/review pair. That approval later occurred, Task1 completed, and the
+original Task2 stopped on the materialization-contract gap. The only current
+transition is exact approval of v2 plan SHA `81b93394...` and review SHA
+`da6da7c2...`, not execution and not a partial-domain production solve.
