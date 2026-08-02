@@ -44,6 +44,7 @@ _TASK6_DECLARED_CHANGED_PATHS = {
     "tests/test_g6b_row_family_protocol.py",
 }
 _TASK7_REPAIR_DECLARED_CHANGED_PATHS = {
+    "docs/verification/G6_B_AUTHORIZATION_GATE_REMEDIATION_REVIEW.md",
     "src/ims_deadlock/g6b_schema_contracts.py",
     "tests/test_g6b_schema_contracts.py",
     "tests/test_g6b_row_family_protocol.py",
@@ -3743,6 +3744,7 @@ def test_task6_ignored_outside_declared_paths_remain_scope_violations() -> None:
 
 def test_task7_repair_scope_is_exact_and_keeps_future_capabilities_forbidden() -> None:
     assert _TASK7_REPAIR_DECLARED_CHANGED_PATHS == {
+        "docs/verification/G6_B_AUTHORIZATION_GATE_REMEDIATION_REVIEW.md",
         "src/ims_deadlock/g6b_schema_contracts.py",
         "tests/test_g6b_schema_contracts.py",
         "tests/test_g6b_row_family_protocol.py",

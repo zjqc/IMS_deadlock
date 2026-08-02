@@ -46,19 +46,41 @@ scientific/boundary 无 P0-P2，code/capability P0-P3 为零；审稿时唯一�
 P3 evidence-publication sync 由本次文档更新关闭。first unchecked next step 只能是 separately approved
 case-construction plan，不能直接进入 science。
 
+2026-08-02 的 PR 独立审查随后发现两个工程/治理授权缺口：缺少显式 fail-closed
+Barrier-A preflight authorization validator，以及 retired-normalization
+authorization 未强制 `authorized is True` 和
+`invalidated_by_identity_drift is False`。两项均在 remediation subject
+`b2f2f285a68793ce9ca4cb1b47a05dd7a3cfb9bb` 修复；focused schema
+`379 passed`、preflight focus `20 passed`、Ruff/format/strict mypy/diff
+通过，fresh full repository 为
+`2145 passed, 2 skipped in 2766.88s (0:46:06)`；完整记录见
+`docs/verification/G6_B_AUTHORIZATION_GATE_REMEDIATION_REVIEW.md`。该修复没有
+打开任何 capability，也没有创建 later root。另发现 case-construction schema
+对 predeclared `estimand_id` 同时 required/prohibited 的 future-instance 矛盾；它
+必须由下一份 exact plan/corrigendum 关闭，不能由执行者自行解释。
+
+包含 remediation review 的文档后继只额外修改
+`tests/test_g6b_row_family_protocol.py` 中两条相互对应的 declared-path
+allowlist/精确集合断言。未列入新文档时 scope guard 按预期 RED
+（`1 failed, 1 passed`）；只更新 allowlist 后，精确集合断言又按预期 RED
+（`1 failed, 1 passed`）；同步断言后 direct `2 passed`、Task-6 selection
+`17 passed, 1111 deselected`，该测试文件 Ruff/format/strict mypy 与 diff
+check 均通过；无 production code/schema 变化。`2145` 项 full suite 仍精确
+绑定 `b2f2f285...`，不得误写成文档后继自身的 full-suite count。
+
 ### 1.1 2026-08-02 当前接管快照
 
 | 工作面 | 当前状态 | 下一动作 |
 | --- | --- | --- |
 | Section 18 schema/governance v2 | `COMPLETE / PASS_SCHEMA_ONLY`；代码审查对象固定为 `948ff5746adcb66b68fb9c47e519f070dd2c96ba` | 不再重跑 Task 1-7；仅在代码/schema/冻结协议/证据对象变化时重跑完整验证 |
-| G6-B case construction | `NOT STARTED`；`case_construction_authorized=false` | 先新写 case-construction plan，独立审查并获得另行批准；批准前不得造 case |
+| G6-B case construction | `NOT STARTED`；`case_construction_authorized=false`；已定位 `estimand_id` future-instance scope blocker | 发布 exact case-construction plan/corrigendum，完成三路独立审查并获得用户对 exact hashes 的另行批准；批准前不得造 case |
 | retired-authority normalization | `NOT AUTHORIZED / NOT RUN` | case sealing 后另开 data-only authorization；不得读取历史 outcome 反推案例 |
 | overlap audit | `NOT RUN` | 仅在 sealed inputs 完成后运行；hash 不等同于语义独立性证明 |
 | Barrier A target preflight | `NOT AUTHORIZED / NOT RUN` | overlap PASS 后另行授权，只能产出 certificate/refusal/preflight evidence |
 | Barrier B quantitative science | `NOT AUTHORIZED / NOT RUN` | exact/DES same-target locks 与单独定量授权完成后，才可运行 CTMC/DES |
 | G6-C/D/E | 全部 `NOT STARTED / NOT PASSED` | 只有 G6-B 全条件通过后才能进入 confirmation preregistration、freeze、一次性执行 |
 | 论文 | 无统一主稿，paper gate 未通过 | 保留 G5 FAIL、R1/R2 failure、R3 historical-only 与 minimality failures；G6-E 后重建 paper gate |
-| Git 集成 | 当前 final-review 分支已推送；`main` 仍是 `9c707ce3d990541847aee745bec211bb55c74f6b` | 用户已批准分支处置方式 2（推送并创建 PR）；push 已完成，当前分支 PR 创建/审查/合并仍待完成 |
+| Git 集成 | Draft PR #4 `https://github.com/zjqc/IMS_deadlock/pull/4` 已建立；`main` 仍是 `9c707ce3d990541847aee745bec211bb55c74f6b`；授权门 remediation subject 为 `b2f2f285a68793ce9ca4cb1b47a05dd7a3cfb9bb` | 保持 PR #4 为 draft，核对 remediation/full-suite/docs successor 后推送；不得在已知 pre-case blocker 或未获 merge authority 时合并 |
 | 非阻塞工程卫生 | 批准门 `ruff format --check src tests` 为 47 files green；更宽的 `ruff format --check .` 仍会对 3 个历史 plan 文档代码块提出格式建议 | 作为历史文档格式债保留；若清理，必须单独审查且不得改动批准规格 digest、冻结协议或证据 bytes |
 
 当前没有代码运行失败，也不是因理论—实现比较得出矛盾而停机。最近的停顿发生
@@ -119,7 +141,9 @@ unchecked task 是创建一份新的、单独审查和批准的 case-constructio
   `docs/cases/CASE_CHANGE_LEDGER.md` 和
   `docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md`。包含本文件的当前
   continuation commit 是上述发布 HEAD 的 document-only 后继，必须实时锁定，
-  不应硬编码成 scientific review subject。
+  不应硬编码成 scientific review subject。其后的授权门 remediation code
+  subject 是 `b2f2f285a68793ce9ca4cb1b47a05dd7a3cfb9bb`；包含 remediation review
+  与本交接更新的 documentation successor 仍须从实时 Git history 定位。
 - 当前批准规格：
   `docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md`，
   SHA-256
@@ -144,13 +168,13 @@ unchecked task 是创建一份新的、单独审查和批准的 case-constructio
   candidate diff 不得包含其路径或字节。
 - 当前主线对照基线：`main@9c707ce3d990541847aee745bec211bb55c74f6b`。
   当前 G6-B 发布分支相对其保持隔离，不得把 feature 分支 HEAD 误写成主线
-  通过状态。2026-08-02 本次最终交接纠偏前，分支在
-  `f4a1be3c975768abee0e7a4200557805c8556169`，相对 `main...HEAD = 0/65`、
-  `HEAD...upstream = 0/0`、clean；包含本文件的后继提交会使领先数增加，下一
-  进程必须实时重算。
+  通过状态。当前 code remediation subject 为 `b2f2f285...`；包含本文件的
+  documentation successor 会使领先数增加，下一进程必须实时重算
+  `main...HEAD`、`HEAD...upstream` 和 clean state。
 - 分支处置方式已由用户选择为方式 2：推送当前 feature branch 并创建 PR。
-  分支 push 已完成；远端 `refs/pull/*/head` 当前没有指向本 final-review branch
-  HEAD，因此 PR 创建/审查/合并仍是工程管理待办，不能写成已进入 `main`。
+  Draft PR #4 已建立：`https://github.com/zjqc/IMS_deadlock/pull/4`。它尚未
+  merge，也没有获得 merge authority；已知 pre-case blocker 和计划审批门关闭前
+  必须保持 draft，不能写成已进入 `main`。
 - 历史交接编写前锁定 `main@235b69a189a869578d9760fcc5585fbfe21a7808`
   和 tree `9ffa5974ced053e3ffd9943f34e163c4606eddf2` 仅是旧交接快照，
   不再是当前 G6-B continuation 的目标锁。

@@ -146,6 +146,46 @@ There is no broad scientific PASS, no broad G6-B PASS, and no Section 18
 runtime-capability PASS. The evidence above is schema-only governance evidence
 for the exact subject commit.
 
+## 2026-08-02 post-publication authorization-gate remediation
+
+Independent PR review found that the schema-only publication lacked a
+first-class fail-closed Barrier-A preflight authorization validator and that
+retired-normalization authorization did not require explicit true/no-identity-
+drift semantics. Those engineering/governance defects were corrected at exact
+subject `b2f2f285a68793ce9ca4cb1b47a05dd7a3cfb9bb` in
+`src/ims_deadlock/g6b_schema_contracts.py` and
+`tests/test_g6b_schema_contracts.py`.
+
+The remediation added exact preflight scope, command-manifest, resource-budget,
+stop-condition, evidence-root schema/path, side-effect, and linked self-hash
+checks. It also rejects quantitative, case-unit, governance, arbitrary
+fallback, stale-schema, materialized, and mismatched evidence roots even when
+their linked hash chain is resealed. Normalization now requires
+`authorized is True` and `invalidated_by_identity_drift is False`.
+
+Fresh remediation evidence: schema-contract `379 passed`; preflight focus
+`20 passed`; touched-file Ruff check/format, strict mypy, and diff check passed;
+full repository `2145 passed, 2 skipped in 2766.88s (0:46:06)`. Final
+independent code/capability review returned `APPROVE` with zero Critical, High,
+or Medium findings. The complete scoped record is
+`docs/verification/G6_B_AUTHORIZATION_GATE_REMEDIATION_REVIEW.md`.
+
+The documentation successor adds that review path to the existing fail-closed
+Task-6/Task-7 changed-path allowlist and its exact-set assertion. The guard
+first produced the intended RED failure for the unlisted file; the intermediate
+allowlist-only edit then produced the intended exact-set RED failure; after the
+matching assertion update, `2` direct tests and the broader Task-6 selection
+`17 passed, 1111 deselected` passed. Ruff, format, strict mypy, and diff check
+passed for the two-line test change. No production code or schema
+changed in the successor.
+
+A separate pre-case ambiguity remains: construction contracts require
+predeclared `estimand_id` fields in sealed hypotheses and metric entries while
+also prohibiting `estimand_id` recursively in construction instances. No case
+may be created until an exact, independently reviewed construction plan resolves
+that scope. This finding does not alter the Section 18 schema-only review
+subject or create scientific evidence.
+
 ## Claim boundary
 
 G6-B remains OPEN/PENDING. Exact-twelve schema validity does not establish case
