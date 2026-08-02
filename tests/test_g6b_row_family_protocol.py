@@ -53,10 +53,24 @@ _CASE_CONSTRUCTION_PLAN_DECLARED_CHANGED_PATHS = {
     "docs/superpowers/plans/2026-08-02-g6b-case-construction.md",
     "docs/verification/G6_B_CASE_CONSTRUCTION_PLAN_REVIEW.md",
 }
+_TASK1_ESTIMAND_SCOPE_CORRIGENDUM_DECLARED_CHANGED_PATHS = {
+    "cases/discovery/g6b/row_families/structural_discovery_v1/"
+    "case_construction_schema.json",
+    "cases/discovery/g6b/row_families/structural_discovery_v1/identity_schema.json",
+    "cases/discovery/g6b/row_families/structural_discovery_v1/"
+    "retired_authority_fingerprint_schema.json",
+    "docs/superpowers/specs/"
+    "2026-08-02-g6b-case-construction-estimand-scope-corrigendum.md",
+    "src/ims_deadlock/g6b_row_family_protocol.py",
+    "src/ims_deadlock/g6b_schema_contracts.py",
+    "tests/test_g6b_row_family_protocol.py",
+    "tests/test_g6b_schema_contracts.py",
+}
 _FINAL_SCHEMA_REVIEW_DECLARED_CHANGED_PATHS = (
     _TASK6_DECLARED_CHANGED_PATHS
     | _TASK7_REPAIR_DECLARED_CHANGED_PATHS
     | _CASE_CONSTRUCTION_PLAN_DECLARED_CHANGED_PATHS
+    | _TASK1_ESTIMAND_SCOPE_CORRIGENDUM_DECLARED_CHANGED_PATHS
 )
 _TASK6_FORBIDDEN_EXACT_PATHS = {
     "docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md": (
@@ -3819,6 +3833,42 @@ def test_case_construction_plan_publication_scope_is_exact_and_plan_only() -> No
         _task6_scope_policy_category(
             "cases/discovery/g6b/row_families/structural_discovery_v1/"
             "governance/construction_authorization.json"
+        )
+        == "case_governance_instance_root"
+    )
+
+
+def test_task1_estimand_scope_corrigendum_scope_is_exact_and_schema_only() -> None:
+    assert _TASK1_ESTIMAND_SCOPE_CORRIGENDUM_DECLARED_CHANGED_PATHS == {
+        "cases/discovery/g6b/row_families/structural_discovery_v1/"
+        "case_construction_schema.json",
+        "cases/discovery/g6b/row_families/structural_discovery_v1/identity_schema.json",
+        "cases/discovery/g6b/row_families/structural_discovery_v1/"
+        "retired_authority_fingerprint_schema.json",
+        "docs/superpowers/specs/"
+        "2026-08-02-g6b-case-construction-estimand-scope-corrigendum.md",
+        "src/ims_deadlock/g6b_row_family_protocol.py",
+        "src/ims_deadlock/g6b_schema_contracts.py",
+        "tests/test_g6b_row_family_protocol.py",
+        "tests/test_g6b_schema_contracts.py",
+    }
+    assert all(
+        _task6_scope_policy_category(path) is None
+        for path in _TASK1_ESTIMAND_SCOPE_CORRIGENDUM_DECLARED_CHANGED_PATHS
+    )
+    assert (
+        _task6_scope_policy_category("src/ims_deadlock/g6b_case_materializer.py")
+        == "outside_task6_declared_files"
+    )
+    assert (
+        _task6_scope_policy_category("tests/test_g6b_case_materializer.py")
+        == "outside_task6_declared_files"
+    )
+    assert (
+        _task6_scope_policy_category(
+            "cases/discovery/g6b/row_families/structural_discovery_v1/"
+            "governance/g6b_discovery_case_construction_v1/"
+            "construction_authorization.json"
         )
         == "case_governance_instance_root"
     )
