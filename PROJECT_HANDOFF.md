@@ -25,9 +25,11 @@
 - 尚无完整论文主文件，也不能声称达到投稿或顶刊就绪状态。
 
 G6-B 当前为 schema-only governance v2 的 exact-twelve nested bundle，状态是
-`ROW_FAMILY_BUNDLE_IMPLEMENTED` 和 `OPEN/PENDING`。当前发布 HEAD 是
-`8336131af19dfa98fceda80fc79dd349b43f19a9`，它是 evidence-only 文档后继；
-最终 Section 18 evidence subject commit 仍是
+`ROW_FAMILY_BUNDLE_IMPLEMENTED` 和 `OPEN/PENDING`。本次 handoff-cleanup 前的
+发布 HEAD 是 `8336131af19dfa98fceda80fc79dd349b43f19a9`，它是
+evidence-only 文档后继；包含本文件的实际当前文档提交必须用
+`git log -1 --format=%H -- PROJECT_HANDOFF.md` 重新定位。最终 Section 18
+evidence subject commit 仍是
 `948ff5746adcb66b68fb9c47e519f070dd2c96ba`；批准规格
 SHA-256 是 `b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6`，
 冻结 matrix raw SHA-256 是
@@ -58,13 +60,15 @@ case-construction plan，不能直接进入 science。
 - GitHub：`git@github.com:zjqc/IMS_deadlock.git`
 - 当前 G6-B v2 权威工作树：
   `D:\worktree\IMS_deadlock-g6b-spec-final-review`，branch
-  `codex/g6b-case-target-certification-final-review`，当前发布 HEAD
-  `8336131af19dfa98fceda80fc79dd349b43f19a9`，已推送且提交后
+  `codex/g6b-case-target-certification-final-review`。本次 handoff-cleanup 前的
+  发布 HEAD 是 `8336131af19dfa98fceda80fc79dd349b43f19a9`，已推送且提交后
   `HEAD...upstream = 0/0`、工作树 clean；它相对最终 Section 18 evidence
   subject commit `948ff5746adcb66b68fb9c47e519f070dd2c96ba` 只改四个文档：
   `PROJECT_HANDOFF.md`、`docs/ROADMAP.md`、
   `docs/cases/CASE_CHANGE_LEDGER.md` 和
-  `docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md`。
+  `docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md`。包含本文件的当前
+  continuation commit 是上述发布 HEAD 的后继，必须实时锁定，不应硬编码成
+  scientific review subject。
 - 当前批准规格：
   `docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md`，
   SHA-256
@@ -903,8 +907,8 @@ G6-B 推进期间可以建立诚实的 working manuscript skeleton，但必须�
 1. 从本地操作契约读取 SSH/远程路径并重锁
    `D:\worktree\IMS_deadlock-g6b-spec-final-review`、branch、HEAD、upstream、
    clean/expected-dirty scope 和批准规格 digest。
-2. 以当前发布 HEAD `8336131af19dfa98fceda80fc79dd349b43f19a9` 作为文档
-   continuation 基线；以 final Section 18 evidence subject
+2. 以 `git log -1 --format=%H -- PROJECT_HANDOFF.md` 定位到的当前文档
+   continuation commit 作为文档 continuation 基线；以 final Section 18 evidence subject
    `948ff5746adcb66b68fb9c47e519f070dd2c96ba` 作为 schema/governance review
    evidence subject；以 historical/pre-repair Task-5 subject
    `9ef6fcec9e410b2ab7afc4144df8b948a238d95f` 只作为历史 diff/count evidence。
