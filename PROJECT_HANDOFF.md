@@ -1,5 +1,60 @@
 # IMS Deadlock 当前项目交接
 
+## 2026-08-02 Task2 Materialization Contract Revision
+
+Current precedence: this section is the current continuation source for G6-B
+case construction. The user did authorize entry into the original Task2, and
+TDD reached a retained intermediate `442 passed in 109.73s`; however, that run
+exposed identity-bearing gaps in the approved Tasks 2-7 contract before any
+authorization or case instance was created. The old Task2 execution was stopped
+fail-closed. Older wording below that says Task2 is merely awaiting renewed
+entry approval is historical and no longer defines the continuation point.
+
+The superseding plan-only correction is published on
+`codex/g6b-case-construction-contract-revision`. Its reviewed subject is
+`79091b863db897e3087640d0c72eb154751a5f6d` with tree
+`e837d7d8bf680bb8d22211fdd20543e3bf6d5ebb`; stacked Draft PR #7 is
+`https://github.com/zjqc/IMS_deadlock/pull/7`, with base
+`codex/g6b-case-construction` / Draft PR #6. The exact materialization-contract
+corrigendum SHA-256 is
+`ff469d9c5105835fde5feb170e501bdde14506df50632990f7c2cddc251da36c`; the
+revised-plan SHA-256 is
+`81b93394233b8201ab4ba234952f17110c87398bf34a83883481ac017112a4f7`.
+The independent review artifact is
+`docs/verification/G6_B_CASE_CONSTRUCTION_V2_PLAN_REVIEW.md`, exact SHA-256
+`da6da7c2e513e11761e439f8b43ef6260556c912d3e730f94f15eae088d90ea0`.
+Ontology/scientific-boundary, mechanical DAG/count/hash/path, and adversarial
+implementability reviews all returned `PASS` with no remaining finding.
+
+The earlier implementation worktree
+`D:\worktree\IMS_deadlock-g6b-case-construction` remains deliberately
+quarantined at branch `codex/g6b-case-construction`, HEAD
+`01cf48c7623fa2d4652a1397c79c3c6202cf84fb`, tree
+`6e7fef9323d6b827fd9555df16b33d6dd3b31642`, with exactly these four dirty
+Task2 draft paths:
+
+- modified `src/ims_deadlock/g6b_schema_contracts.py`;
+- modified `tests/test_g6b_schema_contracts.py`;
+- untracked `src/ims_deadlock/g6b_case_materializer.py`;
+- untracked `tests/test_g6b_case_materializer.py`.
+
+Do not reset, clean, stash, commit, transfer, or use those bytes as v2 test
+truth. No construction-authorization, case-unit, retired-normalization,
+target-certification, quantitative, or scientific root was created; all four
+typed capabilities remain false and G6-B remains `OPEN/PENDING`.
+
+First unchecked next step: obtain exact user approval naming both revised-plan
+SHA-256
+`81b93394233b8201ab4ba234952f17110c87398bf34a83883481ac017112a4f7` and
+review SHA-256
+`da6da7c2e513e11761e439f8b43ef6260556c912d3e730f94f15eae088d90ea0`.
+A general continue instruction does not approve changed bytes. Only after that
+approval may a fresh
+`D:\worktree\IMS_deadlock-g6b-case-construction-v2` worktree and
+`codex/g6b-case-construction-v2` branch be created from the exact publication
+commit containing the corrigendum, revised plan, review, handoff, and roadmap.
+No v2 schema/code/test implementation or case/science byte may precede it.
+
 ## 2026-08-02 Task1 Case-Construction Estimand Scope Corrigendum
 
 Current precedence: this Task1 section is the current continuation source for G6-B case construction. Older `USER_APPROVAL_PENDING` / plan-approval wording below is retained only as historical snapshot text and must not be used as the next continuation step. Task2 materializer work is not authorized until the user again explicitly approves entering Task2.

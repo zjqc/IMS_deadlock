@@ -1,5 +1,54 @@
 # IMS Deadlock Gate Roadmap
 
+## 2026-08-02 Task2 Materialization Contract Revision Status
+
+Current status override: the user authorized the original Task2, but its TDD
+implementation was stopped before commit and before any authorization or case
+instance because the approved Tasks 2-7 did not close the construction
+log/ledger, interruption recovery, comparison projections, seed commitment,
+metric-sharing semantics, or C2/C3 source identity. The retained intermediate
+`442 passed in 109.73s` is negative/partial engineering evidence, not a Task2
+pass. Older Task1 sections and gate-table cells below that still say Task2 is
+only awaiting renewed entry approval are historical.
+
+The corrected plan-only subject is
+`79091b863db897e3087640d0c72eb154751a5f6d` / tree
+`e837d7d8bf680bb8d22211fdd20543e3bf6d5ebb` on
+`codex/g6b-case-construction-contract-revision`. Stacked Draft PR #7 is
+`https://github.com/zjqc/IMS_deadlock/pull/7`, targeting
+`codex/g6b-case-construction` / Draft PR #6. Exact identities:
+
+- materialization-contract corrigendum SHA-256:
+  `ff469d9c5105835fde5feb170e501bdde14506df50632990f7c2cddc251da36c`;
+- revised-plan SHA-256:
+  `81b93394233b8201ab4ba234952f17110c87398bf34a83883481ac017112a4f7`;
+- independent-plan-review SHA-256:
+  `da6da7c2e513e11761e439f8b43ef6260556c912d3e730f94f15eae088d90ea0`.
+
+Three independent lanes returned `PASS`: ontology/scientific boundary,
+mechanical DAG/count/hash/path closure, and adversarial implementability and
+recovery. The v2 contract closes 36 schema keys, 30 files per case, 390 case
+files plus four governance files, 393 deterministic transient paths, a
+manifest-last create-new DAG, ordered repeated torn-frame recovery, nine-path
+C2 source identity, artifact-only C3, documentation-only C4, deterministic
+pre-outcome seed commitment, and the separation between intra-bundle metric
+sharing and later retired-authority reuse.
+
+The old Task2 worktree remains quarantined at
+`codex/g6b-case-construction@01cf48c7623fa2d4652a1397c79c3c6202cf84fb`
+with exactly two modified and two untracked draft paths. It must not be cleaned,
+committed, transferred, or treated as v2 truth. All four capabilities remain
+false; no case, normalization, overlap, preflight, CTMC/DES, quantitative
+artifact, output inspection, or scientific verdict exists. G6-B remains
+`OPEN/PENDING`.
+
+First unchecked next step: exact user approval must name revised-plan SHA-256
+`81b93394233b8201ab4ba234952f17110c87398bf34a83883481ac017112a4f7` and
+review SHA-256
+`da6da7c2e513e11761e439f8b43ef6260556c912d3e730f94f15eae088d90ea0`.
+Only then create the fresh v2 worktree/branch from this plan-publication commit
+and begin Task R1. A general instruction to continue is not exact-byte approval.
+
 ## 2026-08-02 Task1 Corrigendum Review Status
 
 G6-B case construction Task1 is `COMPLETED / REVIEWED` at subject `f8b777713fc7d5f239ab6449d99c050452db6f98` tree `b65b096a6135991ede09c125fbd9de4f381733e9`. Draft PR #6 is `https://github.com/zjqc/IMS_deadlock/pull/6`, targeting `codex/g6b-case-construction-plan` / PR #5. The review artifact is `docs/verification/G6_B_CASE_CONSTRUCTION_ESTIMAND_SCOPE_CORRIGENDUM_REVIEW.md`; its SHA-256 is `744cac6caff24779d862704ad83d186023ea918f06f941e78fcc2f797c1b07c7`.
