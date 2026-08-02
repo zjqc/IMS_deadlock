@@ -1180,6 +1180,25 @@ CONSTRUCTION_REFUSAL_CODES = (
     "unauthorized_case_creation_attempt",
     "unclassified_scientific_input",
 )
+CASE_CONSTRUCTION_V3_REFUSAL_REASON_CODES = (
+    "batch_incomplete",
+    "canonicalization_violation",
+    "ledger_append_interrupted",
+    "missing_hash",
+    "outcome_leakage",
+    "output_root_reuse_or_materialized",
+    "partial_bundle_terminal",
+    "post_seal_ledger_mutation",
+    "projection_file_missing",
+    "runtime_identity_drift",
+    "sealed_input_drift",
+    "self_hash_mismatch",
+    "source_identity_phase_violation",
+    "subject_id_contaminated_projection",
+    "unauthorized_case_creation_attempt",
+    "unclassified_scientific_input",
+    "unexpected_transient_path",
+)
 NORMALIZATION_REFUSAL_CODES = (
     "capability_call_violation",
     "capability_import_violation",
@@ -1235,6 +1254,7 @@ REFUSAL_CODE_GROUPS = MappingProxyType(
     {
         "cross_gate": CROSS_GATE_REFUSAL_CODES,
         "construction": CONSTRUCTION_REFUSAL_CODES,
+        "construction_v3": CASE_CONSTRUCTION_V3_REFUSAL_REASON_CODES,
         "normalization": NORMALIZATION_REFUSAL_CODES,
         "overlap": OVERLAP_REFUSAL_CODES,
         "preflight": PREFLIGHT_REFUSAL_CODES,
@@ -3279,6 +3299,7 @@ def validate_append_only_failure_evidence_hashes(
 def validate_refusal_codes(
     gate: Literal[
         "construction",
+        "construction_v3",
         "normalization_overlap",
         "preflight",
         "quantitative",
@@ -3288,6 +3309,7 @@ def validate_refusal_codes(
 ) -> None:
     group_by_gate = {
         "construction": CONSTRUCTION_REFUSAL_CODES,
+        "construction_v3": CASE_CONSTRUCTION_V3_REFUSAL_REASON_CODES,
         "normalization_overlap": NORMALIZATION_REFUSAL_CODES + OVERLAP_REFUSAL_CODES,
         "preflight": PREFLIGHT_REFUSAL_CODES,
         "quantitative": QUANTITATIVE_REFUSAL_CODES,
@@ -5173,29 +5195,6 @@ METRIC_SCHEMA_REUSE_RECORD_REQUIRED_FIELDS = (
     "review_artifact_hash",
     "reuse_record_sha256",
 )
-CASE_CONSTRUCTION_V3_REFUSAL_REASON_CODES = tuple(
-    sorted(
-        {
-            "batch_incomplete",
-            "canonicalization_violation",
-            "missing_hash",
-            "outcome_leakage",
-            "output_root_reuse_or_materialized",
-            "runtime_identity_drift",
-            "sealed_input_drift",
-            "self_hash_mismatch",
-            "subject_id_contaminated_projection",
-            "unauthorized_case_creation_attempt",
-            "unclassified_scientific_input",
-            "ledger_append_interrupted",
-            "partial_bundle_terminal",
-            "post_seal_ledger_mutation",
-            "projection_file_missing",
-            "source_identity_phase_violation",
-            "unexpected_transient_path",
-        }
-    )
-)
 _DES_SEED_RULE_CODE = "g6b_philox_length_prefixed_sha256_v2"
 _G6B_CONSTRUCTION_BUNDLE_ID = "g6b_discovery_case_construction_v1"
 _FROZEN_ROW_FAMILY_MATRIX_SHA256 = (
@@ -5525,7 +5524,7 @@ def derive_des_philox_key_hex(
 ) -> str:
     _validate_lower_sha256(seed_root_hex, label="seed_root_hex")
     _validate_lower_sha256(case_content_sha256, label="case_content_sha256")
-    if replicate_index < 0:
+    if type(replicate_index) is not int or not 0 <= replicate_index < 4096:
         raise SchemaContractError("invalid_replicate_index")
     fields = (
         "g6b_des_stream_v2",
@@ -5567,6 +5566,95 @@ def derive_des_derivation_label_sha256(
     )
 
 
+def _validate_ledger_hash_map(value: JsonValue, *, label: str) -> Mapping[str, str]:
+    if not isinstance(value, Mapping):
+        raise SchemaContractError("hash_map_invalid", label)
+    result: dict[str, str] = {}
+    previous_key: str | None = None
+    for key, digest in value.items():
+        if not isinstance(key, str):
+            raise SchemaContractError("hash_map_invalid", label)
+        if previous_key is not None and key <= previous_key:
+            raise SchemaContractError("hash_map_not_sorted", label)
+        previous_key = key
+        result[key] = _validate_lower_sha256(digest, label=label)
+    return result
+
+
+def _validate_ledger_refusal_codes(entry: Mapping[str, JsonValue]) -> tuple[str, ...]:
+    raw_codes = entry.get("refusal_reason_codes")
+    codes = _as_string_sequence(raw_codes, "refusal_reason_codes")
+    _unique_sorted_set(codes, "refusal_reason_codes")
+    validate_refusal_codes("construction_v3", codes)
+    return tuple(codes)
+
+
+def _validate_ledger_event_semantics(
+    entry: Mapping[str, JsonValue],
+    *,
+    event: str,
+    prior_hash: str | None,
+    pending_fragments: Sequence[bytes],
+) -> None:
+    created = _validate_ledger_hash_map(
+        entry.get("created_file_hashes"), label="created_file_hashes"
+    )
+    observed = _validate_ledger_hash_map(
+        entry.get("observed_partial_file_hashes"),
+        label="observed_partial_file_hashes",
+    )
+    refusal_codes = _validate_ledger_refusal_codes(entry)
+    causal = entry.get("causal_entry_sha256_or_null")
+
+    if event == "PREWRITE_REFUSED":
+        if created:
+            raise SchemaContractError("created_file_hashes_unexpected")
+        if observed:
+            raise SchemaContractError("partial_observation_unexpected")
+        if not refusal_codes:
+            raise SchemaContractError("refusal_reason_required")
+        if causal is not None:
+            raise SchemaContractError("causal_entry_unexpected")
+    elif event == "WRITE_STARTED":
+        if created:
+            raise SchemaContractError("created_file_hashes_unexpected")
+        if observed:
+            raise SchemaContractError("partial_observation_unexpected")
+        if refusal_codes:
+            raise SchemaContractError("refusal_reason_unexpected")
+        if causal is not None:
+            raise SchemaContractError("causal_entry_unexpected")
+    elif event == "FILE_CREATED":
+        if len(created) != 1:
+            raise SchemaContractError("file_created_hash_count_mismatch")
+        if observed:
+            raise SchemaContractError("partial_observation_unexpected")
+        if refusal_codes:
+            raise SchemaContractError("refusal_reason_unexpected")
+        if causal is not None:
+            raise SchemaContractError("causal_entry_unexpected")
+    elif event == "READY_TO_SEAL":
+        if len(created) != 391:
+            raise SchemaContractError("ready_to_seal_file_count_mismatch")
+        if observed:
+            raise SchemaContractError("partial_observation_unexpected")
+        if refusal_codes:
+            raise SchemaContractError("refusal_reason_unexpected")
+        if causal is not None:
+            raise SchemaContractError("causal_entry_unexpected")
+    elif event == "INTERRUPTED_PARTIAL":
+        if created:
+            raise SchemaContractError("created_file_hashes_unexpected")
+        if not observed and not pending_fragments:
+            raise SchemaContractError("partial_observation_required")
+        if "ledger_append_interrupted" not in refusal_codes:
+            raise SchemaContractError("refusal_reason_required")
+        if causal != prior_hash:
+            raise SchemaContractError("causal_entry_required")
+    else:
+        raise SchemaContractError("ledger_transition_invalid")
+
+
 def _validate_ledger_entry(
     entry: Mapping[str, JsonValue],
     *,
@@ -5593,6 +5681,12 @@ def _validate_ledger_entry(
         g6b_canonical_json.verify_finalized_self_hash(dict(entry), "entry_sha256")
     except Exception as exc:
         raise SchemaContractError("ledger_entry_self_hash_invalid") from exc
+    _validate_ledger_event_semantics(
+        entry,
+        event=event,
+        prior_hash=prior_hash,
+        pending_fragments=pending_fragments,
+    )
     interrupted = entry.get("interrupted_fragments")
     if not isinstance(interrupted, Sequence) or isinstance(interrupted, str | bytes):
         raise SchemaContractError("interrupted_fragment_contract_invalid")
@@ -5668,6 +5762,8 @@ def validate_construction_ledger_bytes(raw: bytes) -> ConstructionLedgerValidati
         raise SchemaContractError("interrupted_fragment_unrecorded")
     if prior_hash is None:
         raise SchemaContractError("empty_ledger")
+    if prior_event in {"WRITE_STARTED", "FILE_CREATED"}:
+        raise SchemaContractError("partial_bundle_terminal")
     return ConstructionLedgerValidation(
         entry_count=expected_index,
         interrupted_fragment_count=interrupted_fragment_count,

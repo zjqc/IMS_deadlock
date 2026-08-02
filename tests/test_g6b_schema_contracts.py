@@ -6067,3 +6067,150 @@ def test_construction_v3_keeps_retired_reuse_only_in_overlap_schemas() -> None:
         "unexpected_transient_path",
     }:
         assert added_code in schema["refusal_reason_codes"]
+
+
+def test_construction_v3_refusal_vocabulary_is_versioned_and_gate_specific() -> None:
+    contracts.validate_refusal_codes(
+        "construction_v3",
+        contracts.CASE_CONSTRUCTION_V3_REFUSAL_REASON_CODES,
+    )
+    contracts.validate_refusal_codes(
+        "construction", contracts.CONSTRUCTION_REFUSAL_CODES
+    )
+
+    for code in (
+        "ledger_append_interrupted",
+        "partial_bundle_terminal",
+        "post_seal_ledger_mutation",
+    ):
+        with pytest.raises(SchemaContractError, match="wrong_gate_refusal_code"):
+            contracts.validate_refusal_codes("construction", [code])
+        with pytest.raises(SchemaContractError, match="wrong_gate_refusal_code"):
+            contracts.validate_refusal_codes("preflight", [code])
+    with pytest.raises(SchemaContractError, match="unknown_refusal_code"):
+        contracts.validate_refusal_codes("construction_v3", ["invented_refusal"])
+
+
+@pytest.mark.parametrize(
+    "event_code",
+    ["WRITE_STARTED", "FILE_CREATED"],
+)
+def test_construction_ledger_rejects_unsealed_terminal_write_states(
+    event_code: str,
+) -> None:
+    first = _ledger_entry("WRITE_STARTED", 0, None)
+    entries = [_ledger_frame(first)]
+    if event_code == "FILE_CREATED":
+        created = _ledger_entry(
+            "FILE_CREATED",
+            1,
+            first["entry_sha256"],
+            created_file_hashes={"case_units/case-01/case_input.json": "4" * 64},
+        )
+        entries.append(_ledger_frame(created))
+
+    with pytest.raises(SchemaContractError, match="partial_bundle_terminal"):
+        contracts.validate_construction_ledger_bytes(b"".join(entries))
+
+
+def test_construction_ledger_ready_to_seal_requires_exact_391_hashes() -> None:
+    first = _ledger_entry("WRITE_STARTED", 0, None)
+    created = _ledger_entry(
+        "FILE_CREATED",
+        1,
+        first["entry_sha256"],
+        created_file_hashes={"case_units/case-000/case_input.json": "4" * 64},
+    )
+    too_short = {
+        f"case_units/case-{index:03d}/case_input.json": "5" * 64 for index in range(390)
+    }
+    ready = _ledger_entry(
+        "READY_TO_SEAL", 2, created["entry_sha256"], created_file_hashes=too_short
+    )
+
+    with pytest.raises(SchemaContractError, match="ready_to_seal_file_count_mismatch"):
+        contracts.validate_construction_ledger_bytes(
+            _ledger_frame(first) + _ledger_frame(created) + _ledger_frame(ready)
+        )
+
+    complete = {
+        f"case_units/case-{index:03d}/case_input.json": "5" * 64 for index in range(391)
+    }
+    ready = _ledger_entry(
+        "READY_TO_SEAL", 2, created["entry_sha256"], created_file_hashes=complete
+    )
+
+    result = contracts.validate_construction_ledger_bytes(
+        _ledger_frame(first) + _ledger_frame(created) + _ledger_frame(ready)
+    )
+
+    assert result.ledger_head_sha256 == ready["entry_sha256"]
+
+
+def test_construction_ledger_prewrite_refused_requires_refusal_only() -> None:
+    refused = _ledger_entry("PREWRITE_REFUSED", 0, None)
+
+    with pytest.raises(SchemaContractError, match="refusal_reason_required"):
+        contracts.validate_construction_ledger_bytes(_ledger_frame(refused))
+
+    refused = _ledger_entry(
+        "PREWRITE_REFUSED",
+        0,
+        None,
+        refusal_reason_codes=["missing_hash"],
+        created_file_hashes={"case_units/case-01/case_input.json": "4" * 64},
+    )
+    with pytest.raises(SchemaContractError, match="created_file_hashes_unexpected"):
+        contracts.validate_construction_ledger_bytes(_ledger_frame(refused))
+
+
+def test_construction_ledger_interrupted_partial_requires_terminal_observations() -> (
+    None
+):
+    first = _ledger_entry("WRITE_STARTED", 0, None)
+    interrupted = _ledger_entry(
+        "INTERRUPTED_PARTIAL",
+        1,
+        first["entry_sha256"],
+        refusal_reason_codes=["ledger_append_interrupted"],
+        causal_entry_sha256_or_null=first["entry_sha256"],
+    )
+
+    with pytest.raises(SchemaContractError, match="partial_observation_required"):
+        contracts.validate_construction_ledger_bytes(
+            _ledger_frame(first) + _ledger_frame(interrupted)
+        )
+
+    interrupted = _ledger_entry(
+        "INTERRUPTED_PARTIAL",
+        1,
+        first["entry_sha256"],
+        observed_partial_file_hashes={
+            "case_units/case-01/.g6b-tmp-token-case_input.json": "3" * 64
+        },
+        refusal_reason_codes=["ledger_append_interrupted"],
+    )
+    with pytest.raises(SchemaContractError, match="causal_entry_required"):
+        contracts.validate_construction_ledger_bytes(
+            _ledger_frame(first) + _ledger_frame(interrupted)
+        )
+
+
+@pytest.mark.parametrize("replicate_index", [-1, 4096, True, "0"])
+def test_des_philox_key_rejects_invalid_replicate_indices(replicate_index: Any) -> None:
+    with pytest.raises(SchemaContractError, match="invalid_replicate_index"):
+        contracts.derive_des_philox_key_hex(
+            seed_root_hex="1" * 64,
+            case_content_sha256="2" * 64,
+            replicate_index=replicate_index,
+        )
+
+
+def test_des_philox_key_accepts_replicate_domain_boundaries() -> None:
+    for replicate_index in (0, 4095):
+        digest = contracts.derive_des_philox_key_hex(
+            seed_root_hex="1" * 64,
+            case_content_sha256="2" * 64,
+            replicate_index=replicate_index,
+        )
+        assert len(digest) == 64
