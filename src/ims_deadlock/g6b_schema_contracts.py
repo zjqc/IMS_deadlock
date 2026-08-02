@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import re
 from collections import Counter
 from collections.abc import Collection, Mapping, Sequence
 from datetime import datetime
@@ -210,6 +211,29 @@ NORMALIZATION_AUTHORIZATION_REQUIRED_FIELDS = (
     "forbidden_calls",
     "allowed_output_schema",
     "allowed_output_root",
+    "review_artifact_hash",
+    "issued_at_utc",
+    "invalidated_by_identity_drift",
+    "authorization_sha256",
+)
+PREFLIGHT_AUTHORIZATION_REQUIRED_FIELDS = (
+    "schema_version",
+    "authorization_id",
+    "capability",
+    "authorized",
+    "bundle_id",
+    "case_unit_ids",
+    "sealed_bundle_manifest_hash",
+    "runtime_lock_sha256",
+    "allowed_entrypoint",
+    "allowed_command_manifest_hash",
+    "allowed_operations",
+    "allowed_output_schemas",
+    "forbidden_calls",
+    "forbidden_side_effects",
+    "resource_budget",
+    "stop_conditions",
+    "preflight_evidence_root",
     "review_artifact_hash",
     "issued_at_utc",
     "invalidated_by_identity_drift",
@@ -631,6 +655,24 @@ PREFLIGHT_COMMAND_RECORD_REQUIRED_FIELDS = (
     "authorized_preflight_root_hash",
     "command_record_sha256",
 )
+PREFLIGHT_RESOURCE_BUDGET_REQUIRED_FIELDS = (
+    "max_wall_clock_seconds",
+    "max_cpu_seconds",
+    "max_memory_bytes",
+    "max_storage_bytes",
+    "max_states_per_case",
+    "max_transitions_per_case",
+    "max_cases",
+    "max_workers",
+)
+PREFLIGHT_EVIDENCE_ROOT_REQUIRED_FIELDS = (
+    "root_schema_version",
+    "bundle_id",
+    "repo_relative_posix_path",
+    "state",
+    "allowed_file_roles",
+    "reservation_sha256",
+)
 QUANTITATIVE_COMMAND_MANIFEST_REQUIRED_FIELDS = (
     "schema_version",
     "manifest_id",
@@ -957,6 +999,9 @@ PREFLIGHT_FORBIDDEN_SIDE_EFFECTS = (
     "advance_quantitative_state",
     "write_scientific_summary",
 )
+PREFLIGHT_ALLOWED_ENTRYPOINT = "ims_deadlock.g6b_target_preflight.main"
+_POSITIVE_CANONICAL_DECIMAL_PATTERN = re.compile(r"^(0|[1-9][0-9]*)(\.[0-9]*[1-9])?$")
+_VERSIONED_STOP_CONDITION_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]*-v[1-9][0-9]*$")
 PREFLIGHT_RECURSIVE_PROHIBITED_FIELDS = frozenset(
     PREFLIGHT_FORBIDDEN_RESULT_FIELDS
     + (
@@ -1622,12 +1667,20 @@ def validate_source_selector_matrix(matrix: Sequence[Mapping[str, JsonValue]]) -
             row.get("source_path_pattern"),
             "source_path_pattern",
         )
-        selector_kind = row.get("selector_kind")
-        if selector_kind not in SELECTOR_KINDS:
+        selector_kind_value = row.get("selector_kind")
+        if (
+            not isinstance(selector_kind_value, str)
+            or selector_kind_value not in SELECTOR_KINDS
+        ):
             raise SchemaContractError("unknown_selector_kind")
-        allowed_use = row.get("allowed_use")
-        if allowed_use not in ALLOWED_USE_VALUES:
+        selector_kind = selector_kind_value
+        allowed_use_value = row.get("allowed_use")
+        if (
+            not isinstance(allowed_use_value, str)
+            or allowed_use_value not in ALLOWED_USE_VALUES
+        ):
             raise SchemaContractError("unknown_allowed_use")
+        allowed_use = allowed_use_value
         selectors = row.get("selectors")
         if selector_kind == "raw_bytes_only":
             if selectors != []:
@@ -1710,8 +1763,8 @@ def validate_normalization_authorization(
     ):
         raise SchemaContractError("schema_version_drift")
     _require_nonempty_string(record.get("authorization_id"), "authorization_id")
-    if type(record.get("authorized")) is not bool:
-        raise SchemaContractError("capability_true", "authorized")
+    if record.get("authorized") is not True:
+        raise SchemaContractError("unauthorized_retired_normalization_attempt")
     if (
         _as_string_sequence(record.get("authority_ids"), "authority_ids")
         != RETIRED_AUTHORITY_IDS
@@ -1784,7 +1837,7 @@ def validate_normalization_authorization(
         record.get("allowed_output_root"),
     )
     _validate_utc_timestamp(record.get("issued_at_utc"), label="issued_at_utc")
-    if type(record.get("invalidated_by_identity_drift")) is not bool:
+    if record.get("invalidated_by_identity_drift") is not False:
         raise SchemaContractError("runtime_identity_drift")
     _verify_finalized_self_hash(record, "authorization_sha256")
 
@@ -2745,6 +2798,215 @@ def validate_same_target_lock(record: Mapping[str, JsonValue]) -> None:
 
 def validate_same_target_certificate_pair(pair: Mapping[str, JsonValue]) -> None:
     validate_same_target_lock(pair)
+
+
+def validate_preflight_authorization(
+    record: Mapping[str, JsonValue],
+    *,
+    expected_bundle_id: str,
+    expected_case_unit_ids: Sequence[str],
+    expected_sealed_bundle_manifest_hash: str,
+    expected_runtime_lock_sha256: str,
+    command_manifest: Mapping[str, JsonValue],
+    command_records: Mapping[str, Mapping[str, JsonValue]],
+) -> None:
+    validate_exact_keys(
+        record,
+        PREFLIGHT_AUTHORIZATION_REQUIRED_FIELDS,
+        label="preflight_authorization",
+    )
+    if record.get("schema_version") != "ims-deadlock/g6b-preflight-authorization/v1":
+        raise SchemaContractError("schema_version_drift")
+    _require_nonempty_string(record.get("authorization_id"), "authorization_id")
+    if record.get("capability") != "target_certification_preflight":
+        raise SchemaContractError("capability_mismatch")
+    if record.get("authorized") is not True:
+        raise SchemaContractError("unauthorized_target_certification_attempt")
+    if record.get("invalidated_by_identity_drift") is not False:
+        raise SchemaContractError("runtime_identity_drift")
+
+    expected_bundle = _require_nonempty_string(
+        expected_bundle_id,
+        "expected_bundle_id",
+    )
+    if record.get("bundle_id") != expected_bundle:
+        raise SchemaContractError("command_scope_violation", "bundle_id")
+    case_ids = _as_string_sequence(record.get("case_unit_ids"), "case_unit_ids")
+    expected_case_ids = _as_string_sequence(
+        expected_case_unit_ids,
+        "expected_case_unit_ids",
+    )
+    if not case_ids or not expected_case_ids:
+        raise SchemaContractError("command_scope_violation", "case_unit_ids")
+    _unique_sorted_set(case_ids, "case_unit_ids")
+    _unique_sorted_set(expected_case_ids, "expected_case_unit_ids")
+    if case_ids != expected_case_ids:
+        raise SchemaContractError("command_scope_violation", "case_unit_ids")
+
+    for field in (
+        "sealed_bundle_manifest_hash",
+        "runtime_lock_sha256",
+        "allowed_command_manifest_hash",
+        "review_artifact_hash",
+    ):
+        _validate_lower_sha256(record.get(field), label=field)
+    _validate_lower_sha256(
+        expected_sealed_bundle_manifest_hash,
+        label="expected_sealed_bundle_manifest_hash",
+    )
+    _validate_lower_sha256(
+        expected_runtime_lock_sha256,
+        label="expected_runtime_lock_sha256",
+    )
+    if (
+        record.get("sealed_bundle_manifest_hash")
+        != expected_sealed_bundle_manifest_hash
+    ):
+        raise SchemaContractError("sealed_input_drift")
+    if record.get("runtime_lock_sha256") != expected_runtime_lock_sha256:
+        raise SchemaContractError("runtime_identity_drift")
+
+    if record.get("allowed_entrypoint") != PREFLIGHT_ALLOWED_ENTRYPOINT:
+        raise SchemaContractError("command_scope_violation", "allowed_entrypoint")
+    if (
+        _as_string_sequence(record.get("allowed_operations"), "allowed_operations")
+        != ALLOWED_OPERATIONS
+    ):
+        raise SchemaContractError("operation_contract_drift")
+    if (
+        _as_string_sequence(
+            record.get("allowed_output_schemas"),
+            "allowed_output_schemas",
+        )
+        != ALLOWED_OUTPUT_SCHEMA_IDS
+    ):
+        raise SchemaContractError("command_scope_violation", "allowed_output_schemas")
+    if (
+        _as_string_sequence(record.get("forbidden_calls"), "forbidden_calls")
+        != PREFLIGHT_FORBIDDEN_CALLS
+    ):
+        raise SchemaContractError("capability_call_violation")
+    if (
+        _as_string_sequence(
+            record.get("forbidden_side_effects"),
+            "forbidden_side_effects",
+        )
+        != PREFLIGHT_FORBIDDEN_SIDE_EFFECTS
+    ):
+        raise SchemaContractError("unexpected_preflight_side_effect")
+
+    budget = record.get("resource_budget")
+    if not isinstance(budget, Mapping):
+        raise SchemaContractError("command_scope_violation", "resource_budget")
+    validate_exact_keys(
+        budget,
+        PREFLIGHT_RESOURCE_BUDGET_REQUIRED_FIELDS,
+        label="resource_budget",
+    )
+    for field in ("max_wall_clock_seconds", "max_cpu_seconds"):
+        value = budget.get(field)
+        if (
+            not isinstance(value, str)
+            or value == "0"
+            or _POSITIVE_CANONICAL_DECIMAL_PATTERN.fullmatch(value) is None
+        ):
+            raise SchemaContractError("command_scope_violation", field)
+    for field in PREFLIGHT_RESOURCE_BUDGET_REQUIRED_FIELDS[2:]:
+        value = budget.get(field)
+        if type(value) is not int or value <= 0:
+            raise SchemaContractError("command_scope_violation", field)
+    max_cases = budget.get("max_cases")
+    if type(max_cases) is not int or max_cases < len(case_ids):
+        raise SchemaContractError("command_scope_violation", "max_cases")
+
+    stop_conditions = _as_string_sequence(
+        record.get("stop_conditions"),
+        "stop_conditions",
+    )
+    if not stop_conditions:
+        raise SchemaContractError("command_scope_violation", "stop_conditions")
+    _unique_sorted_set(stop_conditions, "stop_conditions")
+    if any(
+        _VERSIONED_STOP_CONDITION_PATTERN.fullmatch(code) is None
+        for code in stop_conditions
+    ):
+        raise SchemaContractError("command_scope_violation", "stop_conditions")
+
+    evidence_root = record.get("preflight_evidence_root")
+    if not isinstance(evidence_root, Mapping):
+        raise SchemaContractError("command_scope_violation", "preflight_evidence_root")
+    validate_exact_keys(
+        evidence_root,
+        PREFLIGHT_EVIDENCE_ROOT_REQUIRED_FIELDS,
+        label="preflight_evidence_root",
+    )
+    if (
+        evidence_root.get("root_schema_version")
+        != "ims-deadlock/g6b-preflight-evidence-root/v1"
+    ):
+        raise SchemaContractError("schema_version_drift")
+    if evidence_root.get("bundle_id") != expected_bundle:
+        raise SchemaContractError("command_scope_violation", "preflight_evidence_root")
+    root_path = _require_nonempty_string(
+        evidence_root.get("repo_relative_posix_path"),
+        "repo_relative_posix_path",
+    )
+    _validate_repo_relative_path(root_path)
+    expected_root_path = f"evidence/g6b/target_certification/{expected_bundle}"
+    if root_path != expected_root_path:
+        raise SchemaContractError("unexpected_preflight_side_effect")
+    if evidence_root.get("state") != "reserved_not_materialized":
+        raise SchemaContractError("unexpected_preflight_side_effect")
+    if (
+        _as_string_sequence(
+            evidence_root.get("allowed_file_roles"),
+            "allowed_file_roles",
+        )
+        != ALLOWED_FILE_ROLES
+    ):
+        raise SchemaContractError("command_scope_violation", "allowed_file_roles")
+    _verify_finalized_self_hash(evidence_root, "reservation_sha256")
+    reservation_sha256 = evidence_root.get("reservation_sha256")
+
+    validate_command_manifest(
+        command_manifest,
+        command_records,
+        capability="target_certification_preflight",
+    )
+    if record.get("allowed_command_manifest_hash") != command_manifest.get(
+        "manifest_sha256"
+    ):
+        raise SchemaContractError(
+            "command_scope_violation", "allowed_command_manifest_hash"
+        )
+    if command_manifest.get("sealed_bundle_manifest_hash") != record.get(
+        "sealed_bundle_manifest_hash"
+    ):
+        raise SchemaContractError("sealed_input_drift")
+    if (
+        command_manifest.get("preflight_evidence_root_reservation_sha256")
+        != reservation_sha256
+    ):
+        raise SchemaContractError("command_scope_violation", "preflight_evidence_root")
+    command_case_ids: set[str] = set()
+    for command_record in command_records.values():
+        if command_record.get("entrypoint") != record.get("allowed_entrypoint"):
+            raise SchemaContractError("command_scope_violation", "allowed_entrypoint")
+        if command_record.get("authorized_preflight_root_hash") != reservation_sha256:
+            raise SchemaContractError(
+                "command_scope_violation", "preflight_evidence_root"
+            )
+        command_case_ids.update(
+            _as_string_sequence(
+                command_record.get("authorized_case_unit_ids"),
+                "authorized_case_unit_ids",
+            )
+        )
+    if command_case_ids != set(case_ids):
+        raise SchemaContractError("command_scope_violation", "case_unit_ids")
+
+    _validate_utc_timestamp(record.get("issued_at_utc"), label="issued_at_utc")
+    _verify_finalized_self_hash(record, "authorization_sha256")
 
 
 def validate_quantitative_authorization(

@@ -2952,6 +2952,40 @@ def test_normalization_authorization_rejects_legacy_bypass_shape() -> None:
         )
 
 
+@pytest.mark.parametrize("authorized", [False, 1, "true"])
+def test_normalization_authorization_requires_explicit_true(
+    authorized: object,
+) -> None:
+    schema = _load_retired_schema_definition()
+    record = valid_normalization_authorization()
+    record["authorized"] = authorized
+    record = _with_rehashed(record, "authorization_sha256")
+
+    with pytest.raises(
+        SchemaContractError,
+        match="unauthorized_retired_normalization_attempt",
+    ):
+        validate_normalization_authorization(
+            record,
+            expected_inventory=schema["expected_source_inventory"],
+            expected_selector_matrix=schema["allowed_json_fields_by_source"],
+        )
+
+
+def test_normalization_authorization_rejects_identity_drift() -> None:
+    schema = _load_retired_schema_definition()
+    record = valid_normalization_authorization()
+    record["invalidated_by_identity_drift"] = True
+    record = _with_rehashed(record, "authorization_sha256")
+
+    with pytest.raises(SchemaContractError, match="runtime_identity_drift"):
+        validate_normalization_authorization(
+            record,
+            expected_inventory=schema["expected_source_inventory"],
+            expected_selector_matrix=schema["allowed_json_fields_by_source"],
+        )
+
+
 @pytest.mark.parametrize(
     "field",
     [
@@ -3679,6 +3713,113 @@ def _valid_command_manifest() -> tuple[JsonObject, dict[str, JsonObject]]:
     }
     manifest["manifest_sha256"] = finalized_self_hash(manifest, "manifest_sha256")
     return manifest, {"cmd-preflight": command}
+
+
+def _valid_preflight_authorization() -> tuple[
+    JsonObject, JsonObject, dict[str, JsonObject]
+]:
+    manifest, command_records = _valid_command_manifest()
+    evidence_root: JsonObject = {
+        "root_schema_version": "ims-deadlock/g6b-preflight-evidence-root/v1",
+        "bundle_id": _TEST_BUNDLE_ID,
+        "repo_relative_posix_path": (
+            f"evidence/g6b/target_certification/{_TEST_BUNDLE_ID}"
+        ),
+        "state": "reserved_not_materialized",
+        "allowed_file_roles": list(ALLOWED_FILE_ROLES),
+        "reservation_sha256": None,
+    }
+    evidence_root["reservation_sha256"] = finalized_self_hash(
+        evidence_root,
+        "reservation_sha256",
+    )
+    command_records["cmd-preflight"]["authorized_preflight_root_hash"] = evidence_root[
+        "reservation_sha256"
+    ]
+    command_records["cmd-preflight"] = _with_rehashed(
+        command_records["cmd-preflight"],
+        "command_record_sha256",
+    )
+    manifest["command_record_hashes"]["cmd-preflight"] = command_records[
+        "cmd-preflight"
+    ]["command_record_sha256"]
+    manifest["preflight_evidence_root_reservation_sha256"] = evidence_root[
+        "reservation_sha256"
+    ]
+    manifest = _with_rehashed(manifest, "manifest_sha256")
+    record: JsonObject = {
+        "schema_version": "ims-deadlock/g6b-preflight-authorization/v1",
+        "authorization_id": "preflight-authorization-test",
+        "capability": "target_certification_preflight",
+        "authorized": True,
+        "bundle_id": _TEST_BUNDLE_ID,
+        "case_unit_ids": ["case-a"],
+        "sealed_bundle_manifest_hash": manifest["sealed_bundle_manifest_hash"],
+        "runtime_lock_sha256": "6" * 64,
+        "allowed_entrypoint": "ims_deadlock.g6b_target_preflight.main",
+        "allowed_command_manifest_hash": manifest["manifest_sha256"],
+        "allowed_operations": list(ALLOWED_OPERATIONS),
+        "allowed_output_schemas": list(ALLOWED_OUTPUT_SCHEMA_IDS),
+        "forbidden_calls": list(contracts.PREFLIGHT_FORBIDDEN_CALLS),
+        "forbidden_side_effects": list(contracts.PREFLIGHT_FORBIDDEN_SIDE_EFFECTS),
+        "resource_budget": {
+            "max_wall_clock_seconds": "60",
+            "max_cpu_seconds": "60",
+            "max_memory_bytes": 1024,
+            "max_storage_bytes": 1024,
+            "max_states_per_case": 100,
+            "max_transitions_per_case": 1000,
+            "max_cases": 1,
+            "max_workers": 1,
+        },
+        "stop_conditions": [
+            "all_declared_cases_terminal-v1",
+            "capability_leak-v1",
+            "identity_drift-v1",
+            "resource_budget_exceeded-v1",
+            "unexpected_file-v1",
+        ],
+        "preflight_evidence_root": evidence_root,
+        "review_artifact_hash": "7" * 64,
+        "issued_at_utc": "2030-01-01T00:00:00Z",
+        "invalidated_by_identity_drift": False,
+        "authorization_sha256": None,
+    }
+    record["authorization_sha256"] = finalized_self_hash(
+        record,
+        "authorization_sha256",
+    )
+    return record, manifest, command_records
+
+
+def _reseal_preflight_root_links(
+    record: JsonObject,
+    manifest: JsonObject,
+    command_records: dict[str, JsonObject],
+) -> None:
+    evidence_root = record["preflight_evidence_root"]
+    evidence_root["reservation_sha256"] = None
+    evidence_root["reservation_sha256"] = finalized_self_hash(
+        evidence_root,
+        "reservation_sha256",
+    )
+    command_record = command_records["cmd-preflight"]
+    command_record["authorized_preflight_root_hash"] = evidence_root[
+        "reservation_sha256"
+    ]
+    command_records["cmd-preflight"] = _with_rehashed(
+        command_record,
+        "command_record_sha256",
+    )
+    manifest["command_record_hashes"]["cmd-preflight"] = command_records[
+        "cmd-preflight"
+    ]["command_record_sha256"]
+    manifest["preflight_evidence_root_reservation_sha256"] = evidence_root[
+        "reservation_sha256"
+    ]
+    manifest.update(_with_rehashed(manifest, "manifest_sha256"))
+    record["allowed_command_manifest_hash"] = manifest["manifest_sha256"]
+    record.update(_with_rehashed(record, "authorization_sha256"))
 
 
 def _valid_quantitative_command_record(
@@ -5181,6 +5322,171 @@ def test_spec_17_3_44_schema_command_manifest_hash_maps_and_placeholders() -> No
             records,
             capability="target_certification_preflight",
         )
+
+
+def _validate_preflight_authorization_fixture(
+    record: JsonObject,
+    manifest: JsonObject,
+    command_records: dict[str, JsonObject],
+) -> None:
+    contracts.validate_preflight_authorization(
+        record,
+        expected_bundle_id=_TEST_BUNDLE_ID,
+        expected_case_unit_ids=["case-a"],
+        expected_sealed_bundle_manifest_hash=manifest["sealed_bundle_manifest_hash"],
+        expected_runtime_lock_sha256="6" * 64,
+        command_manifest=manifest,
+        command_records=command_records,
+    )
+
+
+def test_preflight_authorization_validates_exact_schema_and_scope() -> None:
+    schema = json.loads(
+        (_ROW_FAMILY_ROOT / "target_certification_schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    record, manifest, command_records = _valid_preflight_authorization()
+
+    assert schema["preflight_authorization_required_fields"] == list(
+        contracts.PREFLIGHT_AUTHORIZATION_REQUIRED_FIELDS
+    )
+    _validate_preflight_authorization_fixture(record, manifest, command_records)
+
+
+def test_preflight_authorization_rejects_missing_required_field() -> None:
+    record, manifest, command_records = _valid_preflight_authorization()
+    record.pop("allowed_entrypoint")
+    record = _with_rehashed(record, "authorization_sha256")
+
+    with pytest.raises(SchemaContractError, match="missing_key"):
+        _validate_preflight_authorization_fixture(record, manifest, command_records)
+
+
+@pytest.mark.parametrize("authorized", [False, 1, "true"])
+def test_preflight_authorization_requires_explicit_true(authorized: object) -> None:
+    record, manifest, command_records = _valid_preflight_authorization()
+    record["authorized"] = authorized
+    record = _with_rehashed(record, "authorization_sha256")
+
+    with pytest.raises(
+        SchemaContractError,
+        match="unauthorized_target_certification_attempt",
+    ):
+        _validate_preflight_authorization_fixture(record, manifest, command_records)
+
+
+def test_preflight_authorization_rejects_stale_command_manifest() -> None:
+    record, manifest, command_records = _valid_preflight_authorization()
+    record["allowed_command_manifest_hash"] = "8" * 64
+    record = _with_rehashed(record, "authorization_sha256")
+
+    with pytest.raises(SchemaContractError, match="command_scope_violation"):
+        _validate_preflight_authorization_fixture(record, manifest, command_records)
+
+
+def test_preflight_authorization_rejects_identity_drift() -> None:
+    record, manifest, command_records = _valid_preflight_authorization()
+    record["invalidated_by_identity_drift"] = True
+    record = _with_rehashed(record, "authorization_sha256")
+
+    with pytest.raises(SchemaContractError, match="runtime_identity_drift"):
+        _validate_preflight_authorization_fixture(record, manifest, command_records)
+
+
+def test_preflight_authorization_rejects_reordered_operations() -> None:
+    record, manifest, command_records = _valid_preflight_authorization()
+    record["allowed_operations"] = list(reversed(record["allowed_operations"]))
+    record = _with_rehashed(record, "authorization_sha256")
+
+    with pytest.raises(SchemaContractError, match="operation_contract_drift"):
+        _validate_preflight_authorization_fixture(record, manifest, command_records)
+
+
+def test_preflight_authorization_rejects_scope_widening() -> None:
+    record, manifest, command_records = _valid_preflight_authorization()
+    record["case_unit_ids"] = ["case-a", "case-b"]
+    record = _with_rehashed(record, "authorization_sha256")
+
+    with pytest.raises(SchemaContractError, match="command_scope_violation"):
+        _validate_preflight_authorization_fixture(record, manifest, command_records)
+
+
+def test_preflight_authorization_rejects_materialized_or_mismatched_evidence_root() -> (
+    None
+):
+    record, manifest, command_records = _valid_preflight_authorization()
+    record["preflight_evidence_root"]["state"] = (
+        "materialized_by_target_certification_only"
+    )
+    record["preflight_evidence_root"] = _with_rehashed(
+        record["preflight_evidence_root"],
+        "reservation_sha256",
+    )
+    record = _with_rehashed(record, "authorization_sha256")
+
+    with pytest.raises(
+        SchemaContractError,
+        match="unexpected_preflight_side_effect",
+    ):
+        _validate_preflight_authorization_fixture(record, manifest, command_records)
+
+
+@pytest.mark.parametrize(
+    "repo_relative_posix_path",
+    [
+        "artifacts/g6b/quantitative/bundle-test/case-a/method-a/primary",
+        "cases/discovery/g6b/row_families/structural_discovery_v1/case_units/case-a",
+        "governance/g6b/bundle-test",
+        "evidence/g6b/fallback/bundle-test",
+    ],
+)
+def test_preflight_authorization_rejects_noncanonical_evidence_root(
+    repo_relative_posix_path: str,
+) -> None:
+    record, manifest, command_records = _valid_preflight_authorization()
+    record["preflight_evidence_root"]["repo_relative_posix_path"] = (
+        repo_relative_posix_path
+    )
+    _reseal_preflight_root_links(record, manifest, command_records)
+
+    with pytest.raises(
+        SchemaContractError,
+        match="unexpected_preflight_side_effect",
+    ):
+        _validate_preflight_authorization_fixture(record, manifest, command_records)
+
+
+def test_preflight_authorization_rejects_stale_evidence_root_schema() -> None:
+    record, manifest, command_records = _valid_preflight_authorization()
+    record["preflight_evidence_root"]["root_schema_version"] = (
+        "ims-deadlock/g6b-preflight-evidence-root/v0"
+    )
+    _reseal_preflight_root_links(record, manifest, command_records)
+
+    with pytest.raises(SchemaContractError, match="schema_version_drift"):
+        _validate_preflight_authorization_fixture(record, manifest, command_records)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("max_wall_clock_seconds", 60),
+        ("max_cpu_seconds", "0"),
+        ("max_memory_bytes", 0),
+        ("max_workers", True),
+    ],
+)
+def test_preflight_authorization_rejects_invalid_resource_budget(
+    field: str,
+    value: object,
+) -> None:
+    record, manifest, command_records = _valid_preflight_authorization()
+    record["resource_budget"][field] = value
+    record = _with_rehashed(record, "authorization_sha256")
+
+    with pytest.raises(SchemaContractError, match="command_scope_violation"):
+        _validate_preflight_authorization_fixture(record, manifest, command_records)
 
 
 def test_typed_capability_mutations_are_fail_closed() -> None:
