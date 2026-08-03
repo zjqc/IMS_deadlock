@@ -87,6 +87,18 @@ _R1_CASE_CONSTRUCTION_SCHEMA_V3_DECLARED_CHANGED_PATHS = {
     "tests/test_g6b_row_family_protocol.py",
     "tests/test_g6b_schema_contracts.py",
 }
+_R4_CASE_CONSTRUCTION_C2_SOURCE_IDENTITY_PATHS = {
+    "cases/discovery/g6b/row_families/structural_discovery_v1/"
+    "case_construction_schema.json",
+    "cases/discovery/g6b/row_families/structural_discovery_v1/row_family_protocol.json",
+    "docs/verification/G6_B_CASE_CONSTRUCTION_TASK2_SOURCE_REVIEW.md",
+    "src/ims_deadlock/g6b_case_materializer.py",
+    "src/ims_deadlock/g6b_row_family_protocol.py",
+    "src/ims_deadlock/g6b_schema_contracts.py",
+    "tests/test_g6b_case_materializer.py",
+    "tests/test_g6b_row_family_protocol.py",
+    "tests/test_g6b_schema_contracts.py",
+}
 _FINAL_SCHEMA_REVIEW_DECLARED_CHANGED_PATHS = (
     _TASK6_DECLARED_CHANGED_PATHS
     | _TASK7_REPAIR_DECLARED_CHANGED_PATHS
@@ -95,6 +107,7 @@ _FINAL_SCHEMA_REVIEW_DECLARED_CHANGED_PATHS = (
     | _TASK1_REVIEW_PUBLICATION_DECLARED_CHANGED_PATHS
     | _CASE_CONSTRUCTION_V2_GOVERNANCE_DECLARED_CHANGED_PATHS
     | _R1_CASE_CONSTRUCTION_SCHEMA_V3_DECLARED_CHANGED_PATHS
+    | _R4_CASE_CONSTRUCTION_C2_SOURCE_IDENTITY_PATHS
 )
 _TASK6_FORBIDDEN_EXACT_PATHS = {
     "docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md": (
@@ -3909,6 +3922,56 @@ def test_r1_case_construction_schema_v3_scope_is_exact_schema_hash_closure() -> 
     )
 
 
+def test_r4_case_construction_c2_source_identity_scope_is_exact() -> None:
+    assert _R4_CASE_CONSTRUCTION_C2_SOURCE_IDENTITY_PATHS == {
+        "cases/discovery/g6b/row_families/structural_discovery_v1/"
+        "case_construction_schema.json",
+        "cases/discovery/g6b/row_families/structural_discovery_v1/"
+        "row_family_protocol.json",
+        "docs/verification/G6_B_CASE_CONSTRUCTION_TASK2_SOURCE_REVIEW.md",
+        "src/ims_deadlock/g6b_case_materializer.py",
+        "src/ims_deadlock/g6b_row_family_protocol.py",
+        "src/ims_deadlock/g6b_schema_contracts.py",
+        "tests/test_g6b_case_materializer.py",
+        "tests/test_g6b_row_family_protocol.py",
+        "tests/test_g6b_schema_contracts.py",
+    }
+    assert all(
+        _task6_scope_policy_category(path) is None
+        for path in _R4_CASE_CONSTRUCTION_C2_SOURCE_IDENTITY_PATHS
+    )
+    assert (
+        _task6_scope_policy_category(
+            "cases/discovery/g6b/row_families/structural_discovery_v1/"
+            "case_units/case-01/case_input.json"
+        )
+        == "case_instance_root"
+    )
+    assert (
+        _task6_scope_policy_category(
+            "cases/discovery/g6b/row_families/structural_discovery_v1/"
+            "governance/case_construction_v2.json"
+        )
+        == "case_governance_instance_root"
+    )
+    assert (
+        _task6_scope_policy_category("src/ims_deadlock/g6b_quantitative_runner.py")
+        == "outside_task6_declared_files"
+    )
+    assert (
+        _task6_scope_policy_category("src/ims_deadlock/g6b_target_preflight.py")
+        == "outside_task6_declared_files"
+    )
+    assert (
+        _task6_scope_policy_category("artifacts/g6b/quantitative/result.json")
+        == "scientific_artifact_root"
+    )
+    assert (
+        _task6_scope_policy_category("src/ims_deadlock/g6b_future_module.py")
+        == "outside_task6_declared_files"
+    )
+
+
 def test_case_construction_v2_governance_scope_is_exact_and_plan_only() -> None:
     assert _CASE_CONSTRUCTION_V2_GOVERNANCE_DECLARED_CHANGED_PATHS == {
         "docs/superpowers/specs/"
@@ -3947,13 +4010,11 @@ def test_task1_estimand_scope_corrigendum_scope_is_exact_and_schema_only() -> No
         _task6_scope_policy_category(path) is None
         for path in _TASK1_ESTIMAND_SCOPE_CORRIGENDUM_DECLARED_CHANGED_PATHS
     )
-    assert (
-        _task6_scope_policy_category("src/ims_deadlock/g6b_case_materializer.py")
-        == "outside_task6_declared_files"
+    assert "src/ims_deadlock/g6b_case_materializer.py" not in (
+        _TASK1_ESTIMAND_SCOPE_CORRIGENDUM_DECLARED_CHANGED_PATHS
     )
-    assert (
-        _task6_scope_policy_category("tests/test_g6b_case_materializer.py")
-        == "outside_task6_declared_files"
+    assert "tests/test_g6b_case_materializer.py" not in (
+        _TASK1_ESTIMAND_SCOPE_CORRIGENDUM_DECLARED_CHANGED_PATHS
     )
     assert (
         _task6_scope_policy_category(
@@ -3976,12 +4037,12 @@ def test_task1_review_publication_scope_is_exact_and_document_only() -> None:
         for path in _TASK1_REVIEW_PUBLICATION_DECLARED_CHANGED_PATHS
     )
     assert (
-        _task6_scope_policy_category("src/ims_deadlock/g6b_case_materializer.py")
-        == "outside_task6_declared_files"
+        "src/ims_deadlock/g6b_case_materializer.py"
+        not in _TASK1_REVIEW_PUBLICATION_DECLARED_CHANGED_PATHS
     )
     assert (
-        _task6_scope_policy_category("tests/test_g6b_case_materializer.py")
-        == "outside_task6_declared_files"
+        "tests/test_g6b_case_materializer.py"
+        not in _TASK1_REVIEW_PUBLICATION_DECLARED_CHANGED_PATHS
     )
     assert (
         _task6_scope_policy_category(

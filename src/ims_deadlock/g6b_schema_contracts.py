@@ -4950,6 +4950,8 @@ def _validate_prefixed_sha256(value: object, *, label: str) -> str:
 
 def _validate_utc_timestamp(value: object, *, label: str) -> str:
     timestamp = _require_nonempty_string(value, label)
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", timestamp) is None:
+        raise SchemaContractError("timestamp_format_violation", label)
     try:
         parsed = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S%z")
     except ValueError as exc:
@@ -5195,6 +5197,132 @@ METRIC_SCHEMA_REUSE_RECORD_REQUIRED_FIELDS = (
     "review_artifact_hash",
     "reuse_record_sha256",
 )
+CASE_UNIT_RECORD_REQUIRED_FIELDS = (
+    "schema_version",
+    "bundle_id",
+    "case_unit_id",
+    "family_id",
+    "input_mode",
+    "structural_family_role",
+    "negative_control_id_or_null",
+    "case_artifact_paths",
+    "case_content_sha256",
+    "state_snapshot_sha256",
+    "route_signature_sha256",
+    "parameter_tuple_sha256",
+    "sealed_prediction_sha256",
+    "rate_manifest_ref",
+    "policy_declaration_ref",
+    "selected_target_ref",
+    "control_declaration_ref",
+    "state_bound",
+    "state_snapshot_payload_schema_version",
+    "state_snapshot_nesting_relation",
+    "state_snapshot_parent_case_content_sha256",
+    "fingerprint_record_hashes",
+    "semantic_lineage_declaration_hash",
+    "method_observation_ids",
+    "case_unit_state",
+)
+METHOD_OBSERVATION_RECORD_REQUIRED_FIELDS = (
+    "schema_version",
+    "bundle_id",
+    "method_observation_id",
+    "case_unit_id",
+    "method_companion_group_id",
+    "method_role",
+    "random_stream_manifest_sha256",
+    "output_root_reservation_sha256",
+    "metric_schema_sha256",
+    "fingerprint_record_hashes",
+    "stopping_rule_ref",
+    "des_stopping_rule_ref_or_null",
+    "method_state",
+)
+METHOD_COMPANION_GROUP_RECORD_REQUIRED_FIELDS = (
+    "schema_version",
+    "bundle_id",
+    "method_companion_group_id",
+    "case_unit_id",
+    "member_method_observation_ids",
+    "member_method_roles",
+    "metric_schema_ref",
+    "metric_schema_sha256",
+    "same_target_required",
+    "allowed_reuse_reason_code",
+    "reuse_authorization_ref_or_null",
+    "evidence_counting_rule",
+    "fingerprint_record_hashes",
+    "companion_group_state",
+)
+SEMANTIC_LINEAGE_DECLARATION_REQUIRED_FIELDS = (
+    "schema_version",
+    "declaration_id",
+    "case_unit_id",
+    "constructor_role",
+    "visible_retired_authority_ids",
+    "declared_source_template_ids",
+    "declared_source_artifact_hashes",
+    "declared_semantic_parent_ids",
+    "declared_transform_codes",
+    "construction_log_sha256",
+    "graph_isomorphism_check_required",
+    "outcome_driven_tuning_prohibited",
+    "review_artifact_hash",
+    "declaration_sha256",
+)
+RATE_MANIFEST_REQUIRED_FIELDS = (
+    "schema_version",
+    "rate_units",
+    "event_rate_entries",
+)
+POLICY_DECLARATION_REQUIRED_FIELDS = (
+    "schema_version",
+    "mode",
+    "excluded_plant_arc_roles",
+    "filter_rule_code",
+)
+SELECTED_TARGET_DECLARATION_REQUIRED_FIELDS = (
+    "target_schema_version",
+    "selected_bad_classes",
+    "success_class",
+    "exact_stopping_rule",
+    "des_stopping_rule",
+    "policy_analysis_class",
+)
+CONTROL_DECLARATION_REQUIRED_FIELDS = (
+    "schema_version",
+    "mandatory_control_roles",
+    "expected_guard_codes",
+    "failure_effect_codes",
+)
+_DIRECT_MATERIALIZATION_REQUIRED_FIELDS = MappingProxyType(
+    {
+        "case_unit_required_fields": CASE_UNIT_RECORD_REQUIRED_FIELDS,
+        "method_observation_required_fields": METHOD_OBSERVATION_RECORD_REQUIRED_FIELDS,
+        "method_companion_group_required_fields": (
+            METHOD_COMPANION_GROUP_RECORD_REQUIRED_FIELDS
+        ),
+        "semantic_lineage_declaration_required_fields": (
+            SEMANTIC_LINEAGE_DECLARATION_REQUIRED_FIELDS
+        ),
+        "metric_schema_sharing_record_required_fields": (
+            METRIC_SCHEMA_SHARING_RECORD_REQUIRED_FIELDS
+        ),
+        "fingerprint_record_required_fields": FINGERPRINT_RECORD_REQUIRED_FIELDS,
+    }
+)
+_NESTED_MATERIALIZATION_REQUIRED_FIELDS = MappingProxyType(
+    {
+        "rate_manifest": RATE_MANIFEST_REQUIRED_FIELDS,
+        "policy_declaration": POLICY_DECLARATION_REQUIRED_FIELDS,
+        "selected_target_declaration": SELECTED_TARGET_DECLARATION_REQUIRED_FIELDS,
+        "control_declaration": CONTROL_DECLARATION_REQUIRED_FIELDS,
+        "output_root_reservation_instance_required_fields": (
+            OUTPUT_ROOT_RESERVATION_REQUIRED_FIELDS
+        ),
+    }
+)
 _DES_SEED_RULE_CODE = "g6b_philox_length_prefixed_sha256_v2"
 _G6B_CONSTRUCTION_BUNDLE_ID = "g6b_discovery_case_construction_v1"
 _FROZEN_ROW_FAMILY_MATRIX_SHA256 = (
@@ -5390,7 +5518,7 @@ CASE_MATERIALIZATION_FILE_CONTRACTS = MappingProxyType(
             role="output_root_reservation_projection",
             schema_version_field_name="projection_schema_version",
             schema_version_field_value="ims-deadlock/g6b-output-root-reservation-projection/v1",
-            required_fields_contract="output_root_reservation_contract.instance_required_fields",
+            required_fields_contract="nested_field_contracts.output_root_reservation_instance_required_fields",
             hash_meaning="null_placeholder_self_hash",
             projection_subject="method_observation",
         ),
@@ -5398,7 +5526,7 @@ CASE_MATERIALIZATION_FILE_CONTRACTS = MappingProxyType(
             role="output_root_reservation_projection",
             schema_version_field_name="projection_schema_version",
             schema_version_field_value="ims-deadlock/g6b-output-root-reservation-projection/v1",
-            required_fields_contract="output_root_reservation_contract.instance_required_fields",
+            required_fields_contract="nested_field_contracts.output_root_reservation_instance_required_fields",
             hash_meaning="null_placeholder_self_hash",
             projection_subject="method_observation",
         ),
@@ -5459,6 +5587,99 @@ CASE_MATERIALIZATION_FILE_CONTRACTS = MappingProxyType(
         ),
     }
 )
+
+
+def validate_materialization_record_exact_keys(
+    relative_path: str,
+    record: Mapping[str, JsonValue],
+) -> None:
+    required = _resolve_materialization_file_required_fields(relative_path, record)
+    try:
+        validate_exact_keys(
+            record,
+            required,
+            label=f"materialization:{relative_path}",
+        )
+    except SchemaContractError as exc:
+        raise SchemaContractError(
+            "materialization_required_fields",
+            f"{relative_path}:{exc.code}",
+        ) from exc
+
+
+def _resolve_materialization_file_required_fields(
+    relative_path: str,
+    record: Mapping[str, JsonValue],
+) -> Collection[str]:
+    required = frozenset(
+        _resolve_materialization_required_fields(relative_path, record)
+    )
+    contract = CASE_MATERIALIZATION_FILE_CONTRACTS.get(relative_path)
+    if contract is None:
+        raise SchemaContractError("materialization_unknown_path", relative_path)
+    schema_field = contract.get("schema_version_field_name")
+    if not isinstance(schema_field, str):
+        raise SchemaContractError("materialization_schema_version_field")
+    return required | {schema_field}
+
+
+def _resolve_materialization_required_fields(
+    relative_path: str,
+    record: Mapping[str, JsonValue],
+) -> Collection[str]:
+    contract = CASE_MATERIALIZATION_FILE_CONTRACTS.get(relative_path)
+    if contract is None:
+        raise SchemaContractError("materialization_unknown_path", relative_path)
+    required_fields_contract = contract.get("required_fields_contract")
+    if not isinstance(required_fields_contract, str):
+        raise SchemaContractError("materialization_required_fields_contract")
+    direct = _DIRECT_MATERIALIZATION_REQUIRED_FIELDS.get(required_fields_contract)
+    if direct is not None:
+        return direct
+    parts = required_fields_contract.split(".")
+    if (
+        len(parts) == 3
+        and parts[0] == "fingerprint_payload_schemas"
+        and parts[2] == "required_fields"
+    ):
+        dimension = parts[1]
+        if dimension == "random_stream_manifest_sha256":
+            return _resolve_random_stream_materialization_required_fields(record)
+        required = _PROJECTION_REQUIRED_KEYS.get(dimension)
+        if required is None:
+            raise SchemaContractError("materialization_required_fields_contract")
+        return required
+    if len(parts) == 4 and parts[:3] == [
+        "fingerprint_payload_schemas",
+        "case_content_sha256",
+        "nested_field_contracts",
+    ]:
+        nested_required = _NESTED_MATERIALIZATION_REQUIRED_FIELDS.get(parts[3])
+        if nested_required is None:
+            raise SchemaContractError("materialization_required_fields_contract")
+        return nested_required
+    if len(parts) == 2 and parts[0] == "nested_field_contracts":
+        nested_required = _NESTED_MATERIALIZATION_REQUIRED_FIELDS.get(parts[1])
+        if nested_required is None:
+            raise SchemaContractError("materialization_required_fields_contract")
+        return nested_required
+    raise SchemaContractError("materialization_required_fields_contract")
+
+
+def _resolve_random_stream_materialization_required_fields(
+    record: Mapping[str, JsonValue],
+) -> Collection[str]:
+    if (
+        record.get("method_role") == "exact_companion"
+        or record.get("applicability_status") == "not_applicable_by_protocol"
+    ):
+        return _RANDOM_STREAM_EXACT_KEYS
+    if (
+        record.get("method_role") == "des_companion"
+        or record.get("applicability_status") == "applicable"
+    ):
+        return _RANDOM_STREAM_STOCHASTIC_KEYS
+    raise SchemaContractError("materialization_random_stream_branch")
 
 
 @dataclass(frozen=True)
@@ -5692,7 +5913,7 @@ def _validate_ledger_entry(
     if not isinstance(interrupted, Sequence) or isinstance(interrupted, str | bytes):
         raise SchemaContractError("interrupted_fragment_contract_invalid")
     if pending_fragments:
-        if event != "INTERRUPTED_PARTIAL":
+        if event not in {"PREWRITE_REFUSED", "INTERRUPTED_PARTIAL"}:
             raise SchemaContractError("interrupted_fragment_unrecorded")
         if len(interrupted) != len(pending_fragments):
             raise SchemaContractError("interrupted_fragment_unrecorded")

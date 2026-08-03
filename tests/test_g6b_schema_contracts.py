@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from pathlib import Path
 from types import MappingProxyType
@@ -5786,6 +5787,14 @@ _CASE_ARTIFACT_PATH_REQUIRED_KEYS_V3 = (
     "metric_schema_sharing",
     "fingerprint_records",
 )
+_RUN4_SELECTED_TARGET_SEMANTIC_FIELDS = (
+    "target_schema_version",
+    "selected_bad_classes",
+    "success_class",
+    "exact_stopping_rule",
+    "des_stopping_rule",
+    "policy_analysis_class",
+)
 
 
 def _case_construction_schema() -> JsonObject:
@@ -5885,6 +5894,96 @@ def test_case_construction_v3_inventory_and_manifest_hash_closure() -> None:
         "metric_schema_sharing_record_hashes": "final_canonical_file_bytes_sha256",
         "sharing_record_sha256": "separate_null_placeholder_self_hash",
     }
+
+
+def test_run4_selected_target_shared_payload_is_six_semantic_fields() -> None:
+    schema = _case_construction_schema()
+    shared_contract = schema["fingerprint_payload_schemas"]["case_content_sha256"][
+        "nested_field_contracts"
+    ]["selected_target_declaration"]
+    file_contract = schema["materialization_file_contracts"][
+        "declarations/selected_target_declaration.json"
+    ]
+
+    assert tuple(shared_contract["required_fields"]) == (
+        _RUN4_SELECTED_TARGET_SEMANTIC_FIELDS
+    )
+    assert tuple(contracts.SELECTED_TARGET_DECLARATION_REQUIRED_FIELDS) == (
+        _RUN4_SELECTED_TARGET_SEMANTIC_FIELDS
+    )
+    assert "schema_version" not in shared_contract["required_fields"]
+    assert file_contract["schema_version_field_name"] == "schema_version"
+    assert file_contract["schema_version_field_value"] == (
+        "ims-deadlock/g6b-selected-target-declaration/v1"
+    )
+
+
+def test_run4_selected_target_materialization_exact_keys_union_file_schema() -> None:
+    record: JsonObject = {
+        "schema_version": "ims-deadlock/g6b-selected-target-declaration/v1",
+        "target_schema_version": "ims-deadlock/g6-terminal-stopping-partition/v3",
+        "selected_bad_classes": ["D_global", "D_local"],
+        "success_class": "F",
+        "exact_stopping_rule": "first_hit_D_global_or_D_local_or_F_v1",
+        "des_stopping_rule": "first_hit_D_global_or_D_local_or_F_or_censor_budget_v1",
+        "policy_analysis_class": "P_policy",
+    }
+
+    contracts.validate_materialization_record_exact_keys(
+        "declarations/selected_target_declaration.json",
+        record,
+    )
+    for mutation in ("missing_schema_version", "extra_key"):
+        broken = dict(record)
+        if mutation == "missing_schema_version":
+            broken.pop("schema_version")
+        else:
+            broken["unexpected_extra_member"] = "must_be_rejected"
+        with pytest.raises(
+            SchemaContractError, match="materialization_required_fields"
+        ):
+            contracts.validate_materialization_record_exact_keys(
+                "declarations/selected_target_declaration.json",
+                broken,
+            )
+
+
+def _resolve_dotted_contract(schema: Mapping[str, Any], dotted_path: str) -> object:
+    current: object = schema
+    for part in dotted_path.split("."):
+        assert isinstance(current, Mapping), dotted_path
+        current = current[part]
+    return current
+
+
+def test_r4_case_construction_v3_top_level_authorization_fields_are_exact() -> None:
+    schema = _case_construction_schema()
+
+    assert tuple(schema["construction_authorization_required_fields"]) == (
+        contracts.CONSTRUCTION_AUTHORIZATION_V2_REQUIRED_FIELDS
+    )
+    assert (
+        "review_artifact_hash"
+        not in schema["construction_authorization_required_fields"]
+    )
+
+
+def test_r4_case_construction_v3_all_required_field_contracts_are_resolvable() -> None:
+    schema = _case_construction_schema()
+
+    for relative_path, contract in schema["materialization_file_contracts"].items():
+        resolved = _resolve_dotted_contract(
+            schema,
+            contract["required_fields_contract"],
+        )
+        assert isinstance(resolved, (list, dict)), relative_path
+
+    for suffix in ("des", "exact"):
+        assert schema["materialization_file_contracts"][
+            f"projections/output_root_reservation_{suffix}.json"
+        ]["required_fields_contract"] == (
+            "nested_field_contracts.output_root_reservation_instance_required_fields"
+        )
 
 
 def test_case_construction_v3_log_ledger_source_transient_and_sharing_constants() -> (
@@ -5989,6 +6088,17 @@ def _ledger_frame(entry: JsonObject) -> bytes:
     return b"\x1e" + canonical_bytes_v2(entry) + b"\x0a"
 
 
+def _fragment_records_for_test(fragments: Sequence[bytes]) -> list[JsonObject]:
+    return [
+        {
+            "fragment_index": index,
+            "fragment_sha256": hashlib.sha256(fragment).hexdigest(),
+            "fragment_byte_count": len(fragment),
+        }
+        for index, fragment in enumerate(fragments)
+    ]
+
+
 def test_construction_ledger_accepts_recorded_fragments() -> None:
     first = _ledger_entry("WRITE_STARTED", 0, None)
     fragment = b'\x1e{"schema_version":"ims-deadlock/g6b-construction-ledger-entry/v1"'
@@ -6019,6 +6129,106 @@ def test_construction_ledger_accepts_recorded_fragments() -> None:
     assert result.ledger_head_sha256 == recovery["entry_sha256"]
     with pytest.raises(ValueError):
         loads_v2(raw.decode("utf-8"))
+
+
+@pytest.mark.parametrize(
+    "fragments",
+    [
+        [b'\x1e{"partial":'],
+        [b'\x1e{"partial":', b'\x1e{"another":true'],
+    ],
+)
+def test_construction_ledger_prewrite_binds_empty_prefix_torn_fragments(
+    fragments: list[bytes],
+) -> None:
+    prewrite = _ledger_entry(
+        "PREWRITE_REFUSED",
+        0,
+        None,
+        refusal_reason_codes=[
+            "ledger_append_interrupted",
+            "unauthorized_case_creation_attempt",
+        ],
+        interrupted_fragments=_fragment_records_for_test(fragments),
+    )
+    raw = b"".join(fragments) + _ledger_frame(prewrite)
+
+    result = contracts.validate_construction_ledger_bytes(raw)
+
+    assert result.entry_count == 1
+    assert result.interrupted_fragment_count == len(fragments)
+    assert result.ledger_head_sha256 == prewrite["entry_sha256"]
+
+
+@pytest.mark.parametrize(
+    "fragments",
+    [
+        [b'\x1e{"partial":'],
+        [b'\x1e{"partial":', b'\x1e{"another":true'],
+    ],
+)
+def test_construction_ledger_prewrite_binds_after_prewrite_torn_fragments(
+    fragments: list[bytes],
+) -> None:
+    first = _ledger_entry(
+        "PREWRITE_REFUSED",
+        0,
+        None,
+        refusal_reason_codes=["unauthorized_case_creation_attempt"],
+    )
+    recovery = _ledger_entry(
+        "PREWRITE_REFUSED",
+        1,
+        first["entry_sha256"],
+        refusal_reason_codes=[
+            "ledger_append_interrupted",
+            "unauthorized_case_creation_attempt",
+        ],
+        interrupted_fragments=_fragment_records_for_test(fragments),
+    )
+    raw = _ledger_frame(first) + b"".join(fragments) + _ledger_frame(recovery)
+
+    result = contracts.validate_construction_ledger_bytes(raw)
+
+    assert result.entry_count == 2
+    assert result.interrupted_fragment_count == len(fragments)
+    assert result.ledger_head_sha256 == recovery["entry_sha256"]
+
+
+@pytest.mark.parametrize(
+    ("mutation", "expected"),
+    [
+        ("fragment_order", "interrupted_fragment"),
+        ("fragment_hash", "interrupted_fragment_unrecorded"),
+        ("fragment_byte_count", "interrupted_fragment_unrecorded"),
+        ("missing_reason", "interrupted_fragment_unrecorded"),
+    ],
+)
+def test_construction_ledger_prewrite_fragment_binding_mutations_fail(
+    mutation: str, expected: str
+) -> None:
+    fragments = [b'\x1e{"partial":', b'\x1e{"another":true']
+    records = _fragment_records_for_test(fragments)
+    reasons = ["ledger_append_interrupted", "unauthorized_case_creation_attempt"]
+    if mutation == "fragment_order":
+        records = [records[1], records[0]]
+    elif mutation == "fragment_hash":
+        records[0] = {**records[0], "fragment_sha256": "0" * 64}
+    elif mutation == "fragment_byte_count":
+        records[0] = {**records[0], "fragment_byte_count": 1}
+    elif mutation == "missing_reason":
+        reasons = ["unauthorized_case_creation_attempt"]
+    prewrite = _ledger_entry(
+        "PREWRITE_REFUSED",
+        0,
+        None,
+        refusal_reason_codes=reasons,
+        interrupted_fragments=records,
+    )
+    raw = b"".join(fragments) + _ledger_frame(prewrite)
+
+    with pytest.raises(SchemaContractError, match=expected):
+        contracts.validate_construction_ledger_bytes(raw)
 
 
 def test_validate_construction_ledger_bytes_rejects_unrecorded_fragment() -> None:

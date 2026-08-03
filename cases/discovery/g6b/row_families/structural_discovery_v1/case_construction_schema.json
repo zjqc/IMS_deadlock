@@ -99,12 +99,19 @@
     "bundle_id",
     "case_unit_ids",
     "method_observation_ids",
+    "method_companion_group_ids",
     "source_head",
     "source_tree_hash",
+    "source_file_hashes",
+    "case_construction_schema_sha256",
+    "case_recipe_registry_sha256",
+    "frozen_row_family_matrix_sha256",
+    "approved_corrigendum_hash",
     "approved_plan_artifact_hash",
+    "plan_review_artifact_hash",
+    "task2_review_artifact_hash",
     "allowed_operations",
     "forbidden_operations",
-    "review_artifact_hash",
     "issued_at_utc",
     "invalidated_by_identity_drift",
     "artifact_sha256"
@@ -304,12 +311,12 @@
             "filter_rule_code"
           ],
           "additional_properties": false
-        },
-        "selected_target_declaration": {
-          "required_fields": [
-            "target_schema_version",
-            "selected_bad_classes",
-            "success_class",
+          },
+          "selected_target_declaration": {
+            "required_fields": [
+              "target_schema_version",
+              "selected_bad_classes",
+              "success_class",
             "exact_stopping_rule",
             "des_stopping_rule",
             "policy_analysis_class"
@@ -960,7 +967,7 @@
       "role": "output_root_reservation_projection",
       "schema_version_field_name": "projection_schema_version",
       "schema_version_field_value": "ims-deadlock/g6b-output-root-reservation-projection/v1",
-      "required_fields_contract": "output_root_reservation_contract.instance_required_fields",
+      "required_fields_contract": "nested_field_contracts.output_root_reservation_instance_required_fields",
       "hash_meaning": "null_placeholder_self_hash",
       "projection_subject": "method_observation",
       "direct_stored_fingerprint_target": null
@@ -969,7 +976,7 @@
       "role": "output_root_reservation_projection",
       "schema_version_field_name": "projection_schema_version",
       "schema_version_field_value": "ims-deadlock/g6b-output-root-reservation-projection/v1",
-      "required_fields_contract": "output_root_reservation_contract.instance_required_fields",
+      "required_fields_contract": "nested_field_contracts.output_root_reservation_instance_required_fields",
       "hash_meaning": "null_placeholder_self_hash",
       "projection_subject": "method_observation",
       "direct_stored_fingerprint_target": null

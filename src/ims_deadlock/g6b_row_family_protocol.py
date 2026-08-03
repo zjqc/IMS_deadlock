@@ -717,7 +717,7 @@ _TOP_LEVEL_KEYS = {
 
 _EXPECTED_CANONICAL_SHA256 = {
     "row_family_protocol.json": (
-        "e2bf395d25f3a4420aeca92bfdc626a841315291adb159c9abd359164e7d0540"
+        "2a725f990feba8f35739200ce5b0299622d2e447602cc94e699758b5f6088e3f"
     ),
     "identity_schema.json": (
         "dd33178221ed6a0fdce9b6dd0260c492c011ad5f04e43ee6b0e75fedbeb31b3a"
@@ -741,7 +741,7 @@ _EXPECTED_CANONICAL_SHA256 = {
         "34be766f1f8dd97037180547f9b2bde242787c941969771433bceda394dffb87"
     ),
     "case_construction_schema.json": (
-        "e2bf45c82a92740d48e91a291ae4f03013b53a19bfb75e4421e2a704a2efffac"
+        "bdc881151ae847a43171a5b656bf1bd4480ee7846c5c59730118f7b11d045335"
     ),
     "retired_authority_fingerprint_schema.json": (
         "456a66067b5703695948719dc7ccbdfa09d8c2d6eced1c9f544d387234ee8f78"
