@@ -12,6 +12,7 @@ from typing import Any, TypedDict
 
 import pytest
 
+from ims_deadlock import g6b_case_materializer as case_materializer
 from ims_deadlock.g6b_canonical_json import canonical_sha256_v2
 from ims_deadlock.g6b_row_family_protocol import (
     validate_g6b_row_family_bundle,
@@ -128,6 +129,9 @@ _TASK6_FORBIDDEN_PATH_PREFIXES = (
         "cases/discovery/g6b/row_families/structural_discovery_v1/case_units/",
         "case_instance_root",
     ),
+)
+_R5_CASE_CONSTRUCTION_ARTIFACT_PATHS = frozenset(
+    case_materializer._authorized_output_paths()
 )
 _TASK6_BENIGN_IGNORED_ROOT_PREFIXES = (
     ".mypy_cache/",
@@ -1309,10 +1313,16 @@ def _row_family_matrix_from(bundle: Path) -> dict[str, Any]:
     return _load(bundle, "row_family_matrix.json")
 
 
-def _copy_bundle(tmp_path: Path) -> Path:
+def _copy_schema_documents(source: Path, target: Path) -> None:
+    target.mkdir(parents=True)
+    for name in EXPECTED_DOCUMENTS:
+        shutil.copy2(source / name, target / name)
+
+
+def _copy_bundle(tmp_path: Path, *, source: Path = BUNDLE) -> Path:
     repo = tmp_path / "repo"
     target = repo / "cases/discovery/g6b/row_families/structural_discovery_v1"
-    shutil.copytree(BUNDLE, target)
+    _copy_schema_documents(source, target)
     for design in (
         Path("docs/superpowers/specs/2026-07-31-g6b-row-family-design.md"),
         Path(APPROVED_SOURCE_DESIGN),
@@ -1323,6 +1333,23 @@ def _copy_bundle(tmp_path: Path) -> Path:
         copied_design.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(design, copied_design)
     return target
+
+
+def test_copy_bundle_is_schema_only_after_post_seal_materialization(
+    tmp_path: Path,
+) -> None:
+    sealed_source = tmp_path / "sealed_source"
+    shutil.copytree(BUNDLE, sealed_source)
+    (sealed_source / "case_units").mkdir()
+    (sealed_source / "governance").mkdir()
+
+    bundle = _copy_bundle(tmp_path / "copied", source=sealed_source)
+
+    assert tuple(sorted(path.name for path in bundle.iterdir())) == tuple(
+        sorted(EXPECTED_DOCUMENTS)
+    )
+    result = validate_g6b_row_family_bundle(bundle)
+    assert result.valid is True, result.errors
 
 
 def _load(bundle: Path, name: str) -> dict[str, Any]:
@@ -1500,9 +1527,11 @@ def _protocol_manifest_names(protocol: dict[str, Any]) -> tuple[str, ...]:
     return ("row_family_protocol.json",) + tuple(Path(path).name for path in paths)
 
 
-def test_task4_inventory_freezes_exact_ordered_twelve_document_tuple() -> None:
+def test_task4_inventory_freezes_exact_ordered_twelve_document_tuple(
+    tmp_path: Path,
+) -> None:
     protocol = _load(BUNDLE, "row_family_protocol.json")
-    result = validate_g6b_row_family_bundle(BUNDLE)
+    result = validate_g6b_row_family_bundle(_copy_bundle(tmp_path))
 
     assert tuple(result.bundle_hashes) == EXPECTED_DOCUMENTS
     assert _protocol_manifest_names(protocol) == EXPECTED_DOCUMENTS
@@ -1826,8 +1855,8 @@ def test_task4_oracle_prohibited_vocabularies_are_not_live_instances(
     assert result.valid is True, result.errors
 
 
-def test_canonical_row_family_bundle_is_valid_and_disabled() -> None:
-    result = validate_g6b_row_family_bundle(BUNDLE)
+def test_canonical_row_family_bundle_is_valid_and_disabled(tmp_path: Path) -> None:
+    result = validate_g6b_row_family_bundle(_copy_bundle(tmp_path))
 
     assert result.valid is True
     assert result.errors == ()
@@ -2402,7 +2431,7 @@ def test_missing_document_is_rejected(tmp_path: Path, name: str) -> None:
 
 def test_copied_noncanonical_root_is_rejected(tmp_path: Path) -> None:
     floating = tmp_path / "floating"
-    shutil.copytree(BUNDLE, floating)
+    _copy_schema_documents(BUNDLE, floating)
     _assert_invalid(
         floating,
         "bundle root must be <repo>/cases/discovery/g6b/row_families/"
@@ -2963,17 +2992,18 @@ def test_validator_has_no_filesystem_mutation_surface() -> None:
                     assert not set(mode) & {"w", "a", "x", "+"}
 
 
-def test_valid_validation_does_not_mutate_canonical_bundle() -> None:
-    before = _snapshot(BUNDLE)
-    result = validate_g6b_row_family_bundle(BUNDLE)
-    after = _snapshot(BUNDLE)
+def test_valid_validation_does_not_mutate_canonical_bundle(tmp_path: Path) -> None:
+    bundle = _copy_bundle(tmp_path)
+    before = _snapshot(bundle)
+    result = validate_g6b_row_family_bundle(bundle)
+    after = _snapshot(bundle)
     assert result.valid is True
     assert after == before
 
 
 def test_invalid_floating_copy_is_rejected_without_mutation(tmp_path: Path) -> None:
     floating = tmp_path / "floating_bundle"
-    shutil.copytree(BUNDLE, floating)
+    _copy_schema_documents(BUNDLE, floating)
     value = _load(floating, "review_state.json")
     value["current_state"] = "EXECUTION_AUTHORIZED"
     _write(floating, "review_state.json", value)
@@ -3775,6 +3805,8 @@ def _task6_scope_policy_category(path: str) -> str | None:
     exact_category = _TASK6_FORBIDDEN_EXACT_PATHS.get(normalized)
     if exact_category is not None:
         return exact_category
+    if normalized in _R5_CASE_CONSTRUCTION_ARTIFACT_PATHS:
+        return None
     for prefix, category in _TASK6_FORBIDDEN_PATH_PREFIXES:
         if normalized.startswith(prefix):
             return category
@@ -4020,7 +4052,7 @@ def test_task1_estimand_scope_corrigendum_scope_is_exact_and_schema_only() -> No
         _task6_scope_policy_category(
             "cases/discovery/g6b/row_families/structural_discovery_v1/"
             "governance/g6b_discovery_case_construction_v1/"
-            "construction_authorization.json"
+            "unapproved.json"
         )
         == "case_governance_instance_root"
     )
@@ -4048,7 +4080,7 @@ def test_task1_review_publication_scope_is_exact_and_document_only() -> None:
         _task6_scope_policy_category(
             "cases/discovery/g6b/row_families/structural_discovery_v1/"
             "governance/g6b_discovery_case_construction_v1/"
-            "construction_authorization.json"
+            "unapproved.json"
         )
         == "case_governance_instance_root"
     )
@@ -4104,6 +4136,35 @@ def test_task6_diff_scope_policy_rejects_forbidden_paths(
     expected_category: str,
 ) -> None:
     assert _task6_scope_policy_category(path) == expected_category
+
+
+def test_r5_exact_artifact_scope_is_allowed_without_widening_prefixes() -> None:
+    authorized_paths = _R5_CASE_CONSTRUCTION_ARTIFACT_PATHS
+    case_file_paths = {path for path in authorized_paths if "/case_units/" in path}
+    governance_paths = {path for path in authorized_paths if "/governance/" in path}
+    category_by_path = {
+        path: _task6_scope_policy_category(path) for path in sorted(authorized_paths)
+    }
+
+    assert len(authorized_paths) == 394
+    assert len(case_file_paths) == 390
+    assert len(governance_paths) == 4
+    assert case_file_paths | governance_paths == authorized_paths
+    assert category_by_path == {path: None for path in sorted(authorized_paths)}
+    assert (
+        _task6_scope_policy_category(
+            "cases/discovery/g6b/row_families/structural_discovery_v1/"
+            "case_units/near_miss/case_input.json"
+        )
+        == "case_instance_root"
+    )
+    assert (
+        _task6_scope_policy_category(
+            "cases/discovery/g6b/row_families/structural_discovery_v1/"
+            "governance/near_miss/construction_log.json"
+        )
+        == "case_governance_instance_root"
+    )
 
 
 def test_task6_git_diff_scope_excludes_science_and_capability_surfaces() -> None:
