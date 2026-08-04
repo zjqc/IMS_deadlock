@@ -1,15 +1,57 @@
 # IMS Deadlock Gate Roadmap
 
-## 2026-08-02 Task2 Materialization Contract Revision Status
+## 2026-08-05 R7 Case-Construction Publication Status
 
-Current status override: the user authorized the original Task2, but its TDD
+Current precedence: approved v2 Tasks R1-R7 are complete on repaired artifact
+subject C3 `0fa08e66c249fb19d8c014127cca8441efa90505`, tree
+`8153fd46c4dae6dbd08a20fec93eab469fa8bc37`. C3 adds exactly 394 construction
+artifacts: 13 case units, 26 sealed method observations, 13 exact/DES companion
+groups, 390 case files, and four governance files. It changes no
+source/schema/test/review/documentation path.
+
+Three independent R7 lanes reviewed the same C3 and returned PASS with
+P0/P1/P2 `0/0/0`. The durable review is
+`docs/verification/G6_B_CASE_CONSTRUCTION_REVIEW_V2.md`, raw SHA-256
+`069307796147e25edf077ab8019e1b8b7e5cd2c27b980955c950e1dec2f65739`.
+The documentation-only C4 successor changes only that review,
+`PROJECT_HANDOFF.md`, and this roadmap; resolve its commit from live branch
+history. Draft PR #8 is `https://github.com/zjqc/IMS_deadlock/pull/8`, with base
+`codex/g6b-case-construction-contract-revision` / Draft PR #7. It remains draft
+and unmerged.
+
+Authorization semantics are split by design. The generated construction
+authorization is `authorized=true` for the bounded `case_construction`
+operation and has been consumed. The source protocol's frozen typed reference
+still contains `case_construction_authorized=false`; it is not the live
+authorization artifact. Downstream capabilities remain unopened:
+
+```text
+retired_authority_fingerprint_normalization_authorized=false
+target_certification_preflight_authorized=false
+quantitative_execution_authorized=false
+```
+
+No normalization, actual-overlap audit, Barrier-A preflight, CTMC, DES,
+scoring, output inspection, confirmation, or scientific-status advancement was
+run. Final verification recorded artifact-only 390/4/394 with no later roots,
+focused `1975 passed, 2 skipped`, full four-worker worksteal
+`2421 passed, 2 skipped`, and green Ruff/format/strict-mypy/diff checks.
+
+G6-B remains `OPEN/PENDING`; G6-C/D/E remain
+`NOT STARTED / NOT PASSED`; the paper gate remains closed. The mandatory post-R7
+stop is active. The first possible next tranche is separately authorized,
+data-only retired-authority fingerprint normalization.
+
+## 2026-08-02 Historical / Pre-R7 Task2 Materialization Contract Revision Status
+
+Historical snapshot: the user authorized the original Task2, but its TDD
 implementation was stopped before commit and before any authorization or case
 instance because the approved Tasks 2-7 did not close the construction
 log/ledger, interruption recovery, comparison projections, seed commitment,
 metric-sharing semantics, or C2/C3 source identity. The retained intermediate
 `442 passed in 109.73s` is negative/partial engineering evidence, not a Task2
-pass. Older Task1 sections and gate-table cells below that still say Task2 is
-only awaiting renewed entry approval are historical.
+pass. This section no longer defines current status; the 2026-08-05 R7 section
+at the top has precedence.
 
 The corrected plan-only subject is
 `79091b863db897e3087640d0c72eb154751a5f6d` / tree
@@ -42,12 +84,13 @@ false; no case, normalization, overlap, preflight, CTMC/DES, quantitative
 artifact, output inspection, or scientific verdict exists. G6-B remains
 `OPEN/PENDING`.
 
-First unchecked next step: exact user approval must name revised-plan SHA-256
+Historical first unchecked next step at that time was exact user approval naming revised-plan SHA-256
 `81b93394233b8201ab4ba234952f17110c87398bf34a83883481ac017112a4f7` and
 review SHA-256
 `da6da7c2e513e11761e439f8b43ef6260556c912d3e730f94f15eae088d90ea0`.
-Only then create the fresh v2 worktree/branch from this plan-publication commit
-and begin Task R1. A general instruction to continue is not exact-byte approval.
+That approval later occurred; the repaired path completed R1-R7. The current
+boundary is the mandatory post-R7 stop before any separately authorized
+data-only retired-authority fingerprint normalization.
 
 ## 2026-08-02 Task1 Corrigendum Review Status
 
@@ -59,9 +102,8 @@ Final evidence: schema `401 passed`; full repository `2170 passed, 2 skipped in 
 
 Historical next step at Task1 closure: renewed Task2 entry approval was then
 required and was later obtained. The original Task2 stopped on a contract gap
-before authorization/case bytes. The live next step is exact approval of the
-v2 plan/review hashes in the section above; no v2 implementation, case, or
-science byte may precede it.
+before authorization/case bytes; the later repaired path completed R1-R7. The
+live next boundary is now the mandatory post-R7 stop, not v2 plan approval.
 
 
 本路线图采用用户批准的理论优先顺序。Gate 的 `PASS` 只表示其明确列出的
@@ -71,13 +113,13 @@ science byte may precede it.
 
 | Gate | 状态 | 当前证据 | 未关闭项 |
 | --- | --- | --- | --- |
-| G0 仓库门 | PASS | Dell 目标路径、GitHub SSH、干净集成 worktree 和项目专用 Python 3.13.9 已核验；历史整合状态已进入 `main@9c707ce3d990541847aee745bec211bb55c74f6b`；Draft PR #4 保持 open；stacked Draft PR #5 发布 plan；stacked Draft PR #6 `https://github.com/zjqc/IMS_deadlock/pull/6` 发布 Task1 corrigendum，base 为 PR #5 分支 | PR #4/#5/#6 均无 merge authority；PR #6 完成 Task1 review publication，但不构成 Task2 authorization |
+| G0 仓库门 | PASS | Dell 目标路径、GitHub SSH、项目 Python 3.13.9 与 repaired worktree 已核验；historical PR #4/#5/#6/#7 remain open；Draft PR #8 publishes repaired R1-R7 on base PR #7 | PR #8 remains draft/unmerged；no merge authority；每个新进程仍须重锁 branch/HEAD/upstream/status |
 | G1 文献门 | PASS（scope-bounded） | 六条文献链、43 项审计矩阵、20 个全文/全文审计锚点、迁移卡；L30-L35 与 B05 七篇审计已纳入比较边界；R7/R8 类别饱和保持 | 不支持首创性、系统综述或一般 IMS/Petri 等价；G4 必须检验 CRP、recorder、SBA、L30/B05 comparator 边界 |
 | G2 理论门 | PASS（严格受限主链） | P1 有限 LTS/reachability-net；P2 capacity-mediated 封闭核 iff；P2c `IMS-SIP^1` 诊断虹吸双向桥；P3 偏序充分条件；P3d `BIX1-SAT` 可达阈值；P3e `BIX2-PERSIST` 三资源 ring 精确阈值与同语义 DAG 修复；P4 CTMC；P5 supervisor；P6 复杂性边界 | plant-level structured Petri/S3PR 桥、替代/AND/AGV/预约/多 persistent-buffer 一般岛阈值、一般紧凑 IMS 精确复杂性和 risk-budget 控制仍开放 |
 | G3 算法门 | PASS（严格小有限模型 + P2c/P3d/P3e） | 原 G3 证据为 123 tests；加入 G4/G5/G6 协议、局部核/终端类恢复、replay 数值完整性和 post-R3 comparator fail-closed 回归后，Dell 项目 Python 3.13.9 全库 341 tests、Ruff check/format、strict mypy 通过；原 C0、BIX1/BIX2 结果不变 | 一般 plant/S3PR、结构案例物理速率、一般 persistent-buffer/AGV 阈值和风险预算/Pareto 算法仍开放 |
 | G4 案例冻结门 | PASS（historical C seal；已在 G5 原样执行） | A=`f9b9a5a5652c7a49053e7ef26d08911bd757f465`，B2=`58bbd4ab7da8c2c1d0bcdea4a12f2ae7c020d09a`，C=`e91be4d6d7511c76918093899269de4b78e69fd8`；封存时 checker 为 `FROZEN`、`errors=[]`、`confirmation_results_inspected=false`；随后只在 G5-B execution lock 下执行一次 primary 和一次 repro | G4/G5 九行已退役为历史 discovery/regression，不能再次充当 held-out；后续缺陷必须进入独立 successor freeze |
 | G5 论文门 | FAIL（evidence closed） | G5-A=`b5e5dc0494b23a54c78c420bbca50a3639de8bff`，G5-B=`8aa752804b885b79e5371c98e7961087c540f2a8`，G5-C=`ff281481068a2325cb0bde00e85fd7b753ba854a`；9/9 案例完成 primary/repro，raw/canonical/stderr hash 一致；锁定 scorer 为 `4/3/2`，透明 theorem audit 为 `6/1/2` 并另保留两项 minimality failure | CRP local bridge 预测失败；grid/medium 因 `D/F` 未穷尽 terminal classes 而确定性拒绝；不能形成完整 exact/DES 证据链或宣称论文门通过 |
-| G6 局部核—终端类恢复门 | IN PROGRESS / G6-A 与 G6-R PASS / G6-B v2 `PLAN-ONLY PUBLISHED / REVIEWED / EXACT APPROVAL PENDING` | Task1 complete；原 Task2 在任何 authorization/case byte 前因合同缺口停止；v2 corrigendum/plan/review 已发布于 Draft PR #7；first five-doc publication subject `d33fcb5...`，current docs successor 以 branch HEAD 为准 | 四 capability 仍 false，later roots absent；无 case、normalization、actual overlap、preflight、CTMC、DES、output inspection 或 scientific verdict；first unchecked step is exact approval of v2 plan `81b93394...` and review `da6da7c2...` |
+| G6 局部核—终端类恢复门 | IN PROGRESS / G6-A 与 G6-R PASS / G6-B `R7 CASE-CONSTRUCTION PUBLICATION REVIEWED / OPEN-PENDING` | repaired C3 `0fa08e66...` contains exact 13/26/13 and 390/4/394 sealed artifacts；three R7 lanes PASS 0/0/0；Draft PR #8 | construction authorization is true only for bounded construction；downstream capabilities/roots remain unopened；无 normalization/actual overlap/preflight/CTMC/DES/output/scientific verdict；mandatory post-R7 stop |
 
 ## G0 仓库门
 
@@ -365,12 +407,10 @@ case-construction plan SHA
 `c20393328f8f98e7b35a6507fd6e993b2f17e068d977c3dc6253b05e9a75de5f`
 与 review SHA
 `297a69382347e16e894af63e70f8fa95807407048b2e89c45701410a4e9289e1`
-已发布、获批并关闭 Task1；其 Tasks 2-7 已由 v2 修订取代。当前 first
-unchecked next step 是 exact approval v2 plan SHA
-`81b93394233b8201ab4ba234952f17110c87398bf34a83883481ac017112a4f7`
-和 v2 review SHA
-`da6da7c2e513e11761e439f8b43ef6260556c912d3e730f94f15eae088d90ea0`，不能
-直接进入 construction 或 science。
+已发布、获批并关闭 Task1；其 Tasks 2-7 随后由 v2 修订取代。该历史阶段的
+first unchecked next step 曾是 v2 plan/review exact approval；该批准后来发生，
+repaired R1-R7 已完成。当前 first unchecked boundary 是 mandatory post-R7
+stop；未经单独 data-only normalization 授权，不能继续进入 downstream science。
 计划发布作用域守卫在新路径未声明时按预期 RED，随后仅允许两个精确计划文档
 路径并保持 governance-instance 路径拒绝；final direct `2 passed`、Task-6
 selection `17 passed, 1112 deselected`，Ruff/format/strict mypy/diff green。
