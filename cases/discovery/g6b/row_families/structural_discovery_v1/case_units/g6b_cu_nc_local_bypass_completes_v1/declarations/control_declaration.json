@@ -1,0 +1,1 @@
+{"expected_guard_codes":["D_local_not_admitted","reachable_completion_bypass"],"failure_effect_codes":["block_quantitative_authorization","no_claim_upgrade","retain_control_failure"],"mandatory_control_roles":["NC_LOCAL_BYPASS_COMPLETES"],"schema_version":"ims-deadlock/g6b-control-declaration/v1"}

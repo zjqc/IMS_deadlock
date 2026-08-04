@@ -1,0 +1,1 @@
+{"expected_guard_codes":["R_livelock","not_selected_bad_class"],"failure_effect_codes":["block_quantitative_authorization","no_claim_upgrade","retain_control_failure"],"mandatory_control_roles":["NC_UNSELECTED_LIVELOCK"],"schema_version":"ims-deadlock/g6b-control-declaration/v1"}

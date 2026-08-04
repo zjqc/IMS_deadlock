@@ -1,0 +1,1 @@
+{"expected_guard_codes":["R_terminal","not_resource_deadlock"],"failure_effect_codes":["block_quantitative_authorization","no_claim_upgrade","retain_control_failure"],"mandatory_control_roles":["NC_CALENDAR_EMPTY_TERMINAL"],"schema_version":"ims-deadlock/g6b-control-declaration/v1"}

@@ -1,0 +1,1 @@
+{"excluded_plant_arc_roles":["t_plant_complete"],"filter_rule_code":"policy_overlay_does_not_change_plant_partition_v1","mode":"analysis_overlay_only","schema_version":"ims-deadlock/g6b-policy-declaration/v1"}

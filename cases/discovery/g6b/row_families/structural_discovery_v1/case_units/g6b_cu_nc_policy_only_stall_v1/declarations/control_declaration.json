@@ -1,0 +1,1 @@
+{"expected_guard_codes":["P_policy","policy_only_not_plant_partition"],"failure_effect_codes":["block_quantitative_authorization","no_claim_upgrade","retain_control_failure"],"mandatory_control_roles":["NC_POLICY_ONLY_STALL"],"schema_version":"ims-deadlock/g6b-control-declaration/v1"}
