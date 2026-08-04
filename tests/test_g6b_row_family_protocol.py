@@ -1340,8 +1340,8 @@ def test_copy_bundle_is_schema_only_after_post_seal_materialization(
 ) -> None:
     sealed_source = tmp_path / "sealed_source"
     shutil.copytree(BUNDLE, sealed_source)
-    (sealed_source / "case_units").mkdir()
-    (sealed_source / "governance").mkdir()
+    (sealed_source / "case_units").mkdir(exist_ok=True)
+    (sealed_source / "governance").mkdir(exist_ok=True)
 
     bundle = _copy_bundle(tmp_path / "copied", source=sealed_source)
 
