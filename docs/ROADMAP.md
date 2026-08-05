@@ -549,7 +549,7 @@ The original 13-case G6-B eight-dimension gate remains `OPEN_PENDING`.
 | G6-B retired normalization | `COMPLETE / NOT OVERLAP` | 181 fingerprints, 165 lineages, 119 eligible, and 62 typed refusals. |
 | Original G6-B overlap | `OPEN_PENDING` | Missing eligible random-stream and metric-schema projections remain refusals. |
 | Minimal article-core v1 | `TIER A COMPLETE` | Six predeclared cases; 18/18 exact-DES cells compatible; maximum error `0.0030924479166667`. |
-| Article draft and claim matrix | `DRAFT COMPLETE / LOCALLY VALIDATED` | Theory, cases, quantitative result, forbidden claims, and full repository validation are written. |
+| Article draft and claim matrix | `DRAFT PR #12 OPEN / VALIDATED` | Theory, cases, quantitative result, forbidden claims, and full repository validation are published in the stacked Draft PR. |
 | G6-C/D/E | `NOT STARTED` | Separate future scopes; not prerequisites for this constructive article. |
 
 ### Achieved closure
@@ -595,9 +595,14 @@ the four-file long group contributed `1885 passed, 2 skipped in 2229.49s`, and
 the eight-worker remainder contributed `808 passed in 88.95s`. Ruff, executable
 format, strict mypy, and `git diff --check` are green.
 
-1. commit and push the final validation/handoff update;
-2. open a fully described Draft PR stacked on
-   `codex/g6b-retired-normalization` and verify its head/base/Draft/CI state.
+Publication is complete as Draft PR
+[#12](https://github.com/zjqc/IMS_deadlock/pull/12), stacked on
+`codex/g6b-retired-normalization`. Live verification found it open, Draft, and
+mergeable with the intended head/base. GitHub reported no registered commit
+statuses and no pull-request Actions runs.
+
+1. respond only if later PR feedback or CI appears;
+2. keep the PR Draft until the stacked #11 ancestry is intentionally resolved.
 
 Optional future work—full 13-case overlap, a held-out G6-C set, broader timing
 models, or production metrics—requires a new pre-outcome scope. None may rewrite

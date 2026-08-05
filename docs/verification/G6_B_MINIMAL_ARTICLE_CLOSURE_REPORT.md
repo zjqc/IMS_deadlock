@@ -232,10 +232,15 @@ Forbidden interpretation:
 ## 10. Remaining work
 
 The article-core science, manuscript, claim matrix, and local repository
-validation are closed. Remaining work is publication/integration only:
+validation are closed. Publication is complete as Draft PR
+[#12](https://github.com/zjqc/IMS_deadlock/pull/12), stacked on the still-open
+retired-normalization Draft PR #11. Live verification found PR #12 open, Draft,
+mergeable, and correctly targeted from `codex/g6b-minimal-article-closure` into
+`codex/g6b-retired-normalization`. GitHub reported no registered commit statuses
+and no pull-request workflow runs for the published validation head.
 
-1. publish this validated branch as a Draft PR stacked on the still-open retired
-   normalization PR;
-2. verify the remote PR head/base and any CI result without upgrading the claim;
-3. leave original full-overlap G6-B and later G6-C/D/E as separately scoped
+Remaining work is optional or review-triggered only:
+
+1. respond if later PR feedback or CI is added, without upgrading the claim;
+2. leave original full-overlap G6-B and later G6-C/D/E as separately scoped
    optional future work, not prerequisites for this article.

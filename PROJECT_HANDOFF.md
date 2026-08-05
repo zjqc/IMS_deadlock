@@ -1611,8 +1611,14 @@ files are format-clean.
 
 ### First unfinished tasks
 
-1. push `codex/g6b-minimal-article-closure` and open a fully described Draft PR
-   with base `codex/g6b-retired-normalization`;
-2. verify the remote head/base, Draft state, and CI/check status;
-3. keep original full-overlap G6-B and G6-C/D/E as separate optional future
+Publication is complete as Draft PR
+[#12](https://github.com/zjqc/IMS_deadlock/pull/12). Live GitHub verification
+found it open, Draft, mergeable, and correctly stacked from
+`codex/g6b-minimal-article-closure` into
+`codex/g6b-retired-normalization` (the still-open Draft PR #11 head). GitHub
+reported no registered commit status and no pull-request Actions run.
+
+1. respond only if later PR feedback or CI appears; keep the PR Draft until its
+   stacked ancestry is intentionally resolved;
+2. keep original full-overlap G6-B and G6-C/D/E as separate optional future
    scopes rather than prerequisites for this article.
