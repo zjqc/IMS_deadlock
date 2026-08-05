@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from ims_deadlock.article_core import (
+    ArticleCase,
     ArticleTransition,
     build_article_cases,
     derive_replication_seed,
@@ -18,6 +19,7 @@ from ims_deadlock.article_core import (
     validate_article_case,
     write_article_closure_evidence,
 )
+from ims_deadlock.g6b_canonical_json import JsonObject, JsonValue
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CASE_IDS = (
@@ -52,21 +54,35 @@ ESTIMANDS = (
 )
 
 
-def _case_by_id() -> dict[str, object]:
+def _case_by_id() -> dict[str, ArticleCase]:
     return {case.case_id: case for case in build_article_cases(REPO_ROOT)}
+
+
+def _json_object(value: JsonValue) -> JsonObject:
+    assert isinstance(value, dict)
+    return value
+
+
+def _json_list(value: JsonValue) -> list[JsonValue]:
+    assert isinstance(value, list)
+    return value
 
 
 def test_scope_lock_is_frozen_self_hashed_and_bounded() -> None:
     scope = load_article_scope(REPO_ROOT)
+    des_contract = _json_object(scope["des_contract"])
+    original_denominator = _json_object(scope["original_sealed_denominator"])
+    sealed_identity = _json_object(scope["sealed_bundle_identity"])
+    normalization_identity = _json_object(scope["retired_normalization_identity"])
 
-    assert tuple(scope["article_core_case_ids"]) == CASE_IDS
+    assert tuple(_json_list(scope["article_core_case_ids"])) == CASE_IDS
     assert scope["scope_lock_sha256"] == (
         "86ec7b80c888c7758d326a9de7793b0f0f65f4740ecf0303e1b17d2d14344660"
     )
     assert scope["no_failed_case_substitution"] is True
     assert scope["study_role"] == "scoped_constructive_theory_article_not_confirmation"
-    assert scope["original_sealed_denominator"]["case_unit_count"] == 13
-    assert scope["des_contract"] == {
+    assert original_denominator["case_unit_count"] == 13
+    assert des_contract == {
         "absolute_error_tolerance": "0.028340",
         "comparison_cell_count": 18,
         "familywise_delta": "0.05",
@@ -74,11 +90,11 @@ def test_scope_lock_is_frozen_self_hashed_and_bounded() -> None:
         "planned_replicates_per_case": 4096,
         "seed_derivation_rule": "sha256(master_seed:replication_index)",
     }
-    assert scope["sealed_bundle_identity"]["manifest_self_sha256"] == (
+    assert sealed_identity["manifest_self_sha256"] == (
         "36622495237f2c22677190b3858d275ea8285d0ee8fc1ed004f8c03e8543a68c"
     )
-    assert scope["retired_normalization_identity"]["eligible_record_count"] == 119
-    assert scope["retired_normalization_identity"]["typed_refusal_count"] == 62
+    assert normalization_identity["eligible_record_count"] == 119
+    assert normalization_identity["typed_refusal_count"] == 62
 
 
 def test_five_reused_cases_are_bound_to_the_sealed_source_bytes() -> None:
