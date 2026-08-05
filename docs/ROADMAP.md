@@ -1,5 +1,54 @@
 # IMS Deadlock Gate Roadmap
 
+## 2026-08-02 Task2 Materialization Contract Revision Status
+
+Current status override: the user authorized the original Task2, but its TDD
+implementation was stopped before commit and before any authorization or case
+instance because the approved Tasks 2-7 did not close the construction
+log/ledger, interruption recovery, comparison projections, seed commitment,
+metric-sharing semantics, or C2/C3 source identity. The retained intermediate
+`442 passed in 109.73s` is negative/partial engineering evidence, not a Task2
+pass. Older Task1 sections and gate-table cells below that still say Task2 is
+only awaiting renewed entry approval are historical.
+
+The corrected plan-only subject is
+`79091b863db897e3087640d0c72eb154751a5f6d` / tree
+`e837d7d8bf680bb8d22211fdd20543e3bf6d5ebb` on
+`codex/g6b-case-construction-contract-revision`. Stacked Draft PR #7 is
+`https://github.com/zjqc/IMS_deadlock/pull/7`, targeting
+`codex/g6b-case-construction` / Draft PR #6. Exact identities:
+
+- materialization-contract corrigendum SHA-256:
+  `ff469d9c5105835fde5feb170e501bdde14506df50632990f7c2cddc251da36c`;
+- revised-plan SHA-256:
+  `81b93394233b8201ab4ba234952f17110c87398bf34a83883481ac017112a4f7`;
+- independent-plan-review SHA-256:
+  `da6da7c2e513e11761e439f8b43ef6260556c912d3e730f94f15eae088d90ea0`.
+
+Three independent lanes returned `PASS`: ontology/scientific boundary,
+mechanical DAG/count/hash/path closure, and adversarial implementability and
+recovery. The v2 contract closes 36 schema keys, 30 files per case, 390 case
+files plus four governance files, 393 deterministic transient paths, a
+manifest-last create-new DAG, ordered repeated torn-frame recovery, nine-path
+C2 source identity, artifact-only C3, documentation-only C4, deterministic
+pre-outcome seed commitment, and the separation between intra-bundle metric
+sharing and later retired-authority reuse.
+
+The old Task2 worktree remains quarantined at
+`codex/g6b-case-construction@01cf48c7623fa2d4652a1397c79c3c6202cf84fb`
+with exactly two modified and two untracked draft paths. It must not be cleaned,
+committed, transferred, or treated as v2 truth. All four capabilities remain
+false; no case, normalization, overlap, preflight, CTMC/DES, quantitative
+artifact, output inspection, or scientific verdict exists. G6-B remains
+`OPEN/PENDING`.
+
+First unchecked next step: exact user approval must name revised-plan SHA-256
+`81b93394233b8201ab4ba234952f17110c87398bf34a83883481ac017112a4f7` and
+review SHA-256
+`da6da7c2e513e11761e439f8b43ef6260556c912d3e730f94f15eae088d90ea0`.
+Only then create the fresh v2 worktree/branch from this plan-publication commit
+and begin Task R1. A general instruction to continue is not exact-byte approval.
+
 ## 2026-08-02 Task1 Corrigendum Review Status
 
 G6-B case construction Task1 is `COMPLETED / REVIEWED` at subject `f8b777713fc7d5f239ab6449d99c050452db6f98` tree `b65b096a6135991ede09c125fbd9de4f381733e9`. Draft PR #6 is `https://github.com/zjqc/IMS_deadlock/pull/6`, targeting `codex/g6b-case-construction-plan` / PR #5. The review artifact is `docs/verification/G6_B_CASE_CONSTRUCTION_ESTIMAND_SCOPE_CORRIGENDUM_REVIEW.md`; its SHA-256 is `744cac6caff24779d862704ad83d186023ea918f06f941e78fcc2f797c1b07c7`.
@@ -8,7 +57,11 @@ The bounded change is a schema/test/documentation corrigendum for `estimand_id` 
 
 Final evidence: schema `401 passed`; full repository `2170 passed, 2 skipped in 611.87s (0:10:11)`; Ruff/format/strict mypy clean; direct bundle valid with science false, case false, `PENDING`; ontology, boundary, and code-quality reviews all `APPROVE` with Critical/High/Medium/Low all zero.
 
-First unchecked next step: Task2 materializer may begin only after the user again explicitly approves entry into Task2. Until then, G6-B remains `OPEN/PENDING`; no construction authorization, case byte, normalization, overlap, preflight, CTMC/DES, quantitative artifact, or scientific verdict may be created.
+Historical next step at Task1 closure: renewed Task2 entry approval was then
+required and was later obtained. The original Task2 stopped on a contract gap
+before authorization/case bytes. The live next step is exact approval of the
+v2 plan/review hashes in the section above; no v2 implementation, case, or
+science byte may precede it.
 
 
 本路线图采用用户批准的理论优先顺序。Gate 的 `PASS` 只表示其明确列出的
@@ -24,7 +77,7 @@ First unchecked next step: Task2 materializer may begin only after the user agai
 | G3 算法门 | PASS（严格小有限模型 + P2c/P3d/P3e） | 原 G3 证据为 123 tests；加入 G4/G5/G6 协议、局部核/终端类恢复、replay 数值完整性和 post-R3 comparator fail-closed 回归后，Dell 项目 Python 3.13.9 全库 341 tests、Ruff check/format、strict mypy 通过；原 C0、BIX1/BIX2 结果不变 | 一般 plant/S3PR、结构案例物理速率、一般 persistent-buffer/AGV 阈值和风险预算/Pareto 算法仍开放 |
 | G4 案例冻结门 | PASS（historical C seal；已在 G5 原样执行） | A=`f9b9a5a5652c7a49053e7ef26d08911bd757f465`，B2=`58bbd4ab7da8c2c1d0bcdea4a12f2ae7c020d09a`，C=`e91be4d6d7511c76918093899269de4b78e69fd8`；封存时 checker 为 `FROZEN`、`errors=[]`、`confirmation_results_inspected=false`；随后只在 G5-B execution lock 下执行一次 primary 和一次 repro | G4/G5 九行已退役为历史 discovery/regression，不能再次充当 held-out；后续缺陷必须进入独立 successor freeze |
 | G5 论文门 | FAIL（evidence closed） | G5-A=`b5e5dc0494b23a54c78c420bbca50a3639de8bff`，G5-B=`8aa752804b885b79e5371c98e7961087c540f2a8`，G5-C=`ff281481068a2325cb0bde00e85fd7b753ba854a`；9/9 案例完成 primary/repro，raw/canonical/stderr hash 一致；锁定 scorer 为 `4/3/2`，透明 theorem audit 为 `6/1/2` 并另保留两项 minimality failure | CRP local bridge 预测失败；grid/medium 因 `D/F` 未穷尽 terminal classes 而确定性拒绝；不能形成完整 exact/DES 证据链或宣称论文门通过 |
-| G6 局部核—终端类恢复门 | IN PROGRESS / G6-A 与 G6-R PASS / G6-B Task1 `COMPLETED / REVIEWED` / Task2 `NOT AUTHORIZED` | R1/R2 失败和两项 minimality failure 原样保留；schema-only governance v2、authorization remediation、case-construction plan、Task1 estimand-scope corrigendum均已发布和审查；Task1 subject `f8b777713fc7d5f239ab6449d99c050452db6f98` tree `b65b096a6135991ede09c125fbd9de4f381733e9`；Draft PR #6 `https://github.com/zjqc/IMS_deadlock/pull/6` targets PR #5；final evidence includes schema `401 passed`, full repo `2170 passed, 2 skipped in 611.87s`, Ruff/format/mypy, direct bundle valid, and three review approvals all zero severity | 四 capability 仍 false，later roots absent；无 case、normalization、actual overlap、preflight、CTMC、DES、output inspection 或 scientific verdict；first unchecked next step is Task2 materializer only after the user again explicitly approves entering Task2 |
+| G6 局部核—终端类恢复门 | IN PROGRESS / G6-A 与 G6-R PASS / G6-B v2 `PLAN-ONLY PUBLISHED / REVIEWED / EXACT APPROVAL PENDING` | Task1 complete；原 Task2 在任何 authorization/case byte 前因合同缺口停止；v2 corrigendum/plan/review 已发布于 Draft PR #7；first five-doc publication subject `d33fcb5...`，current docs successor 以 branch HEAD 为准 | 四 capability 仍 false，later roots absent；无 case、normalization、actual overlap、preflight、CTMC、DES、output inspection 或 scientific verdict；first unchecked step is exact approval of v2 plan `81b93394...` and review `da6da7c2...` |
 
 ## G0 仓库门
 
@@ -307,12 +360,17 @@ G6-B 保持 `OPEN/PENDING`。四个 typed capabilities 分别为
 `target_certification_preflight_authorized=false`、
 `quantitative_execution_authorized=false`；later instance roots 均 absent。
 本 tranche 没有创建 case、运行 normalization/overlap/preflight/CTMC/DES、
-检查 output 或形成 scientific verdict。case-construction plan SHA
+检查 output 或形成 scientific verdict。作为历史已批准对象，原
+case-construction plan SHA
 `c20393328f8f98e7b35a6507fd6e993b2f17e068d977c3dc6253b05e9a75de5f`
 与 review SHA
 `297a69382347e16e894af63e70f8fa95807407048b2e89c45701410a4e9289e1`
-已发布，三路审查均通过；First unchecked next step 只能是用户对这两个 exact
-SHA-256 的明确批准，不能直接进入 construction 或 science。
+已发布、获批并关闭 Task1；其 Tasks 2-7 已由 v2 修订取代。当前 first
+unchecked next step 是 exact approval v2 plan SHA
+`81b93394233b8201ab4ba234952f17110c87398bf34a83883481ac017112a4f7`
+和 v2 review SHA
+`da6da7c2e513e11761e439f8b43ef6260556c912d3e730f94f15eae088d90ea0`，不能
+直接进入 construction 或 science。
 计划发布作用域守卫在新路径未声明时按预期 RED，随后仅允许两个精确计划文档
 路径并保持 governance-instance 路径拒绝；final direct `2 passed`、Task-6
 selection `17 passed, 1112 deselected`，Ruff/format/strict mypy/diff green。
