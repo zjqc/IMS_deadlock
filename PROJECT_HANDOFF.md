@@ -1,5 +1,32 @@
 # IMS Deadlock 当前项目交接
 
+## 2026-08-05 Projection-Scope Wording Erratum
+
+PR #7 review identified one imprecise background phrase in the already
+content-addressed materialization-contract corrigendum: `those five per-case
+projections`. The approved corrigendum, v2 plan, and independent review remain
+byte-immutable at SHA-256
+`ff469d9c5105835fde5feb170e501bdde14506df50632990f7c2cddc251da36c`,
+`81b93394233b8201ab4ba234952f17110c87398bf34a83883481ac017112a4f7`,
+and `da6da7c2e513e11761e439f8b43ef6260556c912d3e730f94f15eae088d90ea0`.
+They were not rewritten after execution.
+
+The durable successor clarification is
+`docs/superpowers/specs/2026-08-05-g6b-case-construction-materialization-contract-wording-erratum.md`,
+raw SHA-256
+`5192aec8e7269ec0c209e535c263a31c39be8c3f46238cde59e887a7b1db6841`.
+Its independent publication review is
+`docs/verification/G6_B_MATERIALIZATION_PROJECTION_SCOPE_WORDING_ERRATUM_REVIEW.md`,
+raw SHA-256
+`e9aeb3c145c7b72a75dbf0a5456e30da15cdbde923c5480e9d20c4c1aa16102e`,
+with three lanes at PASS and P0/P1/P2 `0/0/0`.
+It explicitly distinguishes one case-scoped case-content projection from four
+method-scoped DES/exact output-root and random-stream projections, matching the
+original normative file-role section and exact path roster. It changes no
+artifact, schema, hash subject, writer, validator, approval, authorization, or
+scientific status. Repository publication of the erratum does not authorize
+normalization or any downstream execution; G6-B remains `OPEN/PENDING`.
+
 ## 2026-08-05 R7 Case-Construction Publication
 
 Current precedence: this section is the single continuation entry point for
@@ -151,10 +178,10 @@ Task1 only synchronized the predeclared estimand-id scope and fail-closed schema
 Verification retained negative evidence and final evidence: initial focused RED `11 failed, 10 passed`; initial GREEN `21 passed`; schema `387 passed`; scope-guard serial RED `1 failed, 1127 passed, 2 skipped in 2713.04s`; code-review HIGH unhashable TypeError; type-fix RED `4 failed, 8 passed`; type-fix GREEN `14 passed`; final schema `401 passed`; final full repository `2170 passed, 2 skipped in 611.87s (0:10:11)` with four-process worksteal and isolated temporary test dependency target; Ruff, format, strict mypy, direct bundle validation, and three independent reviews all passed.
 
 Historical next step at Task1 closure: renewed Task2 entry approval was then
-required and was later obtained. The original Task2 subsequently stopped on a
-contract gap before authorization/case bytes. The live next step is now exact
-approval of the v2 plan/review hashes in the top section; no v2 implementation,
-case, or science byte may precede it.
+required and was later obtained. The original Task2 stopped on a contract gap
+before authorization/case bytes; the later repaired path completed R1-R7. The
+live next boundary is now the mandatory post-R7 stop before any separately
+authorized data-only normalization, not v2 plan approval.
 
 
 更新时间：2026-08-05（Asia/Shanghai）
