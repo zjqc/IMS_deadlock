@@ -1,5 +1,33 @@
 # IMS Deadlock Gate Roadmap
 
+## 2026-08-05 Repository-Publication Closeout
+
+PRs #3 through #9 are merged into `main` in dependency order with merge
+commits. The exact closeout baseline is commit
+`1f87f9d34d3b6f29812d9b904e2ba5ec58d8643e`, tree
+`05844c0e72f18b6de7ebb984a6397a0896e0580b`; the authoritative Windows primary
+checkout was clean and synchronized `0/0`. Older draft/unmerged/no-merge
+statements are historical only. This documentation-only successor records the
+closeout and must resolve its own commit from live Git history.
+
+Final stack verification was `2421 passed, 2 skipped in 888.15s` on a head with
+the same tree, followed by post-merge `2 passed in 1.07s` and green Ruff,
+format, strict mypy, and diff checks. Both PR #7 review threads were resolved;
+no open PR remained at the #9 closeout baseline.
+
+This closeout records count-level validation evidence only. The originating
+PR #9 body and repository-publication closeout discussion retain the run and
+review evidence; this successor does not claim a new CI artifact or a new
+full-suite run at the baseline above.
+
+This is repository publication only. G6-B remains `OPEN/PENDING`; G6-C/D/E and
+the paper gate remain closed. Normalization Tasks 1-8 still require exact
+approval of plan `7b2396b9e85b834715167d05b4b2a545b57541b0ad168e6a23bbe8752cc749be`,
+corrigendum `79c843fd64c6249447309b84e19d73b503fdfe9b4372018a483b89e15af23e49`,
+and review `63e5a146d4ca707899b2f6905eae81f09f27d8f912538be9992deedb6fea2a92`.
+Tasks 9-10 retain a later separate exact-authorization gate; no normalization,
+overlap, Barrier A/B, CTMC, DES, scoring, or scientific-status upgrade is open.
+
 ## 2026-08-05 Projection-Scope Wording Erratum
 
 The approved materialization corrigendum, v2 plan, and independent review stay
@@ -21,14 +49,16 @@ DES/exact output-root and random-stream projections. No contract, artifact,
 authorization, execution, capability, gate, or scientific status changes;
 G6-B remains `OPEN/PENDING`.
 
-## 2026-08-05 R7 Case-Construction Publication Status
+## 2026-08-05 Historical / Pre-Closeout R7 Case-Construction Publication Status
 
-Current precedence: approved v2 Tasks R1-R7 are complete on repaired artifact
+Historical snapshot: approved v2 Tasks R1-R7 were complete on repaired artifact
 subject C3 `0fa08e66c249fb19d8c014127cca8441efa90505`, tree
 `8153fd46c4dae6dbd08a20fec93eab469fa8bc37`. C3 adds exactly 394 construction
 artifacts: 13 case units, 26 sealed method observations, 13 exact/DES companion
 groups, 390 case files, and four governance files. It changes no
-source/schema/test/review/documentation path.
+source/schema/test/review/documentation path. The repository-publication
+closeout above now has precedence for live Git/PR state; the scientific
+post-R7 stop remains current.
 
 Three independent R7 lanes reviewed the same C3 and returned PASS with
 P0/P1/P2 `0/0/0`. The durable review is
@@ -36,9 +66,11 @@ P0/P1/P2 `0/0/0`. The durable review is
 `069307796147e25edf077ab8019e1b8b7e5cd2c27b980955c950e1dec2f65739`.
 The documentation-only C4 successor changes only that review,
 `PROJECT_HANDOFF.md`, and this roadmap; resolve its commit from live branch
-history. Draft PR #8 is `https://github.com/zjqc/IMS_deadlock/pull/8`, with base
-`codex/g6b-case-construction-contract-revision` / Draft PR #7. It remains draft
-and unmerged.
+history. At this historical snapshot PR #8 was draft and unmerged, with base
+`codex/g6b-case-construction-contract-revision` / PR #7. It was later retargeted
+to `main`, marked ready, and merged as
+`3ef2a14e0396c21f825740728df7a08544964b81` during #3-#9 closeout.
+Repository publication changes no scientific authorization.
 
 Authorization semantics are split by design. The generated construction
 authorization is `authorized=true` for the bounded `case_construction`
@@ -71,15 +103,17 @@ instance because the approved Tasks 2-7 did not close the construction
 log/ledger, interruption recovery, comparison projections, seed commitment,
 metric-sharing semantics, or C2/C3 source identity. The retained intermediate
 `442 passed in 109.73s` is negative/partial engineering evidence, not a Task2
-pass. This section no longer defines current status; the 2026-08-05 R7 section
-at the top has precedence.
+pass. This section no longer defines current status; the 2026-08-05
+repository-publication closeout at the top has precedence.
 
 The corrected plan-only subject is
 `79091b863db897e3087640d0c72eb154751a5f6d` / tree
 `e837d7d8bf680bb8d22211fdd20543e3bf6d5ebb` on
-`codex/g6b-case-construction-contract-revision`. Stacked Draft PR #7 is
+`codex/g6b-case-construction-contract-revision`. At this historical snapshot,
+stacked Draft PR #7 was
 `https://github.com/zjqc/IMS_deadlock/pull/7`, targeting
-`codex/g6b-case-construction` / Draft PR #6. Exact identities:
+`codex/g6b-case-construction` / Draft PR #6. PR #7 was later retargeted and
+merged as `b78fe6e84f248d405c934cd7c375cb810cb610a9`. Exact identities:
 
 - materialization-contract corrigendum SHA-256:
   `ff469d9c5105835fde5feb170e501bdde14506df50632990f7c2cddc251da36c`;
@@ -113,9 +147,9 @@ That approval later occurred; the repaired path completed R1-R7. The current
 boundary is the mandatory post-R7 stop before any separately authorized
 data-only retired-authority fingerprint normalization.
 
-## 2026-08-02 Task1 Corrigendum Review Status
+## 2026-08-02 Historical Task1 Corrigendum Review Status
 
-G6-B case construction Task1 is `COMPLETED / REVIEWED` at subject `f8b777713fc7d5f239ab6449d99c050452db6f98` tree `b65b096a6135991ede09c125fbd9de4f381733e9`. Draft PR #6 is `https://github.com/zjqc/IMS_deadlock/pull/6`, targeting `codex/g6b-case-construction-plan` / PR #5. The review artifact is `docs/verification/G6_B_CASE_CONSTRUCTION_ESTIMAND_SCOPE_CORRIGENDUM_REVIEW.md`; its SHA-256 is `744cac6caff24779d862704ad83d186023ea918f06f941e78fcc2f797c1b07c7`.
+G6-B case construction Task1 is `COMPLETED / REVIEWED` at subject `f8b777713fc7d5f239ab6449d99c050452db6f98` tree `b65b096a6135991ede09c125fbd9de4f381733e9`. At that historical snapshot, Draft PR #6 was `https://github.com/zjqc/IMS_deadlock/pull/6`, targeting `codex/g6b-case-construction-plan` / PR #5; it was later retargeted and merged as `3bb449fddde951cb641dc1019c70bc903a0ccccd`. The review artifact is `docs/verification/G6_B_CASE_CONSTRUCTION_ESTIMAND_SCOPE_CORRIGENDUM_REVIEW.md`; its SHA-256 is `744cac6caff24779d862704ad83d186023ea918f06f941e78fcc2f797c1b07c7`.
 
 The bounded change is a schema/test/documentation corrigendum for `estimand_id` scope only. It keeps the original design SHA-256 `b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6`, plan SHA-256 `c20393328f8f98e7b35a6507fd6e993b2f17e068d977c3dc6253b05e9a75de5f`, plan review SHA-256 `297a69382347e16e894af63e70f8fa95807407048b2e89c45701410a4e9289e1`, and corrigendum raw SHA-256 `5b5266a562fb4e1515121a351d0b98227338bf34c991eef2fe76557b0e17334f` bound. It does not authorize construction or science.
 
@@ -134,13 +168,13 @@ live next boundary is now the mandatory post-R7 stop, not v2 plan approval.
 
 | Gate | 状态 | 当前证据 | 未关闭项 |
 | --- | --- | --- | --- |
-| G0 仓库门 | PASS | Dell 目标路径、GitHub SSH、项目 Python 3.13.9 与 repaired worktree 已核验；historical PR #4/#5/#6/#7 remain open；Draft PR #8 publishes repaired R1-R7 on base PR #7 | PR #8 remains draft/unmerged；no merge authority；每个新进程仍须重锁 branch/HEAD/upstream/status |
+| G0 仓库门 | PASS | Dell 目标路径、GitHub SSH 与项目 Python 3.13.9 已核验；PRs #3-#9 were merged in dependency order；closeout baseline `main@1f87f9d...` / tree `05844c0e...` was clean and upstream `0/0` with no open PR | 每个新进程仍须重锁 live `main` branch/HEAD/tree/upstream/status/open-PR state；repository merge 不等于科学授权 |
 | G1 文献门 | PASS（scope-bounded） | 六条文献链、43 项审计矩阵、20 个全文/全文审计锚点、迁移卡；L30-L35 与 B05 七篇审计已纳入比较边界；R7/R8 类别饱和保持 | 不支持首创性、系统综述或一般 IMS/Petri 等价；G4 必须检验 CRP、recorder、SBA、L30/B05 comparator 边界 |
 | G2 理论门 | PASS（严格受限主链） | P1 有限 LTS/reachability-net；P2 capacity-mediated 封闭核 iff；P2c `IMS-SIP^1` 诊断虹吸双向桥；P3 偏序充分条件；P3d `BIX1-SAT` 可达阈值；P3e `BIX2-PERSIST` 三资源 ring 精确阈值与同语义 DAG 修复；P4 CTMC；P5 supervisor；P6 复杂性边界 | plant-level structured Petri/S3PR 桥、替代/AND/AGV/预约/多 persistent-buffer 一般岛阈值、一般紧凑 IMS 精确复杂性和 risk-budget 控制仍开放 |
 | G3 算法门 | PASS（严格小有限模型 + P2c/P3d/P3e） | 原 G3 证据为 123 tests；加入 G4/G5/G6 协议、局部核/终端类恢复、replay 数值完整性和 post-R3 comparator fail-closed 回归后，Dell 项目 Python 3.13.9 全库 341 tests、Ruff check/format、strict mypy 通过；原 C0、BIX1/BIX2 结果不变 | 一般 plant/S3PR、结构案例物理速率、一般 persistent-buffer/AGV 阈值和风险预算/Pareto 算法仍开放 |
 | G4 案例冻结门 | PASS（historical C seal；已在 G5 原样执行） | A=`f9b9a5a5652c7a49053e7ef26d08911bd757f465`，B2=`58bbd4ab7da8c2c1d0bcdea4a12f2ae7c020d09a`，C=`e91be4d6d7511c76918093899269de4b78e69fd8`；封存时 checker 为 `FROZEN`、`errors=[]`、`confirmation_results_inspected=false`；随后只在 G5-B execution lock 下执行一次 primary 和一次 repro | G4/G5 九行已退役为历史 discovery/regression，不能再次充当 held-out；后续缺陷必须进入独立 successor freeze |
 | G5 论文门 | FAIL（evidence closed） | G5-A=`b5e5dc0494b23a54c78c420bbca50a3639de8bff`，G5-B=`8aa752804b885b79e5371c98e7961087c540f2a8`，G5-C=`ff281481068a2325cb0bde00e85fd7b753ba854a`；9/9 案例完成 primary/repro，raw/canonical/stderr hash 一致；锁定 scorer 为 `4/3/2`，透明 theorem audit 为 `6/1/2` 并另保留两项 minimality failure | CRP local bridge 预测失败；grid/medium 因 `D/F` 未穷尽 terminal classes 而确定性拒绝；不能形成完整 exact/DES 证据链或宣称论文门通过 |
-| G6 局部核—终端类恢复门 | IN PROGRESS / G6-A 与 G6-R PASS / G6-B `R7 CASE-CONSTRUCTION PUBLICATION REVIEWED / OPEN-PENDING` | repaired C3 `0fa08e66...` contains exact 13/26/13 and 390/4/394 sealed artifacts；three R7 lanes PASS 0/0/0；Draft PR #8 | construction authorization is true only for bounded construction；downstream capabilities/roots remain unopened；无 normalization/actual overlap/preflight/CTMC/DES/output/scientific verdict；mandatory post-R7 stop |
+| G6 局部核—终端类恢复门 | IN PROGRESS / G6-A 与 G6-R PASS / G6-B `R7 CASE-CONSTRUCTION PUBLICATION REVIEWED / OPEN-PENDING` | repaired C3 `0fa08e66...` contains exact 13/26/13 and 390/4/394 sealed artifacts；three R7 lanes PASS 0/0/0；PR #8 later merged as `3ef2a14e...` | construction authorization is true only for bounded construction；repository merge changes no downstream capability/root；无 normalization/actual overlap/preflight/CTMC/DES/output/scientific verdict；mandatory post-R7 stop |
 
 ## G0 仓库门
 

@@ -1,5 +1,51 @@
 # IMS Deadlock 当前项目交接
 
+## 2026-08-05 Repository-Publication Closeout
+
+Current precedence: the stacked repository-publication workflow is complete.
+PRs #3 through #9 were each retargeted to `main` when required, marked ready,
+and merged in dependency order with merge commits rather than squash/rebase.
+Older statements that those PRs are draft, unmerged, or lack repository-merge
+authority remain historical records only and no longer describe live Git state.
+
+The exact #3..#9 closeout baseline on `main` is commit
+`1f87f9d34d3b6f29812d9b904e2ba5ec58d8643e`, tree
+`05844c0e72f18b6de7ebb984a6397a0896e0580b`. The first-parent merge chain is:
+
+- PR #3: `dcaf27c93daa7a0c5d43cc77f8562e59d5a7ef01`;
+- PR #4: `b354c72784c99a65ac4352b1e800b22b4110261a`;
+- PR #5: `7c96a0bd0692686ed15658a9627ac24ef48f30ee`;
+- PR #6: `3bb449fddde951cb641dc1019c70bc903a0ccccd`;
+- PR #7: `b78fe6e84f248d405c934cd7c375cb810cb610a9`;
+- PR #8: `3ef2a14e0396c21f825740728df7a08544964b81`;
+- PR #9: `1f87f9d34d3b6f29812d9b904e2ba5ec58d8643e`.
+
+The authoritative Windows primary checkout was clean on `main` and synchronized
+`0/0` with `origin/main` at that baseline. The fully tested PR #9 head had the
+same tree and returned `2421 passed, 2 skipped in 888.15s`; post-merge targeted
+regressions returned `2 passed in 1.07s`, with Ruff, format, strict mypy, and
+`git diff --check` green. Both PR #7 review threads were resolved, and no open
+PR remained at the #9 closeout baseline. This two-document successor records
+the closeout; resolve its own exact commit from live Git history rather than
+embedding a self-referential hash.
+
+This closeout records count-level validation evidence only. The originating
+PR #9 body and repository-publication closeout discussion retain the run and
+review evidence; this documentation successor does not claim a new CI artifact
+or a new full-suite run at the baseline above.
+
+Repository publication is administrative, not scientific authorization. It
+does not approve Tasks 1-8 or Tasks 9-10 of the retired-authority normalization
+plan and does not authorize retired-field parsing, normalization, overlap,
+Barrier A/B, CTMC, DES, scoring, output inspection, or a status upgrade. G6-B
+remains `OPEN/PENDING`; G6-C/D/E and the paper gate remain closed. The first
+possible next tranche still requires separate exact approval of normalization
+plan SHA-256 `7b2396b9e85b834715167d05b4b2a545b57541b0ad168e6a23bbe8752cc749be`,
+capability-corrigendum SHA-256
+`79c843fd64c6249447309b84e19d73b503fdfe9b4372018a483b89e15af23e49`,
+and independent-review SHA-256
+`63e5a146d4ca707899b2f6905eae81f09f27d8f912538be9992deedb6fea2a92`.
+
 ## 2026-08-05 Projection-Scope Wording Erratum
 
 PR #7 review identified one imprecise background phrase in the already
@@ -27,12 +73,13 @@ artifact, schema, hash subject, writer, validator, approval, authorization, or
 scientific status. Repository publication of the erratum does not authorize
 normalization or any downstream execution; G6-B remains `OPEN/PENDING`.
 
-## 2026-08-05 R7 Case-Construction Publication
+## 2026-08-05 Historical / Pre-Closeout R7 Case-Construction Publication
 
-Current precedence: this section is the single continuation entry point for
-G6-B case construction. It supersedes older `PLAN-ONLY`, `EXACT APPROVAL
-PENDING`, Task-R1, Task-R2, and pre-repair continuation wording for current
-status without deleting those records as history.
+Historical snapshot: this section recorded R7 before repository closeout. The
+repository-publication closeout section above now has precedence for live
+Git/PR state. The bounded R7 evidence and mandatory scientific post-R7 stop
+remain current; older `PLAN-ONLY`, `EXACT APPROVAL PENDING`, Task-R1, Task-R2,
+and pre-repair continuation wording remains historical.
 
 The repaired artifact subject C3 is
 `0fa08e66c249fb19d8c014127cca8441efa90505`, tree
@@ -53,11 +100,12 @@ handoff section, and the matching `docs/ROADMAP.md` update; resolve its exact
 identity with `git log -1 --format=%H -- PROJECT_HANDOFF.md` after locking the
 branch rather than embedding a self-referential C4 hash here.
 
-Draft PR #8 is `https://github.com/zjqc/IMS_deadlock/pull/8`, with head
+At this historical snapshot, PR #8 was draft and unmerged, with head
 `codex/g6b-case-construction-v2-r6-testfix` and base
-`codex/g6b-case-construction-contract-revision` / Draft PR #7. It remains draft
-and unmerged. The branch was pushed without force and tracks
-`origin/codex/g6b-case-construction-v2-r6-testfix`.
+`codex/g6b-case-construction-contract-revision` / PR #7. It was later retargeted
+to `main`, marked ready, and merged as
+`3ef2a14e0396c21f825740728df7a08544964b81` during the #3-#9 closeout.
+Repository publication does not change the scientific post-R7 boundary.
 
 Construction authorization must be reported precisely. The generated
 `construction_authorization.json` is `authorized=true` for the bounded
@@ -114,14 +162,16 @@ TDD reached a retained intermediate `442 passed in 109.73s`; however, that run
 exposed identity-bearing gaps in the approved Tasks 2-7 contract before any
 authorization or case instance was created. The old Task2 execution was stopped
 fail-closed. This section no longer defines the current next step; the
-2026-08-05 R7 section at the top has precedence.
+2026-08-05 repository-publication closeout at the top has precedence.
 
 The superseding plan-only correction is published on
 `codex/g6b-case-construction-contract-revision`. Its reviewed subject is
 `79091b863db897e3087640d0c72eb154751a5f6d` with tree
-`e837d7d8bf680bb8d22211fdd20543e3bf6d5ebb`; stacked Draft PR #7 is
+`e837d7d8bf680bb8d22211fdd20543e3bf6d5ebb`; the historical stacked Draft PR #7 was
 `https://github.com/zjqc/IMS_deadlock/pull/7`, with base
-`codex/g6b-case-construction` / Draft PR #6. The exact materialization-contract
+`codex/g6b-case-construction` / historical Draft PR #6. PR #7 was later
+retargeted and merged as `b78fe6e84f248d405c934cd7c375cb810cb610a9` during
+repository closeout. The exact materialization-contract
 corrigendum SHA-256 is
 `ff469d9c5105835fde5feb170e501bdde14506df50632990f7c2cddc251da36c`; the
 revised-plan SHA-256 is
@@ -167,9 +217,10 @@ current boundary is now the mandatory post-R7 stop recorded at the top.
 Historical Task1 snapshot: this section was the continuation source when Task1
 closed. Its renewed Task2 entry approval was later granted, so neither this
 section nor older `USER_APPROVAL_PENDING` wording defines the current next
-step. The current continuation source is the 2026-08-05 R7 section at the top.
+step. The current continuation source is the 2026-08-05
+repository-publication closeout at the top.
 
-Task1 is `COMPLETED / REVIEWED` on subject `f8b777713fc7d5f239ab6449d99c050452db6f98` with tree `b65b096a6135991ede09c125fbd9de4f381733e9` and Draft PR #6 `https://github.com/zjqc/IMS_deadlock/pull/6` targeting `codex/g6b-case-construction-plan` / PR #5. Review artifact: `docs/verification/G6_B_CASE_CONSTRUCTION_ESTIMAND_SCOPE_CORRIGENDUM_REVIEW.md`. Review SHA-256 is `744cac6caff24779d862704ad83d186023ea918f06f941e78fcc2f797c1b07c7`.
+Task1 is `COMPLETED / REVIEWED` on subject `f8b777713fc7d5f239ab6449d99c050452db6f98` with tree `b65b096a6135991ede09c125fbd9de4f381733e9`. At that historical snapshot, Draft PR #6 `https://github.com/zjqc/IMS_deadlock/pull/6` targeted `codex/g6b-case-construction-plan` / PR #5; it was later retargeted and merged as `3bb449fddde951cb641dc1019c70bc903a0ccccd`. Review artifact: `docs/verification/G6_B_CASE_CONSTRUCTION_ESTIMAND_SCOPE_CORRIGENDUM_REVIEW.md`. Review SHA-256 is `744cac6caff24779d862704ad83d186023ea918f06f941e78fcc2f797c1b07c7`.
 
 The approved plan SHA-256 is `c20393328f8f98e7b35a6507fd6e993b2f17e068d977c3dc6253b05e9a75de5f` and the plan-review SHA-256 is `297a69382347e16e894af63e70f8fa95807407048b2e89c45701410a4e9289e1`. The original design SHA-256 remains `b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6`. The corrigendum spec raw SHA-256 is `5b5266a562fb4e1515121a351d0b98227338bf34c991eef2fe76557b0e17334f`. The three changed schema raw SHA-256 values are: case construction `e4107f92afd957ad41f55e29fd053ace0062a20b25a1fe3b5f3d75b7dd36a6c4`, identity `a31bcfbb51c5c8d0594f319bd64f4465b3b0d157e3a331abedbedbaa996dd6d8`, retired authority fingerprint `f0c8b649bee392752aec15aed28ac492584a6071d09ef7bdd963ee28a00323bc`.
 
@@ -196,9 +247,12 @@ authorized data-only normalization, not v2 plan approval.
 ## 1. 一句话状态
 Current status override: the approved v2 case-construction tranche completed
 R1-R7 publication on repaired C3 `0fa08e66c249fb19d8c014127cca8441efa90505`
-and documentation-only C4. Draft PR #8 is open and unmerged. G6-B remains
-`OPEN/PENDING`; the mandatory post-R7 stop is active. All older Task2-entry,
-plan-only, approval-pending, and pre-repair wording is historical.
+and documentation-only C4. PR #8 was later merged as
+`3ef2a14e0396c21f825740728df7a08544964b81`; the complete #3-#9 stack is on
+`main@1f87f9d34d3b6f29812d9b904e2ba5ec58d8643e`, tree
+`05844c0e72f18b6de7ebb984a6397a0896e0580b`. G6-B remains `OPEN/PENDING`;
+the mandatory post-R7 stop is active. All older Task2-entry, plan-only,
+approval-pending, draft/unmerged, and pre-repair wording is historical.
 
 
 项目已完成理论优先基础、受限结构—概率—控制主链、范围受限文献门、小有限
@@ -266,27 +320,29 @@ RED（`1 failed`，两条路径均为 `outside_task6_declared_files`）。测试
 final direct 为 `2 passed`，Task-6 selection 为
 `17 passed, 1112 deselected`，测试文件 Ruff/format/strict mypy 和 diff check
 均通过。该测试后继不允许 production/schema/case/evidence/artifact 路径。
-计划发布 subject 是 `bb312fc8db94e977f5c483043715c805fafc86c7`，已推送到
-`codex/g6b-case-construction-plan` 并建立堆叠 Draft PR #5：
+计划发布 subject 是 `bb312fc8db94e977f5c483043715c805fafc86c7`，当时已推送到
+`codex/g6b-case-construction-plan` 并建立 historical stacked Draft PR #5：
 `https://github.com/zjqc/IMS_deadlock/pull/5`；base 是 PR #4 的
 `codex/g6b-case-target-certification-final-review`；包含当前 PR 状态文档后继后，
 #5 显示 2 commits / 5
-paths。该处 `USER_APPROVAL_PENDING` 仅记录当时状态；后来原计划获批，并在
-Task2 合同缺口暴露后由 v2 修订取代。
+paths。PR #5 后来 retarget 并 merge 为
+`7c96a0bd0692686ed15658a9627ac24ef48f30ee`。该处
+`USER_APPROVAL_PENDING` 仅记录当时状态；后来原计划获批，并在 Task2
+合同缺口暴露后由 v2 修订取代。
 
 ### 1.1 2026-08-02 当前接管快照
 
 | 工作面 | 当前状态 | 下一动作 |
 | --- | --- | --- |
 | Section 18 schema/governance v2 | `COMPLETE / PASS_SCHEMA_ONLY`；代码审查对象固定为 `948ff5746adcb66b68fb9c47e519f070dd2c96ba` | 不再重跑 Task 1-7；仅在代码/schema/冻结协议/证据对象变化时重跑完整验证 |
-| G6-B case construction | `R7 CASE-CONSTRUCTION PUBLICATION REVIEWED / OPEN-PENDING`；C3 `0fa08e66...` is exactly 394 artifacts；three R7 lanes PASS 0/0/0；Draft PR #8 is unmerged | Mandatory stop. The next possible tranche is separately authorized data-only retired-authority fingerprint normalization; do not start overlap/preflight/CTMC/DES/science from C3/C4/R7 |
+| G6-B case construction | `R7 CASE-CONSTRUCTION PUBLICATION REVIEWED / OPEN-PENDING`；C3 `0fa08e66...` is exactly 394 artifacts；three R7 lanes PASS 0/0/0；PR #8 later merged as `3ef2a14e...` | Mandatory stop. The next possible tranche is separately authorized data-only retired-authority fingerprint normalization; do not start overlap/preflight/CTMC/DES/science from C3/C4/R7 or from repository merge state |
 | retired-authority normalization | `NOT AUTHORIZED / NOT RUN` | case sealing 后另开 data-only authorization；不得读取历史 outcome 反推案例 |
 | overlap audit | `NOT RUN` | 仅在 sealed inputs 完成后运行；hash 不等同于语义独立性证明 |
 | Barrier A target preflight | `NOT AUTHORIZED / NOT RUN` | overlap PASS 后另行授权，只能产出 certificate/refusal/preflight evidence |
 | Barrier B quantitative science | `NOT AUTHORIZED / NOT RUN` | exact/DES same-target locks 与单独定量授权完成后，才可运行 CTMC/DES |
 | G6-C/D/E | 全部 `NOT STARTED / NOT PASSED` | 只有 G6-B 全条件通过后才能进入 confirmation preregistration、freeze、一次性执行 |
 | 论文 | 无统一主稿，paper gate 未通过 | 保留 G5 FAIL、R1/R2 failure、R3 historical-only 与 minimality failures；G6-E 后重建 paper gate |
-| Git 集成 | Historical Draft PR #4/#5/#6/#7 remain open；Draft PR #8 `https://github.com/zjqc/IMS_deadlock/pull/8` publishes the repaired R1-R7 branch on base PR #7；`main` remains outside this unmerged stack | Keep all PRs draft unless separately authorized；#8 has no merge authority；resolve the documentation-only C4 from live branch history |
+| Git 集成 | PRs #3-#9 were retargeted as required and merged to `main` in dependency order；closeout baseline is `main@1f87f9d...` / tree `05844c0e...`；no open PR remained at that baseline | Re-lock live `main`, upstream, clean state, and open-PR state on each takeover；repository publication does not grant scientific authorization |
 | 非阻塞工程卫生 | 批准门 `ruff format --check src tests` 为 47 files green；更宽的 `ruff format --check .` 仍会对 3 个历史 plan 文档代码块提出格式建议 | 作为历史文档格式债保留；若清理，必须单独审查且不得改动批准规格 digest、冻结协议或证据 bytes |
 
 当前没有代码运行失败，也不是因理论—实现比较得出矛盾而停机。最近的停顿发生
@@ -303,10 +359,11 @@ Task2 合同缺口暴露后由 v2 修订取代。
 ### 1.2 状态源层级与两个冻结旧字段
 
 Current first-unchecked override: approved v2 Tasks R1-R7 are complete on the
-repaired publication branch and Draft PR #8. The active instruction is the
-mandatory post-R7 stop. The first possible next task is a new, separately
-authorized data-only retired-authority fingerprint-normalization tranche.
-Older Task2-entry, plan-only, or approval-pending language is historical.
+repaired C3/C4 subject now published through PR #8 and the #3-#9 merge chain on
+`main`. The active instruction is the mandatory post-R7 stop. The first
+possible next task is a new, separately authorized data-only retired-authority
+fingerprint-normalization tranche. Older Task2-entry, plan-only,
+approval-pending, draft, or unmerged language is historical.
 
 
 下一进程必须按以下优先级解释状态，低层记录不得覆盖高层实时证据：
@@ -330,7 +387,8 @@ Older Task2-entry, plan-only, or approval-pending language is historical.
 中的 checkbox 仍为未勾选，不能据此重跑 Task 1。Tasks 1-7 已实施并由 Section 18
 证据关闭；该文件是历史 execution instruction，不是进度账本。新的
 原 case-construction plan 和三路审查已经发布、获批并完成 Task1；其 Tasks 2-7
-随后由 v2 修订取代。v2 R1-R7 现已在 repaired C3/C4 和 Draft PR #8 上完成。
+随后由 v2 修订取代。v2 R1-R7 已在 repaired C3/C4 完成，随后通过 PR #8 和
+#3-#9 merge chain 发布到 `main`。
 当前 first unchecked boundary 不是继续执行，而是等待另行授权的 data-only
 retired-authority fingerprint normalization。
 
@@ -345,13 +403,18 @@ retired-authority fingerprint normalization。
   `REMOTE_PROJECT_OPERATIONS.md` 读取并在每个会话重新核验；不要把本机
   用户名、私有网络地址或个人 SSH 配置复制进 Git
 - GitHub：`git@github.com:zjqc/IMS_deadlock.git`
-- 当前 G6-B v2 权威工作树：
+- 当前仓库权威工作树：`D:\py_pro\IMS_deadlock`，branch `main`。#3-#9 closeout
+  baseline 是 `1f87f9d34d3b6f29812d9b904e2ba5ec58d8643e`，tree
+  `05844c0e72f18b6de7ebb984a6397a0896e0580b`；每次接管仍须重新核验
+  HEAD/tree/upstream/status/open-PR state。
+- Historical G6-B v2 publication worktree：
   `D:\worktree\IMS_deadlock-g6b-case-construction-v2-r6-testfix`，branch
   `codex/g6b-case-construction-v2-r6-testfix`。artifact-only C3 是
   `0fa08e66c249fb19d8c014127cca8441efa90505`，tree
   `8153fd46c4dae6dbd08a20fec93eab469fa8bc37`；包含本文档的 C4 必须从实时
-  branch history 定位。Draft PR #8 是当前 publication PR，工作树在每次接管时
-  必须重新核验 HEAD/upstream/status。
+  branch history 定位。PR #8 后来作为
+  `3ef2a14e0396c21f825740728df7a08544964b81` merge 到 `main`；该 historical
+  worktree 不再是 live continuation target。
 - Historical Section 18 schema/governance worktree：
   `D:\worktree\IMS_deadlock-g6b-spec-final-review`，branch
   `codex/g6b-case-target-certification-final-review`。初始 Section 18 发布 HEAD
@@ -387,23 +450,20 @@ retired-authority fingerprint normalization。
 - `D:\worktree\IMS_deadlock-g6b-case-target-design@719194c` 是 stale
   exact-eleven plan 的隔离证据，不是代码源、测试 oracle 或当前状态依据；当前
   candidate diff 不得包含其路径或字节。
-- 当前主线对照基线：`main@9c707ce3d990541847aee745bec211bb55c74f6b`。
-  当前 G6-B 发布分支相对其保持隔离，不得把 feature 分支 HEAD 误写成主线
-  通过状态。当前 code remediation subject 为 `b2f2f285...`；包含本文件的
-  documentation successor 会使领先数增加，下一进程必须实时重算
-  `main...HEAD`、`HEAD...upstream` 和 clean state。
-- Historical PR #4 context：分支处置方式曾由用户选择为方式 2，Draft PR #4
-  `https://github.com/zjqc/IMS_deadlock/pull/4` 仍未 merge，也没有 merge
-  authority；它不是当前 publication PR。
-- 当前 publication PR 是 Draft PR #8：
-  `https://github.com/zjqc/IMS_deadlock/pull/8`，head 为 repaired R1-R7 branch，
-  base 为 `codex/g6b-case-construction-contract-revision` / Draft PR #7；不得写成
-  已进入 `main`。
-- 计划发布分支 `codex/g6b-case-construction-plan` 已在 subject
-  `bb312fc8db94e977f5c483043715c805fafc86c7` 建立 stacked Draft PR #5：
-  `https://github.com/zjqc/IMS_deadlock/pull/5`，base 为
-  `codex/g6b-case-target-certification-final-review`。该堆叠结构只隔离 diff，
-  不赋予 merge authority 或 exact-bytes approval。
+- Historical pre-closeout main baseline was
+  `main@9c707ce3d990541847aee745bec211bb55c74f6b`; it no longer defines live Git
+  state. The current #3-#9 closeout baseline is the `main@1f87f9d...` lock above.
+- Historical PR #4 context：分支处置方式曾由用户选择为方式 2；PR #4 was later
+  retargeted and merged as `b354c72784c99a65ac4352b1e800b22b4110261a` during
+  repository closeout。
+- Historical PR #8 context：repaired R1-R7 was published from
+  `codex/g6b-case-construction-v2-r6-testfix`; PR #8 was later retargeted to
+  `main` and merged as `3ef2a14e0396c21f825740728df7a08544964b81`。
+- Historical plan publication branch `codex/g6b-case-construction-plan` had
+  subject `bb312fc8db94e977f5c483043715c805fafc86c7` and stacked PR #5；PR #5
+  was later retargeted and merged as `7c96a0bd0692686ed15658a9627ac24ef48f30ee`。
+  This repository integration history does not grant exact-bytes scientific
+  approval.
 - 历史交接编写前锁定 `main@235b69a189a869578d9760fcc5585fbfe21a7808`
   和 tree `9ffa5974ced053e3ffd9943f34e163c4606eddf2` 仅是旧交接快照，
   不再是当前 G6-B continuation 的目标锁。
@@ -522,12 +582,13 @@ protocol 可解析九个案例且返回 `valid=true`，但本地 `g4_freeze chec
 ssh -o BatchMode=yes -o ConnectTimeout=10 "$REMOTE_SSH_ALIAS" \
   "echo SSH_OK && hostname && whoami"
 ssh -o BatchMode=yes -o ConnectTimeout=10 "$REMOTE_SSH_ALIAS" \
-  "cd /d D:\worktree\IMS_deadlock-g6b-case-construction-v2-r6-testfix && git rev-parse --show-toplevel && git branch --show-current && git rev-parse HEAD && git status --short && git remote get-url origin && git rev-list --left-right --count @{u}...HEAD && git worktree list --porcelain"
+  "cd /d D:\py_pro\IMS_deadlock && git rev-parse --show-toplevel && git branch --show-current && git rev-parse HEAD && git rev-parse HEAD^{tree} && git status --short && git remote get-url origin && git rev-list --left-right --count @{u}...HEAD && git worktree list --porcelain"
 ```
 
-若任务不是继续当前 G6-B publication/review 分支，才按
-`REMOTE_PROJECT_OPERATIONS.md` 重新选择对应远程路径；不要把私有网络地址
-复制进仓库文档。
+默认先锁上述 primary `main` 权威工作区。只有任务明确需要隔离编辑时，才在
+核验 live `main` 后按 `REMOTE_PROJECT_OPERATIONS.md` 建立或选择任务专属
+worktree；不得把 historical PR #8 worktree 当作当前 continuation target，也不要
+把私有网络地址复制进仓库文档。
 
 任何结论中都应记录：
 
@@ -583,7 +644,7 @@ IMS-RAS^CW 稳定语义
 | G3 算法门 | PASS | 稳定 LTS、证书、Petri/refusal、阈值、CTMC、监督器、G4/G5/G6 审计；全库 341 tests | 枚举只核验证明，不替代证明 |
 | G4 案例冻结门 | PASS（历史 seal） | 九个 held-out 案例在结果检查前冻结，并在 G5 原样执行 | 该面板已退役，不能再次作为 held-out |
 | G5 论文门 | FAIL（evidence closed） | 9/9 primary/repro 精确一致，失败、反例和 inconclusive 已固定 | 不得补跑、改 sealed input、重调参或宣称通过 |
-| G6 恢复门 | IN PROGRESS / G6-A 和 G6-R PASS / G6-B `R7 CASE-CONSTRUCTION PUBLICATION REVIEWED / OPEN-PENDING` | repaired C3 `0fa08e66...` contains exact 390/4/394 sealed artifacts；three R7 lanes PASS 0/0/0；Draft PR #8 publishes the unmerged branch | construction authorization is true only for bounded construction；downstream capabilities/roots remain unopened；no normalization/overlap/preflight/CTMC/DES/output/scientific verdict；mandatory post-R7 stop |
+| G6 恢复门 | IN PROGRESS / G6-A 和 G6-R PASS / G6-B `R7 CASE-CONSTRUCTION PUBLICATION REVIEWED / OPEN-PENDING` | repaired C3 `0fa08e66...` contains exact 390/4/394 sealed artifacts；three R7 lanes PASS 0/0/0；PR #8 later merged as `3ef2a14e...` | construction authorization is true only for bounded construction；repository merge changes no downstream capability/root；no normalization/overlap/preflight/CTMC/DES/output/scientific verdict；mandatory post-R7 stop |
 
 状态源：`docs/ROADMAP.md`。
 
@@ -1022,7 +1083,8 @@ git log -1 --format=%H -- PROJECT_HANDOFF.md
 
 下一进程不要继续重放 G4/G5，也不要先写成投稿稿件。原 case-construction
 plan、v2 corrigendum/plan、post-seal repair 和 R1-R7 现已完成。repaired C3
-`0fa08e66...` 与 documentation-only C4 已发布到 Draft PR #8，但 G6-B 仍为
+`0fa08e66...` 与 documentation-only C4 曾发布到 PR #8，并已随 #3-#9 stack
+merge 到 `main`，但 G6-B 仍为
 `OPEN/PENDING`。当前 first unchecked boundary 是 mandatory post-R7 stop；只有
 新的、单独批准的 data-only retired-authority fingerprint-normalization plan 才能
 开启下一 tranche。C3/C4/R7 不授权 overlap、preflight、CTMC、DES 或科学执行。
@@ -1223,18 +1285,19 @@ CTMC/DES, quantitative, or scientific-output authority.
 v2 implementation 与 R1-R7 publication 已完成。当前没有任何 post-R7
 downstream authority。下一进程的第一个可执行批次只能是只读重锁：
 
-1. 重锁
-   `D:\worktree\IMS_deadlock-g6b-case-construction-v2-r6-testfix`、branch、
-   documentation-only C4 HEAD/tree、upstream `0/0` 和 clean state。
-2. 核验 Draft PR #8 的 base/head、Draft、unmerged state，以及 C3..C4 仅三份
-   R7 文档的闭包。
+1. 重锁 `D:\py_pro\IMS_deadlock`、branch `main`、HEAD
+   `1f87f9d34d3b6f29812d9b904e2ba5ec58d8643e`、tree
+   `05844c0e72f18b6de7ebb984a6397a0896e0580b`、upstream `0/0` 和 clean
+   state；这些是 closeout baseline，若实时状态已前进，必须记录新锁而非回退。
+2. 核验 #3-#9 first-parent merge chain、PR #8 merge
+   `3ef2a14e0396c21f825740728df7a08544964b81`，以及 live open-PR state。
 3. 读取 `G6_B_CASE_CONSTRUCTION_REVIEW_V2.md`，确认 C3 exact-394、三路 R7
    PASS、construction-only authorization 和所有 downstream/scientific 边界。
 4. 不得 clean、stash、commit、transfer 或以其他方式接触旧 dirty/quarantined
    worktree；它们只保留负证据。
 5. 在用户另行批准 data-only retired-authority fingerprint-normalization 精确计划
-   前停止。Draft PR #8、普通“继续推进”或 construction authorization 均不等同于
-   downstream/scientific authorization。
+   前停止。PR #8 或整个 repository stack 的 merge、普通“继续推进”或
+   construction authorization 均不等同于 downstream/scientific authorization。
 
 后续依赖顺序不得并行越门：
 
@@ -1250,13 +1313,12 @@ downstream authority。下一进程的第一个可执行批次只能是只读重
 9. G6-D freeze 与 G6-E 一次性执行；
 10. 重建 paper gate，完成主稿、claim-evidence audit、复现包和投稿元数据。
 
-Git 管理不改变科学顺序：PR #4 以 `main` 为 base；原计划 PR #5 堆叠在
-PR #4 上；Task1 PR #6 堆叠在 PR #5 上；v2 contract/review PR #7 堆叠在
-PR #6 上；repaired publication PR #8 堆叠在 PR #7 上。C3..C4
-documentation-only diff 精确为 3 paths；PR #8 aggregate path/commit count 必须从
-live PR 或 `git rev-list` 重新锁定，不能由本文件自引用固定。
-不得在未核对 PR diff、review subject、负证据保留情况和 merge authority 时
-merge；即使 merge，也不替代 post-R7 downstream exact-bytes authorization。
+Git 管理不改变科学顺序：PR #4、原计划 PR #5、Task1 PR #6、v2
+contract/review PR #7 和 repaired publication PR #8 的 historical stack 已在
+#3-#9 closeout 中依序 merge 到 `main`。C3..C4 documentation-only diff 的历史
+闭包精确为 3 paths；当前 continuation 必须从 live `main` 和 GitHub PR state
+重新锁定。该 repository merge 不替代 post-R7 downstream exact-bytes
+authorization。
 
 ## 17. 科学与工程停止条件
 
