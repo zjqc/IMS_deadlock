@@ -1,0 +1,217 @@
+{
+  "schema_version": "ims-deadlock/g6b-row-family-matrix/v1",
+  "study_role": "discovery_only",
+  "confirmation_use": "prohibited",
+  "scientific_execution_authorized": false,
+  "case_creation_authorized": false,
+  "negative_control_families": [
+    {
+      "structural_family_id": "local_bypass_completion_family",
+      "required_negative_control_id": "NC_LOCAL_BYPASS_COMPLETES",
+      "hypothesis_attacked": "local_candidate_with_reachable_completion_is_D_local",
+      "admission_route_allowed": "boundary_probe_only",
+      "expected_classification": "D_local_not_admitted",
+      "expected_refusal": "reachable_completion_bypass",
+      "expected_refusal_or_classification": {
+        "classification": "D_local_not_admitted",
+        "refusal": "reachable_completion_bypass"
+      },
+      "not_support_if_failed": true,
+      "supports_hypothesis_if_failed": false,
+      "case_creation_authorized": false,
+      "observed_outcome": null
+    },
+    {
+      "structural_family_id": "unselected_livelock_family",
+      "required_negative_control_id": "NC_UNSELECTED_LIVELOCK",
+      "hypothesis_attacked": "unselected_closed_recurrent_class_is_selected_bad",
+      "admission_route_allowed": "classification_probe_only",
+      "expected_classification": "R_livelock",
+      "expected_refusal": "not_selected_bad_class",
+      "expected_refusal_or_classification": {
+        "classification": "R_livelock",
+        "refusal": "not_selected_bad_class"
+      },
+      "not_support_if_failed": true,
+      "supports_hypothesis_if_failed": false,
+      "case_creation_authorized": false,
+      "observed_outcome": null
+    },
+    {
+      "structural_family_id": "calendar_empty_terminal_family",
+      "required_negative_control_id": "NC_CALENDAR_EMPTY_TERMINAL",
+      "hypothesis_attacked": "non_resource_terminal_is_resource_deadlock",
+      "admission_route_allowed": "classification_probe_only",
+      "expected_classification": "R_terminal",
+      "expected_refusal": "not_resource_deadlock",
+      "expected_refusal_or_classification": {
+        "classification": "R_terminal",
+        "refusal": "not_resource_deadlock"
+      },
+      "not_support_if_failed": true,
+      "supports_hypothesis_if_failed": false,
+      "case_creation_authorized": false,
+      "observed_outcome": null
+    },
+    {
+      "structural_family_id": "policy_only_stall_family",
+      "required_negative_control_id": "NC_POLICY_ONLY_STALL",
+      "hypothesis_attacked": "policy_stall_changes_plant_partition",
+      "admission_route_allowed": "classification_probe_only",
+      "expected_classification": "P_policy",
+      "expected_refusal": "policy_only_not_plant_partition",
+      "expected_refusal_or_classification": {
+        "classification": "P_policy",
+        "refusal": "policy_only_not_plant_partition"
+      },
+      "not_support_if_failed": true,
+      "supports_hypothesis_if_failed": false,
+      "case_creation_authorized": false,
+      "observed_outcome": null
+    },
+    {
+      "structural_family_id": "or_of_and_feasible_branch_family",
+      "required_negative_control_id": "NC_OR_OF_AND_FEASIBLE_BRANCH",
+      "hypothesis_attacked": "local_candidate_with_feasible_branch_is_D_local",
+      "admission_route_allowed": "boundary_probe_only",
+      "expected_classification": "D_local_not_admitted",
+      "expected_refusal": "feasible_branch_exists",
+      "expected_refusal_or_classification": {
+        "classification": "D_local_not_admitted",
+        "refusal": "feasible_branch_exists"
+      },
+      "not_support_if_failed": true,
+      "supports_hypothesis_if_failed": false,
+      "case_creation_authorized": false,
+      "observed_outcome": null
+    },
+    {
+      "structural_family_id": "agv_reservation_boundary_family",
+      "required_negative_control_id": "NC_AGV_RESERVATION_BOUNDARY",
+      "hypothesis_attacked": "changed_AGV_reservation_semantics_preserve_target_identity",
+      "admission_route_allowed": "boundary_or_new_target_only",
+      "expected_classification": "boundary_or_new_versioned_target_required",
+      "expected_refusal": "semantic_boundary_changed",
+      "expected_refusal_or_classification": {
+        "classification": "boundary_or_new_versioned_target_required",
+        "refusal": "semantic_boundary_changed"
+      },
+      "not_support_if_failed": true,
+      "supports_hypothesis_if_failed": false,
+      "case_creation_authorized": false,
+      "observed_outcome": null
+    },
+    {
+      "structural_family_id": "dglobal_with_local_core_family",
+      "required_negative_control_id": "NC_DGLOBAL_ONLY_WITH_DLOCAL",
+      "hypothesis_attacked": "global_deadlock_with_local_core_counts_twice",
+      "admission_route_allowed": "classification_probe_only",
+      "expected_classification": "D_global",
+      "expected_refusal": "no_double_count_through_D_local",
+      "expected_refusal_or_classification": {
+        "classification": "D_global",
+        "refusal": "no_double_count_through_D_local"
+      },
+      "not_support_if_failed": true,
+      "supports_hypothesis_if_failed": false,
+      "case_creation_authorized": false,
+      "observed_outcome": null
+    }
+  ],
+  "discovery_probes": [
+    {
+      "role": "a2b_admission_probe",
+      "frozen_question": "Does the declared finite-semantics A2b proof admit the candidate to D_local?",
+      "falsifiers": [
+        "violated_A2b_premise",
+        "reachable_completion_bypass",
+        "proof_check_failure"
+      ],
+      "favorable_outcome_frozen": false,
+      "case_creation_authorized": false,
+      "observed_outcome": null
+    },
+    {
+      "role": "complete_lts_admission_probe",
+      "frozen_question": "Does a complete LTS show completion nonreachability from the candidate?",
+      "falsifiers": [
+        "path_to_F",
+        "truncation",
+        "unavailable_transition_branch",
+        "incomplete_state_registry"
+      ],
+      "favorable_outcome_frozen": false,
+      "case_creation_authorized": false,
+      "observed_outcome": null
+    },
+    {
+      "role": "same_target_exact_des_probe",
+      "frozen_question": "Do exact and DES companions evaluate the same frozen target without semantic drift?",
+      "falsifiers": [
+        "selected_label_mismatch",
+        "versioned_target_mismatch",
+        "stopping_hash_mismatch",
+        "companion_identity_mismatch",
+        "absorption_domain_hash_mismatch"
+      ],
+      "favorable_outcome_frozen": false,
+      "case_creation_authorized": false,
+      "observed_outcome": null
+    }
+  ],
+  "ontology_contract": {
+    "foundation_estimand_schema_version": "ims-deadlock/g6b-estimand-schema/v2",
+    "terminal_classification_version": "ims-deadlock/g6-terminal-stopping-partition/v3",
+    "selected_stopping_targets": {
+      "bad_hit_sets": [
+        "D_global",
+        "D_local"
+      ],
+      "success_class": "F"
+    },
+    "unselected_plant_terminal_classes": [
+      "R_livelock",
+      "R_terminal"
+    ],
+    "policy_analysis_class": {
+      "label": "P_policy",
+      "plant_partition_member": false,
+      "selectable_target": false
+    },
+    "derived_state_sets": {
+      "S_reach": {
+        "role": "diagnostic_only",
+        "selectable_target": false
+      },
+      "S_T": {
+        "role": "certified_absorption_domain",
+        "selectable_target": false,
+        "requires_nonnull_absorption_domain_hash": true
+      }
+    },
+    "D_local_definition": "verified_first_hit_bad_set_not_terminal_scc",
+    "D_local_admission_routes": [
+      "A2b_proof",
+      "complete_LTS_completion_nonreachability_audit"
+    ]
+  },
+  "exact_des_pairing": {
+    "same_case_unit_id": true,
+    "same_selected_bad_labels": [
+      "D_global",
+      "D_local"
+    ],
+    "same_selected_success_label": "F",
+    "same_versioned_target": true,
+    "method_observations_are_independent_cases": false,
+    "certified_absorption_domain_required": true,
+    "same_absorption_domain_hash": true
+  },
+  "initial_scoring_state": {
+    "theorem_prediction_status": "not_evaluated",
+    "metric_applicability": "not_assessed",
+    "metric_observations": [],
+    "execution_status": "not_executed",
+    "reproducibility_status": "not_assessed"
+  }
+}

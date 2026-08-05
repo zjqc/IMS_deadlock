@@ -155,7 +155,7 @@ E[T_L | T_L < T_F]  and  E[T_G | T_G < T_F]
 4. 对非 `F/D_global` 状态枚举 all-minimal local kernels，先标记为 `K_local` 候选并保存 certificate family。
 5. 若已证明 A2b，可由引理 3.2 把候选认定为 `D_local`；通用实现则在完整 LTS 上检查每个候选到 `F` 的可达性。任一候选可达 `F` 时返回最短事件反例并拒绝；全部不可达时记录 `local_bad_soundness_audit` 并标记 `D_local`。
 6. 在剩余状态图上求 SCC；无出边 SCC 归为 `R_terminal` 或 `R_livelock`。
-7. 按 `VersionedEstimandSpec` 选择 bad hit union 和 success class；从所选吸收集反向可达，得到完整非吸收 basin `S_T`。任何非吸收状态不在 `S_T` 时拒绝构造，并报告 `selected_reachable_state_ids` 与 `unreachable_nonabsorbing_state_ids`。
+7. 按 `VersionedEstimandSpec` 选择 bad hit union 和 success class，形成 `D_sel := D_global union D_local; A_stop := D_sel union F`。`S_reach` 只是在 complete stopped-LTS support graph 中存在到 `A_stop` 的 support path 的诊断集合。`S_T` 必须由 finite positive-rate stopped CTMC 的 unselected closed SCC / reverse-basin certificate 得出；若全域声明下 `B_closed` 非空，拒绝并报告 `non_almost_sure_absorption_domain`。
 8. 冻结 state-space hash、partition hash、rate-manifest hash、exact stopping-rule hash、DES stopping-rule hash。
 
 **定理 5.1 终端/停止分区健全性。**
@@ -164,7 +164,7 @@ E[T_L | T_L < T_F]  and  E[T_G | T_G < T_F]
 1. `D_global`、`D_local`、`F`、`R_livelock`、`R_terminal` 在报告中按优先级互斥；
 2. `R_livelock/R_terminal` 是剩余 plant graph 的 terminal SCC 分类；
 3. `D_local` 只作为经 A2b 证明或完整 LTS completion-nonreachability audit 核验的 stopped-process bad hit set 使用；
-4. `S_T` 是能到达所选 bad/success absorption 的全部非吸收状态，而不是“所有非吸收状态”的别名；
+4. `S_reach` is the existential support-reachability diagnostic; `S_T` is the certified probability-one absorption domain, not a support-reachability basin;
 5. exact CTMC 与 DES 可以共享同一 selected bad/success labels。
 
 **结构拒绝定理。**
@@ -285,3 +285,38 @@ E[T_L | T_L < T_F]  and  E[T_G | T_G < T_F]
 > 该概率是新的版本化 estimand，不是对 G5 全局操作死锁 estimand 的事后修补。
 
 历史 G4/G5 case 可以用于 labelled historical replay，以验证诊断机制是否被新语义修复；它们不能替代新的独立 sealed confirmation set。
+
+## 2026-07-31 Certified Absorption-Domain Correction
+
+Let `D_sel := D_global union D_local; A_stop := D_sel union F` be the selected stopped target, let `X_stop` be the full finite stopped state set, and let
+`T := X_stop \ A_stop`. `S_reach` is the set of nonabsorbing states in the complete
+stopped-LTS support graph that have at least one support path to `A_stop`. It is a
+structural diagnostic and a necessary condition for probability-one absorption,
+not a sufficient condition.
+
+For a finite complete positive-rate stopped CTMC, compute the positive-rate
+edges in the full stopped graph. An unselected closed SCC `C_closed subset T` has no
+outgoing positive-rate edge from `C_closed` to `(T \ C_closed)` and no outgoing positive-rate
+edge from `C_closed` to selected A_stop. Closure is not checked in the graph induced only
+by `T`; a state with `s -> F` is not in an unselected closed SCC. Let
+`B_closed` be the reverse basin in `T` of all such unselected closed SCCs.
+Define `S_T = T \ B_closed`.
+
+Theorem, under exactly the finite complete positive-rate stopped-CTMC
+assumptions: `x in S_T` iff `P_x(tau_{A_stop} < infinity) = 1`. If `x` can reach an
+unselected closed SCC, there is positive probability of entering it and then
+never hitting `A_stop`. If `x` cannot reach one, every eventual closed class reachable
+from `x` in the finite stopped chain is selected A_stop, so `x` hits `A_stop` almost
+surely.
+
+The global gate `A_abs` is `B_closed = empty` over the claimed nonabsorbing
+analysis domain. The current production G4 gate supports the global
+certificate/refusal boundary only; partial-domain committor or mean-time
+payloads remain unsupported even though the mathematics of a restricted `S_T`
+exists. Committor, mean-time, sensitivity, and Doob-h equations are confined to
+certified `S_T`.
+
+Counterexample `CE-NB1`: with unit rates for `s0 -> F`, `s0 -> c`, and `c -> c`,
+`P_s0(hit F) = 1/2`. Thus `s0 in S_reach` but `s0 notin S_T`; `{c}` is an
+unselected closed SCC, `B_closed = {s0, c}`, and the global certificate refuses
+`non_almost_sure_absorption_domain`. Machine regression: `tests/test_terminal_classes.py::test_branching_closed_class_separates_s_reach_from_s_t`.

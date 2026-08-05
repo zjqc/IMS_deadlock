@@ -1,0 +1,55 @@
+{
+  "schema_version": "ims-deadlock/g6b-row-family-overlap-schema/v1",
+  "study_role": "discovery_only",
+  "confirmation_use": "prohibited",
+  "scientific_execution_authorized": false,
+  "case_creation_authorized": false,
+  "report_role": "schema_only",
+  "actual_overlap_checked": false,
+  "actual_overlap_report_available": false,
+  "schema_only_overlap_report_cannot_authorize_execution": true,
+  "missing_actual_overlap_report_blocks_execution": true,
+  "retired_authorities": [
+    "G4",
+    "G5",
+    "G6_R"
+  ],
+  "retired_dimensions": [
+    "case_content_sha256",
+    "state_snapshot_sha256",
+    "route_signature_sha256",
+    "parameter_tuple_sha256",
+    "random_stream_manifest_sha256",
+    "output_root",
+    "sealed_prediction_sha256",
+    "metric_schema_sha256"
+  ],
+  "future_confirmation_dimensions": [
+    "case_content_sha256",
+    "state_snapshot_sha256",
+    "route_signature_sha256",
+    "parameter_tuple_sha256",
+    "random_stream_manifest_sha256",
+    "output_root",
+    "sealed_prediction_sha256"
+  ],
+  "future_confirmation_metric_reuse": {
+    "explicitly_preregistered": true,
+    "same_target_comparability": true,
+    "not_derived_from_outcomes": true
+  },
+  "required_lock_before_actual_report": "overlap_authority_lock",
+  "remote_only_G5_authority_paths": [
+    "evidence/g5/G5_RAW_HASH_MANIFEST.json",
+    "evidence/g5/G5_RESULT_SUMMARY.json"
+  ],
+  "local_absence_is_nonoverlap_evidence": false,
+  "later_actual_report_required_fields": [
+    "locked_target_identity",
+    "retired_authority_hashes",
+    "discovery_case_unit_hashes",
+    "per_dimension_results",
+    "per_unit_results",
+    "refusal_entries"
+  ]
+}

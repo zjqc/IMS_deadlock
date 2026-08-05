@@ -1,0 +1,24 @@
+{
+  "schema_version": "ims-deadlock/g6b-row-family-review-state/v1",
+  "study_role": "discovery_only",
+  "confirmation_use": "prohibited",
+  "scientific_execution_authorized": false,
+  "case_creation_authorized": false,
+  "current_state": "ROW_FAMILY_BUNDLE_IMPLEMENTED",
+  "allowed_states_in_order": [
+    "SPEC_DRAFTED",
+    "ROW_FAMILY_BUNDLE_IMPLEMENTED",
+    "DATA_ONLY_VALIDATION_PASSED",
+    "ADVERSARIAL_ROW_FAMILY_REVIEW_PASSED",
+    "CASE_CONSTRUCTION_PLAN_APPROVED",
+    "CASE_ARTIFACTS_SEALED_NO_SCIENCE",
+    "OVERLAP_AUTHORITY_LOCK_RECORDED",
+    "ACTUAL_OVERLAP_REPORT_PASSED",
+    "EXECUTION_RUNTIME_LOCK_RECORDED",
+    "EXPLICIT_SCIENCE_AUTHORIZATION_RECORDED"
+  ],
+  "adversarial_review_status": "PENDING",
+  "forward_only": true,
+  "current_state_authorizes_case_creation": false,
+  "current_state_authorizes_science": false
+}

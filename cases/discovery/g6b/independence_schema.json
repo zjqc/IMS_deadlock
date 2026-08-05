@@ -1,0 +1,98 @@
+{
+  "schema_version": "ims-deadlock/g6b-independence-schema/v1",
+  "study_role": "discovery_only",
+  "confirmation_use": "prohibited",
+  "scientific_execution_authorized": false,
+  "canonical_hash_normalization": {
+    "format": "canonical_json_sha256",
+    "encoding": "utf-8",
+    "sort_keys": true,
+    "separators": [
+      ",",
+      ":"
+    ],
+    "duplicate_keys_allowed": false
+  },
+  "zero_overlap_required": true,
+  "zero_overlap_required_scope": "discovery_vs_retired",
+  "dimensions": [
+    "case_content_sha256",
+    "state_snapshot_sha256",
+    "route_signature_sha256",
+    "parameter_tuple_sha256",
+    "random_stream_manifest_sha256",
+    "output_root",
+    "sealed_prediction_sha256",
+    "metric_schema_sha256"
+  ],
+  "retired_authorities": {
+    "G4": "historical_authority_only",
+    "G5": "historical_authority_only",
+    "G6_R": "historical_replay_authority_only"
+  },
+  "comparison_scopes": {
+    "discovery_vs_retired": {
+      "description": "Every G6-B discovery row is compared against retired G4/G5/G6-R authorities.",
+      "compare_against": [
+        "G4",
+        "G5",
+        "G6_R"
+      ],
+      "zero_overlap_required": true,
+      "zero_overlap_dimensions": [
+        "case_content_sha256",
+        "state_snapshot_sha256",
+        "route_signature_sha256",
+        "parameter_tuple_sha256",
+        "random_stream_manifest_sha256",
+        "output_root",
+        "sealed_prediction_sha256",
+        "metric_schema_sha256"
+      ],
+      "metric_schema_sha256_reuse": "prohibited_against_retired_authorities",
+      "sealed_prediction_sha256_reuse": "prohibited_against_retired_authorities"
+    },
+    "discovery_internal": {
+      "description": "This schema does not impose unconditional zero overlap across all admitted G6-B discovery rows.",
+      "zero_overlap_required": false,
+      "row_family_protocol_required": true,
+      "metric_schema_sha256_reuse": "not_refused_by_this_schema_without_row_family_rule",
+      "sealed_prediction_sha256_reuse": "not_refused_by_this_schema_without_row_family_rule"
+    },
+    "future_confirmation_vs_retired_and_discovery": {
+      "description": "Future G6 confirmation rows must be independent from retired authorities and G6-B discovery case identity/provenance.",
+      "compare_against": [
+        "G4",
+        "G5",
+        "G6_R",
+        "G6_B_discovery"
+      ],
+      "zero_overlap_required": true,
+      "zero_overlap_dimensions": [
+        "case_content_sha256",
+        "state_snapshot_sha256",
+        "route_signature_sha256",
+        "parameter_tuple_sha256",
+        "random_stream_manifest_sha256",
+        "output_root",
+        "sealed_prediction_sha256"
+      ],
+      "metric_schema_sha256": {
+        "zero_overlap_required": false,
+        "reuse_allowed_only_if": [
+          "explicitly_preregistered",
+          "same_target_comparability",
+          "not_derived_from_outcomes"
+        ]
+      }
+    }
+  },
+  "prohibitions": {
+    "rename_shift": "prohibited",
+    "parameter_shift_from_retired_authority": "prohibited",
+    "case_snapshot_reuse": "prohibited",
+    "random_stream_reuse": "prohibited",
+    "output_root_reuse": "prohibited",
+    "confirmation_use": "prohibited"
+  }
+}

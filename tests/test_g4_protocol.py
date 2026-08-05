@@ -4,6 +4,7 @@ from typing import Any, cast
 
 import pytest
 
+from ims_deadlock.analysis import StableLTS
 from ims_deadlock.confirmation import ConfirmationCase, load_confirmation_case
 from ims_deadlock.g4_instances import (
     AdversarialBoundaryParameters,
@@ -31,6 +32,7 @@ from ims_deadlock.g4_protocol import (
 from ims_deadlock.terminal_classes import (
     G6_CTM_GENERATOR_PROVENANCE,
     TerminalPartitionError,
+    TerminalStoppingPartition,
     VersionedEstimandSpec,
 )
 
@@ -481,7 +483,30 @@ def test_development_grid_derives_case_bound_absorbing_ctmc() -> None:
     assert derived.ctmc.generator_provenance == G6_CTM_GENERATOR_PROVENANCE
     assert derived.terminal_classification is not None
     assert derived.estimand is not None
-    assert "hashes" in derived.estimand
+    classification = derived.terminal_classification.to_json_dict()
+    assert classification["classification_version"] == (
+        "ims-deadlock/g6-terminal-stopping-partition/v3"
+    )
+    classes = cast(dict[str, object], classification["classes"])
+    assert "P_policy" not in classes
+    assert "S_T" not in classes
+    derived_state_sets = cast(dict[str, object], classification["derived_state_sets"])
+    s_t = cast(dict[str, object], derived_state_sets["S_T"])
+    assert s_t["certification_status"] == (
+        "certified_finite_positive_rate_stopped_ctmc"
+    )
+    assert derived_state_sets["non_almost_sure_absorbing_state_ids"] == []
+    estimand = derived.estimand
+    hashes = cast(dict[str, object], estimand["hashes"])
+    for name in (
+        "rate_manifest_hash",
+        "positive_rate_graph_hash",
+        "policy_filter_hash",
+        "absorption_domain_hash",
+        "estimand_id",
+    ):
+        assert isinstance(hashes[name], str)
+        assert hashes[name]
 
 
 def test_g03_balanced_tight_derives_with_local_first_hit_estimand() -> None:
@@ -515,8 +540,19 @@ def test_medium_protocol_payload_includes_terminal_classification_and_estimand()
     classification = result["terminal_classification"]
     assert isinstance(classification, dict)
     assert classification["classification_version"] == (
-        "ims-deadlock/g6-terminal-stopping-partition/v2"
+        "ims-deadlock/g6-terminal-stopping-partition/v3"
     )
+    classes = cast(dict[str, object], classification["classes"])
+    assert "P_policy" not in classes
+    assert "S_T" not in classes
+    assert classification["policy_analysis_classes"] == {"P_policy": []}
+    derived_state_sets = cast(dict[str, object], classification["derived_state_sets"])
+    assert set(derived_state_sets) >= {"S_reach", "S_T"}
+    s_t = cast(dict[str, object], derived_state_sets["S_T"])
+    assert s_t["certification_status"] == (
+        "certified_finite_positive_rate_stopped_ctmc"
+    )
+    assert derived_state_sets["non_almost_sure_absorbing_state_ids"] == []
     provenance = cast(dict[str, object], classification["lts_provenance_audit"])
     assert provenance["method"] == (
         "deterministic_reenumeration_from_stable_initial_v1"
@@ -528,7 +564,15 @@ def test_medium_protocol_payload_includes_terminal_classification_and_estimand()
     assert isinstance(estimand, dict)
     assert estimand["selected_bad_classes"] == ["D_global", "D_local"]
     hashes = cast(dict[str, object], estimand["hashes"])
-    assert "estimand_id" in hashes
+    for name in (
+        "rate_manifest_hash",
+        "positive_rate_graph_hash",
+        "policy_filter_hash",
+        "absorption_domain_hash",
+        "estimand_id",
+    ):
+        assert isinstance(hashes[name], str)
+        assert hashes[name]
     des_crosscheck = cast(dict[str, object], result["des_crosscheck"])
     assert des_crosscheck["replicate_stream_count"] == 1
 
@@ -547,6 +591,76 @@ def test_d_global_only_estimand_refuses_model_with_local_core() -> None:
 
     assert excinfo.value.code == "d_global_only_estimand_refuses_local_core"
     assert excinfo.value.details["selected_bad_classes"] == ["D_global"]
+
+
+def test_ctmc_derivation_refuses_before_generator_when_global_certificate_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    case = load_confirmation_case("G4_IMS_PARAMETER_GRID", "g4")
+    protocol = parse_g4_protocol_case(case)
+    assert isinstance(protocol, GridProtocol)
+    cell = next(item for item in protocol.cells if item.cell_id == "G01_FWD_DAG")
+    built = build_bidirectional_island_case(cell)
+    sentinel = TerminalPartitionError(
+        "sentinel_global_certification_failed",
+        "sentinel global certification failure",
+        {"boundary": "before_absorbing_ctmc_constructor"},
+    )
+    certifier_calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+    constructor_call_count = 0
+
+    def refusing_certifier(
+        *args: object,
+        **kwargs: object,
+    ) -> object:
+        certifier_calls.append((args, kwargs))
+        raise sentinel
+
+    def forbidden_constructor(*_args: object, **_kwargs: object) -> object:
+        nonlocal constructor_call_count
+        constructor_call_count += 1
+        raise AssertionError("AbsorbingCTMC constructed before certification")
+
+    monkeypatch.setattr(
+        "ims_deadlock.g4_instances.certify_absorption_domain",
+        refusing_certifier,
+    )
+    monkeypatch.setattr(
+        "ims_deadlock.g4_instances.AbsorbingCTMC",
+        forbidden_constructor,
+    )
+
+    with pytest.raises(TerminalPartitionError) as excinfo:
+        derive_absorbing_ctmc(built)
+
+    assert excinfo.value is sentinel
+    assert excinfo.value.code == "sentinel_global_certification_failed"
+    assert constructor_call_count == 0
+    assert len(certifier_calls) == 1
+
+    args, kwargs = certifier_calls[0]
+    assert len(args) == 3
+    partition = args[0]
+    stable_lts = args[1]
+    event_rates = args[2]
+    assert isinstance(partition, TerminalStoppingPartition)
+    assert isinstance(stable_lts, StableLTS)
+    assert stable_lts.truncated is False
+    assert tuple(sorted(partition.declared_transition_event_names)) == tuple(
+        sorted(built.event_rates)
+    )
+    assert event_rates == built.event_rates
+    assert event_rates is built.event_rates
+    assert kwargs == {
+        "selected_bad_state_ids": partition.selected_bad_state_ids,
+        "selected_success_state_ids": partition.f_state_ids,
+        "policy_filter_declaration": {
+            "version": "ims-deadlock/g6-policy-filter-declaration/v1",
+            "mode": "no_policy_filter",
+            "excluded_plant_arcs": [],
+        },
+        "require_global": True,
+    }
 
 
 def test_ctmc_derivation_refuses_a_truncated_generated_lts() -> None:

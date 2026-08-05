@@ -13,7 +13,7 @@
 | G3 算法门 | PASS（严格小有限模型 + P2c/P3d/P3e） | 原 G3 证据为 123 tests；加入 G4/G5/G6 协议、局部核/终端类恢复、replay 数值完整性和 post-R3 comparator fail-closed 回归后，Dell 项目 Python 3.13.9 全库 341 tests、Ruff check/format、strict mypy 通过；原 C0、BIX1/BIX2 结果不变 | 一般 plant/S3PR、结构案例物理速率、一般 persistent-buffer/AGV 阈值和风险预算/Pareto 算法仍开放 |
 | G4 案例冻结门 | PASS（historical C seal；已在 G5 原样执行） | A=`f9b9a5a5652c7a49053e7ef26d08911bd757f465`，B2=`58bbd4ab7da8c2c1d0bcdea4a12f2ae7c020d09a`，C=`e91be4d6d7511c76918093899269de4b78e69fd8`；封存时 checker 为 `FROZEN`、`errors=[]`、`confirmation_results_inspected=false`；随后只在 G5-B execution lock 下执行一次 primary 和一次 repro | G4/G5 九行已退役为历史 discovery/regression，不能再次充当 held-out；后续缺陷必须进入独立 successor freeze |
 | G5 论文门 | FAIL（evidence closed） | G5-A=`b5e5dc0494b23a54c78c420bbca50a3639de8bff`，G5-B=`8aa752804b885b79e5371c98e7961087c540f2a8`，G5-C=`ff281481068a2325cb0bde00e85fd7b753ba854a`；9/9 案例完成 primary/repro，raw/canonical/stderr hash 一致；锁定 scorer 为 `4/3/2`，透明 theorem audit 为 `6/1/2` 并另保留两项 minimality failure | CRP local bridge 预测失败；grid/medium 因 `D/F` 未穷尽 terminal classes 而确定性拒绝；不能形成完整 exact/DES 证据链或宣称论文门通过 |
-| G6 局部核—终端类恢复门 | IN PROGRESS / G6-A 与 G6-R PASS / G6-B NEXT HARD GATE | theorem/metric 分离、all-minimal local kernels、local CRP bridge、terminal/stopping partition、完整 probability map/bounds/residual 审计和 synthetic regressions 已实现；R3 五个历史行的 primary/repro raw/canonical/stderr 全匹配且 mechanism 5/5 PASS；R1/R2 失败与两项 minimality failure 原样保留 | 建立不复用 G4/G5 的独立 discovery set，冻结 terminal-class/estimand/negative-control 证据并关闭 G6-B；随后才能进入 G6-C preregistration、G6-D seal 和 G6-E 一次 primary/repro |
+| G6 局部核—终端类恢复门 | IN PROGRESS / G6-A 与 G6-R PASS / G6-B NEXT HARD GATE / OPEN | theorem/metric 分离、all-minimal local kernels、local CRP bridge、terminal/stopping partition、完整 probability map/bounds/residual 审计和 synthetic regressions 已实现；R3 五个历史行的 primary/repro raw/canonical/stderr 全匹配且 mechanism 5/5 PASS；G6-B protocol foundation 和 row-family nested bundle 已创建：top-level `cases/discovery/g6b/` 精确五个 JSON，nested `cases/discovery/g6b/row_families/structural_discovery_v1/` 精确八个 JSON；执行保持 disabled/PENDING；earlier Phase A HEAD `4fda4896d2284c360f3021e48475f7678b0f37fd` 通过 row-family data-only checks；committed HEAD `13adc15e8b7b8047a25ab5a340880621ee3ad0bd` 通过 full pytest `1307 passed in 144.93s (0:02:24)`、Ruff check、Ruff format `43 files already formatted`、strict mypy `src` 23 source files、strict mypy `src+tests` 43 source files、eight nested JSON parse checks、top-level foundation tests `52 passed in 9.87s`、canonical row-family test `1 passed in 0.09s`、foundation/row validators、recursive 13-JSON scan、base diff forbidden-path/actual-marker scan 和 `git diff --check`；row-family independent reviews 完成：specification compliance `APPROVED`、code quality `APPROVED` 且无 Critical/Important/Minor blockers、scientific boundary `PASS PROTOCOL ONLY`；R1/R2 失败与两项 minimality failure 原样保留 | G6-B 仍未通过，nested bundle 为 `IMPLEMENTED / DATA-ONLY`；`adversarial_review_status=PENDING`、`scientific_execution_authorized=false`、`case_creation_authorized=false` 不变；未产生 discovery case，未运行 enumeration/CTMC/DES，未检查任何新 science output；actual overlap report、overlap-authority lock、execution-runtime lock、discovery outcomes、output root 和 science summary 均 absent；三审只批准 protocol/spec/code/boundary，不授权 case construction 或 science；唯一后续仍是另行批准 case-construction plan |
 
 ## G0 仓库门
 
@@ -199,11 +199,74 @@ G6 是新科学门，不是 G5 repair rerun。通过顺序：
 - R3 是 `historical_replay`，只关闭已诊断机制，不进入新确认集的预测
   正确率，也不使 G6-C/D/E 通过。
 
-因此下一硬门不是继续重放旧案例，而是 G6-B：构造与 G4/G5 在 case hash、
-snapshot、route signature、parameter tuple 和 random-stream manifest
-上均独立的新 discovery set，预先锁定 terminal/stopping estimand、负对照、
-exact/DES 同目标规则和失败账本。只有 G6-B 独立审计通过后，才可创建
-G6-C confirmation preregistration。
+因此下一硬门不是继续重放旧案例，而是 G6-B：相对 retired G4、retired G5
+和 G6-R historical replay，新 discovery rows 必须在
+`case_content_sha256`、`state_snapshot_sha256`、`route_signature_sha256`、
+`parameter_tuple_sha256`、`random_stream_manifest_sha256`、`output_root`、
+`sealed_prediction_sha256` 和 `metric_schema_sha256` 八个 canonical
+dimensions 上全部 zero overlap，并预先锁定 terminal/stopping estimand、
+负对照、exact/DES 同目标规则和失败账本。G6-B protocol foundation 已创建
+`docs/cases/G6_B_DISCOVERY_PROTOCOL.md`、`cases/discovery/g6b/`、
+`src/ims_deadlock/g6b_protocol.py` 和 `tests/test_g6b_protocol.py`；该基础
+只完成 execution-disabled/PENDING 的协议和 data-only validator，Task2
+targeted+adjacent 验证为 52 validator tests + 59 adjacent = 111 passed；
+随后 locked worktree `D:\worktree\IMS_deadlock-g6b-discovery` at HEAD
+`4c24f39` 在 state-doc commit 前通过 full pytest `393 passed in 47.22s`、
+Ruff check、Ruff format 41 files already formatted、strict mypy `src`
+22 source files、strict mypy `src+tests` 41 source files、five protocol JSON
+parse checks、targeted protocol tests `52 passed in 2.48s` 和
+`git diff --check`。
+它没有创建 discovery case，没有运行 enumeration、CTMC 或 DES，也没有
+检查任何新科学输出。Independent foundation review 已通过
+`PASS FOUNDATION ONLY`，artifact 为
+`docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md`，无
+Critical/Important/Minor protocol findings；这不改变
+`adversarial_review_status=PENDING`、`scientific_execution_authorized=false`、
+G6-B `OPEN` 或 G6-C/D/E 未开始状态。下一步是单独编写 adversarial
+row-family discovery-model/execution plan 并审查，审查通过且另获明确授权前
+不得进入 science。actual overlap report、runtime lock 和 discovery
+outcomes 仍开放。
+
+2026-07-31 row-family protocol bundle 继续保持同一边界：nested row-family
+bundle 为 `IMPLEMENTED / DATA-ONLY`，canonical protocol validation 返回
+`valid=True`、0 errors、`scientific_execution_authorized=false`、
+`case_creation_authorized=false`、`adversarial_review_status=PENDING`，但这
+不是科学证据或执行授权。Locked worktree
+`D:\worktree\IMS_deadlock-g6b-discovery` at HEAD
+`4fda4896d2284c360f3021e48475f7678b0f37fd` 在 Phase A state-doc edit 前通过
+full pytest `1307 passed in 150.84s`、Ruff check、Ruff format
+`43 files already formatted`、strict mypy `src` 23 source files、strict mypy `src+tests`
+43 source files、eight nested JSON parse checks、top-level foundation tests
+`52 passed in 5.00s`、canonical row-family test `1 passed in 0.12s`、
+canonical row-family validator `valid=True`/errors empty/`science=False`/
+`case=False`/`PENDING`/`ROW_FAMILY_BUNDLE_IMPLEMENTED`/8 hashes、recursive
+authorization scan 和 `git diff --check`。Top-level `cases/discovery/g6b/`
+JSON set 精确为五个，nested row-family JSON set 精确为八个；Task 1-7 diff
+`a4897ab..4fda489` 只包含 exact-eight nested JSON、row-family validator source
+和 row-family tests；actual overlap report、
+overlap-authority lock、execution-runtime lock、discovery cases/outcomes、
+output root、enumeration、CTMC、DES 和 science summary 均 absent。上述
+`4fda489...` 是 earlier Phase A evidence，不是 current committed target。
+Phase C post-commit verification 在 committed HEAD
+`13adc15e8b7b8047a25ab5a340880621ee3ad0bd`、clean、`NO_UPSTREAM` 上采集：
+Python 3.13.9；full pytest `1307 passed in 144.93s (0:02:24)`；Ruff check
+pass；Ruff format `43 files already formatted`；strict mypy `src` 23 和
+`src tests` 43 pass；`git diff --check` pass；foundation
+`52 passed in 9.87s`；canonical row-family `1 passed in 0.09s`；8/8 JSON
+parse；exact five/exact eight；foundation validator valid/errors0/science
+false/`PENDING`/hashes5；row validator valid/errors0/science false/case
+false/`PENDING`/`ROW_FAMILY_BUNDLE_IMPLEMENTED`/hashes8；recursive 13-JSON
+scan `non_false_auth=0`、`non_pending_status=0`；base diff forbidden paths=0、
+actual marker hits=0；relevant output roots 和 task mypy cache dirs 均 absent。
+Bundle
+`adversarial_review_status` 必须保持 `PENDING`；独立 review verdict 必须
+存储在单独文档中，不得改写 JSON bundle state。2026-07-31 三道独立 review
+已完成：specification compliance 为 `APPROVED` 且无 blockers，code quality 为
+`APPROVED` 且无 Critical/Important/Minor blockers，scientific boundary 为
+`PASS PROTOCOL ONLY` 且无 blockers。这些 verdict 只批准
+protocol/spec/code/boundary，不授权 case construction 或 science。只有后续
+另行批准 case-construction plan 后，才可推进 case construction；
+只有 G6-B 独立审计通过后，才可创建 G6-C confirmation preregistration。
 
 完整根因和 R3 证据见
 `docs/verification/G6_HARD_PROBLEM_ROOT_CAUSE_AND_R3_REPAIR.md`、
@@ -222,3 +285,22 @@ G6-C confirmation preregistration。
 
 历史标识 `e0b07a52ed667ce2651dfccf2455d6876a96b02d` 仅作隔离来源记录，
 不能成为案例、算法、证明或验证证据。
+
+## 2026-07-31 G6-B Ontology And Absorption-Domain Correction
+
+Implementation status: Task 7 documentation alignment is applied on top of the
+v2 foundation estimand, v3 terminal stopping partition, certificate v1, and
+generator provenance v3 work already present on this branch. The correction does
+not create a G6-B case, does not run LTS/CTMC/DES science, and does not upgrade
+G6-B to PASS.
+
+Current boundary: `selected_stopping_targets` are `D_global`, `D_local`, and
+`F`; `unselected_plant_terminal_classes` are `R_livelock` and `R_terminal`;
+`P_policy` is separate; `S_reach` and `S_T` are derived and nonselectable.
+`S_reach` is support graph reachability only. `S_T` is certified by the finite
+positive-rate stopped-CTMC closed-SCC/reverse-basin certificate, where SCC
+closedness is checked against the full stopped graph including selected `A_stop`, with
+`absorption_domain_hash` binding the domain identity. Missing rates remain
+distinct from explicit empty rates. G6-B remains OPEN/PENDING,
+`case_creation_authorized=false`, and `scientific_execution_authorized=false`;
+G6-C, G6-D, and G6-E are not started.

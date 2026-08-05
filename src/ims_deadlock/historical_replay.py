@@ -17,6 +17,7 @@ import subprocess
 import sys
 import time
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 
@@ -41,6 +42,32 @@ SCHEDULE_LOCK_INCIDENT_SCHEMA = (
 SCHEDULE_LOCK_CONTENTION_WAIT_SECONDS = 30.0
 SCHEDULE_LOCK_STALE_SECONDS = 60.0
 SCHEDULE_LOCK_INITIALIZATION_GRACE_SECONDS = 0.25
+HISTORICAL_TERMINAL_CLASSIFICATION_V2 = "ims-deadlock/g6-terminal-stopping-partition/v2"
+HISTORICAL_TERMINAL_CLASSIFICATION_V3 = "ims-deadlock/g6-terminal-stopping-partition/v3"
+HISTORICAL_ABSORPTION_DOMAIN_CERTIFICATE_VERSION = (
+    "ims-deadlock/g6-absorption-domain-certificate/v1"
+)
+HISTORICAL_ABSORPTION_DOMAIN_ALGORITHM_VERSION = (
+    "finite-positive-rate-stopped-ctmc-scc-domain/v1"
+)
+HISTORICAL_CERTIFIED_STATUS = "certified_finite_positive_rate_stopped_ctmc"
+HISTORICAL_SUPPORT_GRAPH_SEMANTICS = "complete_stopped_lts_support"
+_HISTORICAL_CERTIFICATE_ASSUMPTION_FLAGS = (
+    "finite_state_space_verified",
+    "complete_nontruncated_lts_verified",
+    "lts_generation_provenance_verified",
+    "positive_finite_rate_manifest_verified",
+    "selected_target_identity_verified",
+    "policy_filter_identity_verified",
+)
+_HISTORICAL_CERTIFICATE_IDENTITY_HASHES = (
+    "state_space_hash",
+    "partition_hash",
+    "rate_manifest_hash",
+    "positive_rate_graph_hash",
+    "policy_filter_hash",
+    "absorption_domain_hash",
+)
 CASE_IDS = (
     "G4_CRP_S4PR_AGREE",
     "G4_CRP_OUTSIDE_S4PR",
@@ -178,6 +205,13 @@ EXPECTED_EXECUTION_SCHEDULE: Mapping[str, object] = {
 
 class ReplayError(RuntimeError):
     """Raised for historical replay lock, capture, compare, or summary failures."""
+
+
+@dataclass(frozen=True)
+class HistoricalTerminalClassification:
+    classification_version: str
+    d_local_state_ids: tuple[str, ...]
+    certified_s_t_state_ids: tuple[str, ...] | None
 
 
 def canonical_json_sha256(payload: object) -> str:
@@ -1082,25 +1116,208 @@ def _terminal_d_local_verified(result: Mapping[str, object]) -> bool:
     return d_local is not None and bool(d_local)
 
 
-def _terminal_d_local(payload: Mapping[str, object]) -> list[str] | None:
-    terminal = payload.get("terminal_classification")
-    if not isinstance(terminal, Mapping):
-        return None
+def read_historical_terminal_classification(
+    payload: Mapping[str, object],
+) -> HistoricalTerminalClassification | None:
+    if "terminal_classification" in payload:
+        terminal_value = payload.get("terminal_classification")
+        if not isinstance(terminal_value, Mapping):
+            return None
+        terminal = terminal_value
+    else:
+        terminal = payload
     provenance = terminal.get("lts_provenance_audit")
     local_audit = terminal.get("local_bad_soundness_audit")
     if not isinstance(provenance, Mapping) or provenance.get("verified") is not True:
         return None
     if not isinstance(local_audit, Mapping) or local_audit.get("verified") is not True:
         return None
+    version = terminal.get("classification_version")
     classes = terminal.get("classes")
-    if not isinstance(classes, Mapping):
+    if not isinstance(version, str) or not isinstance(classes, Mapping):
         return None
-    d_local = classes.get("D_local")
-    if not isinstance(d_local, list) or not all(
-        isinstance(item, str) for item in d_local
+    d_local = _historical_string_tuple(classes.get("D_local"))
+    if d_local is None:
+        return None
+    if version == HISTORICAL_TERMINAL_CLASSIFICATION_V2:
+        return HistoricalTerminalClassification(
+            classification_version=version,
+            d_local_state_ids=d_local,
+            certified_s_t_state_ids=None,
+        )
+    if version != HISTORICAL_TERMINAL_CLASSIFICATION_V3:
+        return None
+    certified_s_t = _historical_certified_s_t_state_ids(terminal, classes, d_local)
+    if certified_s_t is None:
+        return None
+    return HistoricalTerminalClassification(
+        classification_version=version,
+        d_local_state_ids=d_local,
+        certified_s_t_state_ids=certified_s_t,
+    )
+
+
+def _historical_certified_s_t_state_ids(
+    terminal: Mapping[str, object],
+    classes: Mapping[str, object],
+    d_local: tuple[str, ...],
+) -> tuple[str, ...] | None:
+    d_global = _historical_string_tuple(classes.get("D_global"))
+    f_state_ids = _historical_string_tuple(classes.get("F"))
+    if d_global is None or f_state_ids is None:
+        return None
+    selected_bad = tuple(sorted(set(d_global) | set(d_local)))
+    selected_targets = tuple(sorted(set(selected_bad) | set(f_state_ids)))
+    bad_hit_sets = terminal.get("bad_hit_sets")
+    if not isinstance(bad_hit_sets, Mapping):
+        return None
+    bad_hit_d_global = _historical_string_tuple(bad_hit_sets.get("D_global"))
+    bad_hit_d_local = _historical_string_tuple(bad_hit_sets.get("D_local"))
+    if bad_hit_d_global != d_global or bad_hit_d_local != d_local:
+        return None
+    if _historical_string_tuple(terminal.get("selected_bad_state_ids")) != selected_bad:
+        return None
+    certificate = terminal.get("absorption_domain_certificate")
+    if not isinstance(certificate, Mapping):
+        return None
+    if certificate.get("version") != HISTORICAL_ABSORPTION_DOMAIN_CERTIFICATE_VERSION:
+        return None
+    if (
+        certificate.get("algorithm_version")
+        != HISTORICAL_ABSORPTION_DOMAIN_ALGORITHM_VERSION
     ):
         return None
-    return d_local
+    if certificate.get("certification_status") != HISTORICAL_CERTIFIED_STATUS:
+        return None
+    if certificate.get("reason_codes") != []:
+        return None
+    selected_absorbing = _historical_string_tuple(
+        certificate.get("selected_absorbing_state_ids")
+    )
+    if selected_absorbing != selected_targets:
+        return None
+    assumptions = certificate.get("assumptions")
+    if not isinstance(assumptions, Mapping):
+        return None
+    if any(
+        assumptions.get(flag) is not True
+        for flag in _HISTORICAL_CERTIFICATE_ASSUMPTION_FLAGS
+    ):
+        return None
+    identity = certificate.get("identity")
+    if not isinstance(identity, Mapping):
+        return None
+    if any(
+        not isinstance(identity.get(field), str) or identity.get(field) == ""
+        for field in _HISTORICAL_CERTIFICATE_IDENTITY_HASHES
+    ):
+        return None
+    hashes = terminal.get("hashes")
+    if not isinstance(hashes, Mapping):
+        return None
+    for field in _HISTORICAL_CERTIFICATE_IDENTITY_HASHES:
+        if hashes.get(field) != identity.get(field):
+            return None
+    derived = terminal.get("derived_state_sets")
+    if not isinstance(derived, Mapping):
+        return None
+    s_reach = derived.get("S_reach")
+    if not isinstance(s_reach, Mapping):
+        return None
+    if s_reach.get("graph_semantics") != HISTORICAL_SUPPORT_GRAPH_SEMANTICS:
+        return None
+    if s_reach.get("positive_rate_verified") is not True:
+        return None
+    s_reach_ids = _historical_string_tuple(s_reach.get("state_ids"))
+    support_unreachable = _historical_string_tuple(
+        s_reach.get("support_unreachable_state_ids")
+    )
+    if s_reach_ids is None or support_unreachable is None:
+        return None
+    s_t = derived.get("S_T")
+    if not isinstance(s_t, Mapping):
+        return None
+    if s_t.get("certification_status") != HISTORICAL_CERTIFIED_STATUS:
+        return None
+    if s_t.get("reason_codes") != []:
+        return None
+    s_t_state_ids = _historical_string_tuple(s_t.get("state_ids"))
+    if s_t_state_ids is None:
+        return None
+    if _historical_string_tuple(certificate.get("s_t_state_ids")) != s_t_state_ids:
+        return None
+    derived_unselected_closed = _historical_component_tuple(
+        derived.get("unselected_closed_sccs")
+    )
+    certificate_unselected_closed = _historical_component_tuple(
+        certificate.get("unselected_closed_sccs")
+    )
+    if derived_unselected_closed is None or certificate_unselected_closed is None:
+        return None
+    if derived_unselected_closed != certificate_unselected_closed:
+        return None
+    derived_closed_basin = _historical_string_tuple(
+        derived.get("closed_class_reverse_basin_state_ids")
+    )
+    certificate_closed_basin = _historical_string_tuple(
+        certificate.get("closed_class_reverse_basin_state_ids")
+    )
+    if derived_closed_basin != certificate_closed_basin:
+        return None
+    derived_non_as = _historical_string_tuple(
+        derived.get("non_almost_sure_absorbing_state_ids")
+    )
+    certificate_non_as = _historical_string_tuple(
+        certificate.get("non_almost_sure_absorbing_state_ids")
+    )
+    if derived_non_as != certificate_non_as:
+        return None
+    if derived_closed_basin is None or derived_non_as is None:
+        return None
+    if derived_closed_basin != derived_non_as:
+        return None
+    selected_absorbing_set = set(selected_absorbing)
+    non_as_set = set(derived_non_as)
+    nonabsorbing_domain = set(s_reach_ids) | set(support_unreachable)
+    if nonabsorbing_domain & selected_absorbing_set:
+        return None
+    if not set(s_t_state_ids) <= nonabsorbing_domain:
+        return None
+    if set(s_t_state_ids) & (selected_absorbing_set | non_as_set):
+        return None
+    return s_t_state_ids
+
+
+def _historical_string_tuple(value: object) -> tuple[str, ...] | None:
+    if not isinstance(value, list):
+        return None
+    result: list[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            return None
+        result.append(item)
+    return tuple(result)
+
+
+def _historical_component_tuple(
+    value: object,
+) -> tuple[tuple[str, ...], ...] | None:
+    if not isinstance(value, list):
+        return None
+    result: list[tuple[str, ...]] = []
+    for component in value:
+        parsed = _historical_string_tuple(component)
+        if parsed is None:
+            return None
+        result.append(parsed)
+    return tuple(result)
+
+
+def _terminal_d_local(payload: Mapping[str, object]) -> list[str] | None:
+    classification = read_historical_terminal_classification(payload)
+    if classification is None:
+        return None
+    return list(classification.d_local_state_ids)
 
 
 def _safe_output_root(path: Path, bundle_root: Path) -> Path:

@@ -1,6 +1,12 @@
 # IMS Deadlock G6 Local-Core And Terminal-Class Recovery Plan
 
-Status: `PRE-IMPLEMENTATION / G5 CLOSED / NO G6 HELD-OUT OUTPUT`.
+Status: `G6-A PASS / G6-R PASS HISTORICAL-ONLY / G6-B NEXT HARD GATE /
+NO G6-C/D/E HELD-OUT OUTPUT`.
+
+Sequence update: the original draft placed G6-R after G6-B. Subsequent
+preregistered R1/R2/R3 work executed G6-R after G6-A as an isolated
+historical-only mechanism regression with no confirmation use. G6-R does not
+satisfy G6-B, and G6-B remains the next hard gate.
 
 ## Goal
 
@@ -111,7 +117,10 @@ the whole minimal-kernel family. The initial G6 rule is exact existence:
 On the complete reachable stable LTS, classify:
 
 - `D_global`: global capacity-mediated deadlocks;
-- `D_local`: states containing a local minimal core but not in `D_global`;
+- `K_local`: states containing a local minimal core but not in `D_global`;
+- `D_local`: the admitted verified subset of `K_local` after either an A2b
+  proof or a complete-LTS completion-nonreachability audit establishes the
+  selected first-hit bad set;
 - `F`: declared completion states;
 - `R_livelock`: non-`D/F` closed recurrent communicating classes;
 - `R_terminal`: non-resource terminal states, including calendar-empty or
@@ -122,6 +131,8 @@ On the complete reachable stable LTS, classify:
 
 Membership priority and overlap handling must be explicit. In particular,
 `D_global` is a subset of states with a local core but is reported only once.
+`K_local` is structural candidate evidence; it is not a selected bad class
+unless admitted as `D_local` by the required proof or complete-LTS audit.
 
 ### 4. Versioned Estimand
 
@@ -194,7 +205,7 @@ measured contradiction.
 - retain all failures, refusals and negative controls;
 - no automatic retry, no third run, no post-hoc seed or threshold change.
 
-### G6-R — Historical G4 Replay
+### G6-R — Historical G4 Replay (completed historical-only)
 
 - run the previously failing CRP, grid and medium rows after G6-A/B only to
   verify the diagnosed mechanisms;
@@ -352,8 +363,14 @@ The future independent confirmation set must include:
 - one negative control for each terminal class;
 - exact and DES rows only where the complete partition is valid.
 
-Independence checks reject any confirmation case sharing a frozen G4 case hash,
-snapshot hash, route signature, parameter tuple or random-stream manifest.
+Confirmation independence is governed by
+`cases/discovery/g6b/independence_schema.json`. Future confirmation cases must
+have zero overlap against retired G4/G5/G6-R and G6-B discovery on
+`case_content_sha256`, `state_snapshot_sha256`, `route_signature_sha256`,
+`parameter_tuple_sha256`, `random_stream_manifest_sha256`, `output_root`, and
+`sealed_prediction_sha256`. Reuse of `metric_schema_sha256` is allowed only
+when explicitly preregistered for same-target comparability and not derived
+from inspected outcomes.
 
 ## Task 7: Parallel Execution Policy
 

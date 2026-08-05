@@ -1,0 +1,898 @@
+"""Data-only validation for the G6-B row-family protocol bundle."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, TypeAlias
+
+JsonObject: TypeAlias = dict[str, Any]
+G6B_ROW_FAMILY_PROTOCOL_VERSION = "ims-deadlock/g6b-row-family-protocol/v1"
+G6B_ROW_FAMILY_IDENTITY_VERSION = "ims-deadlock/g6b-row-family-identity/v1"
+G6B_ROW_FAMILY_MATRIX_VERSION = "ims-deadlock/g6b-row-family-matrix/v1"
+G6B_ROW_FAMILY_REUSE_VERSION = "ims-deadlock/g6b-row-family-reuse/v1"
+G6B_ROW_FAMILY_OVERLAP_VERSION = "ims-deadlock/g6b-row-family-overlap-schema/v1"
+G6B_ROW_FAMILY_RUNTIME_LOCK_VERSION = (
+    "ims-deadlock/g6b-row-family-runtime-lock-schema/v1"
+)
+G6B_ROW_FAMILY_REVIEW_STATE_VERSION = "ims-deadlock/g6b-row-family-review-state/v1"
+G6B_ROW_FAMILY_FAILURE_LEDGER_VERSION = "ims-deadlock/g6b-row-family-failure-ledger/v1"
+_DOCUMENTS = (
+    "row_family_protocol.json",
+    "identity_schema.json",
+    "row_family_matrix.json",
+    "reuse_matrix.json",
+    "overlap_report_schema.json",
+    "runtime_lock_schema.json",
+    "review_state.json",
+    "failure_ledger.json",
+)
+_RELATIVE_ROOT = Path("cases/discovery/g6b/row_families/structural_discovery_v1")
+_COMMON_KEYS = {
+    "schema_version",
+    "study_role",
+    "confirmation_use",
+    "scientific_execution_authorized",
+    "case_creation_authorized",
+}
+_SCHEMA_VERSIONS = {
+    "row_family_protocol.json": G6B_ROW_FAMILY_PROTOCOL_VERSION,
+    "identity_schema.json": G6B_ROW_FAMILY_IDENTITY_VERSION,
+    "row_family_matrix.json": G6B_ROW_FAMILY_MATRIX_VERSION,
+    "reuse_matrix.json": G6B_ROW_FAMILY_REUSE_VERSION,
+    "overlap_report_schema.json": G6B_ROW_FAMILY_OVERLAP_VERSION,
+    "runtime_lock_schema.json": G6B_ROW_FAMILY_RUNTIME_LOCK_VERSION,
+    "review_state.json": G6B_ROW_FAMILY_REVIEW_STATE_VERSION,
+    "failure_ledger.json": G6B_ROW_FAMILY_FAILURE_LEDGER_VERSION,
+}
+_EXPECTED_ROW_FAMILY_PROTOCOL: JsonObject = {
+    "schema_version": "ims-deadlock/g6b-row-family-protocol/v1",
+    "study_role": "discovery_only",
+    "confirmation_use": "prohibited",
+    "scientific_execution_authorized": False,
+    "case_creation_authorized": False,
+    "protocol_id": "G6-B-ROW-FAMILY-STRUCTURAL-DISCOVERY-V1",
+    "adversarial_review_status": "PENDING",
+    "bundle_role": "schema_only",
+    "source_design": "docs/superpowers/specs/2026-07-31-g6b-row-family-design.md",
+    "artifact_paths": [
+        "cases/discovery/g6b/row_families/structural_discovery_v1/identity_schema.json",
+        "cases/discovery/g6b/row_families/structural_discovery_v1/"
+        "row_family_matrix.json",
+        "cases/discovery/g6b/row_families/structural_discovery_v1/reuse_matrix.json",
+        "cases/discovery/g6b/row_families/structural_discovery_v1/"
+        "overlap_report_schema.json",
+        "cases/discovery/g6b/row_families/structural_discovery_v1/"
+        "runtime_lock_schema.json",
+        "cases/discovery/g6b/row_families/structural_discovery_v1/review_state.json",
+        "cases/discovery/g6b/row_families/structural_discovery_v1/failure_ledger.json",
+    ],
+    "execution_boundary": {
+        "case_creation": "prohibited",
+        "enumeration": "prohibited",
+        "ctmc": "prohibited",
+        "des": "prohibited",
+        "output_inspection": "prohibited",
+    },
+}
+_EXPECTED_IDENTITY_SCHEMA: JsonObject = {
+    "schema_version": "ims-deadlock/g6b-row-family-identity/v1",
+    "study_role": "discovery_only",
+    "confirmation_use": "prohibited",
+    "scientific_execution_authorized": False,
+    "case_creation_authorized": False,
+    "identity_levels": ["family_id", "case_unit_id", "method_observation_id"],
+    "canonical_dimensions": [
+        "case_content_sha256",
+        "state_snapshot_sha256",
+        "route_signature_sha256",
+        "parameter_tuple_sha256",
+        "random_stream_manifest_sha256",
+        "output_root",
+        "sealed_prediction_sha256",
+        "metric_schema_sha256",
+    ],
+    "fingerprint_record_keys": [
+        "dimension",
+        "applicability_status",
+        "artifact_role",
+        "sha256_or_null",
+    ],
+    "no_stochastic_method_manifest": {
+        "allowed": True,
+        "must_be_case_unit_specific": True,
+        "shared_global_sentinel_prohibited": True,
+        "proves_provenance_only": True,
+        "proves_stochastic_independence": False,
+    },
+    "method_roles": [
+        "exact_companion",
+        "des_companion",
+        "schema_only_refusal",
+        "review_only_placeholder",
+    ],
+    "method_observations_are_independent_cases": False,
+}
+_EXPECTED_ROW_FAMILY_MATRIX: JsonObject = {
+    "schema_version": "ims-deadlock/g6b-row-family-matrix/v1",
+    "study_role": "discovery_only",
+    "confirmation_use": "prohibited",
+    "scientific_execution_authorized": False,
+    "case_creation_authorized": False,
+    "negative_control_families": [
+        {
+            "structural_family_id": "local_bypass_completion_family",
+            "required_negative_control_id": "NC_LOCAL_BYPASS_COMPLETES",
+            "hypothesis_attacked": (
+                "local_candidate_with_reachable_completion_is_D_local"
+            ),
+            "admission_route_allowed": "boundary_probe_only",
+            "expected_classification": "D_local_not_admitted",
+            "expected_refusal": "reachable_completion_bypass",
+            "expected_refusal_or_classification": {
+                "classification": "D_local_not_admitted",
+                "refusal": "reachable_completion_bypass",
+            },
+            "not_support_if_failed": True,
+            "supports_hypothesis_if_failed": False,
+            "case_creation_authorized": False,
+            "observed_outcome": None,
+        },
+        {
+            "structural_family_id": "unselected_livelock_family",
+            "required_negative_control_id": "NC_UNSELECTED_LIVELOCK",
+            "hypothesis_attacked": "unselected_closed_recurrent_class_is_selected_bad",
+            "admission_route_allowed": "classification_probe_only",
+            "expected_classification": "R_livelock",
+            "expected_refusal": "not_selected_bad_class",
+            "expected_refusal_or_classification": {
+                "classification": "R_livelock",
+                "refusal": "not_selected_bad_class",
+            },
+            "not_support_if_failed": True,
+            "supports_hypothesis_if_failed": False,
+            "case_creation_authorized": False,
+            "observed_outcome": None,
+        },
+        {
+            "structural_family_id": "calendar_empty_terminal_family",
+            "required_negative_control_id": "NC_CALENDAR_EMPTY_TERMINAL",
+            "hypothesis_attacked": "non_resource_terminal_is_resource_deadlock",
+            "admission_route_allowed": "classification_probe_only",
+            "expected_classification": "R_terminal",
+            "expected_refusal": "not_resource_deadlock",
+            "expected_refusal_or_classification": {
+                "classification": "R_terminal",
+                "refusal": "not_resource_deadlock",
+            },
+            "not_support_if_failed": True,
+            "supports_hypothesis_if_failed": False,
+            "case_creation_authorized": False,
+            "observed_outcome": None,
+        },
+        {
+            "structural_family_id": "policy_only_stall_family",
+            "required_negative_control_id": "NC_POLICY_ONLY_STALL",
+            "hypothesis_attacked": "policy_stall_changes_plant_partition",
+            "admission_route_allowed": "classification_probe_only",
+            "expected_classification": "P_policy",
+            "expected_refusal": "policy_only_not_plant_partition",
+            "expected_refusal_or_classification": {
+                "classification": "P_policy",
+                "refusal": "policy_only_not_plant_partition",
+            },
+            "not_support_if_failed": True,
+            "supports_hypothesis_if_failed": False,
+            "case_creation_authorized": False,
+            "observed_outcome": None,
+        },
+        {
+            "structural_family_id": "or_of_and_feasible_branch_family",
+            "required_negative_control_id": "NC_OR_OF_AND_FEASIBLE_BRANCH",
+            "hypothesis_attacked": "local_candidate_with_feasible_branch_is_D_local",
+            "admission_route_allowed": "boundary_probe_only",
+            "expected_classification": "D_local_not_admitted",
+            "expected_refusal": "feasible_branch_exists",
+            "expected_refusal_or_classification": {
+                "classification": "D_local_not_admitted",
+                "refusal": "feasible_branch_exists",
+            },
+            "not_support_if_failed": True,
+            "supports_hypothesis_if_failed": False,
+            "case_creation_authorized": False,
+            "observed_outcome": None,
+        },
+        {
+            "structural_family_id": "agv_reservation_boundary_family",
+            "required_negative_control_id": "NC_AGV_RESERVATION_BOUNDARY",
+            "hypothesis_attacked": (
+                "changed_AGV_reservation_semantics_preserve_target_identity"
+            ),
+            "admission_route_allowed": "boundary_or_new_target_only",
+            "expected_classification": "boundary_or_new_versioned_target_required",
+            "expected_refusal": "semantic_boundary_changed",
+            "expected_refusal_or_classification": {
+                "classification": "boundary_or_new_versioned_target_required",
+                "refusal": "semantic_boundary_changed",
+            },
+            "not_support_if_failed": True,
+            "supports_hypothesis_if_failed": False,
+            "case_creation_authorized": False,
+            "observed_outcome": None,
+        },
+        {
+            "structural_family_id": "dglobal_with_local_core_family",
+            "required_negative_control_id": "NC_DGLOBAL_ONLY_WITH_DLOCAL",
+            "hypothesis_attacked": "global_deadlock_with_local_core_counts_twice",
+            "admission_route_allowed": "classification_probe_only",
+            "expected_classification": "D_global",
+            "expected_refusal": "no_double_count_through_D_local",
+            "expected_refusal_or_classification": {
+                "classification": "D_global",
+                "refusal": "no_double_count_through_D_local",
+            },
+            "not_support_if_failed": True,
+            "supports_hypothesis_if_failed": False,
+            "case_creation_authorized": False,
+            "observed_outcome": None,
+        },
+    ],
+    "discovery_probes": [
+        {
+            "role": "a2b_admission_probe",
+            "frozen_question": (
+                "Does the declared finite-semantics A2b proof admit the candidate "
+                "to D_local?"
+            ),
+            "falsifiers": [
+                "violated_A2b_premise",
+                "reachable_completion_bypass",
+                "proof_check_failure",
+            ],
+            "favorable_outcome_frozen": False,
+            "case_creation_authorized": False,
+            "observed_outcome": None,
+        },
+        {
+            "role": "complete_lts_admission_probe",
+            "frozen_question": (
+                "Does a complete LTS show completion nonreachability from the "
+                "candidate?"
+            ),
+            "falsifiers": [
+                "path_to_F",
+                "truncation",
+                "unavailable_transition_branch",
+                "incomplete_state_registry",
+            ],
+            "favorable_outcome_frozen": False,
+            "case_creation_authorized": False,
+            "observed_outcome": None,
+        },
+        {
+            "role": "same_target_exact_des_probe",
+            "frozen_question": (
+                "Do exact and DES companions evaluate the same frozen target "
+                "without semantic drift?"
+            ),
+            "falsifiers": [
+                "selected_label_mismatch",
+                "versioned_target_mismatch",
+                "stopping_hash_mismatch",
+                "companion_identity_mismatch",
+                "absorption_domain_hash_mismatch",
+            ],
+            "favorable_outcome_frozen": False,
+            "case_creation_authorized": False,
+            "observed_outcome": None,
+        },
+    ],
+    "ontology_contract": {
+        "foundation_estimand_schema_version": "ims-deadlock/g6b-estimand-schema/v2",
+        "terminal_classification_version": (
+            "ims-deadlock/g6-terminal-stopping-partition/v3"
+        ),
+        "selected_stopping_targets": {
+            "bad_hit_sets": ["D_global", "D_local"],
+            "success_class": "F",
+        },
+        "unselected_plant_terminal_classes": ["R_livelock", "R_terminal"],
+        "policy_analysis_class": {
+            "label": "P_policy",
+            "plant_partition_member": False,
+            "selectable_target": False,
+        },
+        "derived_state_sets": {
+            "S_reach": {
+                "role": "diagnostic_only",
+                "selectable_target": False,
+            },
+            "S_T": {
+                "role": "certified_absorption_domain",
+                "selectable_target": False,
+                "requires_nonnull_absorption_domain_hash": True,
+            },
+        },
+        "D_local_definition": "verified_first_hit_bad_set_not_terminal_scc",
+        "D_local_admission_routes": [
+            "A2b_proof",
+            "complete_LTS_completion_nonreachability_audit",
+        ],
+    },
+    "exact_des_pairing": {
+        "same_case_unit_id": True,
+        "same_selected_bad_labels": ["D_global", "D_local"],
+        "same_selected_success_label": "F",
+        "same_versioned_target": True,
+        "method_observations_are_independent_cases": False,
+        "certified_absorption_domain_required": True,
+        "same_absorption_domain_hash": True,
+    },
+    "initial_scoring_state": {
+        "theorem_prediction_status": "not_evaluated",
+        "metric_applicability": "not_assessed",
+        "metric_observations": [],
+        "execution_status": "not_executed",
+        "reproducibility_status": "not_assessed",
+    },
+}
+_EXPECTED_REUSE_MATRIX: JsonObject = {
+    "schema_version": "ims-deadlock/g6b-row-family-reuse/v1",
+    "study_role": "discovery_only",
+    "confirmation_use": "prohibited",
+    "scientific_execution_authorized": False,
+    "case_creation_authorized": False,
+    "relations": [
+        {
+            "id": "exact_des_companion",
+            "same_case_unit_id": True,
+            "allowed_shared_dimensions": [
+                "case_content_sha256",
+                "state_snapshot_sha256",
+                "route_signature_sha256",
+                "parameter_tuple_sha256",
+                "sealed_prediction_sha256",
+                "metric_schema_sha256",
+            ],
+            "required_distinct_fields": [
+                "method_observation_id",
+                "method_role",
+                "output_root",
+            ],
+            "evidence_counting": "one_case_unit",
+        },
+        {
+            "id": "controlled_family_variant",
+            "same_case_unit_id": False,
+            "allowed_shared_dimensions": [
+                "family_id",
+                "ontology_version",
+                "metric_schema_sha256",
+                "selected_target_version",
+                "declared_held_fixed_dimensions",
+            ],
+            "required_fields": [
+                "declared_variation_axis",
+                "declared_held_fixed_dimensions",
+                "outcome_independent_declaration",
+            ],
+            "evidence_counting": "distinct_case_units_not_independent_replicates",
+        },
+        {
+            "id": "negative_control_pair",
+            "same_case_unit_id": False,
+            "allowed_shared_dimensions": [
+                "family_id",
+                "ontology_version",
+                "metric_schema_sha256",
+            ],
+            "required_fields": [
+                "required_negative_control_id",
+                "hypothesis_attacked",
+                "mechanism_difference",
+            ],
+            "evidence_counting": "control_pair",
+        },
+        {
+            "id": "method_schema_reuse",
+            "same_case_unit_id": False,
+            "allowed_shared_dimensions": [
+                "metric_schema_sha256",
+                "orthogonal_scoring_layers",
+            ],
+            "required_fields": [
+                "explicitly_preregistered",
+                "same_target_comparability",
+                "not_derived_from_outcomes",
+            ],
+            "evidence_counting": "no_independence_claim_from_schema_reuse",
+        },
+        {
+            "id": "retired_authority_overlap",
+            "same_case_unit_id": False,
+            "allowed_shared_dimensions": [],
+            "required_fields": [
+                "retired_authority",
+                "overlap_dimension",
+                "refusal_ledger_entry",
+            ],
+            "admission": "refused",
+        },
+    ],
+}
+_EXPECTED_OVERLAP_REPORT_SCHEMA: JsonObject = {
+    "schema_version": "ims-deadlock/g6b-row-family-overlap-schema/v1",
+    "study_role": "discovery_only",
+    "confirmation_use": "prohibited",
+    "scientific_execution_authorized": False,
+    "case_creation_authorized": False,
+    "report_role": "schema_only",
+    "actual_overlap_checked": False,
+    "actual_overlap_report_available": False,
+    "schema_only_overlap_report_cannot_authorize_execution": True,
+    "missing_actual_overlap_report_blocks_execution": True,
+    "retired_authorities": ["G4", "G5", "G6_R"],
+    "retired_dimensions": [
+        "case_content_sha256",
+        "state_snapshot_sha256",
+        "route_signature_sha256",
+        "parameter_tuple_sha256",
+        "random_stream_manifest_sha256",
+        "output_root",
+        "sealed_prediction_sha256",
+        "metric_schema_sha256",
+    ],
+    "future_confirmation_dimensions": [
+        "case_content_sha256",
+        "state_snapshot_sha256",
+        "route_signature_sha256",
+        "parameter_tuple_sha256",
+        "random_stream_manifest_sha256",
+        "output_root",
+        "sealed_prediction_sha256",
+    ],
+    "future_confirmation_metric_reuse": {
+        "explicitly_preregistered": True,
+        "same_target_comparability": True,
+        "not_derived_from_outcomes": True,
+    },
+    "required_lock_before_actual_report": "overlap_authority_lock",
+    "remote_only_G5_authority_paths": [
+        "evidence/g5/G5_RAW_HASH_MANIFEST.json",
+        "evidence/g5/G5_RESULT_SUMMARY.json",
+    ],
+    "local_absence_is_nonoverlap_evidence": False,
+    "later_actual_report_required_fields": [
+        "locked_target_identity",
+        "retired_authority_hashes",
+        "discovery_case_unit_hashes",
+        "per_dimension_results",
+        "per_unit_results",
+        "refusal_entries",
+    ],
+}
+_EXPECTED_RUNTIME_LOCK_SCHEMA: JsonObject = {
+    "schema_version": "ims-deadlock/g6b-row-family-runtime-lock-schema/v1",
+    "study_role": "discovery_only",
+    "confirmation_use": "prohibited",
+    "scientific_execution_authorized": False,
+    "case_creation_authorized": False,
+    "overlap_authority_lock": {
+        "status": "required_later",
+        "authorizes_execution": False,
+        "required_fields": [
+            "target_path",
+            "target_branch",
+            "target_head",
+            "target_dirty_state",
+            "upstream_ahead_behind",
+            "worktree_identity",
+            "repo_remote_url",
+            "source_tree_hash",
+            "sealed_case_artifact_hashes",
+            "retired_authority_paths_and_hashes",
+        ],
+    },
+    "execution_runtime_lock": {
+        "status": "required_later",
+        "allowed_only_after": "ACTUAL_OVERLAP_REPORT_PASSED",
+        "authorizes_execution": False,
+        "required_fields": [
+            "python_executable",
+            "python_version",
+            "package_lock_or_environment_hash",
+            "validation_commands",
+            "validation_results",
+            "runtime_lock_created_at_utc",
+            "science_execution_authorized_by_artifact",
+            "pythondontwritebytecode_or_cache_policy",
+            "output_root_policy",
+        ],
+    },
+}
+_EXPECTED_REVIEW_STATE: JsonObject = {
+    "schema_version": "ims-deadlock/g6b-row-family-review-state/v1",
+    "study_role": "discovery_only",
+    "confirmation_use": "prohibited",
+    "scientific_execution_authorized": False,
+    "case_creation_authorized": False,
+    "current_state": "ROW_FAMILY_BUNDLE_IMPLEMENTED",
+    "allowed_states_in_order": [
+        "SPEC_DRAFTED",
+        "ROW_FAMILY_BUNDLE_IMPLEMENTED",
+        "DATA_ONLY_VALIDATION_PASSED",
+        "ADVERSARIAL_ROW_FAMILY_REVIEW_PASSED",
+        "CASE_CONSTRUCTION_PLAN_APPROVED",
+        "CASE_ARTIFACTS_SEALED_NO_SCIENCE",
+        "OVERLAP_AUTHORITY_LOCK_RECORDED",
+        "ACTUAL_OVERLAP_REPORT_PASSED",
+        "EXECUTION_RUNTIME_LOCK_RECORDED",
+        "EXPLICIT_SCIENCE_AUTHORIZATION_RECORDED",
+    ],
+    "adversarial_review_status": "PENDING",
+    "forward_only": True,
+    "current_state_authorizes_case_creation": False,
+    "current_state_authorizes_science": False,
+}
+_EXPECTED_FAILURE_LEDGER: JsonObject = {
+    "schema_version": "ims-deadlock/g6b-row-family-failure-ledger/v1",
+    "study_role": "discovery_only",
+    "confirmation_use": "prohibited",
+    "scientific_execution_authorized": False,
+    "case_creation_authorized": False,
+    "append_only": True,
+    "entries": [],
+    "empty_entries_meaning": (
+        "no row-family admission or execution attempt has occurred"
+    ),
+    "empty_entries_do_not_mean_no_historical_failures": True,
+    "required_future_reason_codes": [
+        "schema_drift",
+        "ontology_drift",
+        "target_drift",
+        "overlap_hit",
+        "missing_hash",
+        "failed_negative_control",
+        "incomplete_LTS_audit",
+        "outcome_leakage",
+        "unauthorized_case_creation_attempt",
+        "unauthorized_science_execution_attempt",
+    ],
+}
+_PROHIBITED_OUTCOME_KEYS = {
+    "observed_result",
+    "exact_output",
+    "des_output",
+    "state_enumeration_result",
+    "metric_value",
+    "actual_overlap_result",
+    "current_runtime_lock",
+}
+
+
+@dataclass(frozen=True)
+class G6BRowFamilyValidation:
+    valid: bool
+    errors: tuple[str, ...]
+    scientific_execution_authorized: bool
+    case_creation_authorized: bool
+    adversarial_review_status: str
+    review_state: str
+    bundle_hashes: dict[str, str]
+
+
+def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> JsonObject:
+    result: JsonObject = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def _load_json_object(path: Path) -> JsonObject:
+    try:
+        loaded = json.loads(
+            path.read_text(encoding="utf-8"),
+            object_pairs_hook=_reject_duplicate_keys,
+        )
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        raise ValueError(str(exc)) from exc
+    if not isinstance(loaded, dict):
+        raise ValueError("root must be a JSON object")
+    return loaded
+
+
+def _canonical_sha256(document: JsonObject) -> str:
+    payload = json.dumps(
+        document,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _repo_root_for(bundle_root: Path) -> Path | None:
+    parts = _RELATIVE_ROOT.parts
+    if tuple(bundle_root.parts[-len(parts) :]) != parts:
+        return None
+    return bundle_root.parents[len(parts) - 1]
+
+
+def _expect(condition: bool, message: str, errors: list[str]) -> None:
+    if not condition:
+        errors.append(message)
+
+
+def _exact_keys(
+    document: JsonObject,
+    expected: set[str],
+    label: str,
+    errors: list[str],
+) -> None:
+    missing = sorted(expected - set(document))
+    extra = sorted(set(document) - expected)
+    if missing:
+        errors.append(f"{label}: missing keys: {missing}")
+    if extra:
+        errors.append(f"{label}: unexpected keys: {extra}")
+
+
+def _expect_exact_document(
+    actual: JsonObject,
+    expected: JsonObject,
+    label: str,
+    errors: list[str],
+) -> None:
+    _exact_keys(actual, set(expected), label, errors)
+    if actual != expected:
+        errors.append(f"{label}: document must match the canonical contract")
+
+
+def _walk_keys(value: Any) -> set[str]:
+    if isinstance(value, dict):
+        keys = set(value)
+        for child in value.values():
+            keys.update(_walk_keys(child))
+        return keys
+    if isinstance(value, list):
+        list_keys: set[str] = set()
+        for child in value:
+            list_keys.update(_walk_keys(child))
+        return list_keys
+    return set()
+
+
+def _reject_prohibited_outcome_keys(
+    document: JsonObject,
+    label: str,
+    errors: list[str],
+) -> None:
+    for key in sorted(_walk_keys(document) & _PROHIBITED_OUTCOME_KEYS):
+        errors.append(f"{label}: prohibited outcome key present: {key}")
+
+
+def _expect_review_state(actual: JsonObject, errors: list[str]) -> None:
+    if (
+        actual.get("allowed_states_in_order")
+        != _EXPECTED_REVIEW_STATE["allowed_states_in_order"]
+    ):
+        errors.append("review_state.json: allowed_states_in_order must match")
+    if actual.get("current_state") != "ROW_FAMILY_BUNDLE_IMPLEMENTED":
+        errors.append(
+            "review_state.json: current_state must remain ROW_FAMILY_BUNDLE_IMPLEMENTED"
+        )
+    if actual.get("adversarial_review_status") != "PENDING":
+        errors.append(
+            "review_state.json: adversarial_review_status must remain PENDING"
+        )
+    if actual.get("forward_only") is not True:
+        errors.append("review_state.json: forward_only must be true")
+    if actual.get("current_state_authorizes_case_creation") is not False:
+        errors.append(
+            "review_state.json: current_state_authorizes_case_creation must be false"
+        )
+    if actual.get("current_state_authorizes_science") is not False:
+        errors.append(
+            "review_state.json: current_state_authorizes_science must be false"
+        )
+
+
+def _expect_failure_ledger(actual: JsonObject, errors: list[str]) -> None:
+    if actual.get("append_only") is not True:
+        errors.append("failure_ledger.json: append_only must be true")
+    if actual.get("entries") != []:
+        errors.append("failure_ledger.json: entries must remain empty")
+    if (
+        actual.get("empty_entries_meaning")
+        != _EXPECTED_FAILURE_LEDGER["empty_entries_meaning"]
+    ):
+        errors.append("failure_ledger.json: empty_entries_meaning must match")
+    if actual.get("empty_entries_do_not_mean_no_historical_failures") is not True:
+        errors.append(
+            "failure_ledger.json: empty_entries_do_not_mean_no_historical_failures "
+            "must be true"
+        )
+    if (
+        actual.get("required_future_reason_codes")
+        != _EXPECTED_FAILURE_LEDGER["required_future_reason_codes"]
+    ):
+        errors.append("failure_ledger.json: required_future_reason_codes must match")
+
+
+def _expect_identity_schema(actual: JsonObject, errors: list[str]) -> None:
+    if actual.get("identity_levels") != _EXPECTED_IDENTITY_SCHEMA["identity_levels"]:
+        errors.append("identity_schema.json: identity_levels must match")
+    if (
+        actual.get("fingerprint_record_keys")
+        != _EXPECTED_IDENTITY_SCHEMA["fingerprint_record_keys"]
+    ):
+        errors.append("identity_schema.json: fingerprint_record_keys must match")
+    if actual.get("method_roles") != _EXPECTED_IDENTITY_SCHEMA["method_roles"]:
+        errors.append("identity_schema.json: method_roles must match")
+    if (
+        actual.get("no_stochastic_method_manifest")
+        != _EXPECTED_IDENTITY_SCHEMA["no_stochastic_method_manifest"]
+    ):
+        errors.append("identity_schema.json: no_stochastic_method_manifest must match")
+    if actual.get("method_observations_are_independent_cases") is not False:
+        errors.append(
+            "identity_schema.json: method_observations_are_independent_cases "
+            "must be false"
+        )
+
+
+def _expect_reuse_matrix(actual: JsonObject, errors: list[str]) -> None:
+    relations = actual.get("relations")
+    if not isinstance(relations, list):
+        errors.append("reuse_matrix.json: reuse relation ids must match")
+        return
+    relation_ids = [
+        relation.get("id") if isinstance(relation, dict) else None
+        for relation in relations
+    ]
+    expected_ids = [relation["id"] for relation in _EXPECTED_REUSE_MATRIX["relations"]]
+    if relation_ids != expected_ids:
+        errors.append("reuse_matrix.json: reuse relation ids must match")
+
+
+def _common_contract(
+    document: JsonObject,
+    label: str,
+    schema_version: str,
+    errors: list[str],
+) -> None:
+    _expect(
+        document.get("schema_version") == schema_version,
+        f"{label}: wrong schema_version",
+        errors,
+    )
+    _expect(
+        document.get("study_role") == "discovery_only",
+        f"{label}: study_role must be discovery_only",
+        errors,
+    )
+    _expect(
+        document.get("confirmation_use") == "prohibited",
+        f"{label}: confirmation_use must be prohibited",
+        errors,
+    )
+    _expect(
+        document.get("scientific_execution_authorized") is False,
+        f"{label}: scientific_execution_authorized must be false",
+        errors,
+    )
+    _expect(
+        document.get("case_creation_authorized") is False,
+        f"{label}: case_creation_authorized must be false",
+        errors,
+    )
+
+
+def validate_g6b_row_family_bundle(root: Path) -> G6BRowFamilyValidation:
+    bundle_root = root.resolve()
+    errors: list[str] = []
+    documents: dict[str, JsonObject] = {}
+    hashes: dict[str, str] = {}
+    actual = sorted(path.name for path in bundle_root.glob("*.json") if path.is_file())
+    missing = sorted(set(_DOCUMENTS) - set(actual))
+    unexpected = sorted(set(actual) - set(_DOCUMENTS))
+    if missing:
+        errors.append(f"missing JSON documents: {missing}")
+    if unexpected:
+        errors.append(f"unexpected JSON documents: {unexpected}")
+    for name in _DOCUMENTS:
+        if name in missing:
+            continue
+        try:
+            document = _load_json_object(bundle_root / name)
+        except ValueError as exc:
+            errors.append(f"{name}: {exc}")
+            continue
+        documents[name] = document
+        hashes[name] = _canonical_sha256(document)
+    protocol = documents.get("row_family_protocol.json", {})
+    review = documents.get("review_state.json", {})
+    if set(documents) == set(_DOCUMENTS):
+        repo_root = _repo_root_for(bundle_root)
+        if repo_root is None:
+            errors.append(
+                "bundle root must be <repo>/cases/discovery/g6b/"
+                "row_families/structural_discovery_v1"
+            )
+        elif not (
+            repo_root / "docs/superpowers/specs/2026-07-31-g6b-row-family-design.md"
+        ).is_file():
+            errors.append("source design path is missing")
+        for name, version in _SCHEMA_VERSIONS.items():
+            _common_contract(documents[name], name, version, errors)
+            _reject_prohibited_outcome_keys(documents[name], name, errors)
+        _expect_exact_document(
+            documents["row_family_protocol.json"],
+            _EXPECTED_ROW_FAMILY_PROTOCOL,
+            "row_family_protocol.json",
+            errors,
+        )
+        _expect_identity_schema(documents["identity_schema.json"], errors)
+        _expect_exact_document(
+            documents["identity_schema.json"],
+            _EXPECTED_IDENTITY_SCHEMA,
+            "identity_schema.json",
+            errors,
+        )
+        _expect_exact_document(
+            documents["row_family_matrix.json"],
+            _EXPECTED_ROW_FAMILY_MATRIX,
+            "row_family_matrix.json",
+            errors,
+        )
+        _expect_reuse_matrix(documents["reuse_matrix.json"], errors)
+        _expect_exact_document(
+            documents["reuse_matrix.json"],
+            _EXPECTED_REUSE_MATRIX,
+            "reuse_matrix.json",
+            errors,
+        )
+        _expect_exact_document(
+            documents["overlap_report_schema.json"],
+            _EXPECTED_OVERLAP_REPORT_SCHEMA,
+            "overlap_report_schema.json",
+            errors,
+        )
+        _expect_exact_document(
+            documents["runtime_lock_schema.json"],
+            _EXPECTED_RUNTIME_LOCK_SCHEMA,
+            "runtime_lock_schema.json",
+            errors,
+        )
+        _expect_review_state(documents["review_state.json"], errors)
+        _expect_exact_document(
+            documents["review_state.json"],
+            _EXPECTED_REVIEW_STATE,
+            "review_state.json",
+            errors,
+        )
+        _expect_failure_ledger(documents["failure_ledger.json"], errors)
+        _expect_exact_document(
+            documents["failure_ledger.json"],
+            _EXPECTED_FAILURE_LEDGER,
+            "failure_ledger.json",
+            errors,
+        )
+    return G6BRowFamilyValidation(
+        valid=not errors,
+        errors=tuple(errors),
+        scientific_execution_authorized=any(
+            item.get("scientific_execution_authorized") is True
+            for item in documents.values()
+        ),
+        case_creation_authorized=any(
+            item.get("case_creation_authorized") is True for item in documents.values()
+        ),
+        adversarial_review_status=str(protocol.get("adversarial_review_status", "")),
+        review_state=str(review.get("current_state", "")),
+        bundle_hashes=hashes,
+    )

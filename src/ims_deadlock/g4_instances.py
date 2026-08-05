@@ -27,6 +27,8 @@ from ims_deadlock.terminal_classes import (
     TerminalPartitionError,
     TerminalStoppingPartition,
     VersionedEstimandSpec,
+    canonical_no_policy_filter_declaration,
+    certify_absorption_domain,
     partition_stable_lts,
 )
 
@@ -435,7 +437,6 @@ def derive_absorbing_ctmc(
         built.spec.transitions,
         event_rates=built.event_rates,
         estimand_spec=estimand_spec,
-        require_selected_absorption=False,
         verify_generated_lts=True,
     )
     if (
@@ -450,20 +451,16 @@ def derive_absorbing_ctmc(
                 "selected_bad_classes": list(estimand_spec.selected_bad_classes),
             },
         )
-    if partition.unreachable_nonabsorbing_state_ids:
-        raise TerminalPartitionError(
-            "unreachable_nonabsorbing_state",
-            "nonabsorbing state cannot reach selected bad or success absorption",
-            {
-                "unreachable_state_ids": list(
-                    partition.unreachable_nonabsorbing_state_ids
-                ),
-                "terminal_scc_state_ids": sorted(
-                    set(partition.r_terminal_state_ids)
-                    | set(partition.r_livelock_state_ids)
-                ),
-            },
-        )
+    certificate = certify_absorption_domain(
+        partition,
+        stable_lts,
+        built.event_rates,
+        selected_bad_state_ids=partition.selected_bad_state_ids,
+        selected_success_state_ids=partition.f_state_ids,
+        policy_filter_declaration=canonical_no_policy_filter_declaration(),
+        require_global=True,
+    )
+    partition = partition.with_absorption_domain_certificate(certificate)
     completion_states = set(partition.f_state_ids)
     deadlock_states = set(partition.selected_bad_state_ids)
     overlap = completion_states & deadlock_states

@@ -1,0 +1,84 @@
+{
+  "schema_version": "ims-deadlock/g6b-row-family-reuse/v1",
+  "study_role": "discovery_only",
+  "confirmation_use": "prohibited",
+  "scientific_execution_authorized": false,
+  "case_creation_authorized": false,
+  "relations": [
+    {
+      "id": "exact_des_companion",
+      "same_case_unit_id": true,
+      "allowed_shared_dimensions": [
+        "case_content_sha256",
+        "state_snapshot_sha256",
+        "route_signature_sha256",
+        "parameter_tuple_sha256",
+        "sealed_prediction_sha256",
+        "metric_schema_sha256"
+      ],
+      "required_distinct_fields": [
+        "method_observation_id",
+        "method_role",
+        "output_root"
+      ],
+      "evidence_counting": "one_case_unit"
+    },
+    {
+      "id": "controlled_family_variant",
+      "same_case_unit_id": false,
+      "allowed_shared_dimensions": [
+        "family_id",
+        "ontology_version",
+        "metric_schema_sha256",
+        "selected_target_version",
+        "declared_held_fixed_dimensions"
+      ],
+      "required_fields": [
+        "declared_variation_axis",
+        "declared_held_fixed_dimensions",
+        "outcome_independent_declaration"
+      ],
+      "evidence_counting": "distinct_case_units_not_independent_replicates"
+    },
+    {
+      "id": "negative_control_pair",
+      "same_case_unit_id": false,
+      "allowed_shared_dimensions": [
+        "family_id",
+        "ontology_version",
+        "metric_schema_sha256"
+      ],
+      "required_fields": [
+        "required_negative_control_id",
+        "hypothesis_attacked",
+        "mechanism_difference"
+      ],
+      "evidence_counting": "control_pair"
+    },
+    {
+      "id": "method_schema_reuse",
+      "same_case_unit_id": false,
+      "allowed_shared_dimensions": [
+        "metric_schema_sha256",
+        "orthogonal_scoring_layers"
+      ],
+      "required_fields": [
+        "explicitly_preregistered",
+        "same_target_comparability",
+        "not_derived_from_outcomes"
+      ],
+      "evidence_counting": "no_independence_claim_from_schema_reuse"
+    },
+    {
+      "id": "retired_authority_overlap",
+      "same_case_unit_id": false,
+      "allowed_shared_dimensions": [],
+      "required_fields": [
+        "retired_authority",
+        "overlap_dimension",
+        "refusal_ledger_entry"
+      ],
+      "admission": "refused"
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "schema_version": "ims-deadlock/g6b-estimand-schema/v2",
+  "study_role": "discovery_only",
+  "confirmation_use": "prohibited",
+  "scientific_execution_authorized": false,
+  "future_required_hashes": [
+    "state_space_hash",
+    "partition_hash",
+    "rate_manifest_hash",
+    "positive_rate_graph_hash",
+    "policy_filter_hash",
+    "absorption_domain_hash",
+    "stopping_rule_hash",
+    "des_stopping_rule_hash",
+    "estimand_id"
+  ],
+  "ontology": {
+    "selected_stopping_targets": {
+      "bad_hit_sets": [
+        "D_global",
+        "D_local"
+      ],
+      "success_class": "F"
+    },
+    "unselected_plant_terminal_classes": [
+      "R_livelock",
+      "R_terminal"
+    ],
+    "policy_analysis_class": {
+      "label": "P_policy",
+      "plant_partition_member": false,
+      "selectable_target": false
+    },
+    "derived_state_sets": {
+      "S_reach": {
+        "definition": "complete_stopped_lts_support_reachability",
+        "role": "diagnostic_only",
+        "selectable_target": false
+      },
+      "S_T": {
+        "definition": "probability_one_hit_selected_target_in_finite_positive_rate_stopped_ctmc",
+        "role": "certified_absorption_domain",
+        "selectable_target": false
+      }
+    },
+    "D_local": {
+      "ontology": "first_hit_bad_set_not_terminal_scc",
+      "definition": "verified first-hit bad set selected by the G6-B estimand, not a plant terminal SCC",
+      "admission": [
+        "A2b_proof",
+        "complete_LTS_completion_nonreachability_audit"
+      ]
+    }
+  },
+  "exact_des_consistency": {
+    "same_target_required": true,
+    "same_selected_bad_labels_required": true,
+    "same_selected_success_label_required": true,
+    "same_versioned_target_required": true,
+    "certified_absorption_domain_required": true,
+    "same_absorption_domain_hash_required": true
+  }
+}

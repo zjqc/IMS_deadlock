@@ -1,133 +1,143 @@
-# 概率层：IMS-CTMC、Committor 与 Doob-h
+# Probability Layer: IMS-CTMC, Committor, And Doob-h
 
-本文件只覆盖有限 CTMC 或显式 PH 展开后的有限状态模型。一般非指数时间不得直接使用本层方程。
+This document covers finite CTMCs, or finite-state models after an explicit PH
+expansion. Non-exponential timing cannot use these equations directly.
 
-## 1. 竞争吸收类
+## 1. Competing Absorption Domains
 
-状态：定义。
+Let `D_sel := D_global union D_local; A_stop := D_sel union F` be the selected stopped target, let `X_stop` be the full finite stopped state set, and let
+`T := X_stop \ A_stop` be the nonabsorbing set. `S_reach` is the diagnostic complete
+stopped-LTS support graph basin: states with at least one support path to `A_stop`.
+`S_reach` is necessary but not sufficient for probability-one absorption.
 
-在闭包归一化稳定状态集合上，令：
+For the finite complete positive-rate stopped CTMC, identify every unselected
+closed SCC `C_closed subset T`. Membership lies in `T`, but closedness is checked
+against all outgoing positive-rate edges in the full stopped graph: there is no
+positive-rate edge from `C_closed` to `(T \ C_closed)` and no positive-rate edge from `C_closed` to
+selected A_stop. A state with `s -> F` is not in an unselected closed SCC.
 
-- `D` 为死锁吸收类；
-- `F` 为完成吸收类；
-- `U = S_st \ (D union F)` 为尚未分类的非吸收集合。
+Let `B_closed` be the reverse basin in `T` of all unselected closed SCCs, and
+let `S_T = T \ B_closed`. Under the finite complete positive-rate stopped-CTMC
+assumptions, `x in S_T` iff `P_x(tau_{A_stop} < infinity) = 1`. The global absorption
+assumption `A_abs` is the stronger condition `B_closed = empty` over the claimed
+nonabsorbing analysis domain.
 
-不能先验把 `U` 全部称为暂态。必须先做闭合类分解：
+## 2. Generator Block
 
-- `S_T`：从这些状态出发以概率 1 命中 `D union F` 的 transient-to-absorption 状态；
-- `R_c`：不属于 `D union F` 的其它 closed/recurrent/livelock 类；
-- `B`：若存在从初始可达区域通向 `R_c` 的状态，需要作为边界处理或单独坏类。
+The finite CTMC generator `Q` satisfies:
 
-若控制策略或模型允许从死锁状态恢复，则该状态不属于本层的死锁吸收类，而应建模为恢复控制问题。
+- `q_ij >= 0` for `i != j`;
+- `q_ii = -sum_{j != i} q_ij`;
+- states in selected A_stop are absorbing, or folded into absorbing classes before
+  block construction;
+- PH expansion is required before non-exponential durations enter `Q`.
 
-核心吸收假设 `A_abs`：从所有分析范围内可达的非 `D/F` 状态，以概率 1 命中 `D union F`。只有在 `A_abs` 成立，且 `S_T` 等于分析范围内非 `D/F` 状态时，下列 `Q_{S_T,S_T}` 线性系统才可直接用于全域 committor 与平均吸收时间。
+Only after `A_abs` is certified globally, or after a future protocol explicitly
+supports a restricted certified `S_T`, may the block be used as:
 
-## 2. 生成元
+`Q = [[Q_{S_T,S_T}, Q_{S_T,D_sel}, Q_{S_T,F}], [0,0,0], [0,0,0]]`.
 
-状态：定义。
+Production G4 currently refuses partial-domain quantitative payloads. That is a
+protocol refusal, not a statement that restricted-domain linear systems are
+mathematically nonexistent.
 
-有限 CTMC 生成元 `Q` 满足：
+## 3. Deadlock Committor
 
-- `q_ij >= 0` for `i != j`；
-- `q_ii = -sum_{j != i} q_ij`；
-- `D` 与 `F` 中状态吸收，或在分块前折叠为吸收类；
-- 非指数时长必须 PH 展开后才可进入 `Q`。
+For certified `S_T`, the deadlock committor `h_i = P_i(tau_{D_sel} < tau_F)` satisfies:
 
-在 `A_abs` 成立或已经限制到 `S_T` 后，分块：
+- `h_i = 1` for `i in D_sel`;
+- `h_i = 0` for `i in F`;
+- `Q_{S_T,S_T} h_{S_T} = - Q_{S_T,D_sel} 1` for `i in S_T`.
 
-`Q = [[Q_{S_T,S_T}, Q_{S_T,D}, Q_{S_T,F}], [0,0,0], [0,0,0]]`。
+`h_i` is a probability of hitting a selected bad target before success. It is
+not a structural deadlock-existence predicate. Outside certified `S_T`, the
+current production protocol refuses the payload because the global stopped-domain
+contract is not certified; this is an unsupported-solver boundary, not a claim
+that all conditional probabilities are mathematically nonexistent.
 
-若 `R_c` 非空，必须执行边界处理：
+## 4. Mean Absorption Time
 
-- 若 `R_c` 是不可接受 livelock 或 terminal block，将其并入新的坏吸收类并重新定义 committor 目标；
-- 若 `R_c` 是可接受循环行为，则死锁 committor 只在能命中 `D union F` 的 basin 上解释，报告从初始状态进入 `R_c` 的概率；
-- 若模型意图证明几乎必然完成/死锁竞争，则 `R_c` 非空直接否定该吸收假设。
+For certified `S_T`, the mean time to the selected absorbing target satisfies:
 
-## 3. 死锁 Committor
+`Q_{S_T,S_T} tau_{S_T} = -1`, with `tau_{A_stop}` as the selected-target hitting time.
 
-状态：P4 项目内已证明（严格有限 CTMC）；L23 提供离散 committor 背景，
-L28 提供条件跳过程全文锚点。
+If `B_closed` is reachable with positive probability and has not been selected
+into a new target, then `tau_{A_stop} = infinity` on those paths and the extended
+unconditional expectation is `+infinity`. The finite mean-time payload is
+therefore protocol-refused for the original global claim. Conditional deadlock
+timing must be computed under a separate conditioned model, not by reusing
+unconditional `tau`.
 
-死锁 committor `h_i = P_i(tau_D < tau_F)` 满足边界：
+## 5. Sensitivity
 
-- `h_i = 1` for `i in D`；
-- `h_i = 0` for `i in F`；
-- `Q_{S_T,S_T} h_{S_T} = - Q_{S_T,D} 1` for `i in S_T`。
+For parameters `theta` that do not change the certified partition and have
+differentiable rates, the candidate sensitivity system on certified `S_T` is:
 
-解释：`h_i` 是先到达死锁而不是完成的概率，不是结构死锁存在性。
+`Q_{S_T,S_T} partial_theta h_{S_T} = - (partial_theta Q_{S_T,S_T}) h_{S_T} - (partial_theta Q_{S_T,D_sel}) 1`.
 
-## 4. 平均吸收时间
+The proof obligations are invertibility of `Q_{S_T,S_T}` on the certified
+transient-to-absorption subspace, fixed state partition or explicit partition
+change handling, and differentiable rate parameters.
 
-状态：P4 项目内已证明（严格有限 CTMC）。
+## 6. Doob-h Conditioning
 
-到任一吸收类的平均时间 `tau_i` 满足：
+For states in certified `S_T` with `h_i > 0`, conditioning on first hitting `D_sel`
+uses jump rates:
 
-在 `A_abs` 成立或限制到 `S_T` 后，到 `D union F` 的平均时间 `tau_i` 满足：
+`q^h_ij = q_ij h_j / h_i` for `i != j`.
 
-`Q_{S_T,S_T} tau_{S_T} = -1`。
+The diagonal is:
 
-若 `R_c` 可达且没有并入吸收目标，无条件平均吸收时间可能为无穷或不定义。
+`q^h_ii = - sum_{j != i} q^h_ij`.
 
-若只关心条件于死锁的时间，需要在 Doob-`h` 条件链或条件分布下重新计算，不能直接把无条件 `tau` 当作死锁时间。
+This transform is undefined where `h_i = 0`, explains conditioned high-risk path
+statistics, and is not a controller.
 
-## 5. 参数敏感性
+## 7. Output Contract
 
-状态：P4 项目内已证明；要求参数邻域内分区固定且速率可微。
+A probability payload must report:
 
-对参数 `theta` 微分 committor 方程，得到候选敏感性线性系统：
+- counts for `A_stop`, `T`, `S_reach`, `S_T`, unselected closed SCCs, and `B_closed`;
+- whether `A_abs` is certified;
+- `positive_rate_graph_hash`, `policy_filter_hash`, `absorption_domain_hash`,
+  `rate_manifest_hash`, and `estimand_id` with nullable identities preserved;
+- the generator block construction summary;
+- `h`, `tau`, sensitivity, and Doob-h outputs only for certified `S_T`;
+- linear-system residuals;
+- conditional path statistics when a conditioned model is explicitly declared;
+- parameter sensitivity outputs with fixed-partition or partition-change handling;
+- independent DES comparison confidence intervals when DES is authorized by a later protocol;
+- the used rate manifest and random-stream manifest identities;
+- explicit refusal code `non_almost_sure_absorption_domain` when a global claim
+  has nonempty `B_closed`.
 
-`Q_{S_T,S_T} partial_theta h_{S_T} = - (partial_theta Q_{S_T,S_T}) h_{S_T} - (partial_theta Q_{S_T,D}) 1`。
+`rate_manifest_hash` binds the full declared rate manifest. It is separate from
+`absorption_domain_hash`, which binds the certified absorption-domain identity.
+Missing rates, explicit empty rates, and certified positive rates are distinct
+identity states.
 
-证明义务：
+## 8. Source Boundary
 
-- `Q_{S_T,S_T}` 在暂态到吸收子空间可逆；该可逆性依赖 `A_abs` 或已完成 closed-class 分解。
-- 参数扰动不改变状态划分，或显式处理状态划分变化。
-- 速率参数可微。
+Markov jump transition path theory and discrete committor background can cite
+Trace `L23` (see the existing literature matrix/source-verification surfaces):
+Metzner et al. 2009, DOI `10.1137/070699500`, supports ergodic Markov jump
+process TPT and discrete committor background only. It does not by itself prove this absorbing IMS stopped-domain theorem.
 
-## 6. Doob-h 条件化
+The committor, mean-time, sensitivity, and Doob-h equations above are finite
+CTMC equations used inside this project's certified stopped-domain boundary.
+Trace `L28` (see the existing literature matrix/source-verification surfaces):
+Corstanje and van der Meulen (2025) provides the conditioned
+jump-process/change-of-measure baseline. Eq. 3.1 gives adjusted intensities,
+Eq. 3.3 gives the generator form, and Appendix D explains the change of
+generator. Migrating that background into an IMS absorbing-boundary theorem
+still requires the finite stopped-domain proof stated here.
 
-状态：P4 项目内已证明（严格有限竞争吸收 CTMC）；L28 为全文迁移锚点。
-
-对 `h_i > 0` 的暂态状态，条件于先达 `D` 的跳转率为：
-
-`q^h_ij = q_ij h_j / h_i` for `i != j`。
-
-对角元：
-
-`q^h_ii = - sum_{j != i} q^h_ij`。
-
-边界：
-
-- 不在 `h_i = 0` 的状态上定义该比值。
-- Doob-`h` 变换解释条件高风险路径和稀有事件采样目标分布。
-- Doob-`h` 不是控制器；它不告诉系统应禁止哪些事件。
-- `Corstanje and van der Meulen (2025)` 现在给出可公开核验的 conditioned CT jump-process/change-of-measure 主线：
-  `Eq. 3.1` 给出 adjusted intensities，`Eq. 3.3` 给出生成元形式，Appendix D 解释 change of generator。
-
-## 7. 来源使用边界
-
-状态：来源边界。
-
-- Markov jump transition path theory 与离散 committor 背景可引用 Metzner et al. 2009，DOI `10.1137/070699500`，但该来源按当前核验边界只支撑 ergodic Markov jump process TPT/discrete committor background，不能直接支撑 absorbing IMS theorem。
-- 本文件中的 committor、平均吸收时间、敏感性和 Doob-`h` 公式在项目内标为标准有限 CTMC 方程/项目推导；吸收 CTMC 条件化主来源现在由 `Corstanje and van der Meulen 2025` 提供可公开核验的 change-of-measure 基线，但把它迁移为 IMS absorbing boundary theorem 仍需单独证明。
-- Narahari 等制造系统吸收 Markov 基线已全文定位：Section 3 给出
-  `F=(I-T)^-1`，Section 3.1 给出平均死锁时间，Section 3.2 给出
-  `G=FC`，Section 4 给出瞬态死锁时间分布。它只支撑该历史
-  DTMC/embedded-chain 范围，不能替代本项目的 CTMC committor、
-  sensitivity 或 Doob-h 证明。
-
-## 8. 验证输出
-
-状态：计算验证。
-
-`quantify` CLI 需要输出版本化 JSON：
-
-- 状态数、`D/F/S_T/R_c` 大小；
-- `A_abs` 是否成立；若不成立，报告 `R_c` 的可达概率和处理方式；
-- `Q` 的构造摘要；
-- `h`、`tau`；
-- 线性系统残差；
-- 条件路径统计；
-- 参数敏感性；
-- 与独立 DES 仿真的置信区间对照；
-- 所用速率和随机流清单。
+Trace `L16` (see the existing literature matrix/source-verification surfaces):
+Narahari et al. remains a manufacturing-system absorbing Markov baseline. In
+source-local notation, write `F_N=(I-T_N)^-1` and `G_N=F_N C_N`. The source-local fundamental-matrix formula is printed in the source as `F=(I-T)^-1`; the absorption-probability product is printed in the source as `G=FC`. These source-local `F_N`, `T_N`, and `C_N`
+are not the project completion set `F`, stopped nonabsorbing set `T`, or
+resource-cycle symbol `C`. Section 3 gives the fundamental matrix, Section 3.1
+gives mean deadlock time, Section 3.2 gives `G_N`, and Section 4 gives transient
+deadlock-time distributions. That evidence supports the historical
+DTMC/embedded-chain scope only; it does not replace this project's CTMC
+committor, sensitivity, Doob-h, or certified absorption-domain proof obligations.

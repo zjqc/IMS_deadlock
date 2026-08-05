@@ -1,0 +1,39 @@
+{
+  "schema_version": "ims-deadlock/g6b-row-family-runtime-lock-schema/v1",
+  "study_role": "discovery_only",
+  "confirmation_use": "prohibited",
+  "scientific_execution_authorized": false,
+  "case_creation_authorized": false,
+  "overlap_authority_lock": {
+    "status": "required_later",
+    "authorizes_execution": false,
+    "required_fields": [
+      "target_path",
+      "target_branch",
+      "target_head",
+      "target_dirty_state",
+      "upstream_ahead_behind",
+      "worktree_identity",
+      "repo_remote_url",
+      "source_tree_hash",
+      "sealed_case_artifact_hashes",
+      "retired_authority_paths_and_hashes"
+    ]
+  },
+  "execution_runtime_lock": {
+    "status": "required_later",
+    "allowed_only_after": "ACTUAL_OVERLAP_REPORT_PASSED",
+    "authorizes_execution": false,
+    "required_fields": [
+      "python_executable",
+      "python_version",
+      "package_lock_or_environment_hash",
+      "validation_commands",
+      "validation_results",
+      "runtime_lock_created_at_utc",
+      "science_execution_authorized_by_artifact",
+      "pythondontwritebytecode_or_cache_policy",
+      "output_root_policy"
+    ]
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "schema_version": "ims-deadlock/g6b-negative-controls/v1",
+  "study_role": "discovery_only",
+  "confirmation_use": "prohibited",
+  "scientific_execution_authorized": false,
+  "controls": [
+    {
+      "id": "NC_LOCAL_BYPASS_COMPLETES",
+      "expected_classification": "D_local_not_admitted",
+      "expected_refusal": "reachable_completion_bypass",
+      "not_support_if_failed": true
+    },
+    {
+      "id": "NC_UNSELECTED_LIVELOCK",
+      "expected_classification": "R_livelock",
+      "expected_refusal": "not_selected_bad_class",
+      "not_support_if_failed": true
+    },
+    {
+      "id": "NC_CALENDAR_EMPTY_TERMINAL",
+      "expected_classification": "R_terminal",
+      "expected_refusal": "not_resource_deadlock",
+      "not_support_if_failed": true
+    },
+    {
+      "id": "NC_POLICY_ONLY_STALL",
+      "expected_classification": "P_policy",
+      "expected_refusal": "policy_only_not_plant_partition",
+      "not_support_if_failed": true
+    },
+    {
+      "id": "NC_OR_OF_AND_FEASIBLE_BRANCH",
+      "expected_classification": "D_local_not_admitted",
+      "expected_refusal": "feasible_branch_exists",
+      "not_support_if_failed": true
+    },
+    {
+      "id": "NC_AGV_RESERVATION_BOUNDARY",
+      "expected_classification": "boundary_or_new_versioned_target_required",
+      "expected_refusal": "semantic_boundary_changed",
+      "not_support_if_failed": true
+    },
+    {
+      "id": "NC_DGLOBAL_ONLY_WITH_DLOCAL",
+      "expected_classification": "D_global",
+      "expected_refusal": "no_double_count_through_D_local",
+      "not_support_if_failed": true
+    }
+  ]
+}
