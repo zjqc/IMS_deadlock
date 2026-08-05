@@ -28,8 +28,6 @@ from ims_deadlock.g6b_schema_contracts import (
     CAPABILITY_NAMES,
     COMPARISON_POLICIES,
     COMPARISON_STATUS_VALUES,
-    EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY,
-    EXPECTED_RETIRED_SOURCE_INVENTORY,
     FINGERPRINT_DIMENSIONS,
     PROJECTION_KINDS,
     QUANTITATIVE_PLACEHOLDER_CODES,
@@ -459,7 +457,10 @@ def _allowed_projection_uses_for_path(path: str) -> list[str]:
         if "{" in pattern:
             prefix, remainder = pattern.split("{", 1)
             alternatives, suffix = remainder.split("}", 1)
-            return [f"{prefix}{alternative}{suffix}" for alternative in alternatives.split(",")]
+            return [
+                f"{prefix}{alternative}{suffix}"
+                for alternative in alternatives.split(",")
+            ]
         return [pattern]
 
     for row in _retired_selector_rows():
@@ -542,13 +543,117 @@ def _relineage_fingerprint_record(record: JsonObject) -> JsonObject:
     return _with_rehashed(updated, "record_provenance_sha256")
 
 
+def _first_g4_case_source_path() -> str:
+    return next(
+        path
+        for path in contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+        if path.startswith("cases/confirmation/g4/cases/") and path.endswith(".json")
+    )
+
+
+def _normalization_source_refs_for_dimension(dimension: str) -> list[JsonObject]:
+    g4_case = _first_g4_case_source_path()
+    refs_by_dimension: dict[str, list[JsonObject]] = {
+        "case_content_sha256": [
+            {
+                "authority_id": "G4_FREEZE",
+                "repo_relative_posix_path": g4_case,
+                "json_pointer_or_null": "/input_payload",
+                "source_role": "case_content_projection",
+            }
+        ],
+        "state_snapshot_sha256": [
+            {
+                "authority_id": "G4_FREEZE",
+                "repo_relative_posix_path": g4_case,
+                "json_pointer_or_null": "/input_payload",
+                "source_role": "case_content_projection",
+            }
+        ],
+        "route_signature_sha256": [
+            {
+                "authority_id": "G4_FREEZE",
+                "repo_relative_posix_path": g4_case,
+                "json_pointer_or_null": "/input_payload",
+                "source_role": "case_content_projection",
+            }
+        ],
+        "parameter_tuple_sha256": [
+            {
+                "authority_id": "G4_FREEZE",
+                "repo_relative_posix_path": g4_case,
+                "json_pointer_or_null": "/input_payload",
+                "source_role": "case_content_projection",
+            }
+        ],
+        "random_stream_manifest_sha256": [
+            {
+                "authority_id": "G4_FREEZE",
+                "repo_relative_posix_path": (
+                    "cases/confirmation/g4/random_stream_manifest.json"
+                ),
+                "json_pointer_or_null": "/streams_by_case",
+                "source_role": "random_stream_projection",
+            }
+        ],
+        "sealed_prediction_sha256": [
+            {
+                "authority_id": "G4_FREEZE",
+                "repo_relative_posix_path": "cases/confirmation/g4/predictions.json",
+                "json_pointer_or_null": "/predictions",
+                "source_role": "prediction_projection",
+            }
+        ],
+        "metric_schema_sha256": [
+            {
+                "authority_id": "G4_FREEZE",
+                "repo_relative_posix_path": (
+                    "cases/confirmation/g4/metrics_schema.json"
+                ),
+                "json_pointer_or_null": "/metrics",
+                "source_role": "metric_projection",
+            }
+        ],
+        "output_root_reservation_sha256": [
+            {
+                "authority_id": "G4_FREEZE",
+                "repo_relative_posix_path": "cases/confirmation/g4/FREEZE_ENTRY.json",
+                "json_pointer_or_null": "/freeze_id",
+                "source_role": "authority_identity",
+            }
+        ],
+    }
+    return refs_by_dimension[dimension]
+
+
+def _source_hashes_for_refs(refs: Sequence[JsonObject]) -> dict[str, str]:
+    retired_hashes = _retired_source_hashes()
+    return {
+        ref["repo_relative_posix_path"]: retired_hashes[ref["repo_relative_posix_path"]]
+        for ref in refs
+    }
+
+
 def _normalization_fingerprint_records() -> dict[str, JsonObject]:
     records: dict[str, JsonObject] = {}
     for dimension in contracts.FINGERPRINT_DIMENSIONS:
         record = valid_fingerprint_record(dimension=dimension)
         record["record_id"] = f"g4-freeze-{dimension}"
         record["source_authority_id"] = "G4_FREEZE"
+        source_refs = _normalization_source_refs_for_dimension(dimension)
+        record["source_artifact_refs"] = source_refs
+        record["source_artifact_byte_hashes"] = _source_hashes_for_refs(source_refs)
+        if dimension == "output_root_reservation_sha256":
+            record["dimension_status"] = "not_applicable_retired_stage"
+            record["comparison_projection_ref_or_null"] = None
+            record["comparison_projection_sha256_or_null"] = None
         record = _relineage_fingerprint_record(record)
+        projection = (
+            None
+            if dimension == "output_root_reservation_sha256"
+            else (_projection_for_record(record))
+        )
+        validate_fingerprint_record(record, projection)
         records[record["record_id"]] = record
     return records
 
@@ -610,7 +715,9 @@ def valid_normalization_manifest(
         "source_head": _git_sha1("normalization-manifest-source-head"),
         "source_tree_hash": _git_sha1("normalization-manifest-source-tree"),
         "source_dirty_state": "clean",
-        "authority_ids": list(_load_retired_schema_definition()["retired_authority_ids"]),
+        "authority_ids": list(
+            _load_retired_schema_definition()["retired_authority_ids"]
+        ),
         "expected_file_manifest": dict(_retired_source_hashes()),
         "verified_file_byte_hashes": dict(_retired_source_hashes()),
         "frozen_hash_validation_results": {
@@ -3257,7 +3364,7 @@ def test_normalization_authorization_rejects_identity_drift() -> None:
         )
 
 
-def test_authority_lock_record_requires_exact_authority_identity_and_projection_lock() -> None:
+def test_authority_lock_record_closes_identity_and_projection_lock() -> None:
     record = valid_authority_lock_record("G4_FREEZE")
     contracts.validate_authority_lock_record(record)
 
