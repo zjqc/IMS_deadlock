@@ -3926,6 +3926,53 @@ def test_normalization_manifest_rejects_unverified_projection_suppliers() -> Non
         )
 
 
+def test_normalization_manifest_binds_sources_to_manifest_lock_records() -> None:
+    verified_locks = _retired_authority_lock_records()
+    unverified_lock = _with_rehashed(
+        {
+            **verified_locks["G4_FREEZE"],
+            "identity_verification_status": "unverified_refuse",
+        },
+        "authority_lock_record_sha256",
+    )
+    source_locks = {**verified_locks, "G4_FREEZE": unverified_lock}
+    sources = _retired_authority_source_records(source_locks)
+    sources = {
+        path: (
+            {**record, "allowed_projection_uses": ["source_hash_validation"]}
+            if record["authority_id"] == "G4_FREEZE"
+            else record
+        )
+        for path, record in sources.items()
+    }
+    fingerprints = _normalization_fingerprint_records()
+    manifest = valid_normalization_manifest(
+        authority_locks=verified_locks,
+        authority_sources=sources,
+        fingerprint_records=fingerprints,
+    )
+
+    with pytest.raises(SchemaContractError, match="absent_authority_lock_ref"):
+        contracts.validate_normalization_manifest(
+            manifest,
+            authority_lock_records=verified_locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+    truly_unverified_manifest = valid_normalization_manifest(
+        authority_locks=source_locks,
+        authority_sources=sources,
+        fingerprint_records=fingerprints,
+    )
+    contracts.validate_normalization_manifest(
+        truly_unverified_manifest,
+        authority_lock_records=source_locks,
+        authority_source_records=sources,
+        fingerprint_records=fingerprints,
+    )
+
+
 def test_normalization_manifest_closes_maps_refs_and_failure_eligibility() -> None:
     locks = _retired_authority_lock_records()
     sources = _retired_authority_source_records(locks)

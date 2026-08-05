@@ -4434,9 +4434,14 @@ def _validate_manifest_verified_projection_suppliers(
         )
         if authority_id not in authority_lock_records:
             raise SchemaContractError("absent_authority_lock_ref", authority_id)
-        identity_status = authority_lock_records[authority_id].get(
-            "identity_verification_status"
+        lock_record = authority_lock_records[authority_id]
+        lock_hash = _validate_lower_sha256(
+            source_record.get("authority_lock_record_sha256"),
+            label="authority_lock_record_sha256",
         )
+        if lock_hash != lock_record.get("authority_lock_record_sha256"):
+            raise SchemaContractError("absent_authority_lock_ref", authority_id)
+        identity_status = lock_record.get("identity_verification_status")
         allowed_projection_uses = _as_string_sequence(
             source_record.get("allowed_projection_uses"),
             "allowed_projection_uses",
