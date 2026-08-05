@@ -889,29 +889,36 @@ def test_manifest_writer_is_last_and_verifies_referenced_record_bytes(
     root = tmp_path / "authorized"
     authorization_bytes = _canonical_json_bytes(_authorization_record())
     authorization_sha = write_normalization_authorization(root, authorization_bytes)
-    lock_sha = write_authority_lock_record(
-        root,
-        _LOCK_AUTHORITY_ID,
-        _authority_lock_record(),
-    )
-    source_sha = write_authority_source_record(
-        root,
-        _G4_CASE_PATH,
-        _authority_source_record(),
-    )
+    locks = _authority_lock_records()
+    written_lock_hashes = {
+        authority_id: write_authority_lock_record(root, authority_id, record)
+        for authority_id, record in locks.items()
+    }
+    assert written_lock_hashes == {
+        authority_id: record["authority_lock_record_sha256"]
+        for authority_id, record in locks.items()
+    }
+    sources = _authority_source_records(locks)
+    written_source_hashes = {
+        path: write_authority_source_record(root, path, record)
+        for path, record in sources.items()
+    }
+    assert written_source_hashes == {
+        path: canonical_sha256_v2(record) for path, record in sources.items()
+    }
     fingerprint_sha = write_fingerprint_record(
         root,
         _FINGERPRINT_ID,
         _fingerprint_record(),
     )
-    manifest = _manifest_record(
-        authorization_sha256=authorization_sha,
-        authority_lock_hash=lock_sha,
-        source_record_hash=source_sha,
-        fingerprint_hash=fingerprint_sha,
-    )
-    manifest_sha = write_normalization_manifest(root, manifest)
+    assert fingerprint_sha == _fingerprint_record()["record_provenance_sha256"]
+    manifest = _manifest_record(authorization_sha256=authorization_sha)
+    assert manifest["authority_lock_record_hashes"] == written_lock_hashes
+    assert manifest["authority_source_record_hashes"] == written_source_hashes
+    assert manifest["fingerprint_record_hashes"] == {_FINGERPRINT_ID: fingerprint_sha}
     destination = root / "normalization_manifest.json"
+    assert not destination.exists()
+    manifest_sha = write_normalization_manifest(root, manifest)
     assert destination.read_bytes() == canonical_bytes_v2(manifest)
     assert manifest_sha == hashlib.sha256(destination.read_bytes()).hexdigest()
     with pytest.raises(SchemaContractError, match="preexisting"):
