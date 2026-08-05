@@ -685,8 +685,8 @@ def test_task6_current_documents_record_exact_twelve_open_pending_boundary() -> 
 
     assert _TASK6_APPROVED_SPEC_SHA256 in handoff
     assert "g6b_schema_contracts.py" in handoff
-    assert "independent schema review" in handoff_normalized
-    assert "separately approved case-construction plan" in handoff_normalized
+    assert _TASK6_REVIEW_PATH in handoff
+    assert "schema-only governance v2" in handoff_normalized
     assert _TASK6_LEDGER_MARKER in ledger
     assert "Section 18 verification status" in review
     assert "G6-B remains OPEN/PENDING" in review

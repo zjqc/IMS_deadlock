@@ -1,5 +1,26 @@
 # IMS Deadlock Gate Roadmap
 
+## 2026-08-05 Projection-Scope Wording Erratum
+
+The approved materialization corrigendum, v2 plan, and independent review stay
+byte-immutable at SHA-256
+`ff469d9c5105835fde5feb170e501bdde14506df50632990f7c2cddc251da36c`,
+`81b93394233b8201ab4ba234952f17110c87398bf34a83883481ac017112a4f7`,
+and `da6da7c2e513e11761e439f8b43ef6260556c912d3e730f94f15eae088d90ea0`.
+PR #7's wording finding is closed by the successor audit clarification
+`docs/superpowers/specs/2026-08-05-g6b-case-construction-materialization-contract-wording-erratum.md`,
+raw SHA-256
+`5192aec8e7269ec0c209e535c263a31c39be8c3f46238cde59e887a7b1db6841`.
+The matching review is
+`docs/verification/G6_B_MATERIALIZATION_PROJECTION_SCOPE_WORDING_ERRATUM_REVIEW.md`,
+raw SHA-256
+`e9aeb3c145c7b72a75dbf0a5456e30da15cdbde923c5480e9d20c4c1aa16102e`,
+and records three PASS lanes with P0/P1/P2 `0/0/0`.
+It names one case-scoped case-content projection and four method-scoped
+DES/exact output-root and random-stream projections. No contract, artifact,
+authorization, execution, capability, gate, or scientific status changes;
+G6-B remains `OPEN/PENDING`.
+
 ## 2026-08-05 R7 Case-Construction Publication Status
 
 Current precedence: approved v2 Tasks R1-R7 are complete on repaired artifact
