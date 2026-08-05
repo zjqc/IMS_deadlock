@@ -33,6 +33,9 @@ _SAFE_PARAMETER_DATA_METHODS = frozenset(
 _SAFE_CALL_RESULT_OBJECTS: Mapping[str, str] = {
     "pathlib.Path": _SAFE_PATH_OBJECT_ALIAS,
     "Path": _SAFE_PATH_OBJECT_ALIAS,
+    "pathlib.Path.resolve": _SAFE_PATH_OBJECT_ALIAS,
+    "Path.resolve": _SAFE_PATH_OBJECT_ALIAS,
+    "__g6b_safe_path_object__.resolve": _SAFE_PATH_OBJECT_ALIAS,
     "hashlib.sha256": _SAFE_HASH_OBJECT_ALIAS,
     "sha256": _SAFE_HASH_OBJECT_ALIAS,
     "json.loads": _SAFE_JSON_OBJECT_ALIAS,
@@ -40,7 +43,17 @@ _SAFE_CALL_RESULT_OBJECTS: Mapping[str, str] = {
     "record.copy": _SAFE_MAPPING_OBJECT_ALIAS,
 }
 _SAFE_OBJECT_METHODS: Mapping[str, frozenset[str]] = {
-    _SAFE_PATH_OBJECT_ALIAS: frozenset({"exists", "read_text"}),
+    _SAFE_PATH_OBJECT_ALIAS: frozenset(
+        {
+            "exists",
+            "is_file",
+            "is_symlink",
+            "read_bytes",
+            "read_text",
+            "relative_to",
+            "resolve",
+        }
+    ),
     _SAFE_HASH_OBJECT_ALIAS: frozenset({"hexdigest"}),
     _SAFE_JSON_OBJECT_ALIAS: frozenset({"get"}),
     _SAFE_MAPPING_OBJECT_ALIAS: frozenset({"get"}),
@@ -219,6 +232,56 @@ NORMALIZATION_AUTHORIZATION_REQUIRED_FIELDS = (
     "invalidated_by_identity_drift",
     "authorization_sha256",
 )
+AUTHORITY_LOCK_RECORD_REQUIRED_FIELDS = (
+    "authority_id",
+    "origin_remote",
+    "origin_commit_or_null",
+    "origin_tree_hash_or_null",
+    "origin_lock_artifact_ref",
+    "origin_artifact_inventory_hash",
+    "current_merged_copy_tree_hash",
+    "identity_verification_status",
+    "authority_lock_record_sha256",
+)
+AUTHORITY_SOURCE_RECORD_REQUIRED_FIELDS = (
+    "authority_id",
+    "authority_stage",
+    "authority_lock_record_sha256",
+    "repo_relative_path",
+    "raw_byte_sha256",
+    "declared_historical_hash_or_null",
+    "declared_hash_algorithm_or_null",
+    "declared_hash_verified",
+    "allowed_projection_uses",
+    "contains_outcome_fields",
+)
+NORMALIZATION_MANIFEST_REQUIRED_FIELDS = (
+    "schema_version",
+    "manifest_id",
+    "source_remote",
+    "source_head",
+    "source_tree_hash",
+    "source_dirty_state",
+    "authority_ids",
+    "expected_file_manifest",
+    "verified_file_byte_hashes",
+    "frozen_hash_validation_results",
+    "historical_canonicalization_versions",
+    "projection_canonicalization_version",
+    "normalizer_version",
+    "normalizer_code_sha256",
+    "normalization_authorization_sha256",
+    "authority_lock_record_hashes",
+    "authority_source_record_hashes",
+    "fingerprint_record_hashes",
+    "unique_lineage_map",
+    "dimension_status_counts",
+    "missing_source_records",
+    "unreconstructable_records",
+    "comparison_eligibility",
+    "created_at_utc",
+    "manifest_sha256",
+)
 PREFLIGHT_AUTHORIZATION_REQUIRED_FIELDS = (
     "schema_version",
     "authorization_id",
@@ -327,17 +390,49 @@ NORMALIZATION_ALLOWED_OPERATIONS = (
     "apply_static_input_projection",
     "canonicalize_projection_v2",
     "compute_sha256",
-    "write_normalization_manifest",
+    "write_normalization_authorization",
+    "write_authority_lock_record",
+    "write_authority_source_record",
     "write_fingerprint_record",
+    "write_normalization_manifest",
 )
 NORMALIZATION_ALLOWED_PROJECT_IMPORTS = (
     "ims_deadlock.g6b_retired_normalizer",
     "ims_deadlock.g6b_canonical_json",
+    "ims_deadlock.g6b_schema_contracts",
     "ims_deadlock.g6b_governance",
 )
 ALLOWED_NORMALIZER_WRITER_SYMBOLS = (
+    "ims_deadlock.g6b_retired_normalizer.write_normalization_authorization",
+    "ims_deadlock.g6b_retired_normalizer.write_authority_lock_record",
+    "ims_deadlock.g6b_retired_normalizer.write_authority_source_record",
     "ims_deadlock.g6b_retired_normalizer.write_fingerprint_record",
     "ims_deadlock.g6b_retired_normalizer.write_normalization_manifest",
+)
+ALLOWED_NORMALIZER_WRITER_FUNCTIONS = (
+    "write_normalization_authorization",
+    "write_authority_lock_record",
+    "write_authority_source_record",
+    "write_fingerprint_record",
+    "write_normalization_manifest",
+)
+ALLOWED_NORMALIZER_SCHEMA_CONTRACT_CALLS = (
+    "ims_deadlock.g6b_schema_contracts.validate_normalization_authorization",
+    "ims_deadlock.g6b_schema_contracts.validate_authority_lock_record",
+    "ims_deadlock.g6b_schema_contracts.validate_authority_source_record",
+    "ims_deadlock.g6b_schema_contracts.validate_fingerprint_record",
+    "ims_deadlock.g6b_schema_contracts.validate_normalization_manifest",
+)
+NORMALIZATION_PATH_WRITER_METHODS = frozenset({"mkdir", "write_bytes", "replace"})
+NORMALIZATION_ALLOWED_OUTPUT_SCHEMA = MappingProxyType(
+    {
+        "schema_id": "ims-deadlock/g6b-retired-normalization-records/v1",
+        "schema_version": "v1",
+    }
+)
+NORMALIZATION_ALLOWED_OUTPUT_ROOT_PATH = (
+    "cases/discovery/g6b/row_families/structural_discovery_v1/"
+    "governance/g6b_retired_authority_normalization_v1"
 )
 NORMALIZATION_FORBIDDEN_IMPORTS = (
     "ims_deadlock.analysis",
@@ -1833,8 +1928,16 @@ def validate_lineage_deduplication(
 def validate_normalization_authorization(
     record: Mapping[str, JsonValue],
     *,
-    expected_inventory: Sequence[str] | None = None,
-    expected_selector_matrix: Sequence[Mapping[str, JsonValue]] | None = None,
+    expected_schema_inventory_patterns: Sequence[str],
+    expected_concrete_source_paths: Sequence[str],
+    expected_selector_matrix: Sequence[Mapping[str, JsonValue]],
+    expected_git_object_format: str,
+    expected_source_head: str,
+    expected_source_tree_hash: str,
+    expected_file_manifest_hash: str,
+    expected_normalizer_code_sha256: str,
+    expected_review_artifact_hash: str,
+    expected_output_root: str,
 ) -> None:
     validate_exact_keys(
         record,
@@ -1856,24 +1959,45 @@ def validate_normalization_authorization(
         != RETIRED_AUTHORITY_IDS
     ):
         raise SchemaContractError("missing_retired_authority")
-    for field in (
-        "source_head",
-        "source_tree_hash",
-        "expected_file_manifest_hash",
-        "normalizer_code_sha256",
-        "review_artifact_hash",
-    ):
-        _validate_lower_sha256(record.get(field), label=field)
+    if expected_git_object_format != "sha1":
+        raise SchemaContractError("source_identity_drift")
+    source_head = _validate_git_sha1(record.get("source_head"), label="source_head")
+    source_tree_hash = _validate_git_sha1(
+        record.get("source_tree_hash"),
+        label="source_tree_hash",
+    )
+    if source_head != expected_source_head:
+        raise SchemaContractError("source_identity_drift")
+    if source_tree_hash != expected_source_tree_hash:
+        raise SchemaContractError("source_identity_drift")
+    expected_file_manifest = _validate_lower_sha256(
+        record.get("expected_file_manifest_hash"),
+        label="expected_file_manifest_hash",
+    )
+    if expected_file_manifest != expected_file_manifest_hash:
+        raise SchemaContractError("file_manifest_drift")
+    normalizer_code = _validate_lower_sha256(
+        record.get("normalizer_code_sha256"),
+        label="normalizer_code_sha256",
+    )
+    if normalizer_code != expected_normalizer_code_sha256:
+        raise SchemaContractError("normalizer_code_drift")
+    review_artifact = _validate_lower_sha256(
+        record.get("review_artifact_hash"),
+        label="review_artifact_hash",
+    )
+    if review_artifact != expected_review_artifact_hash:
+        raise SchemaContractError("review_artifact_drift")
     allowed_source_paths = _as_string_sequence(
         record.get("allowed_source_paths"),
         "allowed_source_paths",
     )
-    if expected_inventory is None or expected_selector_matrix is None:
-        raise SchemaContractError("missing_normalization_authorization")
-    schema_inventory = tuple(expected_inventory)
+    schema_inventory = tuple(expected_schema_inventory_patterns)
     if schema_inventory != EXPECTED_RETIRED_SOURCE_INVENTORY:
         raise SchemaContractError("missing_retired_authority")
-    expected_paths = EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+    expected_paths = tuple(expected_concrete_source_paths)
+    if expected_paths != EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY:
+        raise SchemaContractError("missing_retired_authority")
     validate_retired_inventory(
         expected_paths=expected_paths,
         observed_paths=allowed_source_paths,
@@ -1921,11 +2045,235 @@ def validate_normalization_authorization(
     _validate_output_schema_and_root(
         record.get("allowed_output_schema"),
         record.get("allowed_output_root"),
+        expected_output_root=expected_output_root,
     )
     _validate_utc_timestamp(record.get("issued_at_utc"), label="issued_at_utc")
     if record.get("invalidated_by_identity_drift") is not False:
         raise SchemaContractError("runtime_identity_drift")
     _verify_finalized_self_hash(record, "authorization_sha256")
+
+
+def validate_authority_lock_record(record: Mapping[str, JsonValue]) -> None:
+    validate_exact_keys(
+        record,
+        AUTHORITY_LOCK_RECORD_REQUIRED_FIELDS,
+        label="authority_lock_record",
+    )
+    authority_id = _require_nonempty_string(record.get("authority_id"), "authority_id")
+    if authority_id not in RETIRED_AUTHORITY_IDS:
+        raise SchemaContractError("illegal_retired_authority", authority_id)
+    _require_nonempty_string(record.get("origin_remote"), "origin_remote")
+    for field in ("origin_commit_or_null", "origin_tree_hash_or_null"):
+        value = record.get(field)
+        if value is not None:
+            _validate_git_object_id(value, label=field)
+    _validate_repo_relative_path(
+        _require_nonempty_string(
+            record.get("origin_lock_artifact_ref"),
+            "origin_lock_artifact_ref",
+        )
+    )
+    _validate_lower_sha256(
+        record.get("origin_artifact_inventory_hash"),
+        label="origin_artifact_inventory_hash",
+    )
+    _validate_lower_sha256(
+        record.get("current_merged_copy_tree_hash"),
+        label="current_merged_copy_tree_hash",
+    )
+    identity_status = record.get("identity_verification_status")
+    if identity_status not in {
+        "verified_historical_identity",
+        "verified_merged_copy_against_historical_hashes",
+        "unverified_refuse",
+    }:
+        raise SchemaContractError("unverified_projection_refusal", authority_id)
+    _verify_finalized_self_hash(record, "authority_lock_record_sha256")
+
+
+def validate_authority_source_record(
+    record: Mapping[str, JsonValue],
+    *,
+    authority_lock_hashes: Mapping[str, str],
+    expected_source_hashes: Mapping[str, str],
+    selector_rows: Sequence[Mapping[str, JsonValue]],
+) -> None:
+    validate_exact_keys(
+        record,
+        AUTHORITY_SOURCE_RECORD_REQUIRED_FIELDS,
+        label="authority_source_record",
+    )
+    _validate_sorted_hash_map(
+        expected_source_hashes,
+        expected_keys=EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY,
+        mismatch_code="retired_authority_hash_mismatch",
+    )
+    authority_id = _require_nonempty_string(record.get("authority_id"), "authority_id")
+    if authority_id not in RETIRED_AUTHORITY_IDS:
+        raise SchemaContractError("illegal_retired_authority", authority_id)
+    _validate_authority_lock_hash_refs(
+        authority_lock_hashes,
+        required_authority_id=authority_id,
+    )
+    if record.get("authority_stage") != authority_id:
+        raise SchemaContractError("missing_retired_authority", authority_id)
+    path = _require_nonempty_string(
+        record.get("repo_relative_path"), "repo_relative_path"
+    )
+    _validate_repo_relative_path(path)
+    if path not in EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY:
+        raise SchemaContractError("source_outside_retired_inventory", path)
+    if _authority_id_for_retired_source_path(path) != authority_id:
+        raise SchemaContractError("missing_retired_authority", path)
+    lock_hash = _validate_lower_sha256(
+        record.get("authority_lock_record_sha256"),
+        label="authority_lock_record_sha256",
+    )
+    if authority_lock_hashes.get(authority_id) != lock_hash:
+        raise SchemaContractError("unverified_projection_refusal", authority_id)
+    raw_hash = _validate_lower_sha256(record.get("raw_byte_sha256"), label=path)
+    if raw_hash != expected_source_hashes[path]:
+        raise SchemaContractError("retired_authority_hash_mismatch", path)
+    declared_hash = record.get("declared_historical_hash_or_null")
+    algorithm = record.get("declared_hash_algorithm_or_null")
+    declared_verified = record.get("declared_hash_verified")
+    if declared_hash is not None:
+        _validate_lower_sha256(declared_hash, label="declared_historical_hash_or_null")
+        if declared_hash != raw_hash:
+            raise SchemaContractError("retired_authority_hash_mismatch", path)
+        if algorithm != "sha256" or declared_verified is not True:
+            raise SchemaContractError("retired_authority_hash_mismatch", path)
+    elif algorithm is not None or declared_verified is not False:
+        raise SchemaContractError("retired_authority_hash_mismatch", path)
+    uses = _as_string_sequence(
+        record.get("allowed_projection_uses"),
+        "allowed_projection_uses",
+    )
+    _validate_sorted_unique_strings(uses, label="allowed_projection_uses")
+    allowed_uses = _allowed_projection_uses_for_retired_path(path, selector_rows)
+    if set(uses) != allowed_uses:
+        raise SchemaContractError("source_projection_use_violation", path)
+    contains_outcome = record.get("contains_outcome_fields")
+    if not isinstance(contains_outcome, bool):
+        raise SchemaContractError("source_outcome_field_violation", path)
+    if contains_outcome and set(uses) != {"source_hash_validation"}:
+        raise SchemaContractError("source_outcome_field_violation", path)
+
+
+def validate_normalization_manifest(
+    manifest: Mapping[str, JsonValue],
+    *,
+    authority_lock_records: Mapping[str, Mapping[str, JsonValue]],
+    authority_source_records: Mapping[str, Mapping[str, JsonValue]],
+    fingerprint_records: Mapping[str, Mapping[str, JsonValue]],
+) -> None:
+    validate_exact_keys(
+        manifest,
+        NORMALIZATION_MANIFEST_REQUIRED_FIELDS,
+        label="normalization_manifest",
+    )
+    if manifest.get("schema_version") != (
+        "ims-deadlock/g6b-retired-normalization-manifest/v1"
+    ):
+        raise SchemaContractError("schema_version_drift")
+    _require_nonempty_string(manifest.get("manifest_id"), "manifest_id")
+    _require_nonempty_string(manifest.get("source_remote"), "source_remote")
+    _validate_git_object_id(manifest.get("source_head"), label="source_head")
+    _validate_git_object_id(manifest.get("source_tree_hash"), label="source_tree_hash")
+    if manifest.get("source_dirty_state") != "clean":
+        raise SchemaContractError("source_identity_drift")
+    if _as_string_sequence(manifest.get("authority_ids"), "authority_ids") != (
+        RETIRED_AUTHORITY_IDS
+    ):
+        raise SchemaContractError("missing_retired_authority")
+    expected_hashes = _validate_sorted_hash_map(
+        manifest.get("expected_file_manifest"),
+        expected_keys=EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY,
+        mismatch_code="retired_authority_hash_mismatch",
+    )
+    verified_hashes = _validate_sorted_hash_map(
+        manifest.get("verified_file_byte_hashes"),
+        expected_keys=EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY,
+        mismatch_code="retired_authority_hash_mismatch",
+    )
+    if verified_hashes != expected_hashes:
+        raise SchemaContractError("retired_authority_hash_mismatch")
+    _validate_frozen_hash_validation_results(
+        manifest.get("frozen_hash_validation_results"),
+        expected_hashes=expected_hashes,
+    )
+    canonical_versions = _validate_string_map(
+        manifest.get("historical_canonicalization_versions"),
+        expected_keys=RETIRED_AUTHORITY_IDS,
+        mismatch_code="missing_retired_authority",
+    )
+    if any(
+        value != G6B_CANONICAL_JSON_VERSION for value in canonical_versions.values()
+    ):
+        raise SchemaContractError("canonicalization_version_mismatch")
+    if (
+        manifest.get("projection_canonicalization_version")
+        != G6B_CANONICAL_JSON_VERSION
+    ):
+        raise SchemaContractError("canonicalization_version_mismatch")
+    _require_nonempty_string(manifest.get("normalizer_version"), "normalizer_version")
+    _validate_lower_sha256(
+        manifest.get("normalizer_code_sha256"),
+        label="normalizer_code_sha256",
+    )
+    _validate_lower_sha256(
+        manifest.get("normalization_authorization_sha256"),
+        label="normalization_authorization_sha256",
+    )
+    _validate_manifest_authority_lock_hashes(
+        manifest.get("authority_lock_record_hashes"),
+        authority_lock_records=authority_lock_records,
+    )
+    _validate_manifest_authority_source_hashes(
+        manifest.get("authority_source_record_hashes"),
+        authority_source_records=authority_source_records,
+    )
+    _validate_manifest_fingerprint_hashes(
+        manifest.get("fingerprint_record_hashes"),
+        fingerprint_records=fingerprint_records,
+    )
+    _validate_unique_lineage_map(
+        manifest.get("unique_lineage_map"),
+        fingerprint_records=fingerprint_records,
+    )
+    _validate_dimension_status_counts(
+        manifest.get("dimension_status_counts"),
+        fingerprint_records=fingerprint_records,
+    )
+    missing_records = _as_string_sequence(
+        manifest.get("missing_source_records"),
+        "missing_source_records",
+    )
+    _validate_sorted_unique_strings(missing_records, label="missing_source_records")
+    unreconstructable = _as_string_sequence(
+        manifest.get("unreconstructable_records"),
+        "unreconstructable_records",
+    )
+    _validate_sorted_unique_strings(
+        unreconstructable, label="unreconstructable_records"
+    )
+    expected_unreconstructable = tuple(
+        sorted(
+            record_id
+            for record_id, record in fingerprint_records.items()
+            if record.get("dimension_status") == "unreconstructable_refuse"
+        )
+    )
+    if unreconstructable != expected_unreconstructable:
+        raise SchemaContractError("unreconstructable_not_eligible")
+    _validate_comparison_eligibility(
+        manifest.get("comparison_eligibility"),
+        fingerprint_records=fingerprint_records,
+        missing_source_records=missing_records,
+        unreconstructable_records=unreconstructable,
+    )
+    _validate_utc_timestamp(manifest.get("created_at_utc"), label="created_at_utc")
+    _verify_finalized_self_hash(manifest, "manifest_sha256")
 
 
 def validate_normalizer_source_guard(source: str) -> None:
@@ -1958,6 +2306,7 @@ def validate_normalizer_source_guard(source: str) -> None:
                     {f"{module_name}.{alias.name}"},
                 )
     _extend_callable_assignment_aliases(tree, aliases)
+    _validate_normalizer_operation_sequence(tree, aliases)
     for node in ast.walk(tree):
         if isinstance(node, ast.Call):
             if isinstance(node.func, ast.Subscript):
@@ -1968,7 +2317,11 @@ def validate_normalizer_source_guard(source: str) -> None:
             for call_name in call_names:
                 if _is_unknown_callable_alias(call_name):
                     raise SchemaContractError("retired_normalizer_error", call_name)
-                _validate_normalizer_call(call_name, node)
+                _validate_normalizer_call(
+                    call_name,
+                    node,
+                    top_level_function=_top_level_function_context(tree, node),
+                )
             _reject_sensitive_callable_escapes(
                 node,
                 aliases,
@@ -3824,7 +4177,12 @@ def _reject_failure_status_upgrade(
         raise SchemaContractError("retired_projection_unreconstructable")
 
 
-def _validate_output_schema_and_root(schema: object, root: object) -> None:
+def _validate_output_schema_and_root(
+    schema: object,
+    root: object,
+    *,
+    expected_output_root: str | None = None,
+) -> None:
     if not isinstance(schema, Mapping):
         raise SchemaContractError("output_schema_id_drift")
     validate_exact_keys(
@@ -3832,8 +4190,8 @@ def _validate_output_schema_and_root(schema: object, root: object) -> None:
         {"schema_id", "schema_version"},
         label="allowed_output_schema",
     )
-    _require_nonempty_string(schema.get("schema_id"), "schema_id")
-    _require_nonempty_string(schema.get("schema_version"), "schema_version")
+    if dict(schema) != dict(NORMALIZATION_ALLOWED_OUTPUT_SCHEMA):
+        raise SchemaContractError("output_schema_id_drift")
     if not isinstance(root, Mapping):
         raise SchemaContractError("repo_relative_path_violation")
     validate_exact_keys(
@@ -3846,8 +4204,287 @@ def _validate_output_schema_and_root(schema: object, root: object) -> None:
         "repo_relative_posix_path",
     )
     _validate_repo_relative_path(path)
+    if path != (expected_output_root or NORMALIZATION_ALLOWED_OUTPUT_ROOT_PATH):
+        raise SchemaContractError("output_root_contract_drift")
     if root.get("contains_only_governance_outputs") is not True:
         raise SchemaContractError("output_root_reuse_or_materialized")
+
+
+def _authority_id_for_retired_source_path(path: str) -> str:
+    if path.startswith("cases/confirmation/g4/"):
+        return "G4_FREEZE"
+    if path.startswith("evidence/g5/"):
+        return "G5_EXECUTION"
+    if path.startswith("evidence/g6/"):
+        return "G6_R_REPLAY_R3"
+    raise SchemaContractError("source_outside_retired_inventory", path)
+
+
+def _validate_sorted_unique_strings(values: Sequence[str], *, label: str) -> None:
+    if tuple(values) != tuple(sorted(values)):
+        raise SchemaContractError("set_array_not_sorted", label)
+    if len(set(values)) != len(values):
+        raise SchemaContractError("set_array_duplicate", label)
+
+
+def _validate_sorted_hash_map(
+    value: object,
+    *,
+    expected_keys: Sequence[str],
+    mismatch_code: str,
+) -> dict[str, str]:
+    if not isinstance(value, Mapping):
+        raise SchemaContractError(mismatch_code)
+    if tuple(value.keys()) != tuple(sorted(value.keys())):
+        raise SchemaContractError("hash_map_not_sorted")
+    if set(value) != set(expected_keys):
+        raise SchemaContractError(mismatch_code)
+    result: dict[str, str] = {}
+    for key, digest in value.items():
+        if not isinstance(key, str):
+            raise SchemaContractError(mismatch_code)
+        result[key] = _validate_lower_sha256(digest, label=key)
+    return result
+
+
+def _validate_authority_lock_hash_refs(
+    value: Mapping[str, str],
+    *,
+    required_authority_id: str,
+) -> None:
+    if not isinstance(value, Mapping):
+        raise SchemaContractError("absent_authority_lock_ref")
+    if tuple(value.keys()) != tuple(sorted(value.keys())):
+        raise SchemaContractError("hash_map_not_sorted")
+    if required_authority_id not in value:
+        raise SchemaContractError("absent_authority_lock_ref", required_authority_id)
+    if not set(value) <= set(RETIRED_AUTHORITY_IDS):
+        raise SchemaContractError("absent_authority_lock_ref")
+    for authority_id, digest in value.items():
+        if not isinstance(authority_id, str):
+            raise SchemaContractError("absent_authority_lock_ref")
+        _validate_lower_sha256(digest, label=authority_id)
+
+
+def _validate_string_map(
+    value: object,
+    *,
+    expected_keys: Sequence[str],
+    mismatch_code: str,
+) -> dict[str, str]:
+    if not isinstance(value, Mapping):
+        raise SchemaContractError(mismatch_code)
+    if tuple(value.keys()) != tuple(sorted(value.keys())):
+        raise SchemaContractError("hash_map_not_sorted")
+    if set(value) != set(expected_keys):
+        raise SchemaContractError(mismatch_code)
+    result: dict[str, str] = {}
+    for key, item in value.items():
+        if not isinstance(key, str) or not isinstance(item, str):
+            raise SchemaContractError(mismatch_code)
+        result[key] = item
+    return result
+
+
+def _allowed_projection_uses_for_retired_path(
+    path: str,
+    selector_rows: Sequence[Mapping[str, JsonValue]],
+) -> set[str]:
+    validate_source_selector_matrix(selector_rows)
+    uses: set[str] = set()
+    for row in selector_rows:
+        pattern = _require_nonempty_string(
+            row.get("source_path_pattern"),
+            "source_path_pattern",
+        )
+        if _retired_source_pattern_matches_path(pattern, path):
+            uses.add(_require_nonempty_string(row.get("allowed_use"), "allowed_use"))
+    return uses or {"source_hash_validation"}
+
+
+def _retired_source_pattern_matches_path(pattern: str, path: str) -> bool:
+    if "{case_id}" in pattern:
+        return any(
+            path == pattern.replace("{case_id}", case_id)
+            for case_id in G4_MANIFEST_CASE_IDS
+        )
+    if "{" not in pattern:
+        return path == pattern
+    prefix, remainder = pattern.split("{", 1)
+    alternatives, suffix = remainder.split("}", 1)
+    return any(
+        path == f"{prefix}{alternative}{suffix}"
+        for alternative in alternatives.split(",")
+    )
+
+
+def _validate_frozen_hash_validation_results(
+    value: object,
+    *,
+    expected_hashes: Mapping[str, str],
+) -> None:
+    if not isinstance(value, Mapping):
+        raise SchemaContractError("retired_authority_hash_mismatch")
+    if tuple(value.keys()) != tuple(sorted(value.keys())):
+        raise SchemaContractError("hash_map_not_sorted")
+    if set(value) != set(expected_hashes):
+        raise SchemaContractError("retired_authority_hash_mismatch")
+    for path, result in value.items():
+        if not isinstance(path, str) or not isinstance(result, Mapping):
+            raise SchemaContractError("retired_authority_hash_mismatch")
+        validate_exact_keys(
+            result,
+            {"declared_sha256", "observed_sha256", "status"},
+            label="frozen_hash_validation_result",
+        )
+        if result.get("declared_sha256") != expected_hashes[path]:
+            raise SchemaContractError("retired_authority_hash_mismatch", path)
+        if result.get("observed_sha256") != expected_hashes[path]:
+            raise SchemaContractError("retired_authority_hash_mismatch", path)
+        if result.get("status") != "match":
+            raise SchemaContractError("retired_authority_hash_mismatch", path)
+
+
+def _validate_manifest_authority_lock_hashes(
+    value: object,
+    *,
+    authority_lock_records: Mapping[str, Mapping[str, JsonValue]],
+) -> None:
+    expected = {
+        authority_id: record.get("authority_lock_record_sha256")
+        for authority_id, record in authority_lock_records.items()
+    }
+    observed = _validate_sorted_hash_map(
+        value,
+        expected_keys=RETIRED_AUTHORITY_IDS,
+        mismatch_code="absent_authority_lock_ref",
+    )
+    if set(authority_lock_records) != set(RETIRED_AUTHORITY_IDS):
+        raise SchemaContractError("absent_authority_lock_ref")
+    for authority_id, digest in observed.items():
+        if expected.get(authority_id) != digest:
+            raise SchemaContractError("absent_authority_lock_ref", authority_id)
+
+
+def _validate_manifest_authority_source_hashes(
+    value: object,
+    *,
+    authority_source_records: Mapping[str, Mapping[str, JsonValue]],
+) -> None:
+    observed = _validate_sorted_hash_map(
+        value,
+        expected_keys=EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY,
+        mismatch_code="authority_source_ref_mismatch",
+    )
+    if set(authority_source_records) != set(EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY):
+        raise SchemaContractError("authority_source_ref_mismatch")
+    for path, digest in observed.items():
+        expected_digest = g6b_canonical_json.canonical_sha256_v2(
+            dict(authority_source_records[path])
+        )
+        if digest != expected_digest:
+            raise SchemaContractError("authority_source_ref_mismatch", path)
+
+
+def _validate_manifest_fingerprint_hashes(
+    value: object,
+    *,
+    fingerprint_records: Mapping[str, Mapping[str, JsonValue]],
+) -> None:
+    expected_keys = tuple(sorted(fingerprint_records))
+    observed = _validate_sorted_hash_map(
+        value,
+        expected_keys=expected_keys,
+        mismatch_code="fingerprint_ref_mismatch",
+    )
+    for record_id, digest in observed.items():
+        if digest != fingerprint_records[record_id].get("record_provenance_sha256"):
+            raise SchemaContractError("fingerprint_ref_mismatch", record_id)
+
+
+def _validate_unique_lineage_map(
+    value: object,
+    *,
+    fingerprint_records: Mapping[str, Mapping[str, JsonValue]],
+) -> None:
+    if not isinstance(value, Mapping):
+        raise SchemaContractError("duplicate_lineage_miscount")
+    expected: dict[str, list[str]] = {}
+    for record_id, record in fingerprint_records.items():
+        lineage_id = _require_nonempty_string(record.get("lineage_id"), "lineage_id")
+        expected.setdefault(lineage_id, []).append(record_id)
+    expected = {key: sorted(record_ids) for key, record_ids in sorted(expected.items())}
+    if tuple(value.keys()) != tuple(expected.keys()):
+        raise SchemaContractError("duplicate_lineage_miscount")
+    for lineage_id, record_ids in value.items():
+        actual_ids = _as_string_sequence(record_ids, "unique_lineage_map")
+        if tuple(actual_ids) != tuple(sorted(actual_ids)):
+            raise SchemaContractError("duplicate_lineage_miscount", lineage_id)
+        if len(set(actual_ids)) != len(actual_ids):
+            raise SchemaContractError("duplicate_lineage_miscount", lineage_id)
+        if list(actual_ids) != expected[lineage_id]:
+            raise SchemaContractError("duplicate_lineage_miscount", lineage_id)
+
+
+def _validate_dimension_status_counts(
+    value: object,
+    *,
+    fingerprint_records: Mapping[str, Mapping[str, JsonValue]],
+) -> None:
+    if not isinstance(value, Mapping):
+        raise SchemaContractError("unknown_dimension_status")
+    if tuple(value.keys()) != DIMENSION_STATUS_VALUES:
+        raise SchemaContractError("unknown_dimension_status")
+    expected = {
+        status: sum(
+            1
+            for record in fingerprint_records.values()
+            if record.get("dimension_status") == status
+        )
+        for status in DIMENSION_STATUS_VALUES
+    }
+    for status, count in value.items():
+        if not isinstance(count, int) or isinstance(count, bool):
+            raise SchemaContractError("unknown_dimension_status", status)
+        if expected[status] != count:
+            raise SchemaContractError("unknown_dimension_status", status)
+
+
+def _validate_comparison_eligibility(
+    value: object,
+    *,
+    fingerprint_records: Mapping[str, Mapping[str, JsonValue]],
+    missing_source_records: Sequence[str],
+    unreconstructable_records: Sequence[str],
+) -> None:
+    if not isinstance(value, Mapping):
+        raise SchemaContractError("unreconstructable_not_eligible")
+    if tuple(value.keys()) != tuple(sorted(fingerprint_records)):
+        raise SchemaContractError("unreconstructable_not_eligible")
+    for record_id, eligibility in value.items():
+        if not isinstance(record_id, str) or not isinstance(eligibility, Mapping):
+            raise SchemaContractError("unreconstructable_not_eligible")
+        validate_exact_keys(
+            eligibility,
+            {"eligible_for_overlap_comparison", "refusal_reason_code_or_null"},
+            label="comparison_eligibility",
+        )
+        status = fingerprint_records[record_id].get("dimension_status")
+        eligible = eligibility.get("eligible_for_overlap_comparison")
+        refusal = eligibility.get("refusal_reason_code_or_null")
+        fail_closed = (
+            status == "unreconstructable_refuse"
+            or record_id in missing_source_records
+            or record_id in unreconstructable_records
+        )
+        if fail_closed:
+            if (
+                eligible is not False
+                or refusal != "retired_projection_unreconstructable"
+            ):
+                raise SchemaContractError("unreconstructable_not_eligible", record_id)
+        elif eligible is not True or refusal is not None:
+            raise SchemaContractError("unreconstructable_not_eligible", record_id)
 
 
 def _reject_downstream_and_wildcard_refs(record: Mapping[str, JsonValue]) -> None:
@@ -3867,6 +4504,10 @@ def _reject_downstream_and_wildcard_refs(record: Mapping[str, JsonValue]) -> Non
 
 def _validate_normalizer_import(name: str) -> None:
     _reject_side_effect_import(name)
+    if name == "ims_deadlock.g6b_governance" or name.startswith(
+        "ims_deadlock.g6b_governance."
+    ):
+        raise SchemaContractError("capability_import_violation", name)
     if not name.startswith("ims_deadlock"):
         return
     if any(
@@ -3897,7 +4538,12 @@ def _validate_preflight_import(name: str) -> None:
         raise SchemaContractError("capability_import_violation", name)
 
 
-def _validate_normalizer_call(call_name: str, node: ast.Call) -> None:
+def _validate_normalizer_call(
+    call_name: str,
+    node: ast.Call,
+    *,
+    top_level_function: str | None = None,
+) -> None:
     if _is_dynamic_import_call(call_name):
         imported_name = node.args[0] if node.args else None
         if isinstance(imported_name, ast.Constant) and isinstance(
@@ -3910,8 +4556,16 @@ def _validate_normalizer_call(call_name: str, node: ast.Call) -> None:
         raise SchemaContractError("capability_call_violation", call_name)
     if _is_safe_object_method(call_name):
         return
+    if _is_allowed_normalizer_path_write(call_name, node, top_level_function):
+        return
+    if call_name.rsplit(".", 1)[-1] in NORMALIZATION_ALLOWED_OPERATIONS:
+        return
     if _is_unlisted_safe_object_method(call_name):
         raise SchemaContractError("retired_normalizer_error", call_name)
+    if call_name.startswith("ims_deadlock.g6b_schema_contracts."):
+        if call_name not in ALLOWED_NORMALIZER_SCHEMA_CONTRACT_CALLS:
+            raise SchemaContractError("retired_normalizer_error", call_name)
+        return
     _reject_unapproved_side_effect_call(
         call_name,
         node,
@@ -3952,6 +4606,67 @@ def _validate_normalizer_call(call_name: str, node: ast.Call) -> None:
             raise SchemaContractError(code, call_name)
     if call_name in NORMALIZATION_FORBIDDEN_CALLS:
         raise SchemaContractError("capability_call_violation", call_name)
+
+
+def _is_allowed_normalizer_path_write(
+    call_name: str,
+    node: ast.Call,
+    top_level_function: str | None,
+) -> bool:
+    base_name, separator, method_name = call_name.rpartition(".")
+    return bool(
+        separator
+        and base_name == _SAFE_PATH_OBJECT_ALIAS
+        and method_name in NORMALIZATION_PATH_WRITER_METHODS
+        and top_level_function in ALLOWED_NORMALIZER_WRITER_FUNCTIONS
+        and isinstance(node.func, ast.Attribute)
+    )
+
+
+def _top_level_function_context(tree: ast.Module, target: ast.AST) -> str | None:
+    for statement in tree.body:
+        if not isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef):
+            continue
+        for node in ast.walk(statement):
+            if node is target:
+                return (
+                    statement.name
+                    if _call_belongs_directly_to_function(statement, target)
+                    else None
+                )
+    return None
+
+
+def _call_belongs_directly_to_function(
+    function: ast.FunctionDef | ast.AsyncFunctionDef,
+    target: ast.AST,
+) -> bool:
+    for nested in ast.walk(function):
+        if nested is function:
+            continue
+        if isinstance(
+            nested,
+            ast.FunctionDef | ast.AsyncFunctionDef | ast.Lambda,
+        ) and any(child is target for child in ast.walk(nested)):
+            return False
+    return True
+
+
+def _validate_normalizer_operation_sequence(
+    tree: ast.AST,
+    aliases: Mapping[str, set[str]],
+) -> None:
+    observed: list[str] = []
+    allowed_operations = set(NORMALIZATION_ALLOWED_OPERATIONS)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        for call_name in _ast_callable_value_names(node.func, aliases):
+            leaf_name = call_name.rsplit(".", 1)[-1]
+            if leaf_name in allowed_operations:
+                observed.append(leaf_name)
+    if observed and tuple(observed) != NORMALIZATION_ALLOWED_OPERATIONS:
+        raise SchemaContractError("operation_contract_drift")
 
 
 def _reject_side_effect_import(name: str) -> None:
@@ -4935,6 +5650,14 @@ def _validate_lower_sha256(value: object, *, label: str) -> str:
 
 def _validate_git_object_id(value: object, *, label: str) -> str:
     if not isinstance(value, str) or len(value) not in {40, 64}:
+        raise SchemaContractError("invalid_hash_digest", label)
+    if any(character not in LOWER_SHA256_HEX_DIGITS for character in value):
+        raise SchemaContractError("invalid_hash_digest", label)
+    return value
+
+
+def _validate_git_sha1(value: object, *, label: str) -> str:
+    if not isinstance(value, str) or len(value) != 40:
         raise SchemaContractError("invalid_hash_digest", label)
     if any(character not in LOWER_SHA256_HEX_DIGITS for character in value):
         raise SchemaContractError("invalid_hash_digest", label)

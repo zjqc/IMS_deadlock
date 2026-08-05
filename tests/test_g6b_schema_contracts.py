@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+# ruff: noqa: I001
+
 import hashlib
 import json
+import sys
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Literal, cast
 
-import pytest
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+import pytest
 from ims_deadlock import g6b_schema_contracts as contracts
 from ims_deadlock.g6b_canonical_json import (
     canonical_bytes_v2,
@@ -39,7 +43,6 @@ from ims_deadlock.g6b_schema_contracts import (
     validate_file_role_cardinality,
     validate_fingerprint_record,
     validate_g4_manifest_freeze_reconciliation,
-    validate_normalization_authorization,
     validate_normalizer_static_source,
     validate_output_root_reservation,
     validate_refusal_codes,
@@ -718,15 +721,15 @@ def valid_normalization_manifest(
         "authority_ids": list(
             _load_retired_schema_definition()["retired_authority_ids"]
         ),
-        "expected_file_manifest": dict(_retired_source_hashes()),
-        "verified_file_byte_hashes": dict(_retired_source_hashes()),
+        "expected_file_manifest": dict(sorted(_retired_source_hashes().items())),
+        "verified_file_byte_hashes": dict(sorted(_retired_source_hashes().items())),
         "frozen_hash_validation_results": {
             path: {
                 "declared_sha256": digest,
                 "observed_sha256": digest,
                 "status": "match",
             }
-            for path, digest in _retired_source_hashes().items()
+            for path, digest in sorted(_retired_source_hashes().items())
         },
         "historical_canonicalization_versions": {
             authority_id: contracts.G6B_CANONICAL_JSON_VERSION for authority_id in locks
@@ -741,22 +744,24 @@ def valid_normalization_manifest(
             authority_id: record["authority_lock_record_sha256"]
             for authority_id, record in locks.items()
         },
-        "authority_source_record_hashes": {
-            path: canonical_sha256_v2(record) for path, record in sources.items()
-        },
+        "authority_source_record_hashes": dict(
+            sorted(
+                (path, canonical_sha256_v2(record)) for path, record in sources.items()
+            )
+        ),
         "fingerprint_record_hashes": {
             record_id: record["record_provenance_sha256"]
-            for record_id, record in fingerprints.items()
+            for record_id, record in sorted(fingerprints.items())
         },
         "unique_lineage_map": unique_lineage_map,
         "dimension_status_counts": dimension_status_counts,
         "missing_source_records": [],
-        "unreconstructable_records": [
+        "unreconstructable_records": sorted(
             record_id
             for record_id, record in fingerprints.items()
             if record["dimension_status"] == "unreconstructable_refuse"
-        ],
-        "comparison_eligibility": comparison_eligibility,
+        ),
+        "comparison_eligibility": dict(sorted(comparison_eligibility.items())),
         "created_at_utc": "2030-01-01T00:00:00Z",
         "manifest_sha256": None,
     }
@@ -772,6 +777,38 @@ def _approved_normalization_governance_root() -> str:
     return (
         "cases/discovery/g6b/row_families/structural_discovery_v1/"
         "governance/g6b_retired_authority_normalization_v1"
+    )
+
+
+def _validate_valid_normalization_authorization(
+    authorization: Mapping[str, Any],
+) -> None:
+    schema = _load_retired_schema_definition()
+    contracts.validate_normalization_authorization(
+        authorization,
+        expected_schema_inventory_patterns=(
+            contracts.EXPECTED_RETIRED_SOURCE_INVENTORY
+        ),
+        expected_concrete_source_paths=(
+            contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+        ),
+        expected_selector_matrix=schema["allowed_json_fields_by_source"],
+        expected_git_object_format="sha1",
+        expected_source_head=cast(str, authorization.get("source_head", "")),
+        expected_source_tree_hash=cast(str, authorization.get("source_tree_hash", "")),
+        expected_file_manifest_hash=cast(
+            str,
+            authorization.get("expected_file_manifest_hash", ""),
+        ),
+        expected_normalizer_code_sha256=cast(
+            str,
+            authorization.get("normalizer_code_sha256", ""),
+        ),
+        expected_review_artifact_hash=cast(
+            str,
+            authorization.get("review_artifact_hash", ""),
+        ),
+        expected_output_root=_approved_normalization_governance_root(),
     )
 
 
@@ -1238,11 +1275,7 @@ def test_spec_17_3_12_schema_retired_inventory_fail_closed() -> None:
     inventory = _retired_source_inventory()
     expected_hashes = _retired_source_hashes()
     authorization = valid_normalization_authorization()
-    validate_normalization_authorization(
-        authorization,
-        expected_inventory=schema["expected_source_inventory"],
-        expected_selector_matrix=schema["allowed_json_fields_by_source"],
-    )
+    _validate_valid_normalization_authorization(authorization)
     validate_retired_authority_source_inventory(
         inventory,
         schema_definition=schema,
@@ -2534,6 +2567,137 @@ def test_normalizer_guard_allows_direct_listed_safe_call_result_methods() -> Non
     validate_normalizer_static_source(source)
 
 
+def test_normalizer_guard_allows_exact_retired_normalizer_surface() -> None:
+    source = (
+        "from pathlib import Path\n"
+        "from ims_deadlock.g6b_schema_contracts import SchemaContractError\n"
+        "from ims_deadlock.g6b_schema_contracts import "
+        "validate_normalization_authorization\n"
+        "from ims_deadlock.g6b_schema_contracts import validate_authority_lock_record\n"
+        "from ims_deadlock.g6b_schema_contracts import "
+        "validate_authority_source_record\n"
+        "from ims_deadlock.g6b_schema_contracts import validate_fingerprint_record\n"
+        "from ims_deadlock.g6b_schema_contracts import "
+        "validate_normalization_manifest\n"
+        "def write_normalization_authorization(path, payload):\n"
+        "    target = Path(path).resolve()\n"
+        "    if target.exists() and target.is_file() and not target.is_symlink():\n"
+        "        target.read_bytes()\n"
+        "        target.read_text()\n"
+        "        target.relative_to(Path('governance').resolve())\n"
+        "    target.mkdir()\n"
+        "    validate_normalization_authorization(payload)\n"
+        "    target.write_bytes(b'{}')\n"
+        "    target.replace(Path(path))\n"
+        "def write_authority_lock_record(path, payload):\n"
+        "    read_authority_bytes()\n"
+        "    parse_allowed_json_pointers()\n"
+        "    verify_source_hashes()\n"
+        "    parse_historical_decimal_exactly()\n"
+        "    apply_static_input_projection()\n"
+        "    canonicalize_projection_v2()\n"
+        "    compute_sha256()\n"
+        "    write_normalization_authorization()\n"
+        "    write_authority_lock_record()\n"
+        "    write_authority_source_record()\n"
+        "    write_fingerprint_record()\n"
+        "    write_normalization_manifest()\n"
+        "    validate_authority_lock_record(payload)\n"
+        "    Path(path).write_bytes(b'{}')\n"
+        "def write_authority_source_record(path, payload):\n"
+        "    validate_authority_source_record(payload)\n"
+        "    Path(path).write_bytes(b'{}')\n"
+        "def write_fingerprint_record(path, payload):\n"
+        "    try:\n"
+        "        validate_fingerprint_record(payload, None)\n"
+        "    except SchemaContractError:\n"
+        "        raise\n"
+        "    Path(path).write_bytes(b'{}')\n"
+        "def write_normalization_manifest(path, payload):\n"
+        "    validate_normalization_manifest(payload)\n"
+        "    Path(path).write_bytes(b'{}')\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "def normalize(path):\n    Path(path).write_bytes(b'bad')\n",
+        (
+            "def write_fingerprint_record(path):\n"
+            "    def nested():\n"
+            "        Path(path).write_bytes(b'bad')\n"
+            "    nested()\n"
+        ),
+        (
+            "def write_fingerprint_record(path):\n"
+            "    writer = Path(path).write_bytes\n"
+            "    writer(b'bad')\n"
+        ),
+    ],
+)
+def test_normalizer_guard_rejects_writer_outside_top_level_writer_boundary(
+    body: str,
+) -> None:
+    source = "from pathlib import Path\n" + body
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize("method", ["iterdir", "glob", "unlink", "write_text", "open"])
+def test_normalizer_guard_rejects_unlisted_path_methods(method: str) -> None:
+    source = (
+        f"from pathlib import Path\ndef normalize(path):\n    Path(path).{method}()\n"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_rejects_governance_import_and_unlisted_schema_call() -> None:
+    for source, code in (
+        ("import ims_deadlock.g6b_governance\n", "capability_import_violation"),
+        (
+            (
+                "from ims_deadlock.g6b_schema_contracts import SchemaContractError\n"
+                "def normalize(record):\n"
+                "    SchemaContractError('bad')\n"
+            ),
+            "retired_normalizer_error",
+        ),
+        (
+            (
+                "from ims_deadlock.g6b_schema_contracts import validate_exact_keys\n"
+                "def normalize(record):\n"
+                "    validate_exact_keys(record, set(), label='x')\n"
+            ),
+            "retired_normalizer_error",
+        ),
+    ):
+        with pytest.raises(SchemaContractError, match=code):
+            validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_rejects_retired_operation_order_drift() -> None:
+    source = (
+        "def normalize():\n"
+        "    read_authority_bytes()\n"
+        "    parse_allowed_json_pointers()\n"
+        "    parse_historical_decimal_exactly()\n"
+        "    verify_source_hashes()\n"
+        "    apply_static_input_projection()\n"
+        "    canonicalize_projection_v2()\n"
+        "    compute_sha256()\n"
+        "    write_normalization_authorization()\n"
+        "    write_authority_lock_record()\n"
+        "    write_authority_source_record()\n"
+        "    write_fingerprint_record()\n"
+        "    write_normalization_manifest()\n"
+    )
+    with pytest.raises(SchemaContractError, match="operation_contract_drift"):
+        validate_normalizer_static_source(source)
+
+
 def test_preflight_guard_allows_direct_listed_safe_call_result_methods() -> None:
     source = (
         "from hashlib import sha256\n"
@@ -3303,7 +3467,6 @@ def test_spec_17_3_35_schema_failure_refusal_evidence_append_only() -> None:
 
 
 def test_normalization_authorization_rejects_legacy_bypass_shape() -> None:
-    schema = _load_retired_schema_definition()
     legacy: JsonObject = {
         "schema_version": "ims-deadlock/g6b-retired-normalization-authorization/v1",
         "authorization_id": "legacy-bypass",
@@ -3323,18 +3486,13 @@ def test_normalization_authorization_rejects_legacy_bypass_shape() -> None:
     )
 
     with pytest.raises(SchemaContractError, match="missing_key"):
-        validate_normalization_authorization(
-            legacy,
-            expected_inventory=schema["expected_source_inventory"],
-            expected_selector_matrix=schema["allowed_json_fields_by_source"],
-        )
+        _validate_valid_normalization_authorization(legacy)
 
 
 @pytest.mark.parametrize("authorized", [False, 1, "true"])
 def test_normalization_authorization_requires_explicit_true(
     authorized: object,
 ) -> None:
-    schema = _load_retired_schema_definition()
     record = valid_normalization_authorization()
     record["authorized"] = authorized
     record = _with_rehashed(record, "authorization_sha256")
@@ -3343,25 +3501,16 @@ def test_normalization_authorization_requires_explicit_true(
         SchemaContractError,
         match="unauthorized_retired_normalization_attempt",
     ):
-        validate_normalization_authorization(
-            record,
-            expected_inventory=schema["expected_source_inventory"],
-            expected_selector_matrix=schema["allowed_json_fields_by_source"],
-        )
+        _validate_valid_normalization_authorization(record)
 
 
 def test_normalization_authorization_rejects_identity_drift() -> None:
-    schema = _load_retired_schema_definition()
     record = valid_normalization_authorization()
     record["invalidated_by_identity_drift"] = True
     record = _with_rehashed(record, "authorization_sha256")
 
     with pytest.raises(SchemaContractError, match="runtime_identity_drift"):
-        validate_normalization_authorization(
-            record,
-            expected_inventory=schema["expected_source_inventory"],
-            expected_selector_matrix=schema["allowed_json_fields_by_source"],
-        )
+        _validate_valid_normalization_authorization(record)
 
 
 def test_authority_lock_record_closes_identity_and_projection_lock() -> None:
@@ -3390,6 +3539,12 @@ def test_authority_lock_record_closes_identity_and_projection_lock() -> None:
         "authority_lock_record_sha256",
     )
     contracts.validate_authority_lock_record(unverified)
+
+    historical = _with_rehashed(
+        {**record, "identity_verification_status": "verified_historical_identity"},
+        "authority_lock_record_sha256",
+    )
+    contracts.validate_authority_lock_record(historical)
 
 
 def test_authority_source_record_binds_exact_27_sources_and_projection_use() -> None:
@@ -3420,7 +3575,7 @@ def test_authority_source_record_binds_exact_27_sources_and_projection_use() -> 
         )
 
     use_violation = dict(source)
-    use_violation["allowed_projection_uses"] = ["quantitative_execution_result"]
+    use_violation["allowed_projection_uses"] = []
     with pytest.raises(SchemaContractError, match="source_projection_use_violation"):
         contracts.validate_authority_source_record(
             use_violation,
@@ -3428,6 +3583,17 @@ def test_authority_source_record_binds_exact_27_sources_and_projection_use() -> 
             expected_source_hashes=_retired_source_hashes(),
             selector_rows=schema["allowed_json_fields_by_source"],
         )
+
+    undeclared = dict(source)
+    undeclared["declared_historical_hash_or_null"] = None
+    undeclared["declared_hash_algorithm_or_null"] = None
+    undeclared["declared_hash_verified"] = False
+    contracts.validate_authority_source_record(
+        undeclared,
+        authority_lock_hashes=_authority_lock_hashes({"G4_FREEZE": lock}),
+        expected_source_hashes=_retired_source_hashes(),
+        selector_rows=schema["allowed_json_fields_by_source"],
+    )
 
     unverified_lock = _with_rehashed(
         {**lock, "identity_verification_status": "unverified_refuse"},
@@ -6919,14 +7085,14 @@ def test_construction_v3_keeps_retired_reuse_only_in_overlap_schemas() -> None:
     assert (
         schema["refusal_code_vocabulary_version"] == "ims-deadlock/g6b-refusal-codes/v2"
     )
-    for added_code in {
+    for added_code in (
         "ledger_append_interrupted",
         "partial_bundle_terminal",
         "post_seal_ledger_mutation",
         "projection_file_missing",
         "source_identity_phase_violation",
         "unexpected_transient_path",
-    }:
+    ):
         assert added_code in schema["refusal_reason_codes"]
 
 
