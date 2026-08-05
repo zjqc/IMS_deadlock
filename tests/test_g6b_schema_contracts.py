@@ -28,6 +28,8 @@ from ims_deadlock.g6b_schema_contracts import (
     CAPABILITY_NAMES,
     COMPARISON_POLICIES,
     COMPARISON_STATUS_VALUES,
+    EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY,
+    EXPECTED_RETIRED_SOURCE_INVENTORY,
     FINGERPRINT_DIMENSIONS,
     PROJECTION_KINDS,
     QUANTITATIVE_PLACEHOLDER_CODES,
@@ -333,8 +335,8 @@ def valid_normalization_authorization() -> JsonObject:
         "authorization_id": "normalization-authorization-test",
         "capability": "retired_authority_fingerprint_normalization",
         "authorized": True,
-        "source_head": "1" * 64,
-        "source_tree_hash": "2" * 64,
+        "source_head": _git_sha1("normalization-source-head"),
+        "source_tree_hash": _git_sha1("normalization-source-tree"),
         "authority_ids": list(schema["retired_authority_ids"]),
         "expected_file_manifest_hash": "3" * 64,
         "allowed_source_paths": list(
@@ -356,7 +358,7 @@ def valid_normalization_authorization() -> JsonObject:
             "schema_version": "v1",
         },
         "allowed_output_root": {
-            "repo_relative_posix_path": "governance/g6b/normalization-test",
+            "repo_relative_posix_path": _approved_normalization_governance_root(),
             "contains_only_governance_outputs": True,
         },
         "review_artifact_hash": "5" * 64,
@@ -409,8 +411,239 @@ def _retired_source_hashes() -> dict[str, str]:
     }
 
 
+def valid_authority_lock_record(authority_id: str) -> JsonObject:
+    record: JsonObject = {
+        "authority_id": authority_id,
+        "origin_remote": "git@github.com:zjqc/IMS_deadlock.git",
+        "origin_commit_or_null": _git_sha1(f"{authority_id}:origin-commit"),
+        "origin_tree_hash_or_null": _git_sha1(f"{authority_id}:origin-tree"),
+        "origin_lock_artifact_ref": (
+            "cases/discovery/g6b/row_families/structural_discovery_v1/"
+            f"governance/retired_authority_locks/{authority_id}.json"
+        ),
+        "origin_artifact_inventory_hash": _synthetic_hash(
+            f"{authority_id}:artifact-inventory"
+        ),
+        "current_merged_copy_tree_hash": _synthetic_hash(
+            f"{authority_id}:merged-copy-tree"
+        ),
+        "identity_verification_status": (
+            "verified_merged_copy_against_historical_hashes"
+        ),
+        "authority_lock_record_sha256": None,
+    }
+    record["authority_lock_record_sha256"] = finalized_self_hash(
+        record,
+        "authority_lock_record_sha256",
+    )
+    return record
+
+
+def _authority_id_for_retired_path(path: str) -> str:
+    if path.startswith("cases/confirmation/g4/"):
+        return "G4_FREEZE"
+    if path.startswith("evidence/g5/"):
+        return "G5_EXECUTION"
+    return "G6_R_REPLAY_R3"
+
+
+def _allowed_projection_uses_for_path(path: str) -> list[str]:
+    uses: set[str] = set()
+    for row in _retired_selector_rows():
+        pattern = row["source_path_pattern"]
+        if "{case_id}" in pattern:
+            pattern = pattern.replace("{case_id}", contracts.G4_MANIFEST_CASE_IDS[0])
+        elif "{" in pattern:
+            prefix, remainder = pattern.split("{", 1)
+            alternatives, suffix = remainder.split("}", 1)
+            pattern = f"{prefix}{alternatives.split(',', 1)[0]}{suffix}"
+        if pattern == path:
+            uses.add(row["allowed_use"])
+    return sorted(uses) or ["source_hash_validation"]
+
+
+def valid_authority_source_record(
+    path: str,
+    *,
+    authority_lock_record_sha256: str | None = None,
+) -> JsonObject:
+    authority_id = _authority_id_for_retired_path(path)
+    lock_hash = (
+        valid_authority_lock_record(authority_id)["authority_lock_record_sha256"]
+        if authority_lock_record_sha256 is None
+        else authority_lock_record_sha256
+    )
+    return {
+        "authority_id": authority_id,
+        "authority_stage": authority_id,
+        "authority_lock_record_sha256": lock_hash,
+        "repo_relative_path": path,
+        "raw_byte_sha256": canonical_sha256_v2({"synthetic_source_path": path}),
+        "declared_historical_hash_or_null": canonical_sha256_v2(
+            {"synthetic_source_path": path}
+        ),
+        "declared_hash_algorithm_or_null": "sha256",
+        "declared_hash_verified": True,
+        "allowed_projection_uses": _allowed_projection_uses_for_path(path),
+        "contains_outcome_fields": False,
+    }
+
+
+def _retired_authority_lock_records() -> dict[str, JsonObject]:
+    schema = _load_retired_schema_definition()
+    return {
+        authority_id: valid_authority_lock_record(authority_id)
+        for authority_id in schema["retired_authority_ids"]
+    }
+
+
+def _retired_authority_source_records(
+    lock_records: Mapping[str, JsonObject],
+) -> dict[str, JsonObject]:
+    return {
+        path: valid_authority_source_record(
+            path,
+            authority_lock_record_sha256=lock_records[
+                _authority_id_for_retired_path(path)
+            ]["authority_lock_record_sha256"],
+        )
+        for path in contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+    }
+
+
+def _normalization_fingerprint_records() -> dict[str, JsonObject]:
+    records: dict[str, JsonObject] = {}
+    for authority_id in _load_retired_schema_definition()["retired_authority_ids"]:
+        for dimension in contracts.FINGERPRINT_DIMENSIONS:
+            record = valid_fingerprint_record(dimension=dimension)
+            record["record_id"] = f"{authority_id.lower()}-{dimension}"
+            record["source_authority_id"] = authority_id
+            record["record_provenance_sha256"] = None
+            record["record_provenance_sha256"] = finalized_self_hash(
+                record,
+                "record_provenance_sha256",
+            )
+            records[record["record_id"]] = record
+    return records
+
+
+def valid_normalization_manifest(
+    *,
+    authority_locks: Mapping[str, JsonObject] | None = None,
+    authority_sources: Mapping[str, JsonObject] | None = None,
+    fingerprint_records: Mapping[str, JsonObject] | None = None,
+) -> JsonObject:
+    locks = (
+        _retired_authority_lock_records()
+        if authority_locks is None
+        else dict(authority_locks)
+    )
+    sources = (
+        _retired_authority_source_records(locks)
+        if authority_sources is None
+        else dict(authority_sources)
+    )
+    fingerprints = (
+        _normalization_fingerprint_records()
+        if fingerprint_records is None
+        else dict(fingerprint_records)
+    )
+    unique_lineage_map = {
+        record["lineage_id"]: sorted(
+            other["record_id"]
+            for other in fingerprints.values()
+            if other["lineage_id"] == record["lineage_id"]
+        )
+        for record in sorted(fingerprints.values(), key=lambda item: item["lineage_id"])
+    }
+    dimension_status_counts = {
+        status: sum(
+            1
+            for record in fingerprints.values()
+            if record["dimension_status"] == status
+        )
+        for status in contracts.DIMENSION_STATUS_VALUES
+    }
+    comparison_eligibility = {
+        record_id: {
+            "eligible_for_overlap_comparison": (
+                record["dimension_status"] != "unreconstructable_refuse"
+            ),
+            "refusal_reason_code_or_null": (
+                "retired_projection_unreconstructable"
+                if record["dimension_status"] == "unreconstructable_refuse"
+                else None
+            ),
+        }
+        for record_id, record in fingerprints.items()
+    }
+    manifest: JsonObject = {
+        "schema_version": "ims-deadlock/g6b-retired-normalization-manifest/v1",
+        "manifest_id": "normalization-manifest-test",
+        "source_remote": "git@github.com:zjqc/IMS_deadlock.git",
+        "source_head": _git_sha1("normalization-manifest-source-head"),
+        "source_tree_hash": _git_sha1("normalization-manifest-source-tree"),
+        "source_dirty_state": "clean",
+        "authority_ids": list(_load_retired_schema_definition()["retired_authority_ids"]),
+        "expected_file_manifest": dict(_retired_source_hashes()),
+        "verified_file_byte_hashes": dict(_retired_source_hashes()),
+        "frozen_hash_validation_results": {
+            path: {
+                "declared_sha256": digest,
+                "observed_sha256": digest,
+                "status": "match",
+            }
+            for path, digest in _retired_source_hashes().items()
+        },
+        "historical_canonicalization_versions": {
+            authority_id: contracts.G6B_CANONICAL_JSON_VERSION for authority_id in locks
+        },
+        "projection_canonicalization_version": contracts.G6B_CANONICAL_JSON_VERSION,
+        "normalizer_version": "retired-authority-normalizer-test-v1",
+        "normalizer_code_sha256": _synthetic_hash("normalizer-code"),
+        "normalization_authorization_sha256": _synthetic_hash(
+            "normalization-authorization"
+        ),
+        "authority_lock_record_hashes": {
+            authority_id: record["authority_lock_record_sha256"]
+            for authority_id, record in locks.items()
+        },
+        "authority_source_record_hashes": {
+            path: canonical_sha256_v2(record) for path, record in sources.items()
+        },
+        "fingerprint_record_hashes": {
+            record_id: record["record_provenance_sha256"]
+            for record_id, record in fingerprints.items()
+        },
+        "unique_lineage_map": unique_lineage_map,
+        "dimension_status_counts": dimension_status_counts,
+        "missing_source_records": [],
+        "unreconstructable_records": [
+            record_id
+            for record_id, record in fingerprints.items()
+            if record["dimension_status"] == "unreconstructable_refuse"
+        ],
+        "comparison_eligibility": comparison_eligibility,
+        "created_at_utc": "2030-01-01T00:00:00Z",
+        "manifest_sha256": None,
+    }
+    manifest["manifest_sha256"] = finalized_self_hash(manifest, "manifest_sha256")
+    return manifest
+
+
 def _retired_selector_rows() -> list[JsonObject]:
     return deepcopy(_load_retired_schema_definition()["allowed_json_fields_by_source"])
+
+
+def _approved_normalization_governance_root() -> str:
+    return (
+        "cases/discovery/g6b/row_families/structural_discovery_v1/"
+        "governance/g6b_retired_authority_normalization_v1"
+    )
+
+
+def _git_sha1(label: str) -> str:
+    return hashlib.sha1(canonical_bytes_v2({"synthetic_git_object": label})).hexdigest()
 
 
 def _retired_lineage_metadata() -> JsonObject:
@@ -2995,6 +3228,336 @@ def test_normalization_authorization_rejects_identity_drift() -> None:
             record,
             expected_inventory=schema["expected_source_inventory"],
             expected_selector_matrix=schema["allowed_json_fields_by_source"],
+        )
+
+
+def test_authority_lock_record_requires_exact_authority_identity_and_projection_lock() -> None:
+    schema = _load_retired_schema_definition()
+    record = valid_authority_lock_record("G4_FREEZE")
+    contracts.validate_authority_lock_record(
+        record,
+        expected_authority_ids=schema["retired_authority_ids"],
+        expected_git_object_format="sha1",
+    )
+
+    missing = dict(record)
+    missing.pop("origin_tree_hash_or_null")
+    with pytest.raises(SchemaContractError, match="missing_key"):
+        contracts.validate_authority_lock_record(
+            missing,
+            expected_authority_ids=schema["retired_authority_ids"],
+            expected_git_object_format="sha1",
+        )
+
+    extra = dict(record)
+    extra["legacy_projection_summary"] = "not-closed"
+    with pytest.raises(SchemaContractError, match="unexpected_key"):
+        contracts.validate_authority_lock_record(
+            extra,
+            expected_authority_ids=schema["retired_authority_ids"],
+            expected_git_object_format="sha1",
+        )
+
+    illegal = _with_rehashed(
+        {**record, "authority_id": "G6B_CURRENT_DISCOVERY"},
+        "authority_lock_record_sha256",
+    )
+    with pytest.raises(SchemaContractError, match="illegal_retired_authority"):
+        contracts.validate_authority_lock_record(
+            illegal,
+            expected_authority_ids=schema["retired_authority_ids"],
+            expected_git_object_format="sha1",
+        )
+
+    unverified = _with_rehashed(
+        {**record, "identity_verification_status": "projection_unverified"},
+        "authority_lock_record_sha256",
+    )
+    with pytest.raises(SchemaContractError, match="unverified_projection_refusal"):
+        contracts.validate_authority_lock_record(
+            unverified,
+            expected_authority_ids=schema["retired_authority_ids"],
+            expected_git_object_format="sha1",
+        )
+
+
+def test_authority_source_record_binds_exact_27_sources_and_no_outcomes() -> None:
+    schema = _load_retired_schema_definition()
+    lock = valid_authority_lock_record("G4_FREEZE")
+    source = valid_authority_source_record(
+        contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY[0],
+        authority_lock_record_sha256=lock["authority_lock_record_sha256"],
+    )
+    contracts.validate_authority_source_record(
+        source,
+        authority_lock_records={"G4_FREEZE": lock},
+        expected_concrete_source_paths=contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY,
+        selector_rows=schema["allowed_json_fields_by_source"],
+    )
+
+    outside = dict(source)
+    outside["repo_relative_path"] = (
+        "cases/discovery/g6b/row_families/structural_discovery_v1/"
+        "governance/unapproved-output.json"
+    )
+    with pytest.raises(SchemaContractError, match="source_outside_retired_inventory"):
+        contracts.validate_authority_source_record(
+            outside,
+            authority_lock_records={"G4_FREEZE": lock},
+            expected_concrete_source_paths=(
+                contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+            ),
+            selector_rows=schema["allowed_json_fields_by_source"],
+        )
+
+    outcome = dict(source)
+    outcome["contains_outcome_fields"] = True
+    with pytest.raises(SchemaContractError, match="source_outcome_field_violation"):
+        contracts.validate_authority_source_record(
+            outcome,
+            authority_lock_records={"G4_FREEZE": lock},
+            expected_concrete_source_paths=(
+                contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+            ),
+            selector_rows=schema["allowed_json_fields_by_source"],
+        )
+
+    use_violation = dict(source)
+    use_violation["allowed_projection_uses"] = ["quantitative_execution_result"]
+    with pytest.raises(SchemaContractError, match="source_projection_use_violation"):
+        contracts.validate_authority_source_record(
+            use_violation,
+            authority_lock_records={"G4_FREEZE": lock},
+            expected_concrete_source_paths=(
+                contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+            ),
+            selector_rows=schema["allowed_json_fields_by_source"],
+        )
+
+
+def test_normalization_manifest_closes_maps_refs_and_failure_eligibility() -> None:
+    schema = _load_retired_schema_definition()
+    locks = _retired_authority_lock_records()
+    sources = _retired_authority_source_records(locks)
+    fingerprints = _normalization_fingerprint_records()
+    manifest = valid_normalization_manifest(
+        authority_locks=locks,
+        authority_sources=sources,
+        fingerprint_records=fingerprints,
+    )
+    contracts.validate_normalization_manifest(
+        manifest,
+        authority_lock_records=locks,
+        authority_source_records=sources,
+        fingerprint_records=fingerprints,
+        expected_required_fields=schema["normalization_manifest_required_fields"],
+        expected_concrete_source_paths=contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY,
+    )
+
+    missing = dict(manifest)
+    missing.pop("authority_source_record_hashes")
+    with pytest.raises(SchemaContractError, match="missing_key"):
+        contracts.validate_normalization_manifest(
+            missing,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+            expected_required_fields=schema["normalization_manifest_required_fields"],
+            expected_concrete_source_paths=(
+                contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+            ),
+        )
+
+    extra = dict(manifest)
+    extra["legacy_summary"] = {"eligible_count": 24}
+    with pytest.raises(SchemaContractError, match="unexpected_key"):
+        contracts.validate_normalization_manifest(
+            extra,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+            expected_required_fields=schema["normalization_manifest_required_fields"],
+            expected_concrete_source_paths=(
+                contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+            ),
+        )
+
+    unsorted_hash_map = deepcopy(manifest)
+    unsorted_hash_map["authority_source_record_hashes"] = {
+        "z-last.json": _synthetic_hash("z"),
+        "a-first.json": _synthetic_hash("a"),
+    }
+    unsorted_hash_map = _with_rehashed(unsorted_hash_map, "manifest_sha256")
+    with pytest.raises(SchemaContractError, match="hash_map_not_sorted"):
+        contracts.validate_normalization_manifest(
+            unsorted_hash_map,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+            expected_required_fields=schema["normalization_manifest_required_fields"],
+            expected_concrete_source_paths=(
+                contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+            ),
+        )
+
+    duplicate_lineage = deepcopy(manifest)
+    first_lineage = next(iter(duplicate_lineage["unique_lineage_map"]))
+    duplicate_lineage["unique_lineage_map"][first_lineage].append(
+        duplicate_lineage["unique_lineage_map"][first_lineage][0]
+    )
+    duplicate_lineage = _with_rehashed(duplicate_lineage, "manifest_sha256")
+    with pytest.raises(SchemaContractError, match="duplicate_lineage_miscount"):
+        contracts.validate_normalization_manifest(
+            duplicate_lineage,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+            expected_required_fields=schema["normalization_manifest_required_fields"],
+            expected_concrete_source_paths=(
+                contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+            ),
+        )
+
+    absent_ref = deepcopy(manifest)
+    absent_ref["authority_lock_record_hashes"].pop("G4_FREEZE")
+    absent_ref = _with_rehashed(absent_ref, "manifest_sha256")
+    with pytest.raises(SchemaContractError, match="absent_authority_lock_ref"):
+        contracts.validate_normalization_manifest(
+            absent_ref,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+            expected_required_fields=schema["normalization_manifest_required_fields"],
+            expected_concrete_source_paths=(
+                contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+            ),
+        )
+
+    mismatched_ref = deepcopy(manifest)
+    first_source = next(iter(mismatched_ref["authority_source_record_hashes"]))
+    mismatched_ref["authority_source_record_hashes"][first_source] = "9" * 64
+    mismatched_ref = _with_rehashed(mismatched_ref, "manifest_sha256")
+    with pytest.raises(SchemaContractError, match="authority_source_ref_mismatch"):
+        contracts.validate_normalization_manifest(
+            mismatched_ref,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+            expected_required_fields=schema["normalization_manifest_required_fields"],
+            expected_concrete_source_paths=(
+                contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+            ),
+        )
+
+    failed_record = next(iter(fingerprints.values()))
+    failed_record["dimension_status"] = "unreconstructable_refuse"
+    failed_record["comparison_projection_ref_or_null"] = None
+    failed_record["comparison_projection_sha256_or_null"] = None
+    failed_record = _with_rehashed(failed_record, "record_provenance_sha256")
+    failed_fingerprints = {**fingerprints, failed_record["record_id"]: failed_record}
+    upgraded = valid_normalization_manifest(
+        authority_locks=locks,
+        authority_sources=sources,
+        fingerprint_records=failed_fingerprints,
+    )
+    upgraded["comparison_eligibility"][failed_record["record_id"]] = {
+        "eligible_for_overlap_comparison": True,
+        "refusal_reason_code_or_null": None,
+    }
+    upgraded = _with_rehashed(upgraded, "manifest_sha256")
+    with pytest.raises(SchemaContractError, match="unreconstructable_not_eligible"):
+        contracts.validate_normalization_manifest(
+            upgraded,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=failed_fingerprints,
+            expected_required_fields=schema["normalization_manifest_required_fields"],
+            expected_concrete_source_paths=(
+                contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+            ),
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "code"),
+    [
+        ("invalidated_by_identity_drift", True, "runtime_identity_drift"),
+        (
+            "allowed_output_root",
+            {
+                "repo_relative_posix_path": "governance/g6b/legacy-normalization",
+                "contains_only_governance_outputs": True,
+            },
+            "output_root_contract_drift",
+        ),
+        ("source_head", "0" * 40, "source_identity_drift"),
+        ("source_tree_hash", "1" * 40, "source_identity_drift"),
+        ("normalizer_code_sha256", "2" * 64, "normalizer_code_drift"),
+        ("review_artifact_hash", "3" * 64, "review_artifact_drift"),
+    ],
+)
+def test_normalization_authorization_binds_exact_source_code_review_and_root(
+    field: str,
+    value: object,
+    code: str,
+) -> None:
+    schema = _load_retired_schema_definition()
+    authorization = valid_normalization_authorization()
+    authorization.update(
+        {
+            "source_head": "26515fe4da5c02d4700a54a3882d3767ace88af8",
+            "source_tree_hash": "9b3f36e9943ed48db4d74057ef16991859ded8fd",
+            "normalizer_code_sha256": (
+                "98caa3349030e4dace0015c60919cc310f97f536d661265678113c29a62d12f8"
+            ),
+            "review_artifact_hash": (
+                "da6da7c2e513e11761e439f8b43ef6260556c912d3e730f94f15eae088d90ea0"
+            ),
+        }
+    )
+    authorization = _with_rehashed(authorization, "authorization_sha256")
+    contracts.validate_normalization_authorization(
+        authorization,
+        expected_schema_inventory_patterns=contracts.EXPECTED_RETIRED_SOURCE_INVENTORY,
+        expected_concrete_source_paths=(
+            contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+        ),
+        expected_selector_matrix=schema["allowed_json_fields_by_source"],
+        expected_git_object_format="sha1",
+        expected_source_head="26515fe4da5c02d4700a54a3882d3767ace88af8",
+        expected_source_tree_hash="9b3f36e9943ed48db4d74057ef16991859ded8fd",
+        expected_normalizer_code_sha256=(
+            "98caa3349030e4dace0015c60919cc310f97f536d661265678113c29a62d12f8"
+        ),
+        expected_review_artifact_hash=(
+            "da6da7c2e513e11761e439f8b43ef6260556c912d3e730f94f15eae088d90ea0"
+        ),
+        expected_allowed_output_root=_approved_normalization_governance_root(),
+    )
+
+    drifted = deepcopy(authorization)
+    drifted[field] = value
+    drifted = _with_rehashed(drifted, "authorization_sha256")
+    with pytest.raises(SchemaContractError, match=code):
+        contracts.validate_normalization_authorization(
+            drifted,
+            expected_schema_inventory_patterns=(
+                contracts.EXPECTED_RETIRED_SOURCE_INVENTORY
+            ),
+            expected_concrete_source_paths=(
+                contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+            ),
+            expected_selector_matrix=schema["allowed_json_fields_by_source"],
+            expected_git_object_format="sha1",
+            expected_source_head="26515fe4da5c02d4700a54a3882d3767ace88af8",
+            expected_source_tree_hash="9b3f36e9943ed48db4d74057ef16991859ded8fd",
+            expected_normalizer_code_sha256=(
+                "98caa3349030e4dace0015c60919cc310f97f536d661265678113c29a62d12f8"
+            ),
+            expected_review_artifact_hash=(
+                "da6da7c2e513e11761e439f8b43ef6260556c912d3e730f94f15eae088d90ea0"
+            ),
+            expected_allowed_output_root=_approved_normalization_governance_root(),
         )
 
 
