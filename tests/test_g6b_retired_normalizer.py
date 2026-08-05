@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 import json
+import subprocess
 import sys
 from collections.abc import Callable, Mapping
 from copy import deepcopy
@@ -1188,6 +1189,34 @@ def test_main_uses_fixed_argument_surface_without_extra_commands(
 ) -> None:
     with pytest.raises(SystemExit):
         main(["--unknown-option"])
+    assert not list(tmp_path.rglob("*"))
+
+
+def test_module_entrypoint_rejects_unknown_option_without_writes(
+    tmp_path: Path,
+) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-B",
+            "-m",
+            "ims_deadlock.g6b_retired_normalizer",
+            "--unknown-option",
+        ],
+        cwd=repo_root,
+        env={
+            "PYTHONPATH": str(repo_root / "src"),
+            "PYTHONDONTWRITEBYTECODE": "1",
+        },
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 2
+    assert completed.stdout == ""
+    assert completed.stderr == ""
     assert not list(tmp_path.rglob("*"))
 
 

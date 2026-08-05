@@ -4605,3 +4605,7 @@ def _hash_mapping(value: Mapping[str, str]) -> str:
 
 def _sha256_text(value: str) -> str:
     return hashlib.sha256(bytes(value, "utf-8")).hexdigest()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
