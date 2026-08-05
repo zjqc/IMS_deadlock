@@ -1,0 +1,49 @@
+{
+    "case_id": "g6b_article_bridge_competing_local_completion_v1",
+    "case_sha256": "2e9c1fa5c6c279b128ac7277e938c637e005a675389610aefc7b52ea2951562b",
+    "initial_state": "s0",
+    "schema_version": "ims-deadlock/article-core-case/v1",
+    "source_role": "predeclared_article_bridge",
+    "state_evidence": [
+        {
+            "a2b_request_closed_proof": false,
+            "completion": false,
+            "global_deadlock": false,
+            "local_candidate": false,
+            "local_deadlock": false,
+            "state_id": "s0"
+        },
+        {
+            "a2b_request_closed_proof": true,
+            "completion": false,
+            "global_deadlock": false,
+            "local_candidate": true,
+            "local_deadlock": true,
+            "state_id": "d_local"
+        },
+        {
+            "a2b_request_closed_proof": false,
+            "completion": true,
+            "global_deadlock": false,
+            "local_candidate": false,
+            "local_deadlock": false,
+            "state_id": "f_complete"
+        }
+    ],
+    "target_semantics": "first_hit_D_global_or_D_local_or_F_v1",
+    "theory_admission_route": "A2b_request_closed",
+    "transitions": [
+        {
+            "event": "complete",
+            "rate": "2",
+            "source": "s0",
+            "target": "f_complete"
+        },
+        {
+            "event": "enter_local",
+            "rate": "1",
+            "source": "s0",
+            "target": "d_local"
+        }
+    ]
+}

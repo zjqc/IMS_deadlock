@@ -19,7 +19,6 @@ from ims_deadlock.article_core import (
     write_article_closure_evidence,
 )
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CASE_IDS = (
     "g6b_article_bridge_competing_local_completion_v1",
@@ -93,7 +92,9 @@ def test_five_reused_cases_are_bound_to_the_sealed_source_bytes() -> None:
         expected = SEALED_CASE_INPUT_SHA256[case.case_id]
         assert case.source_sha256 == expected
         assert case.source_path is not None
-        assert sha256((REPO_ROOT / case.source_path).read_bytes()).hexdigest() == expected
+        assert (
+            sha256((REPO_ROOT / case.source_path).read_bytes()).hexdigest() == expected
+        )
 
 
 def test_theory_obligations_close_on_matched_cases_not_one_universal_method() -> None:
@@ -122,9 +123,7 @@ def test_theory_obligations_close_on_matched_cases_not_one_universal_method() ->
     assert bypass.d_local_states == ()
     assert bypass.completion_reachable_by_candidate == {"s_local_candidate": True}
 
-    precedence = validate_article_case(
-        cases["g6b_cu_nc_dglobal_only_with_dlocal_v1"]
-    )
+    precedence = validate_article_case(cases["g6b_cu_nc_dglobal_only_with_dlocal_v1"])
     assert precedence.d_global_states == ("s_initial",)
     assert precedence.local_candidate_states == ("s_initial",)
     assert precedence.d_local_states == ()
@@ -273,7 +272,9 @@ def test_evidence_writer_is_write_once_and_manifest_is_last(tmp_path: Path) -> N
         "exact_results.json",
     ]
     manifest_mtime = (output_root / "article_closure_manifest.json").stat().st_mtime_ns
-    assert manifest_mtime == max(path.stat().st_mtime_ns for path in output_root.iterdir())
+    assert manifest_mtime == max(
+        path.stat().st_mtime_ns for path in output_root.iterdir()
+    )
 
     with pytest.raises(FileExistsError, match="write-once"):
         write_article_closure_evidence(REPO_ROOT, output_root=output_root)
