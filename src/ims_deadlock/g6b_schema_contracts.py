@@ -2105,7 +2105,7 @@ def validate_authority_source_record(
         AUTHORITY_SOURCE_RECORD_REQUIRED_FIELDS,
         label="authority_source_record",
     )
-    _validate_sorted_hash_map(
+    _validate_closed_hash_map(
         expected_source_hashes,
         expected_keys=EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY,
         mismatch_code="retired_authority_hash_mismatch",
@@ -2152,14 +2152,14 @@ def validate_authority_source_record(
         "allowed_projection_uses",
     )
     _validate_sorted_unique_strings(uses, label="allowed_projection_uses")
-    allowed_uses = _allowed_projection_uses_for_retired_path(path, selector_rows)
-    if set(uses) != allowed_uses:
-        raise SchemaContractError("source_projection_use_violation", path)
     contains_outcome = record.get("contains_outcome_fields")
     if not isinstance(contains_outcome, bool):
         raise SchemaContractError("source_outcome_field_violation", path)
     if contains_outcome and set(uses) != {"source_hash_validation"}:
         raise SchemaContractError("source_outcome_field_violation", path)
+    allowed_uses = _allowed_projection_uses_for_retired_path(path, selector_rows)
+    if set(uses) != allowed_uses:
+        raise SchemaContractError("source_projection_use_violation", path)
 
 
 def validate_normalization_manifest(
@@ -4241,6 +4241,24 @@ def _validate_sorted_hash_map(
         raise SchemaContractError(mismatch_code)
     if tuple(value.keys()) != tuple(sorted(value.keys())):
         raise SchemaContractError("hash_map_not_sorted")
+    if set(value) != set(expected_keys):
+        raise SchemaContractError(mismatch_code)
+    result: dict[str, str] = {}
+    for key, digest in value.items():
+        if not isinstance(key, str):
+            raise SchemaContractError(mismatch_code)
+        result[key] = _validate_lower_sha256(digest, label=key)
+    return result
+
+
+def _validate_closed_hash_map(
+    value: object,
+    *,
+    expected_keys: Sequence[str],
+    mismatch_code: str,
+) -> dict[str, str]:
+    if not isinstance(value, Mapping):
+        raise SchemaContractError(mismatch_code)
     if set(value) != set(expected_keys):
         raise SchemaContractError(mismatch_code)
     result: dict[str, str] = {}

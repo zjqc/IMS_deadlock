@@ -3594,10 +3594,15 @@ def test_authority_source_record_binds_exact_27_sources_and_projection_use() -> 
         contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY[0],
         authority_lock_record_sha256=lock["authority_lock_record_sha256"],
     )
+    inventory_order_hashes = _retired_source_hashes()
+    assert tuple(inventory_order_hashes) == (
+        contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+    )
+    assert tuple(inventory_order_hashes) != tuple(sorted(inventory_order_hashes))
     contracts.validate_authority_source_record(
         source,
         authority_lock_hashes=_authority_lock_hashes({"G4_FREEZE": lock}),
-        expected_source_hashes=_retired_source_hashes(),
+        expected_source_hashes=inventory_order_hashes,
         selector_rows=schema["allowed_json_fields_by_source"],
     )
 
