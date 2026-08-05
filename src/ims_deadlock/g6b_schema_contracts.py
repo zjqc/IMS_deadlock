@@ -1939,6 +1939,8 @@ def validate_normalization_authorization(
     expected_review_artifact_hash: str,
     expected_output_root: str,
 ) -> None:
+    if expected_output_root != NORMALIZATION_ALLOWED_OUTPUT_ROOT_PATH:
+        raise SchemaContractError("output_root_contract_drift")
     validate_exact_keys(
         record,
         NORMALIZATION_AUTHORIZATION_REQUIRED_FIELDS,
@@ -2250,6 +2252,8 @@ def validate_normalization_manifest(
         "missing_source_records",
     )
     _validate_sorted_unique_strings(missing_records, label="missing_source_records")
+    if missing_records:
+        raise SchemaContractError("missing_source_records_not_empty")
     unreconstructable = _as_string_sequence(
         manifest.get("unreconstructable_records"),
         "unreconstructable_records",
@@ -4350,6 +4354,8 @@ def _validate_manifest_authority_lock_hashes(
     *,
     authority_lock_records: Mapping[str, Mapping[str, JsonValue]],
 ) -> None:
+    for record in authority_lock_records.values():
+        validate_authority_lock_record(record)
     expected = {
         authority_id: record.get("authority_lock_record_sha256")
         for authority_id, record in authority_lock_records.items()
@@ -4391,6 +4397,8 @@ def _validate_manifest_fingerprint_hashes(
     *,
     fingerprint_records: Mapping[str, Mapping[str, JsonValue]],
 ) -> None:
+    for record in fingerprint_records.values():
+        _verify_finalized_self_hash(record, "record_provenance_sha256")
     expected_keys = tuple(sorted(fingerprint_records))
     observed = _validate_sorted_hash_map(
         value,

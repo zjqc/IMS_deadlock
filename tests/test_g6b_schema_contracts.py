@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import sys
+import ast
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from pathlib import Path
@@ -777,6 +778,13 @@ def _approved_normalization_governance_root() -> str:
     return (
         "cases/discovery/g6b/row_families/structural_discovery_v1/"
         "governance/g6b_retired_authority_normalization_v1"
+    )
+
+
+def _alternate_normalization_governance_root() -> str:
+    return (
+        "cases/discovery/g6b/row_families/structural_discovery_v1/"
+        "governance/alternate_retired_authority_normalization_v1"
     )
 
 
@@ -2698,6 +2706,38 @@ def test_normalizer_guard_rejects_retired_operation_order_drift() -> None:
         validate_normalizer_static_source(source)
 
 
+def test_normalization_allowed_project_imports_remain_exact_corrigendum_tuple() -> None:
+    assert contracts.NORMALIZATION_ALLOWED_PROJECT_IMPORTS == (
+        "ims_deadlock.g6b_retired_normalizer",
+        "ims_deadlock.g6b_canonical_json",
+        "ims_deadlock.g6b_schema_contracts",
+        "ims_deadlock.g6b_governance",
+    )
+
+
+def test_schema_contracts_import_closure_only_uses_canonical_json() -> None:
+    source_path = Path(contracts.__file__).resolve()
+    tree = ast.parse(source_path.read_text(encoding="utf-8"))
+    project_imports: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            project_imports.update(
+                alias.name
+                for alias in node.names
+                if alias.name.startswith("ims_deadlock")
+            )
+        elif isinstance(node, ast.ImportFrom) and node.module is not None:
+            if node.module == "ims_deadlock":
+                project_imports.update(
+                    f"ims_deadlock.{alias.name}"
+                    for alias in node.names
+                    if alias.name != "*"
+                )
+            elif node.module.startswith("ims_deadlock"):
+                project_imports.add(node.module)
+    assert project_imports == {"ims_deadlock.g6b_canonical_json"}
+
+
 def test_preflight_guard_allows_direct_listed_safe_call_result_methods() -> None:
     source = (
         "from hashlib import sha256\n"
@@ -3750,6 +3790,72 @@ def test_normalization_manifest_closes_maps_refs_and_failure_eligibility() -> No
         )
 
 
+def test_normalization_manifest_rejects_tampered_authority_lock_content() -> None:
+    locks = _retired_authority_lock_records()
+    sources = _retired_authority_source_records(locks)
+    fingerprints = _normalization_fingerprint_records()
+    manifest = valid_normalization_manifest(
+        authority_locks=locks,
+        authority_sources=sources,
+        fingerprint_records=fingerprints,
+    )
+    tampered_locks = deepcopy(locks)
+    tampered_locks["G4_FREEZE"]["origin_remote"] = "stale-tampered-origin"
+
+    with pytest.raises(SchemaContractError, match="self_hash_mismatch"):
+        contracts.validate_normalization_manifest(
+            manifest,
+            authority_lock_records=tampered_locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+
+def test_normalization_manifest_rejects_tampered_fingerprint_content() -> None:
+    locks = _retired_authority_lock_records()
+    sources = _retired_authority_source_records(locks)
+    fingerprints = _normalization_fingerprint_records()
+    manifest = valid_normalization_manifest(
+        authority_locks=locks,
+        authority_sources=sources,
+        fingerprint_records=fingerprints,
+    )
+    tampered_fingerprints = deepcopy(fingerprints)
+    first_record_id = next(iter(tampered_fingerprints))
+    tampered_fingerprints[first_record_id]["normalizer_version"] = (
+        "stale-tampered-normalizer"
+    )
+
+    with pytest.raises(SchemaContractError, match="self_hash_mismatch"):
+        contracts.validate_normalization_manifest(
+            manifest,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=tampered_fingerprints,
+        )
+
+
+def test_normalization_manifest_requires_empty_missing_source_records() -> None:
+    locks = _retired_authority_lock_records()
+    sources = _retired_authority_source_records(locks)
+    fingerprints = _normalization_fingerprint_records()
+    manifest = valid_normalization_manifest(
+        authority_locks=locks,
+        authority_sources=sources,
+        fingerprint_records=fingerprints,
+    )
+    manifest["missing_source_records"] = ["arbitrary-non-closed-record"]
+    manifest = _with_rehashed(manifest, "manifest_sha256")
+
+    with pytest.raises(SchemaContractError, match="missing_source_records_not_empty"):
+        contracts.validate_normalization_manifest(
+            manifest,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+
 @pytest.mark.parametrize(
     ("field", "value", "code"),
     [
@@ -3812,6 +3918,34 @@ def test_normalization_authorization_binds_exact_source_code_review_and_root(
             expected_normalizer_code_sha256=authorization["normalizer_code_sha256"],
             expected_review_artifact_hash=authorization["review_artifact_hash"],
             expected_output_root=_approved_normalization_governance_root(),
+        )
+
+
+def test_normalization_authorization_rejects_alternate_caller_output_root() -> None:
+    schema = _load_retired_schema_definition()
+    authorization = valid_normalization_authorization()
+    alternate_root = _alternate_normalization_governance_root()
+    authorization["allowed_output_root"] = {
+        "repo_relative_posix_path": alternate_root,
+        "contains_only_governance_outputs": True,
+    }
+    authorization = _with_rehashed(authorization, "authorization_sha256")
+
+    with pytest.raises(SchemaContractError, match="output_root_contract_drift"):
+        contracts.validate_normalization_authorization(
+            authorization,
+            expected_schema_inventory_patterns=contracts.EXPECTED_RETIRED_SOURCE_INVENTORY,
+            expected_concrete_source_paths=(
+                contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+            ),
+            expected_selector_matrix=schema["allowed_json_fields_by_source"],
+            expected_git_object_format="sha1",
+            expected_source_head=authorization["source_head"],
+            expected_source_tree_hash=authorization["source_tree_hash"],
+            expected_file_manifest_hash=authorization["expected_file_manifest_hash"],
+            expected_normalizer_code_sha256=authorization["normalizer_code_sha256"],
+            expected_review_artifact_hash=authorization["review_artifact_hash"],
+            expected_output_root=alternate_root,
         )
 
 
