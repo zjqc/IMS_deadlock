@@ -685,6 +685,90 @@ def test_selector_preserves_historical_decimal_string_without_float_coercion() -
         )
 
 
+def test_g4_input_payload_selection_canonicalizes_decimal_number_tokens() -> None:
+    source = _json_bytes(
+        '{"case_id":"G4_IMS_PARAMETER_GRID",'
+        '"input_payload":{"count":7,"rate":1.2300e+2,'
+        '"nested":[0.0100,{"kept_int":2}],'
+        '"long":12345678901234567890.1234567890123456789000}}'
+    )
+
+    selected = cast(Any, normalizer)._select_g4_case_content_value(
+        source,
+        pointer="/input_payload",
+        selector_rows=_selector_rows(),
+    )
+
+    assert selected == {
+        "count": 7,
+        "long": "12345678901234567890.1234567890123456789",
+        "nested": ["0.01", {"kept_int": 2}],
+        "rate": "123",
+    }
+    assert type(cast(JsonObject, selected)["count"]) is int
+    assert type(cast(JsonObject, selected)["rate"]) is str
+    with pytest.raises(SchemaContractError, match="source_field_read_violation"):
+        cast(Any, normalizer)._select_g4_case_content_value(
+            source,
+            pointer="/case_id",
+            selector_rows=_selector_rows(),
+        )
+
+
+@pytest.mark.parametrize(
+    ("source", "match"),
+    [
+        (
+            _json_bytes('{"input_payload":{"protocol_input":{"rate":1,"rate":2}}}'),
+            "duplicate",
+        ),
+        (_json_bytes('{"input_payload":{"name":"e\\u0301"}}'), "non_nfc"),
+        (_json_bytes('{"input_payload":{"value":-0}}'), "negative_zero"),
+        (
+            _json_bytes('{"input_payload":{"value":-0.000}}'),
+            "negative_zero",
+        ),
+        (_json_bytes('{"input_payload":{"value":NaN}}'), "non_finite"),
+        (_json_bytes('{"input_payload":{"value":Infinity}}'), "non_finite"),
+        (_json_bytes('{"input_payload":{"value":-Infinity}}'), "non_finite"),
+        (_json_bytes('{"input_payload":{"value":01}}'), "invalid_json"),
+    ],
+)
+def test_g4_historical_decimal_input_path_fails_closed_on_invalid_json(
+    source: bytes,
+    match: str,
+) -> None:
+    with pytest.raises(SchemaContractError, match=match):
+        cast(Any, normalizer)._select_g4_case_content_value(
+            source,
+            pointer="/input_payload",
+            selector_rows=_selector_rows(),
+        )
+
+
+def test_actual_g4_case_sources_project_without_binary_floats() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    selector_rows = [
+        row
+        for row in _selector_rows()
+        if row["source_path_pattern"] == "cases/confirmation/g4/cases/{case_id}.json"
+    ]
+    projected_case_ids: set[str] = set()
+
+    for case_id in contracts.G4_MANIFEST_CASE_IDS:
+        source = (repo_root / _task6_case_path(case_id)).read_bytes()
+        selected = cast(Any, normalizer)._select_g4_case_content_value(
+            source,
+            pointer="/input_payload",
+            selector_rows=selector_rows,
+        )
+        assert isinstance(selected, dict)
+        canonical_bytes_v2(cast(Any, selected))
+        projected_case_ids.add(case_id)
+
+    assert projected_case_ids == set(contracts.G4_MANIFEST_CASE_IDS)
+
+
 @pytest.mark.parametrize(
     ("pointer", "requested_use", "expected"),
     [
@@ -3258,6 +3342,52 @@ def test_task6_exact_decimal_edges_are_canonicalized_without_float_rounding(
     )
 
     assert parsed == {"decimal": canonical}
+
+
+def test_g4_float_bearing_case_is_projected_not_globally_unreconstructable(
+    tmp_path: Path,
+) -> None:
+    def write_float_bearing_case(payload: JsonObject) -> None:
+        payload["input_payload"] = "replace-with-raw"
+
+    repo, source_records = _task6_synthetic_repo(
+        tmp_path,
+        overrides={_task6_case_path("G4_IMS_PARAMETER_GRID"): write_float_bearing_case},
+    )
+    case_path = _task6_case_path("G4_IMS_PARAMETER_GRID")
+    raw = (
+        b'{"case_id":"G4_IMS_PARAMETER_GRID",'
+        b'"expected_outputs_schema":{"declared_outputs":[],"schema_version":'
+        b'"task6/expected-outputs/v1"},'
+        b'"input_payload":{"protocol_kind":"bidirectional_island_grid",'
+        b'"protocol_input":{"cells":[{"agv_count":1,"buffer_capacity":1,'
+        b'"cell_id":"ims_cell_01","forward_wip":1,"machine_capacity":1,'
+        b'"release_rate":1.2300e+2,"reverse_wip":1,"service_rate":0.5000,'
+        b'"state_bound":8,"transfer_rate":2.500e-1}],'
+        b'"generator_id":"bidirectional_bas_v1"}},'
+        b'"schema_version":"task6-synthetic-retired-source/v1"}'
+    )
+    (repo / case_path).write_bytes(raw)
+    source_records[case_path]["raw_byte_sha256"] = hashlib.sha256(raw).hexdigest()
+    source_records[case_path]["declared_historical_hash_or_null"] = hashlib.sha256(
+        raw
+    ).hexdigest()
+
+    records = build_retired_fingerprint_records(
+        repo,
+        _authorization_record(),
+        _authority_lock_records(),
+        source_records,
+    )
+
+    grid_cell = _task6_single_record(
+        records,
+        authority="G4_FREEZE",
+        subject_id="G4_IMS_PARAMETER_GRID:cell_id:ims_cell_01",
+        dimension="parameter_tuple_sha256",
+    )
+    assert grid_cell["dimension_status"] == "derived_by_versioned_normalizer"
+    assert grid_cell["comparison_projection_sha256_or_null"] is not None
 
 
 @pytest.mark.parametrize("raw", ["-0", "-0.000", "1.2.3", "not-a-decimal"])

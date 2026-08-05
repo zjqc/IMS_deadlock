@@ -166,6 +166,28 @@ def select_allowed_value(
         raise contracts.SchemaContractError(str(exc)) from exc
     if not _pointer_allowed(pointer, selector_rows, requested_use):
         raise contracts.SchemaContractError("source_field_read_violation")
+    return _select_json_pointer_value(parsed, pointer)
+
+
+def _select_g4_case_content_value(
+    source_bytes: bytes,
+    *,
+    pointer: str,
+    selector_rows: Sequence[Mapping[str, JsonValue]],
+) -> JsonValue:
+    for row in selector_rows:
+        if (
+            row["allowed_use"] == "case_content_projection"
+            and row["selector_kind"] == "raw_bytes_only"
+        ):
+            raise contracts.SchemaContractError("raw_bytes_only_json_parse")
+    parsed = _load_g4_historical_source_object(source_bytes)
+    if not _pointer_allowed(pointer, selector_rows, "case_content_projection"):
+        raise contracts.SchemaContractError("source_field_read_violation")
+    return _select_json_pointer_value(parsed, pointer)
+
+
+def _select_json_pointer_value(parsed: JsonValue, pointer: str) -> JsonValue:
     if pointer == "":
         return parsed
     if pointer[:1] != "/":
@@ -200,6 +222,143 @@ def select_allowed_value(
         else:
             raise contracts.SchemaContractError("json_pointer_contract")
     return current
+
+
+def _load_g4_historical_source_object(g4_historical_bytes: bytes) -> JsonObject:
+    try:
+        g4_historical_text = str(g4_historical_bytes, "utf-8")
+        g4_historical_value = loads_v2(
+            _quote_historical_decimal_numbers(g4_historical_text)
+        )
+    except (CanonicalJsonError, UnicodeDecodeError) as exc:
+        raise contracts.SchemaContractError(str(exc)) from exc
+    if not isinstance(g4_historical_value, dict):
+        raise contracts.SchemaContractError("retired_projection_unreconstructable")
+    return g4_historical_value
+
+
+def _quote_historical_decimal_numbers(g4_lex_source: str) -> str:
+    g4_lex_chars: list[str] = []
+    g4_lex_index = 0
+    while g4_lex_index < len(g4_lex_source):
+        g4_lex_char = g4_lex_source[g4_lex_index]
+        if g4_lex_char == '"':
+            g4_lex_index = _copy_json_string(
+                g4_lex_source,
+                g4_lex_index,
+                g4_lex_chars,
+            )
+        elif g4_lex_char == "-" or (g4_lex_char >= "0" and g4_lex_char <= "9"):
+            g4_lex_index = _copy_json_number(
+                g4_lex_source,
+                g4_lex_index,
+                g4_lex_chars,
+            )
+        else:
+            g4_lex_chars += [g4_lex_char]
+            g4_lex_index += 1
+    return _chars_to_string(g4_lex_chars)
+
+
+def _copy_json_string(
+    g4_lex_source: str,
+    g4_lex_index: int,
+    g4_lex_chars: list[str],
+) -> int:
+    g4_lex_chars += ['"']
+    g4_lex_index += 1
+    while g4_lex_index < len(g4_lex_source):
+        g4_lex_char = g4_lex_source[g4_lex_index]
+        g4_lex_chars += [g4_lex_char]
+        g4_lex_index += 1
+        if g4_lex_char == "\\" and g4_lex_index < len(g4_lex_source):
+            g4_lex_chars += [g4_lex_source[g4_lex_index]]
+            g4_lex_index += 1
+        elif g4_lex_char == '"':
+            return g4_lex_index
+    return g4_lex_index
+
+
+def _copy_json_number(
+    g4_lex_source: str,
+    g4_lex_index: int,
+    g4_lex_chars: list[str],
+) -> int:
+    g4_lex_start = g4_lex_index
+    if g4_lex_source[g4_lex_index] == "-":
+        g4_lex_index += 1
+    if (
+        g4_lex_index >= len(g4_lex_source)
+        or g4_lex_source[g4_lex_index] < "0"
+        or g4_lex_source[g4_lex_index] > "9"
+    ):
+        g4_lex_chars += [g4_lex_source[g4_lex_start]]
+        return g4_lex_start + 1
+    if g4_lex_source[g4_lex_index] == "0":
+        g4_lex_index += 1
+        if (
+            g4_lex_index < len(g4_lex_source)
+            and g4_lex_source[g4_lex_index] >= "0"
+            and g4_lex_source[g4_lex_index] <= "9"
+        ):
+            raise CanonicalJsonError("invalid_json")
+    else:
+        while (
+            g4_lex_index < len(g4_lex_source)
+            and g4_lex_source[g4_lex_index] >= "0"
+            and g4_lex_source[g4_lex_index] <= "9"
+        ):
+            g4_lex_index += 1
+    g4_lex_decimal = False
+    if g4_lex_index < len(g4_lex_source) and g4_lex_source[g4_lex_index] == ".":
+        g4_lex_decimal = True
+        g4_lex_index += 1
+        if (
+            g4_lex_index >= len(g4_lex_source)
+            or g4_lex_source[g4_lex_index] < "0"
+            or g4_lex_source[g4_lex_index] > "9"
+        ):
+            raise CanonicalJsonError("invalid_json")
+        while (
+            g4_lex_index < len(g4_lex_source)
+            and g4_lex_source[g4_lex_index] >= "0"
+            and g4_lex_source[g4_lex_index] <= "9"
+        ):
+            g4_lex_index += 1
+    if g4_lex_index < len(g4_lex_source) and g4_lex_source[g4_lex_index] in (
+        "e",
+        "E",
+    ):
+        g4_lex_decimal = True
+        g4_lex_index += 1
+        if g4_lex_index < len(g4_lex_source) and g4_lex_source[g4_lex_index] in (
+            "+",
+            "-",
+        ):
+            g4_lex_index += 1
+        if (
+            g4_lex_index >= len(g4_lex_source)
+            or g4_lex_source[g4_lex_index] < "0"
+            or g4_lex_source[g4_lex_index] > "9"
+        ):
+            raise CanonicalJsonError("invalid_json")
+        while (
+            g4_lex_index < len(g4_lex_source)
+            and g4_lex_source[g4_lex_index] >= "0"
+            and g4_lex_source[g4_lex_index] <= "9"
+        ):
+            g4_lex_index += 1
+    g4_lex_token = g4_lex_source[g4_lex_start:g4_lex_index]
+    if not g4_lex_decimal:
+        g4_lex_chars += [g4_lex_token]
+        return g4_lex_index
+    g4_lex_canonical = _canonical_decimal_or_none(g4_lex_token)
+    if g4_lex_canonical is None:
+        if _has_prefix(g4_lex_token, "-0"):
+            raise CanonicalJsonError("negative_zero")
+        raise CanonicalJsonError("invalid_decimal_token")
+    g4_lex_chars += ['"', g4_lex_canonical, '"']
+    return g4_lex_index
 
 
 def build_authority_lock_records(
@@ -310,7 +469,7 @@ def build_retired_fingerprint_records(
     g4_unique: dict[tuple[str, str], JsonObject] = {}
     for case_path in _sorted_g4_case_paths(source_records):
         case_id = _case_id_from_retired_path(case_path)
-        if case_path in unreadable_sources or not _source_is_canonical_json(
+        if case_path in unreadable_sources or not _g4_case_source_is_projectable(
             source_bytes[case_path]
         ):
             _add_g4_unreconstructable_records(
@@ -403,9 +562,9 @@ def _sorted_g4_case_paths(
     return tuple(paths)
 
 
-def _source_is_canonical_json(raw: bytes) -> bool:
+def _g4_case_source_is_projectable(raw: bytes) -> bool:
     try:
-        _load_source_object(raw)
+        _load_g4_historical_source_object(raw)
     except contracts.SchemaContractError:
         return False
     return True
@@ -492,11 +651,10 @@ def _discriminate_g4_kind(
     case_bytes: bytes,
     selector_rows: Sequence[Mapping[str, JsonValue]],
 ) -> str:
-    selected = select_allowed_value(
+    selected = _select_g4_case_content_value(
         case_bytes,
         pointer="/input_payload/protocol_kind",
         selector_rows=selector_rows,
-        requested_use="case_content_projection",
     )
     if isinstance(selected, str) and selected in _G4_KIND_BY_CASE.values():
         if case_id not in _G4_KIND_BY_CASE or _G4_KIND_BY_CASE[case_id] != selected:
@@ -521,11 +679,10 @@ def _g4_subjects(
     if kind not in _SUBUNIT_CONTEXT_BY_KIND:
         return tuple(subjects)
     pointer, key, parent_context = _SUBUNIT_CONTEXT_BY_KIND[kind]
-    selected = select_allowed_value(
+    selected = _select_g4_case_content_value(
         case_bytes,
         pointer=_parent_array_pointer(pointer),
         selector_rows=selector_rows,
-        requested_use="case_content_projection",
     )
     if not isinstance(selected, Sequence) or isinstance(selected, str | bytes):
         raise contracts.SchemaContractError("retired_projection_unreconstructable")
@@ -1115,11 +1272,10 @@ def _derive_g4_projection_from_protocol(
 ) -> JsonObject | None:
     try:
         input_payload = _require_mapping(
-            select_allowed_value(
+            _select_g4_case_content_value(
                 case_bytes,
                 pointer="/input_payload",
                 selector_rows=selector_rows,
-                requested_use="case_content_projection",
             )
         )
     except contracts.SchemaContractError:
@@ -2509,11 +2665,10 @@ def _selected_input_projection_bytes(
             source_path,
             source_hashes,
         )
-        selected_input = select_allowed_value(
+        selected_input = _select_g4_case_content_value(
             selected_source_bytes,
             pointer="/input_payload",
             selector_rows=_selectors_for_path(source_path, selector_rows),
-            requested_use="case_content_projection",
         )
         selected_inputs[source_path] = selected_input
     if not selected_inputs:
