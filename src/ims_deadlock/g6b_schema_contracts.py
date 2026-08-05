@@ -6,7 +6,7 @@ import ast
 import hashlib
 import re
 from collections import Counter
-from collections.abc import Collection, Mapping, Sequence
+from collections.abc import Collection, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from types import MappingProxyType
@@ -2291,6 +2291,7 @@ def validate_normalizer_source_guard(source: str) -> None:
         raise SchemaContractError("retired_normalizer_error")
     if _uses_reserved_safe_alias_name(tree):
         raise SchemaContractError("retired_normalizer_error")
+    _validate_normalizer_writer_bindings(tree)
     aliases: dict[str, set[str]] = {}
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -2310,6 +2311,13 @@ def validate_normalizer_source_guard(source: str) -> None:
                     {f"{module_name}.{alias.name}"},
                 )
     _extend_callable_assignment_aliases(tree, aliases)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            _reject_sensitive_callable_escapes(
+                node,
+                aliases,
+                error_code="retired_normalizer_error",
+            )
     _validate_normalizer_operation_sequence(tree, aliases)
     for node in ast.walk(tree):
         if isinstance(node, ast.Call):
@@ -4651,22 +4659,19 @@ def _is_allowed_normalizer_path_write(
 
 def _top_level_function_context(tree: ast.Module, target: ast.AST) -> str | None:
     for statement in tree.body:
-        if not isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef):
+        if not isinstance(statement, ast.FunctionDef):
             continue
-        for node in ast.walk(statement):
-            if node is target:
-                return (
-                    statement.name
-                    if _call_belongs_directly_to_function(statement, target)
-                    else None
-                )
+        if _call_belongs_directly_to_function_body(statement, target):
+            return statement.name
     return None
 
 
-def _call_belongs_directly_to_function(
-    function: ast.FunctionDef | ast.AsyncFunctionDef,
+def _call_belongs_directly_to_function_body(
+    function: ast.FunctionDef,
     target: ast.AST,
 ) -> bool:
+    if not any(_node_contains(statement, target) for statement in function.body):
+        return False
     for nested in ast.walk(function):
         if nested is function:
             continue
@@ -4676,6 +4681,99 @@ def _call_belongs_directly_to_function(
         ) and any(child is target for child in ast.walk(nested)):
             return False
     return True
+
+
+def _node_contains(root: ast.AST, target: ast.AST) -> bool:
+    return any(node is target for node in ast.walk(root))
+
+
+def _validate_normalizer_writer_bindings(tree: ast.Module) -> None:
+    definition_counts: dict[str, int] = {}
+    for statement in tree.body:
+        if isinstance(statement, ast.FunctionDef):
+            if statement.name in ALLOWED_NORMALIZER_WRITER_FUNCTIONS:
+                definition_counts[statement.name] = (
+                    definition_counts.get(statement.name, 0) + 1
+                )
+        elif isinstance(statement, ast.AsyncFunctionDef):
+            if statement.name in ALLOWED_NORMALIZER_WRITER_FUNCTIONS:
+                raise SchemaContractError("retired_normalizer_error", statement.name)
+        elif isinstance(statement, ast.Import):
+            for alias in statement.names:
+                if _normalizer_writer_binding_name(alias.asname):
+                    raise SchemaContractError(
+                        "retired_normalizer_error",
+                        alias.asname or "",
+                    )
+        elif isinstance(statement, ast.ImportFrom):
+            module_name = statement.module or ""
+            for alias in statement.names:
+                imported_name = f"{module_name}.{alias.name}"
+                bound_name = alias.asname or alias.name
+                if _normalizer_writer_symbol(imported_name):
+                    raise SchemaContractError("retired_normalizer_error", imported_name)
+                if _normalizer_writer_binding_name(bound_name):
+                    raise SchemaContractError("retired_normalizer_error", bound_name)
+        elif isinstance(statement, ast.Assign):
+            _validate_normalizer_writer_assignment(statement.targets, statement.value)
+        elif isinstance(statement, ast.AnnAssign):
+            if statement.value is not None:
+                _validate_normalizer_writer_assignment(
+                    (statement.target,),
+                    statement.value,
+                )
+        elif isinstance(statement, ast.NamedExpr):
+            _validate_normalizer_writer_assignment((statement.target,), statement.value)
+    if any(count > 1 for count in definition_counts.values()):
+        raise SchemaContractError("retired_normalizer_error")
+
+
+def _validate_normalizer_writer_assignment(
+    targets: Iterable[ast.expr],
+    value: ast.expr,
+) -> None:
+    for target in targets:
+        for binding_name in _normalizer_assignment_binding_names(target):
+            if _normalizer_writer_binding_name(binding_name):
+                raise SchemaContractError("retired_normalizer_error", binding_name)
+    for node in ast.walk(value):
+        if isinstance(node, ast.Name):
+            if _normalizer_writer_binding_name(node.id):
+                raise SchemaContractError("retired_normalizer_error", node.id)
+        elif isinstance(node, ast.Attribute):
+            call_name = _ast_call_name(node)
+            if _normalizer_writer_symbol(call_name):
+                raise SchemaContractError("retired_normalizer_error", call_name)
+
+
+def _normalizer_assignment_binding_names(target: ast.expr) -> set[str]:
+    if isinstance(target, ast.Name):
+        return {target.id}
+    if isinstance(target, ast.Attribute):
+        return {_ast_call_name(target)}
+    if isinstance(target, ast.Tuple | ast.List):
+        names: set[str] = set()
+        for element in target.elts:
+            names.update(_normalizer_assignment_binding_names(element))
+        return names
+    return set()
+
+
+def _normalizer_writer_binding_name(name: str | None) -> bool:
+    return bool(
+        name
+        and (
+            name in ALLOWED_NORMALIZER_WRITER_FUNCTIONS
+            or _normalizer_writer_symbol(name)
+        )
+    )
+
+
+def _normalizer_writer_symbol(call_name: str) -> bool:
+    return (
+        call_name in ALLOWED_NORMALIZER_WRITER_SYMBOLS
+        or call_name.rsplit(".", 1)[-1] in ALLOWED_NORMALIZER_WRITER_FUNCTIONS
+    )
 
 
 def _validate_normalizer_operation_sequence(
@@ -5386,6 +5484,8 @@ def _is_sensitive_callable_value(call_name: str) -> bool:
     if call_name in {"open", "io.open"}:
         return True
     leaf_name = call_name.rsplit(".", 1)[-1]
+    if _normalizer_writer_symbol(call_name):
+        return True
     if call_name.startswith("os."):
         return True
     if leaf_name in FILESYSTEM_MUTATOR_NAMES:

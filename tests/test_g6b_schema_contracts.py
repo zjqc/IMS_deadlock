@@ -2653,6 +2653,81 @@ def test_normalizer_guard_rejects_writer_outside_top_level_writer_boundary(
         validate_normalizer_static_source(source)
 
 
+@pytest.mark.parametrize(
+    "source",
+    [
+        (
+            "from pathlib import Path\n"
+            "def guard(fn):\n"
+            "    return fn\n"
+            "@Path('out').write_bytes(b'bad')\n"
+            "def write_fingerprint_record():\n"
+            "    return None\n"
+        ),
+        (
+            "from pathlib import Path\n"
+            "def write_fingerprint_record(path=Path('out').mkdir()):\n"
+            "    return None\n"
+        ),
+        (
+            "from pathlib import Path\n"
+            "def write_fingerprint_record(*, path=Path('out').replace(Path('tmp'))):\n"
+            "    return None\n"
+        ),
+        (
+            "from pathlib import Path\n"
+            "def write_fingerprint_record(path: Path('out').write_bytes(b'bad')):\n"
+            "    return None\n"
+        ),
+        (
+            "from pathlib import Path\n"
+            "def write_fingerprint_record() -> Path('out').mkdir():\n"
+            "    return None\n"
+        ),
+        (
+            "from pathlib import Path\n"
+            "def write_fingerprint_record[T: Path('out').replace(Path('tmp'))]():\n"
+            "    return None\n"
+        ),
+    ],
+)
+def test_normalizer_guard_rejects_definition_time_writer_escapes(
+    source: str,
+) -> None:
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        (
+            "def write_fingerprint_record():\n"
+            "    return None\n"
+            "alias = write_fingerprint_record\n"
+        ),
+        "write_fingerprint_record = lambda: None\n",
+        (
+            "def write_fingerprint_record():\n"
+            "    return None\n"
+            "def write_fingerprint_record():\n"
+            "    return None\n"
+        ),
+        "from ims_deadlock.g6b_retired_normalizer import write_fingerprint_record\n",
+        (
+            "def sink(value):\n"
+            "    return value\n"
+            "def write_fingerprint_record():\n"
+            "    return None\n"
+            "sink(write_fingerprint_record)\n"
+        ),
+    ],
+)
+def test_normalizer_guard_rejects_writer_binding_escapes(source: str) -> None:
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
 @pytest.mark.parametrize("method", ["iterdir", "glob", "unlink", "write_text", "open"])
 def test_normalizer_guard_rejects_unlisted_path_methods(method: str) -> None:
     source = (
