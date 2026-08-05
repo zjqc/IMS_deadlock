@@ -2122,7 +2122,8 @@ def validate_authority_lock_record(record: Mapping[str, JsonValue]) -> None:
     authority_id = _require_nonempty_string(record.get("authority_id"), "authority_id")
     if authority_id not in RETIRED_AUTHORITY_IDS:
         raise SchemaContractError("illegal_retired_authority", authority_id)
-    _require_nonempty_string(record.get("origin_remote"), "origin_remote")
+    if record.get("origin_remote") != "zjqc/IMS_deadlock":
+        raise SchemaContractError("source_identity_drift")
     for field in ("origin_commit_or_null", "origin_tree_hash_or_null"):
         value = record.get(field)
         if value is not None:
@@ -2237,7 +2238,8 @@ def validate_normalization_manifest(
     ):
         raise SchemaContractError("schema_version_drift")
     _require_nonempty_string(manifest.get("manifest_id"), "manifest_id")
-    _require_nonempty_string(manifest.get("source_remote"), "source_remote")
+    if manifest.get("source_remote") != "zjqc/IMS_deadlock":
+        raise SchemaContractError("source_identity_drift")
     _validate_git_object_id(manifest.get("source_head"), label="source_head")
     _validate_git_object_id(manifest.get("source_tree_hash"), label="source_tree_hash")
     if manifest.get("source_dirty_state") != "clean":
@@ -4583,7 +4585,7 @@ def _validate_dimension_status_counts(
 ) -> None:
     if not isinstance(value, Mapping):
         raise SchemaContractError("unknown_dimension_status")
-    if tuple(value.keys()) != DIMENSION_STATUS_VALUES:
+    if tuple(value.keys()) != tuple(sorted(DIMENSION_STATUS_VALUES)):
         raise SchemaContractError("unknown_dimension_status")
     expected = {
         status: sum(

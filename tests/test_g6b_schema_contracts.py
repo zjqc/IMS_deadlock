@@ -416,7 +416,7 @@ def _retired_source_hashes() -> dict[str, str]:
 def valid_authority_lock_record(authority_id: str) -> JsonObject:
     record: JsonObject = {
         "authority_id": authority_id,
-        "origin_remote": "retired-authority-logical-origin",
+        "origin_remote": "zjqc/IMS_deadlock",
         "origin_commit_or_null": _git_sha1(f"{authority_id}:origin-commit"),
         "origin_tree_hash_or_null": _git_sha1(f"{authority_id}:origin-tree"),
         "origin_lock_artifact_ref": (
@@ -708,7 +708,7 @@ def valid_normalization_manifest(
             for record in fingerprints.values()
             if record["dimension_status"] == status
         )
-        for status in contracts.DIMENSION_STATUS_VALUES
+        for status in sorted(contracts.DIMENSION_STATUS_VALUES)
     }
     comparison_eligibility = {
         record_id: {
@@ -726,7 +726,7 @@ def valid_normalization_manifest(
     manifest: JsonObject = {
         "schema_version": "ims-deadlock/g6b-retired-normalization-manifest/v1",
         "manifest_id": "normalization-manifest-test",
-        "source_remote": "retired-authority-logical-origin",
+        "source_remote": "zjqc/IMS_deadlock",
         "source_head": _git_sha1("normalization-manifest-source-head"),
         "source_tree_hash": _git_sha1("normalization-manifest-source-tree"),
         "source_dirty_state": "clean",
@@ -754,7 +754,7 @@ def valid_normalization_manifest(
         ),
         "authority_lock_record_hashes": {
             authority_id: record["authority_lock_record_sha256"]
-            for authority_id, record in locks.items()
+            for authority_id, record in sorted(locks.items())
         },
         "authority_source_record_hashes": dict(
             sorted(
@@ -3935,6 +3935,13 @@ def test_authority_lock_record_closes_identity_and_projection_lock() -> None:
     with pytest.raises(SchemaContractError, match="illegal_retired_authority"):
         contracts.validate_authority_lock_record(illegal)
 
+    wrong_remote = _with_rehashed(
+        {**record, "origin_remote": "retired-authority-logical-origin"},
+        "authority_lock_record_sha256",
+    )
+    with pytest.raises(SchemaContractError, match="source_identity_drift"):
+        contracts.validate_authority_lock_record(wrong_remote)
+
     unverified = _with_rehashed(
         {**record, "identity_verification_status": "unverified_refuse"},
         "authority_lock_record_sha256",
@@ -4280,6 +4287,56 @@ def test_normalization_manifest_closes_maps_refs_and_failure_eligibility() -> No
         )
 
 
+def test_normalization_manifest_accepts_canonical_status_order_roundtrip() -> None:
+    locks = _retired_authority_lock_records()
+    sources = _retired_authority_source_records(locks)
+    fingerprints = _normalization_fingerprint_records()
+    manifest = valid_normalization_manifest(
+        authority_locks=locks,
+        authority_sources=sources,
+        fingerprint_records=fingerprints,
+    )
+    parsed = loads_v2(str(canonical_bytes_v2(manifest), "utf-8"))
+    assert isinstance(parsed, dict)
+    parsed_manifest = cast(JsonObject, parsed)
+    parsed_status_counts = cast(JsonObject, parsed_manifest["dimension_status_counts"])
+    assert parsed_manifest["source_remote"] == "zjqc/IMS_deadlock"
+    assert tuple(parsed_status_counts) == tuple(
+        sorted(contracts.DIMENSION_STATUS_VALUES)
+    )
+    contracts.validate_normalization_manifest(
+        parsed_manifest,
+        authority_lock_records=locks,
+        authority_source_records=sources,
+        fingerprint_records=fingerprints,
+    )
+
+    noncanonical = deepcopy(parsed_manifest)
+    noncanonical["dimension_status_counts"] = {
+        status: parsed_status_counts[status]
+        for status in contracts.DIMENSION_STATUS_VALUES
+    }
+    noncanonical = _with_rehashed(noncanonical, "manifest_sha256")
+    with pytest.raises(SchemaContractError, match="unknown_dimension_status"):
+        contracts.validate_normalization_manifest(
+            noncanonical,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+    wrong_remote = deepcopy(parsed)
+    wrong_remote["source_remote"] = "retired-authority-logical-origin"
+    wrong_remote = _with_rehashed(wrong_remote, "manifest_sha256")
+    with pytest.raises(SchemaContractError, match="source_identity_drift"):
+        contracts.validate_normalization_manifest(
+            wrong_remote,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+
 def test_normalization_manifest_rejects_tampered_authority_lock_content() -> None:
     locks = _retired_authority_lock_records()
     sources = _retired_authority_source_records(locks)
@@ -4290,7 +4347,7 @@ def test_normalization_manifest_rejects_tampered_authority_lock_content() -> Non
         fingerprint_records=fingerprints,
     )
     tampered_locks = deepcopy(locks)
-    tampered_locks["G4_FREEZE"]["origin_remote"] = "stale-tampered-origin"
+    tampered_locks["G4_FREEZE"]["current_merged_copy_tree_hash"] = "9" * 64
 
     with pytest.raises(SchemaContractError, match="self_hash_mismatch"):
         contracts.validate_normalization_manifest(

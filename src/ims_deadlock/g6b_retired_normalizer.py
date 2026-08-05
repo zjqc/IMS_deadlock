@@ -2055,7 +2055,32 @@ def _record_with_refs(
         projection_hash,
         status,
     )
-    refs_value = [cast(JsonObject, dict(ref)) for ref in refs]
+    ref_rows: list[tuple[str, str, str, str, JsonObject]] = []
+    seen_ref_keys: list[tuple[str, str, str, str]] = []
+    for ref in refs:
+        ref_value = cast(JsonObject, dict(ref))
+        pointer = ref_value["json_pointer_or_null"]
+        pointer_text = None if pointer is None else _require_string(pointer)
+        pointer_sort_text = "" if pointer_text is None else pointer_text
+        ref_key = (
+            _require_string(ref_value["authority_id"]),
+            _require_string(ref_value["repo_relative_posix_path"]),
+            pointer_sort_text,
+            _require_string(ref_value["source_role"]),
+        )
+        if ref_key in seen_ref_keys:
+            raise contracts.SchemaContractError("source_artifact_ref_duplicate")
+        seen_ref_keys += [ref_key]
+        ref_rows += [
+            (
+                ref_key[0],
+                ref_key[1],
+                pointer_sort_text,
+                ref_key[3],
+                ref_value,
+            )
+        ]
+    refs_value = [row[4] for row in sorted(ref_rows)]
     byte_hashes = {
         _require_string(ref["repo_relative_posix_path"]): source_hashes[
             _require_string(ref["repo_relative_posix_path"])
@@ -2308,11 +2333,14 @@ def write_normalization_manifest(
 ) -> str:
     root = Path(authorized_root)
     _require_record_root(root)
-    _verify_manifest_references(root, manifest)
     directory = root
     destination = directory / _MANIFEST_FILE
     _reject_symlink_components(destination)
     payload = canonical_bytes_v2(cast(JsonObject, dict(manifest)))
+    persisted = loads_v2(str(payload, "utf-8"))
+    if not isinstance(persisted, Mapping):
+        raise contracts.SchemaContractError("manifest_last")
+    _verify_manifest_references(root, persisted)
     temporary = directory / f"{_MANIFEST_FILE}.tmp"
     if Path(destination).exists() or Path(temporary).exists():
         raise contracts.SchemaContractError("preexisting")
@@ -4225,16 +4253,20 @@ def _manifest_from_records(
             for record_id in fingerprints
             if fingerprints[record_id]["dimension_status"] == status
         )
-        for status in contracts.DIMENSION_STATUS_VALUES
+        for status in sorted(contracts.DIMENSION_STATUS_VALUES)
     }
     unique_lineage_map = {
-        _require_string(fingerprints[record_id]["lineage_id"]): sorted(
+        lineage_id: sorted(
             _require_string(fingerprints[other_id]["record_id"])
             for other_id in fingerprints
-            if fingerprints[other_id]["lineage_id"]
-            == fingerprints[record_id]["lineage_id"]
+            if fingerprints[other_id]["lineage_id"] == lineage_id
         )
-        for record_id in fingerprints
+        for lineage_id in sorted(
+            {
+                _require_string(fingerprints[record_id]["lineage_id"])
+                for record_id in fingerprints
+            }
+        )
     }
     comparison_eligibility = {
         record_id: {
@@ -4259,7 +4291,7 @@ def _manifest_from_records(
     manifest: JsonObject = {
         "schema_version": "ims-deadlock/g6b-retired-normalization-manifest/v1",
         "manifest_id": "retired-normalization-source-only",
-        "source_remote": "retired-authority-logical-origin",
+        "source_remote": "zjqc/IMS_deadlock",
         "source_head": _require_string(authorization["source_head"]),
         "source_tree_hash": _require_string(authorization["source_tree_hash"]),
         "source_dirty_state": "clean",
@@ -4290,15 +4322,15 @@ def _manifest_from_records(
         "normalization_authorization_sha256": authorization_sha,
         "authority_lock_record_hashes": {
             key: _require_string(locks[key]["authority_lock_record_sha256"])
-            for key in locks
+            for key in sorted(locks)
         },
         "authority_source_record_hashes": {
             key: canonical_sha256_v2(cast(JsonObject, dict(sources[key])))
-            for key in sources
+            for key in sorted(sources)
         },
         "fingerprint_record_hashes": {
             key: _require_string(fingerprints[key]["record_provenance_sha256"])
-            for key in fingerprints
+            for key in sorted(fingerprints)
         },
         "unique_lineage_map": cast(JsonObject, unique_lineage_map),
         "dimension_status_counts": cast(JsonObject, dimension_status_counts),

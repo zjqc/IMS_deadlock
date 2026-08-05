@@ -4,7 +4,7 @@ import hashlib
 import inspect
 import json
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, cast
@@ -288,7 +288,7 @@ def _retired_source_hashes() -> dict[str, str]:
 def _authority_lock_record(authority_id: str = _LOCK_AUTHORITY_ID) -> JsonObject:
     record: JsonObject = {
         "authority_id": authority_id,
-        "origin_remote": "retired-authority-logical-origin",
+        "origin_remote": "zjqc/IMS_deadlock",
         "origin_commit_or_null": _git_sha1(f"{authority_id}:origin-commit"),
         "origin_tree_hash_or_null": _git_sha1(f"{authority_id}:origin-tree"),
         "origin_lock_artifact_ref": (
@@ -537,7 +537,7 @@ def _manifest_record(
             for record in fingerprints.values()
             if record["dimension_status"] == status
         )
-        for status in contracts.DIMENSION_STATUS_VALUES
+        for status in sorted(contracts.DIMENSION_STATUS_VALUES)
     }
     comparison_eligibility = {
         record_id: {
@@ -555,7 +555,7 @@ def _manifest_record(
     manifest: JsonObject = {
         "schema_version": "ims-deadlock/g6b-retired-normalization-manifest/v1",
         "manifest_id": "retired-normalization-manifest-test",
-        "source_remote": "retired-authority-logical-origin",
+        "source_remote": "zjqc/IMS_deadlock",
         "source_head": _git_sha1("normalization-manifest-source-head"),
         "source_tree_hash": _git_sha1("normalization-manifest-source-tree"),
         "source_dirty_state": "clean",
@@ -581,7 +581,7 @@ def _manifest_record(
         "normalization_authorization_sha256": authorization_sha256,
         "authority_lock_record_hashes": {
             authority_id: record["authority_lock_record_sha256"]
-            for authority_id, record in locks.items()
+            for authority_id, record in sorted(locks.items())
         },
         "authority_source_record_hashes": dict(
             sorted(
@@ -1019,6 +1019,89 @@ def test_manifest_writer_is_last_and_verifies_referenced_record_bytes(
     assert manifest_sha == hashlib.sha256(destination.read_bytes()).hexdigest()
     with pytest.raises(SchemaContractError, match="preexisting"):
         write_normalization_manifest(root, manifest)
+
+
+def test_manifest_writer_validates_canonical_reread_before_writing(
+    tmp_path: Path,
+) -> None:
+    root, manifest = _write_manifest_inputs(tmp_path)
+    manifest["authority_lock_record_hashes"] = dict(
+        reversed(list(manifest["authority_lock_record_hashes"].items()))
+    )
+    manifest["manifest_sha256"] = None
+    manifest["manifest_sha256"] = finalized_self_hash(manifest, "manifest_sha256")
+
+    manifest_sha = write_normalization_manifest(root, manifest)
+    destination = root / "normalization_manifest.json"
+    parsed = loads_v2(str(destination.read_bytes(), "utf-8"))
+    assert isinstance(parsed, dict)
+    parsed_manifest = cast(JsonObject, parsed)
+    assert destination.read_bytes() == canonical_bytes_v2(manifest)
+    assert manifest_sha == hashlib.sha256(destination.read_bytes()).hexdigest()
+    parsed_lock_hashes = cast(
+        JsonObject, parsed_manifest["authority_lock_record_hashes"]
+    )
+    assert tuple(parsed_lock_hashes) == tuple(
+        sorted(manifest["authority_lock_record_hashes"])
+    )
+
+
+def test_manifest_from_records_sorts_maps_and_roundtrips_canonical_manifest() -> None:
+    authorization = _authorization_record()
+    locks = dict(reversed(list(_authority_lock_records().items())))
+    sources = dict(reversed(list(_authority_source_records(locks).items())))
+    fingerprints = {
+        "z-fingerprint-record-test": _fingerprint_record("z-fingerprint-record-test"),
+        "a-fingerprint-record-test": _fingerprint_record("a-fingerprint-record-test"),
+    }
+    source_hashes = dict(reversed(list(_retired_source_hashes().items())))
+
+    manifest = normalizer._manifest_from_records(
+        cast(str, authorization["authorization_sha256"]),
+        locks,
+        sources,
+        fingerprints,
+        source_hashes,
+        authorization,
+    )
+    parsed = loads_v2(str(canonical_bytes_v2(manifest), "utf-8"))
+    assert isinstance(parsed, dict)
+    parsed_manifest = cast(JsonObject, parsed)
+    assert parsed_manifest["source_remote"] == "zjqc/IMS_deadlock"
+    parsed_lock_hashes = cast(
+        JsonObject, parsed_manifest["authority_lock_record_hashes"]
+    )
+    parsed_source_hashes = cast(
+        JsonObject,
+        parsed_manifest["authority_source_record_hashes"],
+    )
+    parsed_fingerprint_hashes = cast(
+        JsonObject,
+        parsed_manifest["fingerprint_record_hashes"],
+    )
+    parsed_lineage_map = cast(JsonObject, parsed_manifest["unique_lineage_map"])
+    parsed_status_counts = cast(JsonObject, parsed_manifest["dimension_status_counts"])
+    parsed_comparison_eligibility = cast(
+        JsonObject,
+        parsed_manifest["comparison_eligibility"],
+    )
+    assert tuple(parsed_lock_hashes) == tuple(sorted(locks))
+    assert tuple(parsed_source_hashes) == tuple(sorted(sources))
+    assert tuple(parsed_fingerprint_hashes) == tuple(sorted(fingerprints))
+    assert tuple(parsed_lineage_map) == tuple(
+        sorted({cast(str, record["lineage_id"]) for record in fingerprints.values()})
+    )
+    assert tuple(parsed_status_counts) == tuple(
+        sorted(contracts.DIMENSION_STATUS_VALUES)
+    )
+    assert tuple(parsed_comparison_eligibility) == tuple(sorted(fingerprints))
+
+    contracts.validate_normalization_manifest(
+        parsed_manifest,
+        authority_lock_records=locks,
+        authority_source_records=sources,
+        fingerprint_records=fingerprints,
+    )
 
 
 def test_manifest_writer_rejects_rehashed_malformed_source_record(
@@ -2339,6 +2422,23 @@ def _task6_g4_source_refs_for_dimension(dimension: str) -> list[JsonObject]:
     raise AssertionError(dimension)
 
 
+def _source_ref_sort_key(ref: Mapping[str, Any]) -> tuple[str, str, str, str]:
+    return (
+        cast(str, ref["authority_id"]),
+        cast(str, ref["repo_relative_posix_path"]),
+        (
+            ""
+            if ref["json_pointer_or_null"] is None
+            else cast(str, ref["json_pointer_or_null"])
+        ),
+        cast(str, ref["source_role"]),
+    )
+
+
+def _sorted_source_refs(refs: list[JsonObject]) -> list[JsonObject]:
+    return sorted(refs, key=_source_ref_sort_key)
+
+
 def _task6_required_record(
     records: dict[str, JsonObject],
     *,
@@ -3366,6 +3466,16 @@ def test_task6_g4_producer_rows_use_exact_source_keys_status_and_hashes(
     _task6_assert_record_matches_projection(record, projection)
 
 
+def test_task6_actual_producer_records_sort_source_refs_full_positive(
+    tmp_path: Path,
+) -> None:
+    records = _task6_records(tmp_path)
+    assert records
+    for record in records.values():
+        refs = cast(list[JsonObject], record["source_artifact_refs"])
+        assert refs == _sorted_source_refs(refs), record["record_id"]
+
+
 def test_task6_g4_output_root_is_explicit_retired_stage_refusal(
     tmp_path: Path,
 ) -> None:
@@ -3391,20 +3501,22 @@ def test_task6_g5_output_root_projection_uses_only_lock_schedule_and_raw_root(
         dimension="output_root_reservation_sha256",
     )
 
-    assert record["source_artifact_refs"] == [
-        {
-            "authority_id": "G5_EXECUTION",
-            "repo_relative_posix_path": "evidence/g5/G5_EXECUTION_LOCK.json",
-            "json_pointer_or_null": "/output_roots/raw_output_root_relative",
-            "source_role": "output_root_containment_projection",
-        },
-        {
-            "authority_id": "G5_EXECUTION",
-            "repo_relative_posix_path": "evidence/g5/G5_EXECUTION_LOCK.json",
-            "json_pointer_or_null": "/execution_schedule",
-            "source_role": "method_stage_projection",
-        },
-    ]
+    assert record["source_artifact_refs"] == _sorted_source_refs(
+        [
+            {
+                "authority_id": "G5_EXECUTION",
+                "repo_relative_posix_path": "evidence/g5/G5_EXECUTION_LOCK.json",
+                "json_pointer_or_null": "/output_roots/raw_output_root_relative",
+                "source_role": "output_root_containment_projection",
+            },
+            {
+                "authority_id": "G5_EXECUTION",
+                "repo_relative_posix_path": "evidence/g5/G5_EXECUTION_LOCK.json",
+                "json_pointer_or_null": "/execution_schedule",
+                "source_role": "method_stage_projection",
+            },
+        ]
+    )
     _task6_assert_record_matches_projection(
         record,
         _task6_output_root_projection(authority="G5_EXECUTION"),
@@ -3443,40 +3555,50 @@ def test_task6_g6r_output_root_requires_lock_raw_equality_and_unique_r3_suffix(
         dimension="output_root_reservation_sha256",
     )
 
-    assert record["source_artifact_refs"] == [
-        {
-            "authority_id": "G6_R_REPLAY_R3",
-            "repo_relative_posix_path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
-            "json_pointer_or_null": "/output_root",
-            "source_role": "output_root_containment_projection",
-        },
-        {
-            "authority_id": "G6_R_REPLAY_R3",
-            "repo_relative_posix_path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
-            "json_pointer_or_null": "/case_ids",
-            "source_role": "method_stage_projection",
-        },
-        {
-            "authority_id": "G6_R_REPLAY_R3",
-            "repo_relative_posix_path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
-            "json_pointer_or_null": "/run_labels",
-            "source_role": "method_stage_projection",
-        },
-        {
-            "authority_id": "G6_R_REPLAY_R3",
-            "repo_relative_posix_path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
-            "json_pointer_or_null": "/execution_schedule",
-            "source_role": "method_stage_projection",
-        },
-        {
-            "authority_id": "G6_R_REPLAY_R3",
-            "repo_relative_posix_path": (
-                "evidence/g6/G6_HISTORICAL_REPLAY_R3_RAW_HASH_MANIFEST.json"
-            ),
-            "json_pointer_or_null": "/output_root",
-            "source_role": "output_root_source_equality_validation",
-        },
-    ]
+    assert record["source_artifact_refs"] == _sorted_source_refs(
+        [
+            {
+                "authority_id": "G6_R_REPLAY_R3",
+                "repo_relative_posix_path": (
+                    "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json"
+                ),
+                "json_pointer_or_null": "/output_root",
+                "source_role": "output_root_containment_projection",
+            },
+            {
+                "authority_id": "G6_R_REPLAY_R3",
+                "repo_relative_posix_path": (
+                    "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json"
+                ),
+                "json_pointer_or_null": "/case_ids",
+                "source_role": "method_stage_projection",
+            },
+            {
+                "authority_id": "G6_R_REPLAY_R3",
+                "repo_relative_posix_path": (
+                    "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json"
+                ),
+                "json_pointer_or_null": "/run_labels",
+                "source_role": "method_stage_projection",
+            },
+            {
+                "authority_id": "G6_R_REPLAY_R3",
+                "repo_relative_posix_path": (
+                    "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json"
+                ),
+                "json_pointer_or_null": "/execution_schedule",
+                "source_role": "method_stage_projection",
+            },
+            {
+                "authority_id": "G6_R_REPLAY_R3",
+                "repo_relative_posix_path": (
+                    "evidence/g6/G6_HISTORICAL_REPLAY_R3_RAW_HASH_MANIFEST.json"
+                ),
+                "json_pointer_or_null": "/output_root",
+                "source_role": "output_root_source_equality_validation",
+            },
+        ]
+    )
     assert record["source_run_role_or_null"] == "R3"
     assert record["source_run_role_or_null"] != "r3"
     _task6_assert_record_matches_projection(
@@ -3656,21 +3778,27 @@ def test_task6_g6r_metric_overlay_retains_g4_metric_lineage_input(
     )
 
     assert overlay["dimension_status"] == "derived_by_versioned_normalizer"
-    assert overlay["source_artifact_refs"] == [
-        *cast(list[JsonObject], g4_metric["source_artifact_refs"]),
-        {
-            "authority_id": "G6_R_REPLAY_R3",
-            "repo_relative_posix_path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
-            "json_pointer_or_null": "/default_estimand_spec",
-            "source_role": "metric_projection",
-        },
-        {
-            "authority_id": "G6_R_REPLAY_R3",
-            "repo_relative_posix_path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
-            "json_pointer_or_null": "/default_estimand_spec_sha256",
-            "source_role": "metric_projection",
-        },
-    ]
+    assert overlay["source_artifact_refs"] == _sorted_source_refs(
+        [
+            *cast(list[JsonObject], g4_metric["source_artifact_refs"]),
+            {
+                "authority_id": "G6_R_REPLAY_R3",
+                "repo_relative_posix_path": (
+                    "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json"
+                ),
+                "json_pointer_or_null": "/default_estimand_spec",
+                "source_role": "metric_projection",
+            },
+            {
+                "authority_id": "G6_R_REPLAY_R3",
+                "repo_relative_posix_path": (
+                    "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json"
+                ),
+                "json_pointer_or_null": "/default_estimand_spec_sha256",
+                "source_role": "metric_projection",
+            },
+        ]
+    )
     assert overlay["comparison_projection_sha256_or_null"] == canonical_sha256_v2(
         _task7_g6r_metric_overlay_projection()
     )
@@ -3734,7 +3862,7 @@ def test_task6_unique_lineage_accounting_allows_zero_or_more_duplicate_aliases(
         status: sum(
             1 for record in records.values() if record["dimension_status"] == status
         )
-        for status in contracts.DIMENSION_STATUS_VALUES
+        for status in sorted(contracts.DIMENSION_STATUS_VALUES)
     }
     aliases = [
         record
@@ -4091,40 +4219,50 @@ def test_task7_g6r_output_root_refs_include_raw_and_schedule_membership(
         dimension="output_root_reservation_sha256",
     )
 
-    assert record["source_artifact_refs"] == [
-        {
-            "authority_id": "G6_R_REPLAY_R3",
-            "repo_relative_posix_path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
-            "json_pointer_or_null": "/output_root",
-            "source_role": "output_root_containment_projection",
-        },
-        {
-            "authority_id": "G6_R_REPLAY_R3",
-            "repo_relative_posix_path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
-            "json_pointer_or_null": "/case_ids",
-            "source_role": "method_stage_projection",
-        },
-        {
-            "authority_id": "G6_R_REPLAY_R3",
-            "repo_relative_posix_path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
-            "json_pointer_or_null": "/run_labels",
-            "source_role": "method_stage_projection",
-        },
-        {
-            "authority_id": "G6_R_REPLAY_R3",
-            "repo_relative_posix_path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
-            "json_pointer_or_null": "/execution_schedule",
-            "source_role": "method_stage_projection",
-        },
-        {
-            "authority_id": "G6_R_REPLAY_R3",
-            "repo_relative_posix_path": (
-                "evidence/g6/G6_HISTORICAL_REPLAY_R3_RAW_HASH_MANIFEST.json"
-            ),
-            "json_pointer_or_null": "/output_root",
-            "source_role": "output_root_source_equality_validation",
-        },
-    ]
+    assert record["source_artifact_refs"] == _sorted_source_refs(
+        [
+            {
+                "authority_id": "G6_R_REPLAY_R3",
+                "repo_relative_posix_path": (
+                    "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json"
+                ),
+                "json_pointer_or_null": "/output_root",
+                "source_role": "output_root_containment_projection",
+            },
+            {
+                "authority_id": "G6_R_REPLAY_R3",
+                "repo_relative_posix_path": (
+                    "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json"
+                ),
+                "json_pointer_or_null": "/case_ids",
+                "source_role": "method_stage_projection",
+            },
+            {
+                "authority_id": "G6_R_REPLAY_R3",
+                "repo_relative_posix_path": (
+                    "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json"
+                ),
+                "json_pointer_or_null": "/run_labels",
+                "source_role": "method_stage_projection",
+            },
+            {
+                "authority_id": "G6_R_REPLAY_R3",
+                "repo_relative_posix_path": (
+                    "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json"
+                ),
+                "json_pointer_or_null": "/execution_schedule",
+                "source_role": "method_stage_projection",
+            },
+            {
+                "authority_id": "G6_R_REPLAY_R3",
+                "repo_relative_posix_path": (
+                    "evidence/g6/G6_HISTORICAL_REPLAY_R3_RAW_HASH_MANIFEST.json"
+                ),
+                "json_pointer_or_null": "/output_root",
+                "source_role": "output_root_source_equality_validation",
+            },
+        ]
+    )
 
 
 @pytest.mark.parametrize(
