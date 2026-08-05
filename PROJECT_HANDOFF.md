@@ -1,5 +1,71 @@
 # IMS Deadlock 当前项目交接
 
+## 2026-08-05 Retired-Authority Normalization Publication
+
+Current precedence: this section is the single continuation entry point for
+the G6-B main line. The exact-decimal C1 source/test subject is
+`90214d4ecbb7ac62492966c7ede3ca68da259cd7`, tree
+`66e951ebb34e95912a4f496fcf6c783fdd1144da`. The artifact-only C2 successor is
+`73916f2d5a1a5ae644f3fa0be42b17fcada097d9`, tree
+`d8cd83e473292b1c8f83d701abb830c395a3184c`, and contains exactly the 213
+files under
+`cases/discovery/g6b/row_families/structural_discovery_v1/governance/g6b_retired_authority_normalization_v1/`.
+The documentation-only C3 changes only
+`docs/verification/G6_B_RETIRED_AUTHORITY_NORMALIZATION_REVIEW.md`, this file,
+and `docs/ROADMAP.md`; resolve its exact identity from live Git history.
+
+The normalizer ran exactly once successfully under the approved replacement
+authorization. Authorization raw/self SHA-256 values are
+`fc04ffe450dee355ac89b7b201be287eff4caa6d892dc698f462300721b10c6c` and
+`646787f1888e3254d63da0a37af0287e1bb66b14ab78f09b54b7eeab0162f0eb`;
+the approved independent authorization-review raw SHA-256 is
+`bfcfa4a9b378f2602a30679f561e068d92d5c7c949fcbda186ae28bb99bc7146`.
+The successful exit/progress raw SHA-256 values are
+`9fc91afad6160d8485302a2c90923e55b06e76be85e5c185457370558de9a759`
+and `89b6aed777ae5c04962978638b2a391cef18a4f5d74551862577a96a21c54366`.
+
+Independent artifact-only verification returned PASS. The normalization
+manifest raw/self SHA-256 values are
+`d1391920c97c254fe8874175d502853354b9859322ac624a94b2f2573f371d23`
+and `3fcb863d8f7f19820c8ea5f5edbaf213dec587fb4497265b5ec005f525c587ad`;
+the verifier report raw SHA-256 is
+`4b75575b6bf2cb42b4196c77d687c3e0338f7edd5b27121d916d2c9ce5298fe6`.
+Exact closure is three authority locks, 27 source records, 181 fingerprints,
+and 165 unique lineages. The manifest preserves 119 later-audit-eligible
+records and 62 typed `unreconstructable_refuse` records, with zero missing
+sources and zero forbidden outcome/result/score/stdout/stderr fields or
+downstream roots.
+
+The theory-to-case chain is now closed through retired-corpus normalization:
+R7 sealed 13 case units / 26 method observations / 13 exact-DES companion
+groups, and C2 supplies the retired comparison corpus. It is not closed through
+actual overlap, target certification, or quantitative evidence. G5 remains
+FAIL evidence (`4/3/2`, transparent `6/1/2`, both minimality failures); R1/R2
+remain failures and R3 remains historical-only.
+
+The three bounded R10 publication lanes returned PASS with P0/P1/P2 `0/0/0`:
+ontology/estimand, selector/leakage/nonreuse, and artifact/hash/lineage closure.
+They were run once in parallel over the exact pre-publication documentation
+candidate and did not expand into another generic code-review cycle.
+
+Current terminal status:
+
+```text
+RETIRED_AUTHORITY_NORMALIZATION_COMPLETE / G6-B OPEN-PENDING
+actual overlap = NOT RUN
+Barrier A = NOT AUTHORIZED / NOT RUN
+Barrier B = NOT AUTHORIZED / NOT RUN
+G6-C/D/E = NOT STARTED / NOT PASSED
+paper gate = CLOSED
+```
+
+The first unchecked scientific boundary is a separately bounded input-level
+actual-overlap audit across the eight applicable fingerprint dimensions. No
+current authorization opens that audit, Barrier A/B, CTMC/DES, G6-C/D/E, or a
+scientific PASS claim. Full counts, ontology locks, case obligations, and
+negative-evidence retention are in
+`docs/verification/G6_B_RETIRED_AUTHORITY_NORMALIZATION_REVIEW.md`.
+
 ## 2026-08-05 Projection-Scope Wording Erratum
 
 PR #7 review identified one imprecise background phrase in the already
@@ -29,10 +95,10 @@ normalization or any downstream execution; G6-B remains `OPEN/PENDING`.
 
 ## 2026-08-05 R7 Case-Construction Publication
 
-Current precedence: this section is the single continuation entry point for
-G6-B case construction. It supersedes older `PLAN-ONLY`, `EXACT APPROVAL
-PENDING`, Task-R1, Task-R2, and pre-repair continuation wording for current
-status without deleting those records as history.
+Historical predecessor: this section remains the authoritative record for
+G6-B case construction, but the retired-normalization section above now defines
+the live continuation boundary. It superseded older `PLAN-ONLY`, `EXACT
+APPROVAL PENDING`, Task-R1, Task-R2, and pre-repair wording at R7 publication.
 
 The repaired artifact subject C3 is
 `0fa08e66c249fb19d8c014127cca8441efa90505`, tree
@@ -194,11 +260,11 @@ authorized data-only normalization, not v2 plan approval.
 为准；不得用聊天记录、旧 worktree 或本地快照替代实时锁定。
 
 ## 1. 一句话状态
-Current status override: the approved v2 case-construction tranche completed
-R1-R7 publication on repaired C3 `0fa08e66c249fb19d8c014127cca8441efa90505`
-and documentation-only C4. Draft PR #8 is open and unmerged. G6-B remains
-`OPEN/PENDING`; the mandatory post-R7 stop is active. All older Task2-entry,
-plan-only, approval-pending, and pre-repair wording is historical.
+Current status override: R7 case construction is complete, and the separately
+approved retired-authority normalization is complete on artifact-only C2
+`73916f2d5a1a5ae644f3fa0be42b17fcada097d9`. G6-B remains `OPEN/PENDING` at
+the mandatory pre-overlap boundary. All older Task2-entry, plan-only,
+approval-pending, pre-repair, and pre-normalization wording is historical.
 
 
 项目已完成理论优先基础、受限结构—概率—控制主链、范围受限文献门、小有限
@@ -210,20 +276,18 @@ plan-only, approval-pending, and pre-repair wording is historical.
 - `G5 = FAIL（evidence closed）`；
 - `G6-A = PASS`；
 - `G6-R = PASS（historical replay only）`；
-- `G6-B = R7 CASE-CONSTRUCTION PUBLICATION REVIEWED; OPEN/PENDING`；
+- `G6-B = RETIRED-AUTHORITY NORMALIZATION COMPLETE; OPEN/PENDING`；
 - `G6-C/D/E = 均未开始，均未通过`；
 - 尚无完整论文主文件，也不能声称达到投稿或顶刊就绪状态。
 
-G6-B schema-only governance v2 的历史 Section 18 基线仍保留，但当前主体已
-推进到 repaired case-construction C3 `0fa08e66...` 和 R7 publication。C3 是
-exact-394 sealed construction bundle；单独的 construction authorization 为
-`authorized=true`。这一事实不打开 retired-normalization、target-preflight 或
-quantitative capability，也不形成 scientific execution。当前文档后继仍须用
-`git log -1 --format=%H -- PROJECT_HANDOFF.md` 实时定位；不得把早期 Section 18
-subject、plan-only successor 或 frozen typed-reference false 值误写成当前 C3/C4
-身份或声称未发生 construction。later scientific roots 仍 absent；没有运行
-normalization、actual overlap、Barrier-A preflight、CTMC、DES、output inspection
-或 scientific verdict。三路 R7 review 均 PASS，G6-B 继续 `OPEN/PENDING`。
+G6-B schema-only governance v2 的历史 Section 18 基线仍保留；当前主体已完成
+repaired case-construction C3 `0fa08e66...`、R7 publication，以及单独批准的
+retired-authority artifact-only C2 `73916f2d...`。R7 的 exact-394 sealed bundle 与
+C2 的 213-file retired corpus 均已闭合，但二者尚未进行 actual input-level
+comparison。不得把 normalization 写成 overlap PASS、科学独立性或 G6-B PASS。
+later scientific roots 仍 absent；没有运行 actual overlap、Barrier-A preflight、
+CTMC、DES、output inspection 或 scientific verdict。G6-B 继续
+`OPEN/PENDING`。
 
 2026-08-02 的 PR 独立审查随后发现两个工程/治理授权缺口：缺少显式 fail-closed
 Barrier-A preflight authorization validator，以及 retired-normalization
@@ -279,9 +343,9 @@ Task2 合同缺口暴露后由 v2 修订取代。
 | 工作面 | 当前状态 | 下一动作 |
 | --- | --- | --- |
 | Section 18 schema/governance v2 | `COMPLETE / PASS_SCHEMA_ONLY`；代码审查对象固定为 `948ff5746adcb66b68fb9c47e519f070dd2c96ba` | 不再重跑 Task 1-7；仅在代码/schema/冻结协议/证据对象变化时重跑完整验证 |
-| G6-B case construction | `R7 CASE-CONSTRUCTION PUBLICATION REVIEWED / OPEN-PENDING`；C3 `0fa08e66...` is exactly 394 artifacts；three R7 lanes PASS 0/0/0；Draft PR #8 is unmerged | Mandatory stop. The next possible tranche is separately authorized data-only retired-authority fingerprint normalization; do not start overlap/preflight/CTMC/DES/science from C3/C4/R7 |
-| retired-authority normalization | `NOT AUTHORIZED / NOT RUN` | case sealing 后另开 data-only authorization；不得读取历史 outcome 反推案例 |
-| overlap audit | `NOT RUN` | 仅在 sealed inputs 完成后运行；hash 不等同于语义独立性证明 |
+| G6-B case construction | `R7 CASE-CONSTRUCTION PUBLICATION REVIEWED`；C3 `0fa08e66...` is exactly 394 artifacts；three R7 lanes PASS 0/0/0；Draft PR #8 is unmerged | construction evidence remains sealed/no-execution; do not infer results from control names |
+| retired-authority normalization | `COMPLETE / ARTIFACT-ONLY`；C2 `73916f2d...` is exactly 213 files；3 locks / 27 sources / 181 fingerprints / 165 lineages；119 eligible / 62 refusal；independent verifier PASS | preserve all refusals；normalization is not actual overlap |
+| overlap audit | `NOT AUTHORIZED / NOT RUN` | next bounded scientific tranche；compare the 13 sealed inputs to the normalized retired corpus under all applicable dimension policies；hash 不等同于语义独立性证明 |
 | Barrier A target preflight | `NOT AUTHORIZED / NOT RUN` | overlap PASS 后另行授权，只能产出 certificate/refusal/preflight evidence |
 | Barrier B quantitative science | `NOT AUTHORIZED / NOT RUN` | exact/DES same-target locks 与单独定量授权完成后，才可运行 CTMC/DES |
 | G6-C/D/E | 全部 `NOT STARTED / NOT PASSED` | 只有 G6-B 全条件通过后才能进入 confirmation preregistration、freeze、一次性执行 |
@@ -1018,14 +1082,15 @@ git log -1 --format=%H -- PROJECT_HANDOFF.md
 本地材料化快照上用 `g4_freeze check` 作为远程当前性证明；第 2.1 节已经
 记录该快照的 file-byte mismatch。
 
-## 13. 下一硬门：G6-B
+## 13. 下一硬门：G6-B actual input-level overlap
 
 下一进程不要继续重放 G4/G5，也不要先写成投稿稿件。原 case-construction
-plan、v2 corrigendum/plan、post-seal repair 和 R1-R7 现已完成。repaired C3
-`0fa08e66...` 与 documentation-only C4 已发布到 Draft PR #8，但 G6-B 仍为
-`OPEN/PENDING`。当前 first unchecked boundary 是 mandatory post-R7 stop；只有
-新的、单独批准的 data-only retired-authority fingerprint-normalization plan 才能
-开启下一 tranche。C3/C4/R7 不授权 overlap、preflight、CTMC、DES 或科学执行。
+plan、v2 corrigendum/plan、post-seal repair、R1-R7 和单独批准的
+retired-authority normalization 现已完成。repaired C3 `0fa08e66...`、R7 文档
+后继与 normalization artifact-only C2 `73916f2d...` 都已闭合，但 G6-B 仍为
+`OPEN/PENDING`。当前 first unchecked boundary 是 mandatory post-normalization
+stop；只有新的、单独批准的 actual input-level overlap audit 才能开启下一
+tranche。当前 C2/C3 不授权 overlap、preflight、CTMC、DES 或科学执行。
 Final Section 18 evidence subject 是
 `948ff5746adcb66b68fb9c47e519f070dd2c96ba`。Historical/pre-repair Task-5
 schema-code subject 是 `9ef6fcec9e410b2ab7afc4144df8b948a238d95f`，仅作为已保留
@@ -1038,13 +1103,12 @@ validator 为
 源 schema-only bundle 仍保留 frozen reference
 `case_construction_authorized=false` 与 `adversarial_review_status=PENDING`；
 单独生成并提交的 construction authorization 则为 `authorized=true`，且已产出
-exact-394 sealed C3。不得混淆这两个对象。当前 downstream capabilities 仍为
-`retired_authority_fingerprint_normalization_authorized=false`、
-`target_certification_preflight_authorized=false`、
-`quantitative_execution_authorized=false`，later scientific roots 均 absent。
-本 tranche 创建了 sealed construction inputs，但没有运行
-normalization/actual-overlap/preflight/CTMC/DES、检查科学输出或形成 scientific
-verdict。三路 R7 review 已通过；G6-B 保持 `OPEN/PENDING`，G6-C/D/E 仍未开始。
+exact-394 sealed C3。不得混淆 frozen typed reference 与后继 authorization。
+单独的 normalization authorization 已被一次性消费并产出 exact-213 C2；它不
+回写或升级早期 typed reference。当前未打开的是 actual-overlap、
+target-certification 与 quantitative capability，later scientific roots 均 absent。
+本 tranche 没有运行 actual-overlap/preflight/CTMC/DES、检查科学输出或形成
+scientific verdict。G6-B 保持 `OPEN/PENDING`，G6-C/D/E 仍未开始。
 
 ### 13.1 G6-B 必须冻结前定义的内容
 
@@ -1063,9 +1127,9 @@ verdict。三路 R7 review 已通过；G6-B 保持 `OPEN/PENDING`，G6-C/D/E 仍
 ### 13.2 独立性要求
 
 退役证据范围包括 retired G4、retired G5 和 G6-R historical replay。G6-B
-未来经单独授权构造的 G6-B discovery subjects 相对这些退役证据，必须按各
-subject 所有权在以下八个 fingerprint dimensions 上完成适用的 overlap 审计；
-当前 schema-only tranche 没有 subjects，也没有 actual overlap result：
+已封存的 G6-B discovery subjects 相对这些退役证据，必须按各 subject 所有权
+在以下八个 fingerprint dimensions 上完成适用的 overlap 审计；当前已有 13 个
+sealed subjects 与 181-record retired corpus，但仍没有 actual overlap result：
 
 - `case_content_sha256`
 - `state_snapshot_sha256`
@@ -1220,29 +1284,30 @@ CTMC/DES, quantitative, or scientific-output authority.
 
 ## 16. 下一进程的第一个可执行批次
 
-v2 implementation 与 R1-R7 publication 已完成。当前没有任何 post-R7
-downstream authority。下一进程的第一个可执行批次只能是只读重锁：
+v2 implementation、R1-R7 publication 与 retired-authority normalization 已完成。
+当前没有 actual-overlap 或更下游 authority。下一进程的第一个可执行批次只能是
+只读重锁：
 
-1. 重锁
-   `D:\worktree\IMS_deadlock-g6b-case-construction-v2-r6-testfix`、branch、
-   documentation-only C4 HEAD/tree、upstream `0/0` 和 clean state。
-2. 核验 Draft PR #8 的 base/head、Draft、unmerged state，以及 C3..C4 仅三份
-   R7 文档的闭包。
-3. 读取 `G6_B_CASE_CONSTRUCTION_REVIEW_V2.md`，确认 C3 exact-394、三路 R7
-   PASS、construction-only authorization 和所有 downstream/scientific 边界。
+1. 重锁 `D:\worktree\IMS_deadlock-g6b-retired-normalization`、branch、live C3
+   HEAD/tree、upstream 和 clean state。
+2. 核验 normalization Draft PR 的 base/head、Draft、unmerged state，以及
+   C1..C2 artifact-only、C2..C3 documentation-only 闭包。
+3. 读取 `G6_B_RETIRED_AUTHORITY_NORMALIZATION_REVIEW.md`，确认 213-file exact
+   closure、119 eligible / 62 refusal、normalization-not-overlap 与所有
+   downstream/scientific boundaries。
 4. 不得 clean、stash、commit、transfer 或以其他方式接触旧 dirty/quarantined
    worktree；它们只保留负证据。
-5. 在用户另行批准 data-only retired-authority fingerprint-normalization 精确计划
-   前停止。Draft PR #8、普通“继续推进”或 construction authorization 均不等同于
-   downstream/scientific authorization。
+5. 在用户另行批准 actual input-level overlap 精确计划前停止。任何 Draft PR、
+   普通“继续推进”、construction authorization 或 normalization authorization 均
+   不等同于 overlap/downstream scientific authorization。
 
 后续依赖顺序不得并行越门：
 
 1. approved case-construction plan — `COMPLETE`；
 2. materialize and review sealed case inputs/predictions/controls/metric schemas —
    `COMPLETE / NO SCIENTIFIC EXECUTION`；
-3. 单独授权并完成 retired-authority data-only normalization；
-4. sealing 后做 input-level overlap audit；
+3. 单独授权并完成 retired-authority data-only normalization — `COMPLETE`；
+4. sealing 后做 input-level overlap audit — `NEXT / NOT AUTHORIZED`；
 5. overlap PASS 后另行授权 Barrier A target-certification preflight；
 6. review target certificate/refusal evidence，并建立 exact/DES same-target locks；
 7. 另行授权 Barrier B 后才可运行 CTMC、DES、metric observation 和定量输出；
