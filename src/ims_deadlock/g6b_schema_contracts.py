@@ -15,6 +15,7 @@ from ims_deadlock import g6b_canonical_json
 JsonValue: TypeAlias = (
     None | bool | int | float | str | list["JsonValue"] | dict[str, "JsonValue"]
 )
+JsonPath: TypeAlias = tuple[str | int, ...]
 _UNKNOWN_CALLABLE_ALIAS = "__g6b_unknown_callable__"
 _SAFE_PATH_OBJECT_ALIAS = "__g6b_safe_path_object__"
 _SAFE_HASH_OBJECT_ALIAS = "__g6b_safe_hash_object__"
@@ -241,6 +242,39 @@ PREFLIGHT_AUTHORIZATION_REQUIRED_FIELDS = (
 )
 G6B_CANONICAL_JSON_VERSION = "ims-deadlock/g6b-canonical-json/v2"
 LOWER_SHA256_HEX_DIGITS = frozenset("0123456789abcdef")
+G6B_ALLOWED_ESTIMAND_IDS = frozenset(
+    {
+        "g6b_estimand_theta_global_before_success_v1",
+        "g6b_estimand_theta_local_before_success_v1",
+        "g6b_estimand_theta_selected_bad_before_success_v1",
+    }
+)
+G6B_ESTIMAND_ID_SCOPE_CONTRACT: Mapping[str, object] = MappingProxyType(
+    {
+        "additional_allowed_paths": False,
+        "allowed_predeclared_paths": (
+            MappingProxyType(
+                {
+                    "allowed_use": (
+                        "predeclared_directional_hypothesis_identifier_only"
+                    ),
+                    "json_pointer_pattern": "/directional_hypotheses/*/estimand_id",
+                    "projection_role": "sealed_prediction_sha256",
+                }
+            ),
+            MappingProxyType(
+                {
+                    "allowed_use": "predeclared_metric_identifier_only",
+                    "json_pointer_pattern": "/metric_entries/*/estimand_id",
+                    "projection_role": "metric_schema_sha256",
+                }
+            ),
+        ),
+        "allowed_value_codes": tuple(sorted(G6B_ALLOWED_ESTIMAND_IDS)),
+        "default_policy": "recursive_prohibition",
+        "runtime_certificate_observation_or_result_use": "prohibited",
+    }
+)
 RETIRED_AUTHORITY_IDS = ("G4_FREEZE", "G5_EXECUTION", "G6_R_REPLAY_R3")
 EXPECTED_RETIRED_SOURCE_INVENTORY = (
     "cases/confirmation/g4/FREEZE_ENTRY.json",
@@ -1380,6 +1414,7 @@ def validate_subject_free_projection(
 ) -> None:
     if dimension not in FINGERPRINT_DIMENSIONS:
         raise SchemaContractError("unknown_dimension", dimension)
+    _validate_estimand_id_scope(dimension, projection)
     if "state_space_hash" in projection and dimension == "state_snapshot_sha256":
         raise SchemaContractError("state_space_hash_substitution", dimension)
     if DIMENSION_PROJECTION_KINDS[dimension] != "provenance_containment":
@@ -1417,6 +1452,35 @@ def validate_subject_free_projection(
         extra = sorted(actual - required)
         if extra:
             raise SchemaContractError("unclassified_scientific_input", extra[0])
+
+
+def _validate_estimand_id_scope(
+    projection_role: str,
+    payload: Mapping[str, JsonValue],
+) -> None:
+    for path, value in _find_estimand_id_paths(payload):
+        if not _is_allowed_estimand_id_path(projection_role, path):
+            raise SchemaContractError("estimand_id_scope_violation", _format_path(path))
+        if not isinstance(value, str) or value not in G6B_ALLOWED_ESTIMAND_IDS:
+            raise SchemaContractError("estimand_id_scope_violation", _format_path(path))
+
+
+def _is_allowed_estimand_id_path(projection_role: str, path: JsonPath) -> bool:
+    if projection_role == "sealed_prediction_sha256":
+        return (
+            len(path) == 3
+            and path[0] == "directional_hypotheses"
+            and isinstance(path[1], int)
+            and path[2] == "estimand_id"
+        )
+    if projection_role == "metric_schema_sha256":
+        return (
+            len(path) == 3
+            and path[0] == "metric_entries"
+            and isinstance(path[1], int)
+            and path[2] == "estimand_id"
+        )
+    return False
 
 
 def validate_fingerprint_record(
@@ -4603,6 +4667,29 @@ def _find_forbidden_keys(value: object, forbidden: set[str]) -> set[str]:
         for item in value:
             found.update(_find_forbidden_keys(item, forbidden))
     return found
+
+
+def _find_estimand_id_paths(
+    value: object,
+    path: JsonPath = (),
+) -> list[tuple[JsonPath, object]]:
+    found: list[tuple[JsonPath, object]] = []
+    if isinstance(value, Mapping):
+        for key, nested in value.items():
+            nested_path = (*path, key)
+            if key == "estimand_id":
+                found.append((nested_path, nested))
+            found.extend(_find_estimand_id_paths(nested, nested_path))
+    elif isinstance(value, Sequence) and not isinstance(value, str | bytes):
+        for index, item in enumerate(value):
+            found.extend(_find_estimand_id_paths(item, (*path, index)))
+    return found
+
+
+def _format_path(path: JsonPath) -> str:
+    if not path:
+        return "/"
+    return "/" + "/".join(str(part) for part in path)
 
 
 def _validate_optional_projection_hash(value: object, *, label: str) -> str | None:

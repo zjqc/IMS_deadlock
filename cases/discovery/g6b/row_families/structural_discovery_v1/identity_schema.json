@@ -1,5 +1,5 @@
 {
-  "schema_version": "ims-deadlock/g6b-row-family-identity/v2",
+  "schema_version": "ims-deadlock/g6b-row-family-identity/v3",
   "study_role": "discovery_only",
   "confirmation_use": "prohibited",
   "schema_role": "schema_only",
@@ -64,6 +64,28 @@
     },
     "digest_algorithm": "sha256",
     "digest_encoding": "lowercase_hexadecimal"
+  },
+  "estimand_id_scope_contract": {
+    "additional_allowed_paths": false,
+    "allowed_predeclared_paths": [
+      {
+        "allowed_use": "predeclared_directional_hypothesis_identifier_only",
+        "json_pointer_pattern": "/directional_hypotheses/*/estimand_id",
+        "projection_role": "sealed_prediction_sha256"
+      },
+      {
+        "allowed_use": "predeclared_metric_identifier_only",
+        "json_pointer_pattern": "/metric_entries/*/estimand_id",
+        "projection_role": "metric_schema_sha256"
+      }
+    ],
+    "allowed_value_codes": [
+      "g6b_estimand_theta_global_before_success_v1",
+      "g6b_estimand_theta_local_before_success_v1",
+      "g6b_estimand_theta_selected_bad_before_success_v1"
+    ],
+    "default_policy": "recursive_prohibition",
+    "runtime_certificate_observation_or_result_use": "prohibited"
   },
   "identity_levels": [
     "family_id",

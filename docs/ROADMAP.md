@@ -1,5 +1,16 @@
 # IMS Deadlock Gate Roadmap
 
+## 2026-08-02 Task1 Corrigendum Review Status
+
+G6-B case construction Task1 is `COMPLETED / REVIEWED` at subject `f8b777713fc7d5f239ab6449d99c050452db6f98` tree `b65b096a6135991ede09c125fbd9de4f381733e9`. Draft PR #6 is `https://github.com/zjqc/IMS_deadlock/pull/6`, targeting `codex/g6b-case-construction-plan` / PR #5. The review artifact is `docs/verification/G6_B_CASE_CONSTRUCTION_ESTIMAND_SCOPE_CORRIGENDUM_REVIEW.md`; its SHA-256 is `744cac6caff24779d862704ad83d186023ea918f06f941e78fcc2f797c1b07c7`.
+
+The bounded change is a schema/test/documentation corrigendum for `estimand_id` scope only. It keeps the original design SHA-256 `b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6`, plan SHA-256 `c20393328f8f98e7b35a6507fd6e993b2f17e068d977c3dc6253b05e9a75de5f`, plan review SHA-256 `297a69382347e16e894af63e70f8fa95807407048b2e89c45701410a4e9289e1`, and corrigendum raw SHA-256 `5b5266a562fb4e1515121a351d0b98227338bf34c991eef2fe76557b0e17334f` bound. It does not authorize construction or science.
+
+Final evidence: schema `401 passed`; full repository `2170 passed, 2 skipped in 611.87s (0:10:11)`; Ruff/format/strict mypy clean; direct bundle valid with science false, case false, `PENDING`; ontology, boundary, and code-quality reviews all `APPROVE` with Critical/High/Medium/Low all zero.
+
+First unchecked next step: Task2 materializer may begin only after the user again explicitly approves entry into Task2. Until then, G6-B remains `OPEN/PENDING`; no construction authorization, case byte, normalization, overlap, preflight, CTMC/DES, quantitative artifact, or scientific verdict may be created.
+
+
 本路线图采用用户批准的理论优先顺序。Gate 的 `PASS` 只表示其明确列出的
 受限结论已满足，不把候选定理、发现集程序结果或文献摘要包装成完成证据。
 
@@ -7,13 +18,13 @@
 
 | Gate | 状态 | 当前证据 | 未关闭项 |
 | --- | --- | --- | --- |
-| G0 仓库门 | PASS | Dell 目标路径、GitHub SSH、干净集成 worktree 和项目专用 Python 3.13.9 已核验；污染历史保持隔离；历史整合状态已进入 `main@9c707ce3d990541847aee745bec211bb55c74f6b`；Draft PR #4 `https://github.com/zjqc/IMS_deadlock/pull/4` 已推送 `004bc7d3...`；plan subject `bb312fc8...` 已在独立分支通过 stacked Draft PR #5 `https://github.com/zjqc/IMS_deadlock/pull/5` 发布，base 为 PR #4 分支；包含 PR 状态文档后继后 diff 为 2 commits / 5 paths | PR #4/#5 均无 merge authority；merge 不构成 plan exact-bytes approval，两个 PR 在批准门关闭前保持 draft |
+| G0 仓库门 | PASS | Dell 目标路径、GitHub SSH、干净集成 worktree 和项目专用 Python 3.13.9 已核验；历史整合状态已进入 `main@9c707ce3d990541847aee745bec211bb55c74f6b`；Draft PR #4 保持 open；stacked Draft PR #5 发布 plan；stacked Draft PR #6 `https://github.com/zjqc/IMS_deadlock/pull/6` 发布 Task1 corrigendum，base 为 PR #5 分支 | PR #4/#5/#6 均无 merge authority；PR #6 完成 Task1 review publication，但不构成 Task2 authorization |
 | G1 文献门 | PASS（scope-bounded） | 六条文献链、43 项审计矩阵、20 个全文/全文审计锚点、迁移卡；L30-L35 与 B05 七篇审计已纳入比较边界；R7/R8 类别饱和保持 | 不支持首创性、系统综述或一般 IMS/Petri 等价；G4 必须检验 CRP、recorder、SBA、L30/B05 comparator 边界 |
 | G2 理论门 | PASS（严格受限主链） | P1 有限 LTS/reachability-net；P2 capacity-mediated 封闭核 iff；P2c `IMS-SIP^1` 诊断虹吸双向桥；P3 偏序充分条件；P3d `BIX1-SAT` 可达阈值；P3e `BIX2-PERSIST` 三资源 ring 精确阈值与同语义 DAG 修复；P4 CTMC；P5 supervisor；P6 复杂性边界 | plant-level structured Petri/S3PR 桥、替代/AND/AGV/预约/多 persistent-buffer 一般岛阈值、一般紧凑 IMS 精确复杂性和 risk-budget 控制仍开放 |
 | G3 算法门 | PASS（严格小有限模型 + P2c/P3d/P3e） | 原 G3 证据为 123 tests；加入 G4/G5/G6 协议、局部核/终端类恢复、replay 数值完整性和 post-R3 comparator fail-closed 回归后，Dell 项目 Python 3.13.9 全库 341 tests、Ruff check/format、strict mypy 通过；原 C0、BIX1/BIX2 结果不变 | 一般 plant/S3PR、结构案例物理速率、一般 persistent-buffer/AGV 阈值和风险预算/Pareto 算法仍开放 |
 | G4 案例冻结门 | PASS（historical C seal；已在 G5 原样执行） | A=`f9b9a5a5652c7a49053e7ef26d08911bd757f465`，B2=`58bbd4ab7da8c2c1d0bcdea4a12f2ae7c020d09a`，C=`e91be4d6d7511c76918093899269de4b78e69fd8`；封存时 checker 为 `FROZEN`、`errors=[]`、`confirmation_results_inspected=false`；随后只在 G5-B execution lock 下执行一次 primary 和一次 repro | G4/G5 九行已退役为历史 discovery/regression，不能再次充当 held-out；后续缺陷必须进入独立 successor freeze |
 | G5 论文门 | FAIL（evidence closed） | G5-A=`b5e5dc0494b23a54c78c420bbca50a3639de8bff`，G5-B=`8aa752804b885b79e5371c98e7961087c540f2a8`，G5-C=`ff281481068a2325cb0bde00e85fd7b753ba854a`；9/9 案例完成 primary/repro，raw/canonical/stderr hash 一致；锁定 scorer 为 `4/3/2`，透明 theorem audit 为 `6/1/2` 并另保留两项 minimality failure | CRP local bridge 预测失败；grid/medium 因 `D/F` 未穷尽 terminal classes 而确定性拒绝；不能形成完整 exact/DES 证据链或宣称论文门通过 |
-| G6 局部核—终端类恢复门 | IN PROGRESS / G6-A 与 G6-R PASS / G6-B `OPEN/PENDING` | R1/R2 失败和两项 minimality failure 原样保留；G6-B schema-only governance v2 在 historical/pre-repair Task-5 subject `9ef6fcec9e410b2ab7afc4144df8b948a238d95f` 实现 top-level exact-five、nested exact-twelve；final Section 18 evidence subject `948ff5746adcb66b68fb9c47e519f070dd2c96ba` 完成 independent review publication；授权门 remediation subject `b2f2f285a68793ce9ca4cb1b47a05dd7a3cfb9bb` focused schema `379 passed`、preflight `20 passed`、fresh full repository `2145 passed, 2 skipped`；case-construction plan SHA `c2039332...` 与 review SHA `297a6938...` 已发布并获三路 `APPROVE` 0 Critical/High/Medium | 四 capability 仍 false，later roots absent；计划把 `estimand_id` 矛盾限定为 exact two-path corrigendum，但尚未实施；无 case、normalization、actual overlap、preflight、CTMC、DES、output inspection 或 scientific verdict；first unchecked next step 仅为用户批准两个 exact SHA-256 |
+| G6 局部核—终端类恢复门 | IN PROGRESS / G6-A 与 G6-R PASS / G6-B Task1 `COMPLETED / REVIEWED` / Task2 `NOT AUTHORIZED` | R1/R2 失败和两项 minimality failure 原样保留；schema-only governance v2、authorization remediation、case-construction plan、Task1 estimand-scope corrigendum均已发布和审查；Task1 subject `f8b777713fc7d5f239ab6449d99c050452db6f98` tree `b65b096a6135991ede09c125fbd9de4f381733e9`；Draft PR #6 `https://github.com/zjqc/IMS_deadlock/pull/6` targets PR #5；final evidence includes schema `401 passed`, full repo `2170 passed, 2 skipped in 611.87s`, Ruff/format/mypy, direct bundle valid, and three review approvals all zero severity | 四 capability 仍 false，later roots absent；无 case、normalization、actual overlap、preflight、CTMC、DES、output inspection 或 scientific verdict；first unchecked next step is Task2 materializer only after the user again explicitly approves entering Task2 |
 
 ## G0 仓库门
 

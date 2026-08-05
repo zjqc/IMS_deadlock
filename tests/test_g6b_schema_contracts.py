@@ -67,6 +67,11 @@ _ROW_FAMILY_ROOT = (
 _RETIRED_AUTHORITY_SCHEMA = (
     _ROW_FAMILY_ROOT / "retired_authority_fingerprint_schema.json"
 )
+_ALLOWED_G6B_ESTIMAND_IDS = (
+    "g6b_estimand_theta_global_before_success_v1",
+    "g6b_estimand_theta_local_before_success_v1",
+    "g6b_estimand_theta_selected_bad_before_success_v1",
+)
 
 
 def _subject_id_for_dimension(dimension: str) -> str:
@@ -4416,6 +4421,172 @@ def test_spec_17_3_06_schema_fingerprint_projection_relations() -> None:
             match="unclassified_scientific_input|subject_id_contaminated_projection",
         ):
             validate_subject_free_projection(dimension, extra_payload)
+
+
+def test_case_construction_estimand_scope_allows_only_two_predeclared_roles() -> None:
+    sealed_prediction = _projection_for_dimension("sealed_prediction_sha256")
+    sealed_prediction["directional_hypotheses"] = [
+        {
+            "hypothesis_role": f"hypothesis-{index}",
+            "statement": "predeclared discovery-only hypothesis",
+            "direction": "case_specific_predeclared",
+            "estimand_id": estimand_id,
+            "scope_code": "single_case_discovery_only",
+            "falsifier_roles": [],
+        }
+        for index, estimand_id in enumerate(_ALLOWED_G6B_ESTIMAND_IDS)
+    ]
+    validate_subject_free_projection("sealed_prediction_sha256", sealed_prediction)
+
+    metric_schema = _projection_for_dimension("metric_schema_sha256")
+    metric_schema["metric_entries"] = [
+        {
+            "metric_id": f"metric-{index}",
+            "estimand_id": estimand_id,
+            "unit": "probability",
+            "domain": "closed_unit_interval",
+            "direction": "case_specific_predeclared",
+            "aggregation_rule_id": "aggregation-v1",
+            "censoring_rule_id": "censoring-v1",
+            "failure_rule_id": "failure-v1",
+            "scoring_rule_id": "scoring-v1",
+            "applicability_rule": "target_certified_and_same_target_locked_v1",
+        }
+        for index, estimand_id in enumerate(_ALLOWED_G6B_ESTIMAND_IDS)
+    ]
+    validate_subject_free_projection("metric_schema_sha256", metric_schema)
+
+
+@pytest.mark.parametrize(
+    ("dimension", "mutate"),
+    [
+        pytest.param(
+            "sealed_prediction_sha256",
+            lambda payload: payload.update(
+                {"estimand_id": _ALLOWED_G6B_ESTIMAND_IDS[0]}
+            ),
+            id="root",
+        ),
+        pytest.param(
+            "sealed_prediction_sha256",
+            lambda payload: payload["falsifiers"].append(
+                {
+                    "falsifier_role": "f1",
+                    "estimand_id": _ALLOWED_G6B_ESTIMAND_IDS[0],
+                }
+            ),
+            id="sibling",
+        ),
+        pytest.param(
+            "sealed_prediction_sha256",
+            lambda payload: payload["directional_hypotheses"].append(
+                {
+                    "hypothesis_role": "h1",
+                    "result": {"estimand_id": _ALLOWED_G6B_ESTIMAND_IDS[0]},
+                }
+            ),
+            id="nested_result",
+        ),
+        pytest.param(
+            "random_stream_manifest_sha256",
+            lambda payload: payload.update(
+                {"estimand_id": _ALLOWED_G6B_ESTIMAND_IDS[0]}
+            ),
+            id="runtime_projection",
+        ),
+        pytest.param(
+            "case_content_sha256",
+            lambda payload: payload.update(
+                {"certificate": {"estimand_id": _ALLOWED_G6B_ESTIMAND_IDS[0]}}
+            ),
+            id="certificate_projection",
+        ),
+        pytest.param(
+            "metric_schema_sha256",
+            lambda payload: payload.setdefault("aggregation_rules", []).append(
+                {
+                    "rule_id": "agg",
+                    "details": {"estimand_id": _ALLOWED_G6B_ESTIMAND_IDS[0]},
+                }
+            ),
+            id="arbitrary_nested",
+        ),
+        pytest.param(
+            "metric_schema_sha256",
+            lambda payload: payload.setdefault("metric_entries", []).append(
+                {"metric_id": "m1", "estimand_id": "theta-post-outcome-drift"}
+            ),
+            id="wrong_value_code",
+        ),
+    ],
+)
+def test_case_construction_estimand_scope_rejects_forbidden_placements(
+    dimension: str, mutate: Any
+) -> None:
+    payload = _projection_for_dimension(dimension)
+    mutate(payload)
+
+    with pytest.raises(SchemaContractError, match="estimand_id_scope_violation"):
+        validate_subject_free_projection(dimension, payload)
+
+
+@pytest.mark.parametrize(
+    ("dimension", "mutate"),
+    [
+        pytest.param(
+            "sealed_prediction_sha256",
+            lambda payload, value: payload["directional_hypotheses"].append(
+                {
+                    "hypothesis_role": "hypothesis-invalid-type",
+                    "statement": "predeclared discovery-only hypothesis",
+                    "direction": "case_specific_predeclared",
+                    "estimand_id": value,
+                    "scope_code": "single_case_discovery_only",
+                    "falsifier_roles": [],
+                }
+            ),
+            id="directional_hypothesis",
+        ),
+        pytest.param(
+            "metric_schema_sha256",
+            lambda payload, value: payload["metric_entries"].append(
+                {
+                    "metric_id": "metric-invalid-type",
+                    "estimand_id": value,
+                    "unit": "probability",
+                    "domain": "closed_unit_interval",
+                    "direction": "case_specific_predeclared",
+                    "aggregation_rule_id": "aggregation-v1",
+                    "censoring_rule_id": "censoring-v1",
+                    "failure_rule_id": "failure-v1",
+                    "scoring_rule_id": "scoring-v1",
+                    "applicability_rule": "target_certified_and_same_target_locked_v1",
+                }
+            ),
+            id="metric_entry",
+        ),
+    ],
+)
+@pytest.mark.parametrize(
+    "estimand_id",
+    [
+        pytest.param([], id="list"),
+        pytest.param({}, id="dict"),
+        pytest.param(1, id="int"),
+        pytest.param(None, id="null"),
+        pytest.param(True, id="bool"),
+        pytest.param(1.25, id="float"),
+        pytest.param("theta-post-outcome-drift", id="wrong_string"),
+    ],
+)
+def test_case_construction_estimand_scope_rejects_non_string_value_codes(
+    dimension: str, mutate: Any, estimand_id: Any
+) -> None:
+    payload = _projection_for_dimension(dimension)
+    mutate(payload, estimand_id)
+
+    with pytest.raises(SchemaContractError, match="estimand_id_scope_violation"):
+        validate_subject_free_projection(dimension, payload)
 
 
 def test_random_stream_projection_accepts_exact_stochastic_branch_only() -> None:

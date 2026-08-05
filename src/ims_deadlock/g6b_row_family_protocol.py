@@ -13,7 +13,7 @@ JsonObject: TypeAlias = dict[str, Any]
 JsonPath: TypeAlias = tuple[str | int, ...]
 
 G6B_ROW_FAMILY_PROTOCOL_VERSION = "ims-deadlock/g6b-row-family-protocol/v2"
-G6B_ROW_FAMILY_IDENTITY_VERSION = "ims-deadlock/g6b-row-family-identity/v2"
+G6B_ROW_FAMILY_IDENTITY_VERSION = "ims-deadlock/g6b-row-family-identity/v3"
 G6B_ROW_FAMILY_MATRIX_VERSION = "ims-deadlock/g6b-row-family-matrix/v1"
 G6B_ROW_FAMILY_REUSE_VERSION = "ims-deadlock/g6b-row-family-reuse/v2"
 G6B_ROW_FAMILY_OVERLAP_VERSION = "ims-deadlock/g6b-row-family-overlap-schema/v2"
@@ -22,9 +22,9 @@ G6B_ROW_FAMILY_RUNTIME_LOCK_VERSION = (
 )
 G6B_ROW_FAMILY_REVIEW_STATE_VERSION = "ims-deadlock/g6b-row-family-review-state/v2"
 G6B_ROW_FAMILY_FAILURE_LEDGER_VERSION = "ims-deadlock/g6b-row-family-failure-ledger/v2"
-G6B_CASE_CONSTRUCTION_SCHEMA_VERSION = "ims-deadlock/g6b-case-construction-schema/v1"
+G6B_CASE_CONSTRUCTION_SCHEMA_VERSION = "ims-deadlock/g6b-case-construction-schema/v2"
 G6B_RETIRED_AUTHORITY_FINGERPRINT_SCHEMA_VERSION = (
-    "ims-deadlock/g6b-retired-authority-fingerprint-schema/v1"
+    "ims-deadlock/g6b-retired-authority-fingerprint-schema/v2"
 )
 G6B_TARGET_CERTIFICATION_SCHEMA_VERSION = (
     "ims-deadlock/g6b-target-certification-schema/v1"
@@ -127,6 +127,28 @@ _EXPECTED_CANONICALIZATION_CONTRACT: JsonObject = {
         "format": "YYYY-MM-DDTHH:MM:SSZ",
         "precision": "seconds",
     },
+}
+_EXPECTED_ESTIMAND_ID_SCOPE_CONTRACT: JsonObject = {
+    "additional_allowed_paths": False,
+    "allowed_predeclared_paths": [
+        {
+            "allowed_use": "predeclared_directional_hypothesis_identifier_only",
+            "json_pointer_pattern": "/directional_hypotheses/*/estimand_id",
+            "projection_role": "sealed_prediction_sha256",
+        },
+        {
+            "allowed_use": "predeclared_metric_identifier_only",
+            "json_pointer_pattern": "/metric_entries/*/estimand_id",
+            "projection_role": "metric_schema_sha256",
+        },
+    ],
+    "allowed_value_codes": [
+        "g6b_estimand_theta_global_before_success_v1",
+        "g6b_estimand_theta_local_before_success_v1",
+        "g6b_estimand_theta_selected_bad_before_success_v1",
+    ],
+    "default_policy": "recursive_prohibition",
+    "runtime_certificate_observation_or_result_use": "prohibited",
 }
 _EXPECTED_SELF_HASH_FINALIZATION_CONTRACT: JsonObject = {
     "version": "ims-deadlock/g6b-self-hash-finalization/v2",
@@ -439,6 +461,7 @@ _TOP_LEVEL_KEYS = {
         "schema_role",
         "canonicalization_contract",
         "self_hash_finalization_contract",
+        "estimand_id_scope_contract",
         "identity_levels",
         "canonical_dimensions",
         "fingerprint_record_keys",
@@ -552,6 +575,7 @@ _TOP_LEVEL_KEYS = {
         "prerequisite_bundle_state",
         "canonicalization_contract",
         "self_hash_finalization_contract",
+        "estimand_id_scope_contract",
         "governance_instance_root_template",
         "case_unit_root_template",
         "construction_authorization_required_fields",
@@ -581,6 +605,7 @@ _TOP_LEVEL_KEYS = {
         "schema_role",
         "canonicalization_contract",
         "self_hash_finalization_contract",
+        "estimand_id_scope_contract",
         "retired_authority_ids",
         "expected_source_inventory",
         "authority_lock_record_required_fields",
@@ -682,7 +707,7 @@ _EXPECTED_CANONICAL_SHA256 = {
         "bc3d451c2996dc1104773d44cd4b64bffa3228d8865713a929d70aadf8c3edbc"
     ),
     "identity_schema.json": (
-        "912f8d57e82c777baa8c5444e808b992f115c270f43461c12bdc0e9a34091027"
+        "dd33178221ed6a0fdce9b6dd0260c492c011ad5f04e43ee6b0e75fedbeb31b3a"
     ),
     "row_family_matrix.json": (
         "435783028dd7a118bc160aeea54f3081be60ecef94b863e0b73978186cd17e4a"
@@ -703,10 +728,10 @@ _EXPECTED_CANONICAL_SHA256 = {
         "34be766f1f8dd97037180547f9b2bde242787c941969771433bceda394dffb87"
     ),
     "case_construction_schema.json": (
-        "0aac60e9dd036cdd26bf1cb4af16ebf59f0aeefbb2fb7e81abc9db1456fb585f"
+        "828382b6787408477c9b0a3170475e08a8971c54b4860349b1da3b8495d74b42"
     ),
     "retired_authority_fingerprint_schema.json": (
-        "d9b6b3486553b73a8a1ba9a4e9eab5c09461dbd474da460db14a9227bb1940bd"
+        "456a66067b5703695948719dc7ccbdfa09d8c2d6eced1c9f544d387234ee8f78"
     ),
     "target_certification_schema.json": (
         "d090c6fb4621b7d9c78f18d133970eeb308eb6202023878297a394941a42515b"
@@ -898,6 +923,17 @@ def _expect_shared_contracts(
         f"{name}: self_hash_finalization_contract must match the closed v2 contract",
         errors,
     )
+    if name in {
+        "identity_schema.json",
+        "case_construction_schema.json",
+        "retired_authority_fingerprint_schema.json",
+    }:
+        _expect(
+            document.get("estimand_id_scope_contract")
+            == _EXPECTED_ESTIMAND_ID_SCOPE_CONTRACT,
+            f"{name}: estimand_id_scope_contract must match",
+            errors,
+        )
 
 
 def _expect_fingerprint_payload_schemas(
@@ -1329,10 +1365,19 @@ def validate_g6b_row_family_bundle(root: Path) -> G6BRowFamilyValidation:
         identity_payloads = documents["identity_schema.json"].get(
             "fingerprint_payload_schemas"
         )
+        identity_estimand_scope = documents["identity_schema.json"].get(
+            "estimand_id_scope_contract"
+        )
         for name in payload_documents[1:]:
             _expect(
                 documents[name].get("fingerprint_payload_schemas") == identity_payloads,
                 f"{name}: fingerprint_payload_schemas must match identity schema",
+                errors,
+            )
+            _expect(
+                documents[name].get("estimand_id_scope_contract")
+                == identity_estimand_scope,
+                f"{name}: estimand_id_scope_contract must match identity schema",
                 errors,
             )
     reuse = documents.get("reuse_matrix.json")

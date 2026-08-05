@@ -53,10 +53,30 @@ _CASE_CONSTRUCTION_PLAN_DECLARED_CHANGED_PATHS = {
     "docs/superpowers/plans/2026-08-02-g6b-case-construction.md",
     "docs/verification/G6_B_CASE_CONSTRUCTION_PLAN_REVIEW.md",
 }
+_TASK1_ESTIMAND_SCOPE_CORRIGENDUM_DECLARED_CHANGED_PATHS = {
+    "cases/discovery/g6b/row_families/structural_discovery_v1/"
+    "case_construction_schema.json",
+    "cases/discovery/g6b/row_families/structural_discovery_v1/identity_schema.json",
+    "cases/discovery/g6b/row_families/structural_discovery_v1/"
+    "retired_authority_fingerprint_schema.json",
+    "docs/superpowers/specs/"
+    "2026-08-02-g6b-case-construction-estimand-scope-corrigendum.md",
+    "src/ims_deadlock/g6b_row_family_protocol.py",
+    "src/ims_deadlock/g6b_schema_contracts.py",
+    "tests/test_g6b_row_family_protocol.py",
+    "tests/test_g6b_schema_contracts.py",
+}
+_TASK1_REVIEW_PUBLICATION_DECLARED_CHANGED_PATHS = {
+    "PROJECT_HANDOFF.md",
+    "docs/ROADMAP.md",
+    "docs/verification/G6_B_CASE_CONSTRUCTION_ESTIMAND_SCOPE_CORRIGENDUM_REVIEW.md",
+}
 _FINAL_SCHEMA_REVIEW_DECLARED_CHANGED_PATHS = (
     _TASK6_DECLARED_CHANGED_PATHS
     | _TASK7_REPAIR_DECLARED_CHANGED_PATHS
     | _CASE_CONSTRUCTION_PLAN_DECLARED_CHANGED_PATHS
+    | _TASK1_ESTIMAND_SCOPE_CORRIGENDUM_DECLARED_CHANGED_PATHS
+    | _TASK1_REVIEW_PUBLICATION_DECLARED_CHANGED_PATHS
 )
 _TASK6_FORBIDDEN_EXACT_PATHS = {
     "docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md": (
@@ -99,16 +119,16 @@ _NAMES = (
 )
 SCHEMA_FILES = {
     "row_family_protocol.json": "ims-deadlock/g6b-row-family-protocol/v2",
-    "identity_schema.json": "ims-deadlock/g6b-row-family-identity/v2",
+    "identity_schema.json": "ims-deadlock/g6b-row-family-identity/v3",
     "row_family_matrix.json": "ims-deadlock/g6b-row-family-matrix/v1",
     "reuse_matrix.json": "ims-deadlock/g6b-row-family-reuse/v2",
     "overlap_report_schema.json": "ims-deadlock/g6b-row-family-overlap-schema/v2",
     "runtime_lock_schema.json": "ims-deadlock/g6b-row-family-runtime-lock-schema/v2",
     "review_state.json": "ims-deadlock/g6b-row-family-review-state/v2",
     "failure_ledger.json": "ims-deadlock/g6b-row-family-failure-ledger/v2",
-    "case_construction_schema.json": "ims-deadlock/g6b-case-construction-schema/v1",
+    "case_construction_schema.json": "ims-deadlock/g6b-case-construction-schema/v2",
     "retired_authority_fingerprint_schema.json": (
-        "ims-deadlock/g6b-retired-authority-fingerprint-schema/v1"
+        "ims-deadlock/g6b-retired-authority-fingerprint-schema/v2"
     ),
     "target_certification_schema.json": (
         "ims-deadlock/g6b-target-certification-schema/v1"
@@ -465,6 +485,7 @@ EXPECTED_TOP_LEVEL_KEYS = {
         "schema_role",
         "canonicalization_contract",
         "self_hash_finalization_contract",
+        "estimand_id_scope_contract",
         "identity_levels",
         "canonical_dimensions",
         "fingerprint_record_keys",
@@ -566,6 +587,7 @@ EXPECTED_TOP_LEVEL_KEYS = {
         "prerequisite_bundle_state",
         "canonicalization_contract",
         "self_hash_finalization_contract",
+        "estimand_id_scope_contract",
         "governance_instance_root_template",
         "case_unit_root_template",
         "construction_authorization_required_fields",
@@ -595,6 +617,7 @@ EXPECTED_TOP_LEVEL_KEYS = {
         "schema_role",
         "canonicalization_contract",
         "self_hash_finalization_contract",
+        "estimand_id_scope_contract",
         "retired_authority_ids",
         "expected_source_inventory",
         "authority_lock_record_required_fields",
@@ -728,6 +751,28 @@ LIVE_INJECTION_PARENT_PATHS: dict[str, tuple[PathPart, ...]] = {
     "retired_authority_fingerprint_schema.json": ("source_projection_map",),
     "target_certification_schema.json": ("nested_field_contracts",),
     "quantitative_authorization_schema.json": ("nested_field_contracts",),
+}
+EXPECTED_ESTIMAND_ID_SCOPE_CONTRACT = {
+    "additional_allowed_paths": False,
+    "allowed_predeclared_paths": [
+        {
+            "allowed_use": "predeclared_directional_hypothesis_identifier_only",
+            "json_pointer_pattern": "/directional_hypotheses/*/estimand_id",
+            "projection_role": "sealed_prediction_sha256",
+        },
+        {
+            "allowed_use": "predeclared_metric_identifier_only",
+            "json_pointer_pattern": "/metric_entries/*/estimand_id",
+            "projection_role": "metric_schema_sha256",
+        },
+    ],
+    "allowed_value_codes": [
+        "g6b_estimand_theta_global_before_success_v1",
+        "g6b_estimand_theta_local_before_success_v1",
+        "g6b_estimand_theta_selected_bad_before_success_v1",
+    ],
+    "default_policy": "recursive_prohibition",
+    "runtime_certificate_observation_or_result_use": "prohibited",
 }
 
 
@@ -1491,6 +1536,22 @@ def test_task4_oracle_uses_closed_field_level_canonical_and_self_hash_contracts(
         document["self_hash_finalization_contract"]
         == EXPECTED_SELF_HASH_FINALIZATION_CONTRACT
     )
+
+
+def test_task1_estimand_scope_contract_is_synchronized_across_payload_schemas() -> None:
+    documents = {
+        name: _load(BUNDLE, name)
+        for name in (
+            "identity_schema.json",
+            "case_construction_schema.json",
+            "retired_authority_fingerprint_schema.json",
+        )
+    }
+
+    assert {
+        json.dumps(document["estimand_id_scope_contract"], sort_keys=True)
+        for document in documents.values()
+    } == {json.dumps(EXPECTED_ESTIMAND_ID_SCOPE_CONTRACT, sort_keys=True)}
 
 
 @pytest.mark.parametrize(
@@ -3780,6 +3841,74 @@ def test_case_construction_plan_publication_scope_is_exact_and_plan_only() -> No
             "governance/construction_authorization.json"
         )
         == "case_governance_instance_root"
+    )
+
+
+def test_task1_estimand_scope_corrigendum_scope_is_exact_and_schema_only() -> None:
+    assert _TASK1_ESTIMAND_SCOPE_CORRIGENDUM_DECLARED_CHANGED_PATHS == {
+        "cases/discovery/g6b/row_families/structural_discovery_v1/"
+        "case_construction_schema.json",
+        "cases/discovery/g6b/row_families/structural_discovery_v1/identity_schema.json",
+        "cases/discovery/g6b/row_families/structural_discovery_v1/"
+        "retired_authority_fingerprint_schema.json",
+        "docs/superpowers/specs/"
+        "2026-08-02-g6b-case-construction-estimand-scope-corrigendum.md",
+        "src/ims_deadlock/g6b_row_family_protocol.py",
+        "src/ims_deadlock/g6b_schema_contracts.py",
+        "tests/test_g6b_row_family_protocol.py",
+        "tests/test_g6b_schema_contracts.py",
+    }
+    assert all(
+        _task6_scope_policy_category(path) is None
+        for path in _TASK1_ESTIMAND_SCOPE_CORRIGENDUM_DECLARED_CHANGED_PATHS
+    )
+    assert (
+        _task6_scope_policy_category("src/ims_deadlock/g6b_case_materializer.py")
+        == "outside_task6_declared_files"
+    )
+    assert (
+        _task6_scope_policy_category("tests/test_g6b_case_materializer.py")
+        == "outside_task6_declared_files"
+    )
+    assert (
+        _task6_scope_policy_category(
+            "cases/discovery/g6b/row_families/structural_discovery_v1/"
+            "governance/g6b_discovery_case_construction_v1/"
+            "construction_authorization.json"
+        )
+        == "case_governance_instance_root"
+    )
+
+
+def test_task1_review_publication_scope_is_exact_and_document_only() -> None:
+    assert _TASK1_REVIEW_PUBLICATION_DECLARED_CHANGED_PATHS == {
+        "PROJECT_HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/verification/G6_B_CASE_CONSTRUCTION_ESTIMAND_SCOPE_CORRIGENDUM_REVIEW.md",
+    }
+    assert all(
+        _task6_scope_policy_category(path) is None
+        for path in _TASK1_REVIEW_PUBLICATION_DECLARED_CHANGED_PATHS
+    )
+    assert (
+        _task6_scope_policy_category("src/ims_deadlock/g6b_case_materializer.py")
+        == "outside_task6_declared_files"
+    )
+    assert (
+        _task6_scope_policy_category("tests/test_g6b_case_materializer.py")
+        == "outside_task6_declared_files"
+    )
+    assert (
+        _task6_scope_policy_category(
+            "cases/discovery/g6b/row_families/structural_discovery_v1/"
+            "governance/g6b_discovery_case_construction_v1/"
+            "construction_authorization.json"
+        )
+        == "case_governance_instance_root"
+    )
+    assert (
+        _task6_scope_policy_category("artifacts/g6b/quantitative/result.json")
+        == "scientific_artifact_root"
     )
 
 
