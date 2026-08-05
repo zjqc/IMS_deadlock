@@ -377,6 +377,24 @@ G6B_ESTIMAND_ID_SCOPE_CONTRACT: Mapping[str, object] = MappingProxyType(
     }
 )
 RETIRED_AUTHORITY_IDS = ("G4_FREEZE", "G5_EXECUTION", "G6_R_REPLAY_R3")
+RETIRED_SUBJECT_TYPES = (
+    "retired_case",
+    "retired_case_subunit",
+    "retired_method_observation",
+    "retired_method_companion_group",
+)
+RETIRED_DIMENSION_SUBJECTS = MappingProxyType(
+    {
+        "case_content_sha256": frozenset({"retired_case", "retired_case_subunit"}),
+        "state_snapshot_sha256": frozenset({"retired_case", "retired_case_subunit"}),
+        "route_signature_sha256": frozenset({"retired_case", "retired_case_subunit"}),
+        "parameter_tuple_sha256": frozenset({"retired_case", "retired_case_subunit"}),
+        "random_stream_manifest_sha256": frozenset({"retired_method_observation"}),
+        "output_root_reservation_sha256": frozenset({"retired_method_observation"}),
+        "sealed_prediction_sha256": frozenset({"retired_case", "retired_case_subunit"}),
+        "metric_schema_sha256": frozenset({"retired_method_companion_group"}),
+    }
+)
 EXPECTED_RETIRED_SOURCE_INVENTORY = (
     "cases/confirmation/g4/FREEZE_ENTRY.json",
     "cases/confirmation/g4/case_manifest.json",
@@ -1650,7 +1668,11 @@ def validate_fingerprint_record(
         raise SchemaContractError("unknown_dimension")
     if record.get("projection_kind") != DIMENSION_PROJECTION_KINDS[dimension]:
         raise SchemaContractError("projection_kind_mismatch", dimension)
-    if record.get("subject_type") != DIMENSION_SUBJECTS[dimension]:
+    subject_type = record.get("subject_type")
+    if record.get("source_authority_id") in RETIRED_AUTHORITY_IDS:
+        if subject_type not in RETIRED_DIMENSION_SUBJECTS[dimension]:
+            raise SchemaContractError("subject_type_mismatch", dimension)
+    elif subject_type != DIMENSION_SUBJECTS[dimension]:
         raise SchemaContractError("subject_type_mismatch", dimension)
     if record.get("comparison_policy") != DIMENSION_POLICIES[dimension]:
         raise SchemaContractError("comparison_policy_mismatch", dimension)

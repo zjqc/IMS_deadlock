@@ -640,10 +640,21 @@ def _source_hashes_for_refs(refs: Sequence[JsonObject]) -> dict[str, str]:
 
 def _normalization_fingerprint_records() -> dict[str, JsonObject]:
     records: dict[str, JsonObject] = {}
+    retired_subject_type_by_dimension = {
+        "case_content_sha256": "retired_case",
+        "state_snapshot_sha256": "retired_case",
+        "route_signature_sha256": "retired_case",
+        "parameter_tuple_sha256": "retired_case",
+        "sealed_prediction_sha256": "retired_case",
+        "random_stream_manifest_sha256": "retired_method_observation",
+        "output_root_reservation_sha256": "retired_method_observation",
+        "metric_schema_sha256": "retired_method_companion_group",
+    }
     for dimension in contracts.FINGERPRINT_DIMENSIONS:
         record = valid_fingerprint_record(dimension=dimension)
         record["record_id"] = f"g4-freeze-{dimension}"
         record["source_authority_id"] = "G4_FREEZE"
+        record["subject_type"] = retired_subject_type_by_dimension[dimension]
         source_refs = _normalization_source_refs_for_dimension(dimension)
         record["source_artifact_refs"] = source_refs
         record["source_artifact_byte_hashes"] = _source_hashes_for_refs(source_refs)
@@ -4575,6 +4586,38 @@ def test_spec_17_3_06_fingerprint_record_rejects_subject_relation_drift() -> Non
     record = valid_fingerprint_record(dimension="case_content_sha256")
     record["subject_type"] = "method_observation"
     record = _with_rehashed(record, "record_provenance_sha256")
+
+    with pytest.raises(SchemaContractError, match="subject_type_mismatch"):
+        validate_fingerprint_record(record, _projection_for_record(record))
+
+
+@pytest.mark.parametrize(
+    ("dimension", "retired_subject_type"),
+    [
+        ("case_content_sha256", "retired_case"),
+        ("state_snapshot_sha256", "retired_case_subunit"),
+        ("random_stream_manifest_sha256", "retired_method_observation"),
+        ("metric_schema_sha256", "retired_method_companion_group"),
+    ],
+)
+def test_retired_fingerprint_record_accepts_only_retired_subject_vocabulary(
+    dimension: str,
+    retired_subject_type: str,
+) -> None:
+    record = valid_fingerprint_record(dimension=dimension)
+    record["source_authority_id"] = "G4_FREEZE"
+    record["source_stage"] = "G4_FREEZE"
+    record["subject_type"] = retired_subject_type
+    record = _relineage_fingerprint_record(record)
+
+    validate_fingerprint_record(record, _projection_for_record(record))
+
+
+def test_retired_fingerprint_record_rejects_new_case_subject_vocabulary() -> None:
+    record = valid_fingerprint_record(dimension="case_content_sha256")
+    record["source_authority_id"] = "G4_FREEZE"
+    record["source_stage"] = "G4_FREEZE"
+    record = _relineage_fingerprint_record(record)
 
     with pytest.raises(SchemaContractError, match="subject_type_mismatch"):
         validate_fingerprint_record(record, _projection_for_record(record))
