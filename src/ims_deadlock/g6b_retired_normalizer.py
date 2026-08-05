@@ -46,6 +46,11 @@ _G4_STREAM_PATH = "cases/confirmation/g4/random_stream_manifest.json"
 _G5_LOCK_PATH = "evidence/g5/G5_EXECUTION_LOCK.json"
 _G6R_LOCK_PATH = "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json"
 _G6R_RAW_PATH = "evidence/g6/G6_HISTORICAL_REPLAY_R3_RAW_HASH_MANIFEST.json"
+_OUTCOME_SOURCE_PATHS = (
+    "evidence/g5/G5_RESULT_SUMMARY.json",
+    "evidence/g6/G6_HISTORICAL_REPLAY_FAILURE_LEDGER.json",
+    "evidence/g6/G6_HISTORICAL_REPLAY_R3_REPORT.json",
+)
 _CASE_DIMS = (
     "case_content_sha256",
     "state_snapshot_sha256",
@@ -267,7 +272,7 @@ def build_authority_source_records(
                 JsonValue,
                 _allowed_uses_for_path(path, selector_rows),
             ),
-            "contains_outcome_fields": path == "evidence/g5/G5_RESULT_SUMMARY.json",
+            "contains_outcome_fields": path in _OUTCOME_SOURCE_PATHS,
         }
         records[path] = record
     return records
@@ -897,6 +902,8 @@ def _inherit_g5_stage(
                 source_bytes[_G5_LOCK_PATH],
                 _selectors_for_path(_G5_LOCK_PATH, all_selectors),
             )
+            if projection is None:
+                continue
             record = _record_from_optional_projection_refs(
                 "G5_EXECUTION",
                 "G5_EXECUTION",
@@ -1039,6 +1046,8 @@ def _inherit_g6r_stage(
                 run_label,
                 _selectors_for_path(_G6R_LOCK_PATH, all_selectors),
             )
+            if projection is None:
+                continue
             ancestor = _find_g5_root_record(records, case_id)
             root_refs = [
                 _source_ref(
@@ -1046,17 +1055,32 @@ def _inherit_g6r_stage(
                     _G6R_LOCK_PATH,
                     "/output_root",
                     "output_root_containment_projection",
-                )
+                ),
+                _source_ref(
+                    "G6_R_REPLAY_R3",
+                    _G6R_LOCK_PATH,
+                    "/case_ids",
+                    "method_stage_projection",
+                ),
+                _source_ref(
+                    "G6_R_REPLAY_R3",
+                    _G6R_LOCK_PATH,
+                    "/run_labels",
+                    "method_stage_projection",
+                ),
+                _source_ref(
+                    "G6_R_REPLAY_R3",
+                    _G6R_LOCK_PATH,
+                    "/execution_schedule",
+                    "method_stage_projection",
+                ),
+                _source_ref(
+                    "G6_R_REPLAY_R3",
+                    _G6R_RAW_PATH,
+                    "/output_root",
+                    "output_root_source_equality_validation",
+                ),
             ]
-            if _G6R_RAW_PATH in source_hashes:
-                root_refs += [
-                    _source_ref(
-                        "G6_R_REPLAY_R3",
-                        _G6R_RAW_PATH,
-                        "/output_root",
-                        "output_root_source_equality_validation",
-                    )
-                ]
             record = _record_from_optional_projection_refs(
                 "G6_R_REPLAY_R3",
                 "G6_R_REPLAY_R3",
@@ -1302,7 +1326,6 @@ def _derive_metric_projection(
     selector_rows: Sequence[Mapping[str, JsonValue]],
     case_id: str,
 ) -> JsonObject | None:
-    del case_id
     try:
         metrics = _require_mapping(
             select_allowed_value(
@@ -1326,6 +1349,20 @@ def _derive_metric_projection(
     for key in required:
         if key not in metrics:
             return None
+    applicability = _item_or_none(metrics, "applicability_by_case")
+    applicability_case_id: str | None = None
+    if isinstance(applicability, Mapping):
+        case_metric = _item_or_none(applicability, case_id)
+        if not isinstance(case_metric, Mapping):
+            return None
+        case_metric_entries = _item_or_none(case_metric, "metric_entries")
+        if not isinstance(case_metric_entries, Sequence) or isinstance(
+            case_metric_entries, str | bytes
+        ):
+            return None
+        metrics = cast(JsonObject, dict(metrics))
+        metrics["metric_entries"] = cast(JsonValue, list(case_metric_entries))
+        applicability_case_id = case_id
     if (
         not isinstance(metrics["estimand_schema_version"], str)
         or not isinstance(metrics["metric_entries"], Sequence)
@@ -1341,7 +1378,7 @@ def _derive_metric_projection(
         or not isinstance(metrics["comparability_scope"], str)
     ):
         return None
-    return {
+    projection: JsonObject = {
         "projection_schema_version": "g4_metric_projection/v1",
         "estimand_schema_version": metrics["estimand_schema_version"],
         "metric_entries": cast(JsonValue, list(metrics["metric_entries"])),
@@ -1351,6 +1388,9 @@ def _derive_metric_projection(
         "scoring_rules": cast(JsonValue, list(metrics["scoring_rules"])),
         "comparability_scope": metrics["comparability_scope"],
     }
+    if applicability_case_id is not None:
+        projection["applicability_case_id"] = applicability_case_id
+    return projection
 
 
 def _derive_prediction_projection(
@@ -1387,10 +1427,49 @@ def _derive_prediction_projection(
         cell_prediction = _item_or_none(cell_predictions, selector_value)
         if not isinstance(cell_prediction, Mapping):
             return None
-        selected_prediction = {
-            "parent_prediction": cast(JsonValue, dict(prediction)),
-            "selected_cell_prediction": cast(JsonValue, dict(cell_prediction)),
+        parent_prediction = dict(prediction)
+        if "cell_predictions" in parent_prediction:
+            del parent_prediction["cell_predictions"]
+        parent_projection = _prediction_projection_from_payload(
+            parent_prediction,
+            "g4_prediction_projection/v1",
+        )
+        if parent_projection is None:
+            return None
+        cell_override = dict(cell_prediction)
+        declared_cell_id = _item_or_none(cell_override, "cell_id")
+        if declared_cell_id is not None and declared_cell_id != selector_value:
+            return None
+        if "cell_id" in cell_override:
+            del cell_override["cell_id"]
+        allowed_override_keys = {
+            "research_question",
+            "directional_hypotheses",
+            "falsifiers",
+            "mandatory_control_roles",
+            "planned_method_roles",
+            "scoring_rule",
+            "claim_boundary",
         }
+        if not cell_override or not set(cell_override) <= allowed_override_keys:
+            return None
+        merged_prediction = dict(parent_projection)
+        for key in sorted(cell_override):
+            merged_prediction[key] = cell_override[key]
+        return _prediction_projection_from_payload(
+            merged_prediction,
+            "g4_grid_cell_prediction_projection/v1",
+        )
+    return _prediction_projection_from_payload(
+        selected_prediction,
+        "g4_prediction_projection/v1",
+    )
+
+
+def _prediction_projection_from_payload(
+    selected_prediction: Mapping[str, JsonValue],
+    schema_version: str,
+) -> JsonObject | None:
     required = (
         "research_question",
         "directional_hypotheses",
@@ -1418,7 +1497,7 @@ def _derive_prediction_projection(
     ):
         return None
     return {
-        "projection_schema_version": "g4_prediction_projection/v1",
+        "projection_schema_version": schema_version,
         "research_question": selected_prediction["research_question"],
         "directional_hypotheses": cast(
             JsonValue,
@@ -1546,38 +1625,58 @@ def _find_g5_root_record(
 
 
 def _g5_schedule_cases(lock: Mapping[str, JsonValue]) -> tuple[str, ...]:
-    schedule = _item_or_none(lock, "execution_schedule")
-    if isinstance(schedule, Mapping):
-        schedule = _item_or_none(schedule, "case_runs")
-    if isinstance(schedule, Sequence) and not isinstance(schedule, str | bytes):
-        cases: list[str] = []
-        for item in schedule:
-            if isinstance(item, Mapping):
-                case_id = _item_or_none(item, "case_id")
-                if isinstance(case_id, str) and case_id not in cases:
-                    cases += [case_id]
-        if cases:
-            return tuple(sorted(cases))
-    g4_seal = _item_or_none(lock, "g4_seal")
-    if isinstance(g4_seal, Mapping):
-        case_hashes = _item_or_none(g4_seal, "case_json_sha256_by_id")
-        if isinstance(case_hashes, Mapping):
-            return tuple(sorted(_require_string(key) for key in case_hashes))
-    return ()
+    return _schedule_cases(lock)
 
 
 def _g5_schedule_run_labels(lock: Mapping[str, JsonValue]) -> tuple[str, ...]:
+    return _schedule_run_labels(lock)
+
+
+def _schedule_case_runs(
+    lock: Mapping[str, JsonValue],
+) -> tuple[tuple[str, str], ...]:
     schedule = _item_or_none(lock, "execution_schedule")
     if isinstance(schedule, Mapping):
         schedule = _item_or_none(schedule, "case_runs")
-    labels: list[str] = []
+    runs: list[tuple[str, str]] = []
     if isinstance(schedule, Sequence) and not isinstance(schedule, str | bytes):
         for item in schedule:
             if isinstance(item, Mapping):
-                label = _item_or_none(item, "run_label")
-                if isinstance(label, str) and label not in labels:
-                    labels += [label]
-    return tuple(sorted(labels)) or ("primary",)
+                case_id = _item_or_none(item, "case_id")
+                run_label = _item_or_none(item, "run_label")
+                if (
+                    isinstance(case_id, str)
+                    and case_id != ""
+                    and isinstance(run_label, str)
+                    and run_label != ""
+                    and (case_id, run_label) not in runs
+                ):
+                    runs += [(case_id, run_label)]
+    return tuple(sorted(runs))
+
+
+def _schedule_cases(lock: Mapping[str, JsonValue]) -> tuple[str, ...]:
+    cases: list[str] = []
+    for case_id, _run_label in _schedule_case_runs(lock):
+        if case_id not in cases:
+            cases += [case_id]
+    return tuple(sorted(cases))
+
+
+def _schedule_run_labels(lock: Mapping[str, JsonValue]) -> tuple[str, ...]:
+    labels: list[str] = []
+    for _case_id, run_label in _schedule_case_runs(lock):
+        if run_label not in labels:
+            labels += [run_label]
+    return tuple(sorted(labels))
+
+
+def _schedule_has_case_run(
+    lock: Mapping[str, JsonValue],
+    case_id: str,
+    run_label: str,
+) -> bool:
+    return (case_id, run_label) in _schedule_case_runs(lock)
 
 
 def _derive_g5_root_projection(
@@ -1587,6 +1686,8 @@ def _derive_g5_root_projection(
     raw: bytes,
     selector_rows: Sequence[Mapping[str, JsonValue]],
 ) -> JsonObject | None:
+    if not _schedule_has_case_run(lock, case_id, run_label):
+        return None
     try:
         root_value = select_allowed_value(
             raw,
@@ -1634,6 +1735,8 @@ def _derive_g6r_root_projection(
     run_label: str,
     selector_rows: Sequence[Mapping[str, JsonValue]],
 ) -> JsonObject | None:
+    if not _schedule_has_case_run(lock, case_id, run_label):
+        return None
     try:
         root_value = select_allowed_value(
             source_bytes[_G6R_LOCK_PATH],
@@ -1645,11 +1748,15 @@ def _derive_g6r_root_projection(
         return None
     if not isinstance(root_value, str):
         return None
-    if _G6R_RAW_PATH in source_bytes:
+    if _G6R_RAW_PATH not in source_bytes:
+        return None
+    try:
         raw_manifest = _load_source_object(source_bytes[_G6R_RAW_PATH])
-        raw_root = _item_or_none(raw_manifest, "output_root")
-        if isinstance(raw_root, str) and raw_root != root_value:
-            return None
+    except contracts.SchemaContractError:
+        return None
+    raw_root = _item_or_none(raw_manifest, "output_root")
+    if not isinstance(raw_root, str) or raw_root != root_value:
+        return None
     suffix = _unique_g6r_suffix(root_value)
     if suffix is None:
         return None
@@ -1687,27 +1794,47 @@ def _derive_g6r_metric_overlay(
         return None
     spec = _item_or_none(lock, "default_estimand_spec")
     spec_hash = _item_or_none(lock, "default_estimand_spec_sha256")
-    if not isinstance(spec, Mapping):
-        spec = {}
-    if not isinstance(spec_hash, str):
-        spec_hash = _require_string(ancestor["comparison_projection_sha256_or_null"])
+    if not isinstance(spec, Mapping) or not isinstance(spec_hash, str):
+        return None
+    if canonical_sha256_v2(cast(JsonValue, dict(spec))) != spec_hash:
+        return None
+    required = (
+        "estimand_schema_version",
+        "metric_entries",
+        "aggregation_rules",
+        "censoring_rules",
+        "failure_rules",
+        "scoring_rules",
+        "comparability_scope",
+    )
+    for key in required:
+        if key not in spec:
+            return None
+    if (
+        not isinstance(spec["estimand_schema_version"], str)
+        or not isinstance(spec["metric_entries"], Sequence)
+        or isinstance(spec["metric_entries"], str | bytes)
+        or not isinstance(spec["aggregation_rules"], Sequence)
+        or isinstance(spec["aggregation_rules"], str | bytes)
+        or not isinstance(spec["censoring_rules"], Sequence)
+        or isinstance(spec["censoring_rules"], str | bytes)
+        or not isinstance(spec["failure_rules"], Sequence)
+        or isinstance(spec["failure_rules"], str | bytes)
+        or not isinstance(spec["scoring_rules"], Sequence)
+        or isinstance(spec["scoring_rules"], str | bytes)
+        or not isinstance(spec["comparability_scope"], str)
+    ):
+        return None
     return {
         "projection_schema_version": "g6r_metric_overlay_projection/v1",
-        "estimand_schema_version": _string_or_default(
-            _item_or_none(spec, "estimand_schema_version"),
-            "g6r-default-estimand/v1",
-        ),
-        "metric_entries": [
-            {
-                "metric_id": "g6r_default_estimand_overlay",
-                "definition_sha256": spec_hash,
-            }
-        ],
-        "aggregation_rules": _item_or_default(spec, "aggregation_rules", []),
-        "censoring_rules": _item_or_default(spec, "censoring_rules", []),
-        "failure_rules": _item_or_default(spec, "failure_rules", []),
-        "scoring_rules": [],
-        "comparability_scope": "retired_g6r_metric_overlay",
+        "default_estimand_spec_sha256": spec_hash,
+        "estimand_schema_version": spec["estimand_schema_version"],
+        "metric_entries": cast(JsonValue, list(spec["metric_entries"])),
+        "aggregation_rules": cast(JsonValue, list(spec["aggregation_rules"])),
+        "censoring_rules": cast(JsonValue, list(spec["censoring_rules"])),
+        "failure_rules": cast(JsonValue, list(spec["failure_rules"])),
+        "scoring_rules": cast(JsonValue, list(spec["scoring_rules"])),
+        "comparability_scope": spec["comparability_scope"],
     }
 
 
@@ -2242,30 +2369,48 @@ def run_normalization(
         ),
     )
     source_hashes = verify_source_hashes(repo, authority_bytes)
-    parse_historical_decimal_exactly(authority_bytes)
-    projection = apply_static_input_projection({})
-    canonical_projection = canonicalize_projection_v2(projection)
-    compute_sha256(canonical_projection)
-    authorization_sha = write_normalization_authorization(root, authority_bytes)
     locks = build_authority_lock_records(repo, authorization, source_hashes)
-    for authority_id in contracts.RETIRED_AUTHORITY_IDS:
-        write_authority_lock_record(root, authority_id, locks[authority_id])
     sources = build_authority_source_records(repo, authorization, locks)
-    for source_path in sorted(sources):
-        write_authority_source_record(root, source_path, sources[source_path])
     fingerprints = build_retired_fingerprint_records(
         repo,
         authorization,
         locks,
         sources,
     )
-    for record_id in sorted(fingerprints):
-        write_fingerprint_record(root, record_id, fingerprints[record_id])
+    selected_input_bytes = _selected_input_projection_bytes(
+        repo,
+        authorization,
+        source_hashes,
+    )
+    historical_decimal_bundle = parse_historical_decimal_exactly(selected_input_bytes)
+    fingerprint_projection_value = cast(JsonValue, fingerprints)
+    projection = apply_static_input_projection(
+        {
+            "fingerprint_records": fingerprint_projection_value,
+            "numeric_selected_bundle": historical_decimal_bundle,
+        }
+    )
+    canonical_projection = canonicalize_projection_v2(projection)
+    projection_sha256 = compute_sha256(canonical_projection)
+    if projection_sha256 != canonical_sha256_v2(projection):
+        raise contracts.SchemaContractError("retired_normalizer_error")
+    projected_fingerprints = _require_mapping(projection["fingerprint_records"])
+    authorization_sha = write_normalization_authorization(root, authority_bytes)
+    for authority_id in contracts.RETIRED_AUTHORITY_IDS:
+        write_authority_lock_record(root, authority_id, locks[authority_id])
+    for source_path in sorted(sources):
+        write_authority_source_record(root, source_path, sources[source_path])
+    for record_id in sorted(projected_fingerprints):
+        write_fingerprint_record(
+            root,
+            record_id,
+            _require_mapping(projected_fingerprints[record_id]),
+        )
     manifest = _manifest_from_records(
         authorization_sha,
         locks,
         sources,
-        fingerprints,
+        cast(Mapping[str, Mapping[str, JsonValue]], projected_fingerprints),
         source_hashes,
         authorization,
     )
@@ -2294,8 +2439,8 @@ def read_authority_bytes(path: Path) -> bytes:
     target = Path(path)
     if not Path(target).is_file() or Path(target).is_symlink():
         raise contracts.SchemaContractError("missing_retired_authority")
-    raw = Path(target).read_bytes()
-    return raw
+    authority_file_bytes = Path(target).read_bytes()
+    return authority_file_bytes
 
 
 def parse_allowed_json_pointers(
@@ -2318,13 +2463,66 @@ def verify_source_hashes(repo_root: Path, authority_bytes: bytes) -> dict[str, s
     return hashes
 
 
-def parse_historical_decimal_exactly(authority_bytes: bytes) -> JsonValue:
-    value = _load_canonical_object(authority_bytes, "normalization_authorization")
-    return _canonicalized_decimal_value_strict(value)
+def _selected_input_projection_bytes(
+    repo_root: Path,
+    authorization: Mapping[str, JsonValue],
+    source_hashes: Mapping[str, str],
+) -> bytes:
+    selector_rows = _mapping_sequence(authorization["allowed_json_fields_by_source"])
+    selected_inputs: JsonObject = {}
+    for source_path in sorted(source_hashes):
+        if not _has_prefix(source_path, _G4_CASE_PREFIX) or not _has_suffix(
+            source_path,
+            _G4_CASE_SUFFIX,
+        ):
+            continue
+        selected_source_bytes = _read_authorized_source_bytes(
+            repo_root,
+            source_path,
+            source_hashes,
+        )
+        selected_input = select_allowed_value(
+            selected_source_bytes,
+            pointer="/input_payload",
+            selector_rows=_selectors_for_path(source_path, selector_rows),
+            requested_use="case_content_projection",
+        )
+        selected_inputs[source_path] = selected_input
+    if not selected_inputs:
+        raise contracts.SchemaContractError("retired_projection_unreconstructable")
+    return canonical_bytes_v2({"selected_input_payloads": selected_inputs})
+
+
+def parse_historical_decimal_exactly(numeric_source_bytes: bytes) -> JsonValue:
+    value = _load_canonical_object(
+        numeric_source_bytes,
+        "selected_input_projection",
+    )
+    if set(value) == {"decimal"}:
+        return _canonicalized_decimal_value_strict(value)
+    if set(value) != {"selected_input_payloads"}:
+        raise contracts.SchemaContractError("retired_projection_unreconstructable")
+    selected_inputs = _item_or_none(value, "selected_input_payloads")
+    if not isinstance(selected_inputs, Mapping) or not selected_inputs:
+        raise contracts.SchemaContractError("retired_projection_unreconstructable")
+    return {
+        "selected_input_payloads": _canonicalized_decimal_value(
+            cast(JsonValue, dict(selected_inputs))
+        ),
+    }
 
 
 def apply_static_input_projection(value: Mapping[str, JsonValue]) -> JsonObject:
-    return dict(value)
+    if set(value) != {"fingerprint_records", "numeric_selected_bundle"}:
+        raise contracts.SchemaContractError("retired_projection_unreconstructable")
+    fingerprint_records = _require_mapping(value["fingerprint_records"])
+    numeric_selected_bundle = _require_mapping(value["numeric_selected_bundle"])
+    if not fingerprint_records or not numeric_selected_bundle:
+        raise contracts.SchemaContractError("retired_projection_unreconstructable")
+    return {
+        "fingerprint_records": cast(JsonValue, fingerprint_records),
+        "numeric_selected_bundle": cast(JsonValue, numeric_selected_bundle),
+    }
 
 
 def canonicalize_projection_v2(value: Mapping[str, JsonValue]) -> bytes:
@@ -3181,13 +3379,6 @@ def _parameter_projection_entries(
                 subunit,
                 parent_context,
             )
-        params = _required_generator_params(protocol_input, subunit)
-        if params is None:
-            return None
-        if kind == "medium_island_rebuild":
-            return _medium_parameter_entries(params)
-        if kind == "adversarial_snapshot":
-            return _adversarial_parameter_entries(params)
         if kind in {
             "crp_evidence_audit",
             "fixed_recorder_target",
@@ -3197,6 +3388,13 @@ def _parameter_projection_entries(
                 subunit,
                 parent_context,
             )
+        params = _required_generator_params(protocol_input, subunit)
+        if params is None:
+            return None
+        if kind == "medium_island_rebuild":
+            return _medium_parameter_entries(params)
+        if kind == "adversarial_snapshot":
+            return _adversarial_parameter_entries(params)
     except contracts.SchemaContractError:
         return None
     return None
@@ -3317,6 +3515,15 @@ def _l30_parameter_entries(
         _structural_entry("inequality_name", "string", inequality["name"]),
         _structural_entry("inequality_provenance", "string", provenance),
     ]
+    if subunit is None:
+        all_inequalities = _item_or_none(protocol_input, "inequalities")
+        structural_entries += [
+            _structural_entry(
+                "all_inequalities_content_sha256",
+                "content_sha256",
+                _content_sha256(all_inequalities),
+            )
+        ]
     numeric_entries = [_numeric_entry("inequality_rhs", "integer", inequality["rhs"])]
     for capacity_name in sorted(capacities):
         numeric_entries += [
@@ -3360,21 +3567,30 @@ def _monitor_cover_parameter_entries(
         ),
         _structural_entry(
             "finite_lts_sha256",
-            "sha256",
+            "content_sha256",
             canonical_sha256_v2(cast(JsonValue, finite_lts)),
         ),
         _structural_entry(
             "first_met_bad_states_sha256",
-            "sha256",
+            "content_sha256",
             canonical_sha256_v2(first_met_bad_states),
         ),
         _structural_entry(
             "legal_states_sha256",
-            "sha256",
+            "content_sha256",
             canonical_sha256_v2(legal_states),
         ),
         _structural_entry("monitor_id", "string", monitor["monitor_id"]),
     ]
+    if subunit is None:
+        candidate_monitors = _item_or_none(protocol_input, "candidate_monitors")
+        structural_entries += [
+            _structural_entry(
+                "all_candidate_monitors_content_sha256",
+                "content_sha256",
+                _content_sha256(candidate_monitors),
+            )
+        ]
     numeric_entries = [_numeric_entry("state_bound", "integer", state_bound)]
     return _parameter_entries_object(structural_entries, numeric_entries, state_bound)
 
@@ -3385,18 +3601,21 @@ def _generic_explicit_parameter_entries(
     parent_context: Mapping[str, JsonValue],
 ) -> JsonObject:
     structural_entries: list[JsonObject] = [
-        {
-            "name": "protocol_input_sha256",
-            "value_sha256": canonical_sha256_v2(cast(JsonValue, protocol_input)),
-        },
-        {
-            "name": "selected_subunit_or_null_sha256",
-            "value_sha256": canonical_sha256_v2(_json_object_or_null(subunit)),
-        },
-        {
-            "name": "parent_context_sha256",
-            "value_sha256": canonical_sha256_v2(cast(JsonValue, parent_context)),
-        },
+        _structural_entry(
+            "protocol_input_content_sha256",
+            "content_sha256",
+            canonical_sha256_v2(cast(JsonValue, protocol_input)),
+        ),
+        _structural_entry(
+            "selected_subunit_or_null_content_sha256",
+            "content_sha256",
+            canonical_sha256_v2(_json_object_or_null(subunit)),
+        ),
+        _structural_entry(
+            "parent_context_content_sha256",
+            "content_sha256",
+            canonical_sha256_v2(cast(JsonValue, parent_context)),
+        ),
     ]
     return _parameter_entries_object(
         structural_entries,
@@ -3431,6 +3650,10 @@ def _parameter_entries_object(
 
 def _structural_entry(name: str, value_type: str, value: JsonValue) -> JsonObject:
     return {"name": name, "value_type": value_type, "value": value}
+
+
+def _content_sha256(value: JsonValue | None) -> str:
+    return canonical_sha256_v2(value)
 
 
 def _numeric_entry(name: str, value_type: str, value: JsonValue) -> JsonObject:

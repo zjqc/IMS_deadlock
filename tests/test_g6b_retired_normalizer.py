@@ -2354,6 +2354,22 @@ def _task6_required_record(
     )
 
 
+def _task7_records_matching(
+    records: dict[str, JsonObject],
+    *,
+    authority: str,
+    subject_id: str,
+    dimension: str,
+) -> list[JsonObject]:
+    return [
+        record
+        for record in records.values()
+        if record["source_authority_id"] == authority
+        and record["subject_id"] == subject_id
+        and record["dimension"] == dimension
+    ]
+
+
 def _task6_expect_refusal(
     tmp_path: Path,
     overrides: dict[str, Callable[[JsonObject], None]],
@@ -2373,6 +2389,245 @@ def _task6_expect_refusal(
         assert refused
         return
     assert records[expected_record_id]["dimension_status"] == "unreconstructable_refuse"
+
+
+def _task7_grid_cell_prediction() -> JsonObject:
+    return {
+        "cell_id": "ims_cell_01",
+        "research_question": "Can this grid cell independently realize D_local?",
+        "directional_hypotheses": [
+            {
+                "hypothesis_role": "cell_reachability",
+                "statement": "D_local is reachable in ims_cell_01",
+                "direction": "greater_than_zero",
+                "estimand_id": "g6b_estimand_theta_selected_bad_before_success_v1",
+                "scope_code": "selected_grid_cell",
+                "falsifier_roles": ["no_cell_reachability"],
+            }
+        ],
+        "falsifiers": [
+            {
+                "falsifier_role": "no_cell_reachability",
+                "condition_code": "cell_D_local_not_reachable",
+                "affected_hypothesis_roles": ["cell_reachability"],
+            }
+        ],
+        "mandatory_control_roles": ["exact_companion"],
+        "planned_method_roles": ["exact_companion", "des_companion"],
+        "scoring_rule": {
+            "scoring_rule_id": "bounded_cell_discovery_v1",
+            "required_input_roles": ["exact_companion", "des_companion"],
+            "decision_table_sha256": _synthetic_hash("cell-prediction-table"),
+            "failure_handling_code": "fail_closed",
+        },
+        "claim_boundary": {
+            "study_role": "discovery_only",
+            "confirmation_use": "retired_authority_fingerprint_only",
+            "estimand_scope_code": "selected_grid_cell",
+            "population_scope_code": "synthetic_retired_g4_grid_cell",
+            "forbidden_upgrade_codes": ["no_outcome_upgrade", "no_universal_claim"],
+        },
+    }
+
+
+def _task7_add_grid_cell_prediction(payload: JsonObject) -> None:
+    parent = cast(JsonObject, payload["predictions"])["G4_IMS_PARAMETER_GRID"]
+    cast(JsonObject, parent)["cell_predictions"] = {
+        "ims_cell_01": _task7_grid_cell_prediction()
+    }
+
+
+def _task7_grid_cell_prediction_projection() -> JsonObject:
+    parent = _task6_projection_payload("sealed_prediction_sha256")
+    selected = _task7_grid_cell_prediction()
+    projection = dict(parent)
+    projection["projection_schema_version"] = "g4_grid_cell_prediction_projection/v1"
+    for key in (
+        "research_question",
+        "directional_hypotheses",
+        "falsifiers",
+        "mandatory_control_roles",
+        "planned_method_roles",
+        "scoring_rule",
+        "claim_boundary",
+    ):
+        projection[key] = deepcopy(selected[key])
+    return projection
+
+
+def _task7_case_metric(case_id: str, metric_id: str) -> JsonObject:
+    return {
+        "case_id": case_id,
+        "metric_entries": [
+            {
+                "metric_id": metric_id,
+                "estimand_id": "g6b_estimand_theta_global_before_success_v1",
+                "unit": "probability",
+                "domain": "selected_target",
+                "direction": "lower_is_better",
+                "aggregation_rule_id": "mean",
+                "censoring_rule_id": "none",
+                "failure_rule_id": "refuse_on_missing",
+                "scoring_rule_id": "bounded_discovery_v1",
+            }
+        ],
+    }
+
+
+def _task7_add_metric_applicability_by_case(payload: JsonObject) -> None:
+    metrics = cast(JsonObject, payload["metrics"])
+    metrics["metric_entries"] = [
+        *_task7_case_metric("G4_IMS_PARAMETER_GRID", "theta_grid")["metric_entries"],
+        *_task7_case_metric("G4_MEDIUM_ISLAND_REBUILD", "theta_medium")[
+            "metric_entries"
+        ],
+    ]
+    metrics["applicability_by_case"] = {
+        "G4_IMS_PARAMETER_GRID": _task7_case_metric(
+            "G4_IMS_PARAMETER_GRID",
+            "theta_grid",
+        ),
+        "G4_MEDIUM_ISLAND_REBUILD": _task7_case_metric(
+            "G4_MEDIUM_ISLAND_REBUILD",
+            "theta_medium",
+        ),
+    }
+
+
+def _task7_metric_projection_for_case(case_id: str, metric_id: str) -> JsonObject:
+    base = _task6_projection_payload("metric_schema_sha256")
+    return {
+        **base,
+        "metric_entries": _task7_case_metric(case_id, metric_id)["metric_entries"],
+        "applicability_case_id": case_id,
+    }
+
+
+def _task7_g6r_estimand_spec() -> JsonObject:
+    return {
+        "estimand_schema_version": "g6r-estimand-spec/v1",
+        "metric_entries": [
+            {
+                "metric_id": "theta_replay",
+                "estimand_id": "g6b_estimand_theta_global_before_success_v1",
+                "unit": "probability",
+                "domain": "selected_target",
+                "direction": "lower_is_better",
+                "aggregation_rule_id": "mean",
+                "censoring_rule_id": "none",
+                "failure_rule_id": "refuse_on_missing",
+                "scoring_rule_id": "bounded_discovery_v1",
+            }
+        ],
+        "aggregation_rules": [{"rule_id": "mean", "operator": "mean"}],
+        "censoring_rules": [{"rule_id": "none", "operator": "none"}],
+        "failure_rules": [{"rule_id": "refuse_on_missing", "operator": "fail_closed"}],
+        "scoring_rules": [
+            {"rule_id": "bounded_discovery_v1", "operator": "descriptive"}
+        ],
+        "comparability_scope": "same_target_companion_group",
+    }
+
+
+def _task7_add_g6r_estimand_spec(payload: JsonObject) -> None:
+    spec = _task7_g6r_estimand_spec()
+    payload["default_estimand_spec"] = spec
+    payload["default_estimand_spec_sha256"] = canonical_sha256_v2(spec)
+
+
+def _task7_g6r_metric_overlay_projection() -> JsonObject:
+    spec = _task7_g6r_estimand_spec()
+    return {
+        "projection_schema_version": "g6r_metric_overlay_projection/v1",
+        "default_estimand_spec_sha256": canonical_sha256_v2(spec),
+        "estimand_schema_version": spec["estimand_schema_version"],
+        "metric_entries": spec["metric_entries"],
+        "aggregation_rules": spec["aggregation_rules"],
+        "censoring_rules": spec["censoring_rules"],
+        "failure_rules": spec["failure_rules"],
+        "scoring_rules": spec["scoring_rules"],
+        "comparability_scope": spec["comparability_scope"],
+    }
+
+
+def _task7_case_bytes_by_path(repo: Path) -> dict[str, bytes]:
+    return {
+        path: (repo / path).read_bytes()
+        for path in contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+    }
+
+
+def _task7_actual_parameter_projection(
+    tmp_path: Path,
+    *,
+    case_id: str,
+    subject_id: str,
+    overrides: dict[str, Callable[[JsonObject], None]] | None = None,
+) -> JsonObject:
+    repo, _ = _task6_synthetic_repo(tmp_path, overrides=overrides)
+    case_path = _task6_case_path(case_id)
+    kind = _TASK6_G4_KIND_BY_CASE[case_id]
+    source_bytes = _task7_case_bytes_by_path(repo)
+    selector_rows = _selector_rows()
+    case_selectors = [
+        row
+        for row in selector_rows
+        if row["source_path_pattern"] == "cases/confirmation/g4/cases/{case_id}.json"
+    ]
+    subjects = cast(Any, normalizer)._g4_subjects(
+        case_id,
+        kind,
+        source_bytes[case_path],
+        case_selectors,
+    )
+    subject = next(item for item in subjects if item["subject_id"] == subject_id)
+    projection = cast(Any, normalizer)._g4_projection(
+        subject,
+        kind,
+        "parameter_tuple_sha256",
+        case_path,
+        source_bytes,
+        selector_rows,
+    )
+    assert isinstance(projection, dict)
+    return cast(JsonObject, projection)
+
+
+def _task7_two_l30_inequalities(payload: JsonObject, *, second_rhs: int) -> None:
+    protocol_input = cast(
+        JsonObject,
+        cast(JsonObject, payload["input_payload"])["protocol_input"],
+    )
+    protocol_input["inequalities"] = [
+        {"name": "l30-bound-a", "coefficients": {"p1": 1, "p2": -1}, "rhs": 1},
+        {"name": "l30-bound-b", "coefficients": {"p1": 2, "p2": 1}, "rhs": second_rhs},
+    ]
+
+
+def _task7_two_b05_monitors(payload: JsonObject, *, second_bad: str) -> None:
+    protocol_input = cast(
+        JsonObject,
+        cast(JsonObject, payload["input_payload"])["protocol_input"],
+    )
+    protocol_input["candidate_monitors"] = [
+        {
+            "monitor_id": "monitor-cover-a",
+            "covered_bad_states": ["s1"],
+            "excluded_legal_states": [],
+        },
+        {
+            "monitor_id": "monitor-cover-b",
+            "covered_bad_states": [second_bad],
+            "excluded_legal_states": ["s0"],
+        },
+    ]
+
+
+def _task7_parameter_entries(projection: JsonObject) -> list[JsonObject]:
+    return [
+        *cast(list[JsonObject], projection["structural_parameter_entries"]),
+        *cast(list[JsonObject], projection["numeric_parameter_entries"]),
+    ]
 
 
 def test_task6_synthetic_repo_uses_exact_27_file_inventory_and_protocol_fields(
@@ -3197,6 +3452,24 @@ def test_task6_g6r_output_root_requires_lock_raw_equality_and_unique_r3_suffix(
         },
         {
             "authority_id": "G6_R_REPLAY_R3",
+            "repo_relative_posix_path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
+            "json_pointer_or_null": "/case_ids",
+            "source_role": "method_stage_projection",
+        },
+        {
+            "authority_id": "G6_R_REPLAY_R3",
+            "repo_relative_posix_path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
+            "json_pointer_or_null": "/run_labels",
+            "source_role": "method_stage_projection",
+        },
+        {
+            "authority_id": "G6_R_REPLAY_R3",
+            "repo_relative_posix_path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
+            "json_pointer_or_null": "/execution_schedule",
+            "source_role": "method_stage_projection",
+        },
+        {
+            "authority_id": "G6_R_REPLAY_R3",
             "repo_relative_posix_path": (
                 "evidence/g6/G6_HISTORICAL_REPLAY_R3_RAW_HASH_MANIFEST.json"
             ),
@@ -3361,7 +3634,14 @@ def test_task6_grid_downstream_case_content_remains_unreconstructable(
 def test_task6_g6r_metric_overlay_retains_g4_metric_lineage_input(
     tmp_path: Path,
 ) -> None:
-    records = _task6_records(tmp_path)
+    records = _task6_records(
+        tmp_path,
+        overrides={
+            "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json": (
+                _task7_add_g6r_estimand_spec
+            )
+        },
+    )
     g4_metric = _task6_required_record(
         records,
         authority="G4_FREEZE",
@@ -3391,6 +3671,9 @@ def test_task6_g6r_metric_overlay_retains_g4_metric_lineage_input(
             "source_role": "metric_projection",
         },
     ]
+    assert overlay["comparison_projection_sha256_or_null"] == canonical_sha256_v2(
+        _task7_g6r_metric_overlay_projection()
+    )
     assert g4_metric["lineage_id"] in cast(str, overlay["lineage_id"])
 
 
@@ -3599,6 +3882,750 @@ def test_task6_selector_matrix_isolates_source_paths_and_allowed_uses(
             ],
             requested_use="case_content_projection",
         )
+
+
+def test_task7_grid_cell_sealed_prediction_uses_exact_parent_and_cell_payload(
+    tmp_path: Path,
+) -> None:
+    record = _task6_required_record(
+        _task6_records(
+            tmp_path,
+            overrides={
+                "cases/confirmation/g4/predictions.json": (
+                    _task7_add_grid_cell_prediction
+                )
+            },
+        ),
+        authority="G4_FREEZE",
+        subject_id="G4_IMS_PARAMETER_GRID:cell_id:ims_cell_01",
+        dimension="sealed_prediction_sha256",
+    )
+
+    assert record["dimension_status"] == "derived_by_versioned_normalizer"
+    assert record["projection_schema_version"] == (
+        "g4_grid_cell_prediction_projection/v1"
+    )
+    expected_projection = _task7_grid_cell_prediction_projection()
+    assert set(expected_projection) == {
+        "projection_schema_version",
+        "research_question",
+        "directional_hypotheses",
+        "falsifiers",
+        "mandatory_control_roles",
+        "planned_method_roles",
+        "scoring_rule",
+        "claim_boundary",
+    }
+    assert "parent_prediction" not in expected_projection
+    assert "selected_cell_prediction" not in expected_projection
+    assert record["comparison_projection_sha256_or_null"] == canonical_sha256_v2(
+        expected_projection
+    )
+
+
+def test_task7_grid_cell_prediction_merges_partial_cell_override_into_parent(
+    tmp_path: Path,
+) -> None:
+    def mutate(payload: JsonObject) -> None:
+        parent = cast(JsonObject, payload["predictions"])["G4_IMS_PARAMETER_GRID"]
+        cast(JsonObject, parent)["cell_predictions"] = {
+            "ims_cell_01": {
+                "cell_id": "ims_cell_01",
+                "research_question": "Cell-specific frozen question",
+            }
+        }
+
+    record = _task6_required_record(
+        _task6_records(
+            tmp_path,
+            overrides={"cases/confirmation/g4/predictions.json": mutate},
+        ),
+        authority="G4_FREEZE",
+        subject_id="G4_IMS_PARAMETER_GRID:cell_id:ims_cell_01",
+        dimension="sealed_prediction_sha256",
+    )
+    expected = _task6_projection_payload("sealed_prediction_sha256")
+    expected["projection_schema_version"] = "g4_grid_cell_prediction_projection/v1"
+    expected["research_question"] = "Cell-specific frozen question"
+
+    assert record["dimension_status"] == "derived_by_versioned_normalizer"
+    assert record["comparison_projection_sha256_or_null"] == canonical_sha256_v2(
+        expected
+    )
+
+
+def test_task7_grid_cell_sealed_prediction_refuses_when_cell_payload_missing(
+    tmp_path: Path,
+) -> None:
+    def mutate(payload: JsonObject) -> None:
+        parent = cast(JsonObject, payload["predictions"])["G4_IMS_PARAMETER_GRID"]
+        cast(JsonObject, parent)["cell_predictions"] = {
+            "other_cell": _task7_grid_cell_prediction()
+        }
+
+    record = _task6_required_record(
+        _task6_records(
+            tmp_path,
+            overrides={"cases/confirmation/g4/predictions.json": mutate},
+        ),
+        authority="G4_FREEZE",
+        subject_id="G4_IMS_PARAMETER_GRID:cell_id:ims_cell_01",
+        dimension="sealed_prediction_sha256",
+    )
+
+    assert record["dimension_status"] == "unreconstructable_refuse"
+    assert record["comparison_projection_sha256_or_null"] is None
+
+
+def test_task7_metric_projection_is_narrowed_to_applicable_case(
+    tmp_path: Path,
+) -> None:
+    record = _task6_required_record(
+        _task6_records(
+            tmp_path,
+            overrides={
+                "cases/confirmation/g4/metrics_schema.json": (
+                    _task7_add_metric_applicability_by_case
+                )
+            },
+        ),
+        authority="G4_FREEZE",
+        subject_id="G4_IMS_PARAMETER_GRID:exact_des_companion_group",
+        dimension="metric_schema_sha256",
+    )
+
+    assert record["dimension_status"] == "derived_by_versioned_normalizer"
+    assert record["comparison_projection_sha256_or_null"] == canonical_sha256_v2(
+        _task7_metric_projection_for_case("G4_IMS_PARAMETER_GRID", "theta_grid")
+    )
+
+
+def test_task7_metric_projection_refuses_when_case_applicability_missing(
+    tmp_path: Path,
+) -> None:
+    def mutate(payload: JsonObject) -> None:
+        _task7_add_metric_applicability_by_case(payload)
+        cast(JsonObject, cast(JsonObject, payload["metrics"])["applicability_by_case"])[
+            "G4_IMS_PARAMETER_GRID"
+        ] = None
+
+    record = _task6_required_record(
+        _task6_records(
+            tmp_path,
+            overrides={"cases/confirmation/g4/metrics_schema.json": mutate},
+        ),
+        authority="G4_FREEZE",
+        subject_id="G4_IMS_PARAMETER_GRID:exact_des_companion_group",
+        dimension="metric_schema_sha256",
+    )
+
+    assert record["dimension_status"] == "unreconstructable_refuse"
+    assert record["comparison_projection_sha256_or_null"] is None
+
+
+def test_task7_g5_output_root_uses_lock_schedule_and_raw_root(
+    tmp_path: Path,
+) -> None:
+    record = _task6_required_record(
+        _task6_records(tmp_path),
+        authority="G5_EXECUTION",
+        subject_id="G5_EXECUTION:G4_IMS_PARAMETER_GRID:primary",
+        dimension="output_root_reservation_sha256",
+    )
+
+    assert record["dimension_status"] == "derived_by_versioned_normalizer"
+    assert record["comparison_projection_sha256_or_null"] == canonical_sha256_v2(
+        _task6_output_root_projection(authority="G5_EXECUTION")
+    )
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda payload: payload.pop("execution_schedule"),
+        lambda payload: payload.update(
+            {
+                "execution_schedule": {
+                    "case_runs": [{"case_id": "G4_IMS_PARAMETER_GRID"}]
+                }
+            }
+        ),
+        lambda payload: (
+            payload.pop("execution_schedule"),
+            payload.update(
+                {
+                    "g4_seal": {
+                        "case_json_sha256_by_id": {
+                            "G4_IMS_PARAMETER_GRID": _synthetic_hash("grid")
+                        }
+                    }
+                }
+            ),
+        ),
+    ],
+)
+def test_task7_g5_output_roots_require_explicit_execution_schedule(
+    tmp_path: Path,
+    mutate: Callable[[JsonObject], None],
+) -> None:
+    records = _task6_records(
+        tmp_path,
+        overrides={"evidence/g5/G5_EXECUTION_LOCK.json": mutate},
+    )
+
+    assert not _task7_records_matching(
+        records,
+        authority="G5_EXECUTION",
+        subject_id="G5_EXECUTION:G4_IMS_PARAMETER_GRID:primary",
+        dimension="output_root_reservation_sha256",
+    )
+
+
+def test_task7_g6r_output_root_refs_include_raw_and_schedule_membership(
+    tmp_path: Path,
+) -> None:
+    record = _task6_required_record(
+        _task6_records(tmp_path),
+        authority="G6_R_REPLAY_R3",
+        subject_id="G6_R_REPLAY_R3:G4_IMS_PARAMETER_GRID:R3",
+        dimension="output_root_reservation_sha256",
+    )
+
+    assert record["source_artifact_refs"] == [
+        {
+            "authority_id": "G6_R_REPLAY_R3",
+            "repo_relative_posix_path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
+            "json_pointer_or_null": "/output_root",
+            "source_role": "output_root_containment_projection",
+        },
+        {
+            "authority_id": "G6_R_REPLAY_R3",
+            "repo_relative_posix_path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
+            "json_pointer_or_null": "/case_ids",
+            "source_role": "method_stage_projection",
+        },
+        {
+            "authority_id": "G6_R_REPLAY_R3",
+            "repo_relative_posix_path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
+            "json_pointer_or_null": "/run_labels",
+            "source_role": "method_stage_projection",
+        },
+        {
+            "authority_id": "G6_R_REPLAY_R3",
+            "repo_relative_posix_path": "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
+            "json_pointer_or_null": "/execution_schedule",
+            "source_role": "method_stage_projection",
+        },
+        {
+            "authority_id": "G6_R_REPLAY_R3",
+            "repo_relative_posix_path": (
+                "evidence/g6/G6_HISTORICAL_REPLAY_R3_RAW_HASH_MANIFEST.json"
+            ),
+            "json_pointer_or_null": "/output_root",
+            "source_role": "output_root_source_equality_validation",
+        },
+    ]
+
+
+@pytest.mark.parametrize(
+    ("path", "mutate"),
+    [
+        (
+            "evidence/g6/G6_HISTORICAL_REPLAY_R3_RAW_HASH_MANIFEST.json",
+            lambda payload: payload.pop("output_root"),
+        ),
+        (
+            "evidence/g6/G6_HISTORICAL_REPLAY_R3_RAW_HASH_MANIFEST.json",
+            lambda payload: payload.update({"output_root": {"not": "a string"}}),
+        ),
+        (
+            "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
+            lambda payload: cast(
+                JsonObject,
+                payload["execution_schedule"],
+            ).update(
+                {
+                    "case_runs": [
+                        {
+                            "case_id": "G4_MEDIUM_ISLAND_REBUILD",
+                            "run_label": "R3",
+                        }
+                    ]
+                }
+            ),
+        ),
+        (
+            "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json",
+            lambda payload: cast(
+                JsonObject,
+                payload["execution_schedule"],
+            ).update(
+                {"case_runs": [{"case_id": "G4_IMS_PARAMETER_GRID", "run_label": "R4"}]}
+            ),
+        ),
+    ],
+)
+def test_task7_g6r_output_root_refuses_raw_or_schedule_drift(
+    tmp_path: Path,
+    path: str,
+    mutate: Callable[[JsonObject], None],
+) -> None:
+    records = _task6_records(tmp_path, overrides={path: mutate})
+
+    assert not _task7_records_matching(
+        records,
+        authority="G6_R_REPLAY_R3",
+        subject_id="G6_R_REPLAY_R3:G4_IMS_PARAMETER_GRID:R3",
+        dimension="output_root_reservation_sha256",
+    )
+
+
+def test_task7_g6r_metric_overlay_uses_exact_default_spec_and_hash(
+    tmp_path: Path,
+) -> None:
+    record = _task6_required_record(
+        _task6_records(
+            tmp_path,
+            overrides={
+                "evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json": (
+                    _task7_add_g6r_estimand_spec
+                )
+            },
+        ),
+        authority="G6_R_REPLAY_R3",
+        subject_id="G6_R_REPLAY_R3:G4_IMS_PARAMETER_GRID:exact_des_companion_group",
+        dimension="metric_schema_sha256",
+    )
+
+    assert record["dimension_status"] == "derived_by_versioned_normalizer"
+    assert record["comparison_projection_sha256_or_null"] == canonical_sha256_v2(
+        _task7_g6r_metric_overlay_projection()
+    )
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda payload: payload.pop("default_estimand_spec", None),
+        lambda payload: payload.pop("default_estimand_spec_sha256", None),
+        lambda payload: payload.update({"default_estimand_spec_sha256": "0" * 64}),
+    ],
+)
+def test_task7_g6r_metric_overlay_refuses_missing_or_hash_drifted_spec(
+    tmp_path: Path,
+    mutate: Callable[[JsonObject], None],
+) -> None:
+    def combined(payload: JsonObject) -> None:
+        _task7_add_g6r_estimand_spec(payload)
+        mutate(payload)
+
+    record = _task6_required_record(
+        _task6_records(
+            tmp_path,
+            overrides={"evidence/g6/G6_HISTORICAL_REPLAY_LOCK_R3.json": combined},
+        ),
+        authority="G6_R_REPLAY_R3",
+        subject_id="G6_R_REPLAY_R3:G4_IMS_PARAMETER_GRID:exact_des_companion_group",
+        dimension="metric_schema_sha256",
+    )
+
+    assert record["dimension_status"] == "unreconstructable_refuse"
+    assert record["comparison_projection_sha256_or_null"] is None
+
+
+def test_task7_l30_whole_case_parameter_hash_covers_all_inequalities(
+    tmp_path: Path,
+) -> None:
+    first = _task7_actual_parameter_projection(
+        tmp_path,
+        case_id="G4_L30_RESOURCE_BASELINE",
+        subject_id="G4_L30_RESOURCE_BASELINE",
+        overrides={
+            _task6_case_path("G4_L30_RESOURCE_BASELINE"): (
+                lambda payload: _task7_two_l30_inequalities(payload, second_rhs=5)
+            )
+        },
+    )
+    changed_sibling = _task7_actual_parameter_projection(
+        tmp_path,
+        case_id="G4_L30_RESOURCE_BASELINE",
+        subject_id="G4_L30_RESOURCE_BASELINE",
+        overrides={
+            _task6_case_path("G4_L30_RESOURCE_BASELINE"): (
+                lambda payload: _task7_two_l30_inequalities(payload, second_rhs=6)
+            )
+        },
+    )
+
+    assert canonical_sha256_v2(first) != canonical_sha256_v2(changed_sibling)
+
+
+def test_task7_l30_first_subunit_parameter_hash_ignores_sibling_inequality(
+    tmp_path: Path,
+) -> None:
+    first = _task7_actual_parameter_projection(
+        tmp_path,
+        case_id="G4_L30_RESOURCE_BASELINE",
+        subject_id="G4_L30_RESOURCE_BASELINE:name:l30-bound-a",
+        overrides={
+            _task6_case_path("G4_L30_RESOURCE_BASELINE"): (
+                lambda payload: _task7_two_l30_inequalities(payload, second_rhs=5)
+            )
+        },
+    )
+    changed_sibling = _task7_actual_parameter_projection(
+        tmp_path,
+        case_id="G4_L30_RESOURCE_BASELINE",
+        subject_id="G4_L30_RESOURCE_BASELINE:name:l30-bound-a",
+        overrides={
+            _task6_case_path("G4_L30_RESOURCE_BASELINE"): (
+                lambda payload: _task7_two_l30_inequalities(payload, second_rhs=6)
+            )
+        },
+    )
+
+    assert canonical_sha256_v2(first) == canonical_sha256_v2(changed_sibling)
+
+
+def test_task7_b05_whole_case_parameter_hash_covers_all_candidate_monitors(
+    tmp_path: Path,
+) -> None:
+    first = _task7_actual_parameter_projection(
+        tmp_path,
+        case_id="G4_B05_SUPERVISOR_COMPARATOR",
+        subject_id="G4_B05_SUPERVISOR_COMPARATOR",
+        overrides={
+            _task6_case_path("G4_B05_SUPERVISOR_COMPARATOR"): (
+                lambda payload: _task7_two_b05_monitors(payload, second_bad="s1")
+            )
+        },
+    )
+    changed_sibling = _task7_actual_parameter_projection(
+        tmp_path,
+        case_id="G4_B05_SUPERVISOR_COMPARATOR",
+        subject_id="G4_B05_SUPERVISOR_COMPARATOR",
+        overrides={
+            _task6_case_path("G4_B05_SUPERVISOR_COMPARATOR"): (
+                lambda payload: _task7_two_b05_monitors(payload, second_bad="s2")
+            )
+        },
+    )
+
+    assert canonical_sha256_v2(first) != canonical_sha256_v2(changed_sibling)
+
+
+def test_task7_b05_first_subunit_parameter_hash_ignores_sibling_monitor(
+    tmp_path: Path,
+) -> None:
+    first = _task7_actual_parameter_projection(
+        tmp_path,
+        case_id="G4_B05_SUPERVISOR_COMPARATOR",
+        subject_id="G4_B05_SUPERVISOR_COMPARATOR:monitor_id:monitor-cover-a",
+        overrides={
+            _task6_case_path("G4_B05_SUPERVISOR_COMPARATOR"): (
+                lambda payload: _task7_two_b05_monitors(payload, second_bad="s1")
+            )
+        },
+    )
+    changed_sibling = _task7_actual_parameter_projection(
+        tmp_path,
+        case_id="G4_B05_SUPERVISOR_COMPARATOR",
+        subject_id="G4_B05_SUPERVISOR_COMPARATOR:monitor_id:monitor-cover-a",
+        overrides={
+            _task6_case_path("G4_B05_SUPERVISOR_COMPARATOR"): (
+                lambda payload: _task7_two_b05_monitors(payload, second_bad="s2")
+            )
+        },
+    )
+
+    assert canonical_sha256_v2(first) == canonical_sha256_v2(changed_sibling)
+
+
+@pytest.mark.parametrize(
+    ("case_id", "subject_id"),
+    [
+        ("G4_CRP_OUTSIDE_S4PR", "G4_CRP_OUTSIDE_S4PR"),
+        (
+            "G4_RECORDER_TARGET_QUANTIFICATION",
+            "G4_RECORDER_TARGET_QUANTIFICATION",
+        ),
+        ("G4_L30_RESOURCE_BASELINE", "G4_L30_RESOURCE_BASELINE"),
+        (
+            "G4_L30_RESOURCE_BASELINE",
+            "G4_L30_RESOURCE_BASELINE:name:l30-bound-a",
+        ),
+        ("G4_B05_SUPERVISOR_COMPARATOR", "G4_B05_SUPERVISOR_COMPARATOR"),
+        (
+            "G4_B05_SUPERVISOR_COMPARATOR",
+            "G4_B05_SUPERVISOR_COMPARATOR:monitor_id:monitor-cover-a",
+        ),
+    ],
+)
+def test_task7_actual_parameter_entries_use_exact_name_value_type_value_keys(
+    tmp_path: Path,
+    case_id: str,
+    subject_id: str,
+) -> None:
+    projection = _task7_actual_parameter_projection(
+        tmp_path,
+        case_id=case_id,
+        subject_id=subject_id,
+    )
+
+    for entry in _task7_parameter_entries(projection):
+        assert set(entry) == {"name", "value_type", "value"}
+
+
+@pytest.mark.parametrize(
+    ("case_id", "subject_id"),
+    [
+        ("G4_CRP_OUTSIDE_S4PR", "G4_CRP_OUTSIDE_S4PR"),
+        (
+            "G4_RECORDER_TARGET_QUANTIFICATION",
+            "G4_RECORDER_TARGET_QUANTIFICATION",
+        ),
+        ("G4_L30_RESOURCE_BASELINE", "G4_L30_RESOURCE_BASELINE"),
+        (
+            "G4_L30_RESOURCE_BASELINE",
+            "G4_L30_RESOURCE_BASELINE:name:l30-bound-a",
+        ),
+        ("G4_B05_SUPERVISOR_COMPARATOR", "G4_B05_SUPERVISOR_COMPARATOR"),
+        (
+            "G4_B05_SUPERVISOR_COMPARATOR",
+            "G4_B05_SUPERVISOR_COMPARATOR:monitor_id:monitor-cover-a",
+        ),
+    ],
+)
+def test_task7_actual_parameter_value_types_are_from_section_7_4_allowlist(
+    tmp_path: Path,
+    case_id: str,
+    subject_id: str,
+) -> None:
+    projection = _task7_actual_parameter_projection(
+        tmp_path,
+        case_id=case_id,
+        subject_id=subject_id,
+    )
+    allowed = {
+        "integer",
+        "canonical_decimal_string",
+        "boolean",
+        "enum",
+        "string",
+        "content_sha256",
+        "ordered_tuple",
+    }
+
+    assert {
+        entry["value_type"] for entry in _task7_parameter_entries(projection)
+    } <= allowed
+
+
+def test_task7_source_records_mark_exact_three_outcome_sources(
+    tmp_path: Path,
+) -> None:
+    repo, _ = _task6_synthetic_repo(tmp_path)
+    source_hashes = {
+        path: hashlib.sha256((repo / path).read_bytes()).hexdigest()
+        for path in contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+    }
+    locks = build_authority_lock_records(repo, _authorization_record(), source_hashes)
+    source_records = build_authority_source_records(
+        repo,
+        _authorization_record(),
+        locks,
+    )
+
+    assert {
+        path
+        for path, record in source_records.items()
+        if record["contains_outcome_fields"] is True
+    } == {
+        "evidence/g5/G5_RESULT_SUMMARY.json",
+        "evidence/g6/G6_HISTORICAL_REPLAY_FAILURE_LEDGER.json",
+        "evidence/g6/G6_HISTORICAL_REPLAY_R3_REPORT.json",
+    }
+
+
+def test_task7_parse_decimal_accepts_selected_input_projection_only() -> None:
+    parsed = cast(Any, normalizer).parse_historical_decimal_exactly(
+        canonical_bytes_v2(
+            {
+                "selected_input_payloads": {
+                    "theta": "1.2300e+2",
+                    "tail": ["0.1000", "0003.500"],
+                }
+            }
+        )
+    )
+
+    assert parsed == {
+        "selected_input_payloads": {"theta": "123", "tail": ["0.1", "3.5"]}
+    }
+
+
+def test_task7_decimal_operation_consumes_valid_authorization_selected_input(
+    tmp_path: Path,
+) -> None:
+    authorization = _authorization_record()
+    contracts.validate_normalization_authorization(
+        authorization,
+        expected_schema_inventory_patterns=contracts.EXPECTED_RETIRED_SOURCE_INVENTORY,
+        expected_concrete_source_paths=contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY,
+        expected_selector_matrix=cast(
+            Any,
+            authorization["allowed_json_fields_by_source"],
+        ),
+        expected_git_object_format="sha1",
+        expected_source_head=cast(str, authorization["source_head"]),
+        expected_source_tree_hash=cast(str, authorization["source_tree_hash"]),
+        expected_file_manifest_hash=cast(
+            str, authorization["expected_file_manifest_hash"]
+        ),
+        expected_normalizer_code_sha256=cast(
+            str, authorization["normalizer_code_sha256"]
+        ),
+        expected_review_artifact_hash=cast(str, authorization["review_artifact_hash"]),
+        expected_output_root=contracts.NORMALIZATION_ALLOWED_OUTPUT_ROOT_PATH,
+    )
+    repo = tmp_path / "repo"
+    payload = _task6_source_payload(_G4_CASE_PATH)
+    input_payload = cast(JsonObject, payload["input_payload"])
+    input_payload["historical_decimal"] = "1.2300e+2"
+    payload["outside_selected_input"] = "9.9000"
+    raw = canonical_bytes_v2(payload)
+    source = repo / _G4_CASE_PATH
+    source.parent.mkdir(parents=True)
+    source.write_bytes(raw)
+
+    selected_bytes = cast(Any, normalizer)._selected_input_projection_bytes(
+        repo,
+        authorization,
+        {_G4_CASE_PATH: hashlib.sha256(raw).hexdigest()},
+    )
+    parsed = cast(Any, normalizer).parse_historical_decimal_exactly(selected_bytes)
+    selected_inputs = cast(JsonObject, parsed)["selected_input_payloads"]
+    selected_case = cast(JsonObject, cast(JsonObject, selected_inputs)[_G4_CASE_PATH])
+
+    assert selected_case["historical_decimal"] == "123"
+    assert "outside_selected_input" not in selected_case
+
+
+def test_task7_run_normalization_has_no_dummy_operation_calls() -> None:
+    source = Path(normalizer.__file__).read_text(encoding="utf-8")
+
+    assert "parse_historical_decimal_exactly(authority_bytes)" not in source
+    assert "apply_static_input_projection({})" not in source
+    assert '_item_or_none(value, "numeric_selected_bundle")' not in source
+
+
+def test_task7_run_normalization_writes_fingerprint_records_from_projection_output(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sentinel_record: JsonObject = {
+        "record_id": "projection-output-record",
+        "record_provenance_sha256": _synthetic_hash("projection-output-record"),
+    }
+    written_records: list[JsonObject] = []
+
+    def record_writer(root: Path, record_id: str, record: JsonObject) -> str:
+        del root, record_id
+        written_records.append(dict(record))
+        return _SHA_C
+
+    monkeypatch.setattr(
+        normalizer,
+        "read_authority_bytes",
+        lambda path: canonical_bytes_v2({"authorization": "synthetic"}),
+    )
+    monkeypatch.setattr(normalizer, "parse_allowed_json_pointers", lambda raw: [])
+    monkeypatch.setattr(
+        normalizer,
+        "_load_canonical_object",
+        lambda raw, label: {
+            "source_head": _GIT_A,
+            "source_tree_hash": _GIT_B,
+            "expected_file_manifest_hash": _SHA_A,
+            "normalizer_code_sha256": _SHA_B,
+            "review_artifact_hash": _SHA_C,
+            "allowed_output_root": {"repo_relative_posix_path": "authorized-root"},
+        },
+    )
+    monkeypatch.setattr(
+        normalizer, "_verify_output_root", lambda repo, root, auth: None
+    )
+    monkeypatch.setattr(
+        contracts,
+        "validate_normalization_authorization",
+        lambda *args, **kwargs: None,
+    )
+    monkeypatch.setattr(normalizer, "verify_source_hashes", lambda repo, raw: {})
+    monkeypatch.setattr(
+        normalizer,
+        "_selected_input_projection_bytes",
+        lambda *args: canonical_bytes_v2(
+            {"selected_input_payloads": {"synthetic": {"theta": "1"}}}
+        ),
+    )
+    monkeypatch.setattr(
+        normalizer,
+        "parse_historical_decimal_exactly",
+        lambda raw: {"numeric_selected_bundle": {"theta": "1"}},
+    )
+    monkeypatch.setattr(
+        normalizer,
+        "apply_static_input_projection",
+        lambda value: {
+            "fingerprint_records": {"projection-output-record": sentinel_record}
+        },
+    )
+    monkeypatch.setattr(normalizer, "canonicalize_projection_v2", canonical_bytes_v2)
+    monkeypatch.setattr(
+        normalizer,
+        "compute_sha256",
+        lambda raw: hashlib.sha256(raw).hexdigest(),
+    )
+    monkeypatch.setattr(
+        normalizer,
+        "write_normalization_authorization",
+        lambda root, raw: _synthetic_hash("authorization"),
+    )
+    monkeypatch.setattr(
+        normalizer,
+        "build_authority_lock_records",
+        lambda *args: {
+            authority_id: {
+                "authority_lock_record_sha256": _synthetic_hash(authority_id)
+            }
+            for authority_id in contracts.RETIRED_AUTHORITY_IDS
+        },
+    )
+    monkeypatch.setattr(normalizer, "write_authority_lock_record", lambda *args: _SHA_A)
+    monkeypatch.setattr(normalizer, "build_authority_source_records", lambda *args: {})
+    monkeypatch.setattr(
+        normalizer, "write_authority_source_record", lambda *args: _SHA_B
+    )
+    monkeypatch.setattr(
+        normalizer, "build_retired_fingerprint_records", lambda *args: {}
+    )
+    monkeypatch.setattr(
+        normalizer,
+        "write_fingerprint_record",
+        record_writer,
+    )
+    monkeypatch.setattr(
+        normalizer,
+        "_manifest_from_records",
+        lambda *args: {"manifest_sha256": _synthetic_hash("manifest")},
+    )
+    monkeypatch.setattr(
+        normalizer, "write_normalization_manifest", lambda *args: _SHA_A
+    )
+
+    run_normalization(tmp_path, tmp_path / "auth.json", tmp_path / "authorized-root")
+
+    assert written_records == [sentinel_record]
 
 
 def test_task6_forbidden_outcome_strings_never_enter_source_or_records(
