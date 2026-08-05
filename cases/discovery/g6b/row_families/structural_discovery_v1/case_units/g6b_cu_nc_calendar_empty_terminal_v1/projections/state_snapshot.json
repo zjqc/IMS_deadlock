@@ -1,0 +1,1 @@
+{"input_mode":"explicit_finite_lts_input","projection_schema_version":"ims-deadlock/g6b-state-snapshot-projection/v1","state_payload":{"initial_state":"r_terminal","marked_states":["f_complete"],"states":["f_complete","r_terminal"],"transitions":[]},"state_payload_schema_version":"ims-deadlock/g6b-state-snapshot-payload/v1"}

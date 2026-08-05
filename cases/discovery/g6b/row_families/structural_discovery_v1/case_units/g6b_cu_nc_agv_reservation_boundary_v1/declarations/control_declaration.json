@@ -1,0 +1,1 @@
+{"expected_guard_codes":["boundary_or_new_versioned_target_required","semantic_boundary_changed"],"failure_effect_codes":["block_quantitative_authorization","no_claim_upgrade","retain_control_failure"],"mandatory_control_roles":["NC_AGV_RESERVATION_BOUNDARY"],"schema_version":"ims-deadlock/g6b-control-declaration/v1"}

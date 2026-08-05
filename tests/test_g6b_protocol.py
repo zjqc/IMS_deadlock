@@ -325,12 +325,18 @@ _TYPED_ADMISSION_CONTRACT = {
 }
 
 
-def _copy_bundle(tmp_path: Path) -> Path:
-    source_root = Path.cwd()
+def _copy_protocol_documents(source: Path, target: Path) -> None:
+    target.mkdir(parents=True)
+    for name in sorted(_DOCUMENT_TOP_LEVEL_KEYS):
+        shutil.copy2(source / name, target / name)
+
+
+def _copy_bundle(tmp_path: Path, *, source_root: Path | None = None) -> Path:
+    source_root = Path.cwd() if source_root is None else source_root
     repo_root = tmp_path / "repo"
     target = repo_root / "cases/discovery/g6b"
     source = source_root / "cases/discovery/g6b"
-    shutil.copytree(source, target)
+    _copy_protocol_documents(source, target)
     for relative_path in [*_ARTIFACT_PATHS, *_HISTORICAL_AUTHORITIES]:
         if relative_path in _REMOTE_ONLY_HISTORICAL_AUTHORITIES:
             continue
@@ -340,6 +346,29 @@ def _copy_bundle(tmp_path: Path) -> Path:
         target_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source_path, target_path)
     return target
+
+
+def test_protocol_copy_bundle_excludes_post_seal_row_family_instance_roots(
+    tmp_path: Path,
+) -> None:
+    source_root = tmp_path / "sealed_source_root"
+    shutil.copytree(Path("cases/discovery/g6b"), source_root / "cases/discovery/g6b")
+    for relative_path in [*_ARTIFACT_PATHS, *_HISTORICAL_AUTHORITIES]:
+        if relative_path in _REMOTE_ONLY_HISTORICAL_AUTHORITIES:
+            continue
+        source_path = Path(relative_path)
+        assert source_path.is_file(), relative_path
+        target_path = source_root / relative_path
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_path, target_path)
+    for relative in _TASK6_LATER_INSTANCE_ROOTS:
+        (source_root / relative).mkdir(parents=True, exist_ok=True)
+
+    bundle = _copy_bundle(tmp_path / "copied", source_root=source_root)
+    copied_repo = bundle.parents[2]
+
+    for relative in _TASK6_LATER_INSTANCE_ROOTS:
+        assert not (copied_repo / relative).exists(), relative
 
 
 def _load(bundle: Path, filename: str) -> dict[str, Any]:
@@ -404,7 +433,7 @@ def test_duplicate_json_key_is_rejected(tmp_path: Path) -> None:
 
 def test_copied_bundle_outside_canonical_layout_fails_closed(tmp_path: Path) -> None:
     bundle = tmp_path / "floating_g6b"
-    shutil.copytree(Path("cases/discovery/g6b"), bundle)
+    _copy_protocol_documents(Path("cases/discovery/g6b"), bundle)
 
     _assert_invalid(bundle, "bundle root must be <repo>/cases/discovery/g6b")
 
@@ -616,10 +645,17 @@ def test_spec_17_3_02_schema_only_capabilities_false(tmp_path: Path) -> None:
     _assert_invalid(bundle, "protocol.json: scientific execution")
 
 
-def test_task6_capability_modules_and_later_instance_roots_remain_absent() -> None:
-    for relative in _TASK6_LATER_INSTANCE_ROOTS:
-        assert not (_REPO_ROOT / relative).exists(), relative
+def test_task6_later_instance_roots_remain_absent_from_schema_fixture(
+    tmp_path: Path,
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    copied_repo = bundle.parents[2]
 
+    for relative in _TASK6_LATER_INSTANCE_ROOTS:
+        assert not (copied_repo / relative).exists(), relative
+
+
+def test_task6_deferred_capability_modules_remain_absent() -> None:
     source_root = _REPO_ROOT / "src/ims_deadlock"
     for module_name in _TASK6_DEFERRED_CAPABILITY_MODULES:
         assert not (source_root / module_name).exists(), module_name

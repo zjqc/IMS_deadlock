@@ -1,0 +1,1 @@
+{"expected_guard_codes":["D_global","no_double_count_through_D_local"],"failure_effect_codes":["block_quantitative_authorization","no_claim_upgrade","retain_control_failure"],"mandatory_control_roles":["NC_DGLOBAL_ONLY_WITH_DLOCAL"],"schema_version":"ims-deadlock/g6b-control-declaration/v1"}

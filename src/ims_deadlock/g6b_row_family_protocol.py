@@ -22,7 +22,7 @@ G6B_ROW_FAMILY_RUNTIME_LOCK_VERSION = (
 )
 G6B_ROW_FAMILY_REVIEW_STATE_VERSION = "ims-deadlock/g6b-row-family-review-state/v2"
 G6B_ROW_FAMILY_FAILURE_LEDGER_VERSION = "ims-deadlock/g6b-row-family-failure-ledger/v2"
-G6B_CASE_CONSTRUCTION_SCHEMA_VERSION = "ims-deadlock/g6b-case-construction-schema/v2"
+G6B_CASE_CONSTRUCTION_SCHEMA_VERSION = "ims-deadlock/g6b-case-construction-schema/v3"
 G6B_RETIRED_AUTHORITY_FINGERPRINT_SCHEMA_VERSION = (
     "ims-deadlock/g6b-retired-authority-fingerprint-schema/v2"
 )
@@ -351,15 +351,21 @@ _EXPECTED_SCHEMA_REFUSAL_CODES = {
     "case_construction_schema.json": (
         "batch_incomplete",
         "canonicalization_violation",
+        "ledger_append_interrupted",
         "missing_hash",
         "outcome_leakage",
         "output_root_reuse_or_materialized",
+        "partial_bundle_terminal",
+        "post_seal_ledger_mutation",
+        "projection_file_missing",
         "runtime_identity_drift",
         "sealed_input_drift",
         "self_hash_mismatch",
+        "source_identity_phase_violation",
         "subject_id_contaminated_projection",
         "unauthorized_case_creation_attempt",
         "unclassified_scientific_input",
+        "unexpected_transient_path",
     ),
     "retired_authority_fingerprint_schema.json": (
         "batch_incomplete",
@@ -448,6 +454,7 @@ _TOP_LEVEL_KEYS = {
         "source_design",
         "source_design_sha256",
         "artifact_paths",
+        "artifact_manifest_sha256",
         "canonicalization_contract",
         "self_hash_finalization_contract",
         "typed_capabilities",
@@ -584,10 +591,16 @@ _TOP_LEVEL_KEYS = {
         "method_observation_required_fields",
         "method_companion_group_required_fields",
         "semantic_lineage_declaration_required_fields",
-        "metric_schema_reuse_record_required_fields",
+        "metric_schema_sharing_record_required_fields",
         "fingerprint_record_required_fields",
         "fingerprint_subject_map",
         "fingerprint_payload_schemas",
+        "materialization_file_contracts",
+        "construction_log_contract",
+        "construction_ledger_contract",
+        "source_identity_contract",
+        "transient_path_contract",
+        "des_seed_contract",
         "dimension_dependence_contract",
         "allowed_input_modes",
         "output_root_reservation_contract",
@@ -704,7 +717,7 @@ _TOP_LEVEL_KEYS = {
 
 _EXPECTED_CANONICAL_SHA256 = {
     "row_family_protocol.json": (
-        "bc3d451c2996dc1104773d44cd4b64bffa3228d8865713a929d70aadf8c3edbc"
+        "2a725f990feba8f35739200ce5b0299622d2e447602cc94e699758b5f6088e3f"
     ),
     "identity_schema.json": (
         "dd33178221ed6a0fdce9b6dd0260c492c011ad5f04e43ee6b0e75fedbeb31b3a"
@@ -728,7 +741,7 @@ _EXPECTED_CANONICAL_SHA256 = {
         "34be766f1f8dd97037180547f9b2bde242787c941969771433bceda394dffb87"
     ),
     "case_construction_schema.json": (
-        "828382b6787408477c9b0a3170475e08a8971c54b4860349b1da3b8495d74b42"
+        "bdc881151ae847a43171a5b656bf1bd4480ee7846c5c59730118f7b11d045335"
     ),
     "retired_authority_fingerprint_schema.json": (
         "456a66067b5703695948719dc7ccbdfa09d8c2d6eced1c9f544d387234ee8f78"
@@ -1082,7 +1095,9 @@ def _expect_document(
         errors.append(f"{name}: document must match the canonical contract")
 
 
-def _expect_protocol(document: JsonObject, errors: list[str]) -> None:
+def _expect_protocol(
+    document: JsonObject, hashes: dict[str, str], errors: list[str]
+) -> None:
     expected_paths = [(_RELATIVE_ROOT / name).as_posix() for name in _DOCUMENTS[1:]]
     _expect(
         document.get("artifact_paths") == expected_paths,
@@ -1099,6 +1114,17 @@ def _expect_protocol(document: JsonObject, errors: list[str]) -> None:
         "row_family_protocol.json: source_design_sha256 must match",
         errors,
     )
+    missing_artifact_hashes = [name for name in _DOCUMENTS[1:] if name not in hashes]
+    if not missing_artifact_hashes:
+        artifact_manifest = {
+            (_RELATIVE_ROOT / name).as_posix(): hashes[name] for name in _DOCUMENTS[1:]
+        }
+        _expect(
+            document.get("artifact_manifest_sha256")
+            == _canonical_sha256(artifact_manifest),
+            "row_family_protocol.json: artifact_manifest_sha256 must match",
+            errors,
+        )
     capabilities = document.get("typed_capabilities")
     _expect(
         capabilities == _EXPECTED_TYPED_CAPABILITIES,
@@ -1348,7 +1374,7 @@ def validate_g6b_row_family_bundle(root: Path) -> G6BRowFamilyValidation:
     protocol = documents.get("row_family_protocol.json", {})
     review = documents.get("review_state.json", {})
     if protocol:
-        _expect_protocol(protocol, errors)
+        _expect_protocol(protocol, hashes, errors)
     identity = documents.get("identity_schema.json")
     if identity:
         _expect_identity_schema(identity, errors)
