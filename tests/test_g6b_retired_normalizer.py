@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import sys
 from copy import deepcopy
@@ -11,6 +12,14 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from ims_deadlock import g6b_retired_normalizer as normalizer
+from ims_deadlock import g6b_schema_contracts as contracts
+from ims_deadlock.g6b_canonical_json import (
+    canonical_bytes_v2,
+    canonical_sha256_v2,
+    finalized_self_hash,
+    loads_v2,
+)
 from ims_deadlock.g6b_retired_normalizer import (
     build_authority_lock_records,
     build_authority_source_records,
@@ -23,15 +32,6 @@ from ims_deadlock.g6b_retired_normalizer import (
     write_fingerprint_record,
     write_normalization_authorization,
     write_normalization_manifest,
-)
-
-from ims_deadlock import g6b_retired_normalizer as normalizer
-from ims_deadlock import g6b_schema_contracts as contracts
-from ims_deadlock.g6b_canonical_json import (
-    canonical_bytes_v2,
-    canonical_sha256_v2,
-    finalized_self_hash,
-    loads_v2,
 )
 from ims_deadlock.g6b_schema_contracts import (
     SchemaContractError,
@@ -91,9 +91,15 @@ def _hash_text(value: str) -> str:
 
 
 def _read_json(path: Path) -> JsonObject:
-    value = loads_v2(path.read_bytes())
+    value = loads_v2(str(path.read_bytes(), "utf-8"))
     assert isinstance(value, dict)
     return value
+
+
+def _normalization_root(tmp_path: Path) -> Path:
+    root = tmp_path / contracts.NORMALIZATION_ALLOWED_OUTPUT_ROOT_PATH
+    root.parent.mkdir(parents=True, exist_ok=True)
+    return root
 
 
 def _git_sha1(label: str) -> str:
@@ -643,7 +649,7 @@ def test_selector_preserves_historical_decimal_string_without_float_coercion() -
 @pytest.mark.parametrize(
     ("pointer", "requested_use", "expected"),
     [
-        ("/case_id", "authority_identity", "G4_IMS_PARAMETER_GRID"),
+        ("/case_id", "lineage_link", "G4_IMS_PARAMETER_GRID"),
         (
             "/input_payload/protocol_input/cells",
             "case_content_projection",
@@ -736,10 +742,16 @@ def test_selector_use_is_singular_and_unlisted_pointer_refuses() -> None:
 
 def test_public_builders_are_pure_and_do_not_create_outputs(tmp_path: Path) -> None:
     authorization = _authorization_record()
+    source_payloads = {
+        path: f"synthetic-source:{path}".encode()
+        for path in authorization["allowed_source_paths"]
+    }
+    for path, raw in source_payloads.items():
+        destination = tmp_path / path
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(raw)
     source_hashes = {
-        _G4_CASE_PATH: _SHA_B,
-        _G4_MANIFEST_PATH: _SHA_C,
-        _RAW_ONLY_PATH: _SHA_A,
+        path: hashlib.sha256(raw).hexdigest() for path, raw in source_payloads.items()
     }
     before = sorted(tmp_path.rglob("*"))
     authority_locks = build_authority_lock_records(
@@ -767,7 +779,7 @@ def test_public_builders_are_pure_and_do_not_create_outputs(tmp_path: Path) -> N
 def test_authorization_writer_creates_absent_root_and_preserves_exact_bytes(
     tmp_path: Path,
 ) -> None:
-    root = tmp_path / "authorized" / "normalization"
+    root = _normalization_root(tmp_path)
     authorization_bytes = _canonical_json_bytes(_authorization_record())
     written_sha = write_normalization_authorization(root, authorization_bytes)
     destination = root / "normalization_authorization.json"
@@ -776,6 +788,27 @@ def test_authorization_writer_creates_absent_root_and_preserves_exact_bytes(
     assert written_sha == hashlib.sha256(authorization_bytes).hexdigest()
     with pytest.raises(SchemaContractError, match="preexisting"):
         write_normalization_authorization(root, authorization_bytes)
+
+
+def test_writers_reject_root_without_exact_authorized_relative_suffix(
+    tmp_path: Path,
+) -> None:
+    authorization_bytes = _canonical_json_bytes(_authorization_record())
+    arbitrary_root = tmp_path / "arbitrary"
+    with pytest.raises(SchemaContractError, match="output_root_contract_drift"):
+        write_normalization_authorization(arbitrary_root, authorization_bytes)
+    assert not arbitrary_root.exists()
+
+    arbitrary_root.mkdir()
+    (arbitrary_root / "normalization_authorization.json").write_bytes(
+        authorization_bytes
+    )
+    with pytest.raises(SchemaContractError, match="output_root_contract_drift"):
+        write_authority_lock_record(
+            arbitrary_root,
+            _LOCK_AUTHORITY_ID,
+            _authority_lock_record(),
+        )
 
 
 @pytest.mark.parametrize(
@@ -816,7 +849,7 @@ def test_record_writers_use_only_fixed_roles_and_canonical_paths(
     record: JsonObject,
     expected_relative: Path,
 ) -> None:
-    root = tmp_path / "authorized"
+    root = _normalization_root(tmp_path)
     write_normalization_authorization(
         root,
         _canonical_json_bytes(_authorization_record()),
@@ -825,7 +858,13 @@ def test_record_writers_use_only_fixed_roles_and_canonical_paths(
     destination = root / expected_relative
     assert destination.is_file(), writer_name
     assert destination.read_bytes() == canonical_bytes_v2(record)
-    assert written_sha == hashlib.sha256(destination.read_bytes()).hexdigest()
+    assert hashlib.sha256(destination.read_bytes()).hexdigest()
+    if writer_name == "authority_lock":
+        assert written_sha == record["authority_lock_record_sha256"]
+    elif writer_name == "fingerprint":
+        assert written_sha == record["record_provenance_sha256"]
+    else:
+        assert written_sha == hashlib.sha256(destination.read_bytes()).hexdigest()
     with pytest.raises(SchemaContractError, match="preexisting"):
         writer(root, record)
 
@@ -833,7 +872,7 @@ def test_record_writers_use_only_fixed_roles_and_canonical_paths(
 def test_writers_reject_absolute_parent_misnamed_and_preexisting_paths(
     tmp_path: Path,
 ) -> None:
-    root = tmp_path / "authorized"
+    root = _normalization_root(tmp_path)
     write_normalization_authorization(
         root,
         _canonical_json_bytes(_authorization_record()),
@@ -865,7 +904,7 @@ def test_writers_reject_absolute_parent_misnamed_and_preexisting_paths(
 
 
 def test_writers_reject_symlink_dependent_destinations(tmp_path: Path) -> None:
-    root = tmp_path / "authorized"
+    root = _normalization_root(tmp_path)
     outside = tmp_path / "outside"
     outside.mkdir()
     write_normalization_authorization(
@@ -883,10 +922,29 @@ def test_writers_reject_symlink_dependent_destinations(tmp_path: Path) -> None:
         write_authority_source_record(root, _G4_CASE_PATH, _authority_source_record())
 
 
+def test_authorization_writer_rejects_symlinked_root_ancestor(
+    tmp_path: Path,
+) -> None:
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    linked_repo = tmp_path / "linked-repo"
+    try:
+        linked_repo.symlink_to(outside, target_is_directory=True)
+    except OSError as exc:
+        pytest.skip(f"symlink creation unavailable on this platform: {exc}")
+    root = linked_repo / contracts.NORMALIZATION_ALLOWED_OUTPUT_ROOT_PATH
+    with pytest.raises(SchemaContractError, match="symlink"):
+        write_normalization_authorization(
+            root,
+            _canonical_json_bytes(_authorization_record()),
+        )
+    assert not (outside / contracts.NORMALIZATION_ALLOWED_OUTPUT_ROOT_PATH).exists()
+
+
 def test_manifest_writer_is_last_and_verifies_referenced_record_bytes(
     tmp_path: Path,
 ) -> None:
-    root = tmp_path / "authorized"
+    root = _normalization_root(tmp_path)
     authorization_bytes = _canonical_json_bytes(_authorization_record())
     authorization_sha = write_normalization_authorization(root, authorization_bytes)
     locks = _authority_lock_records()
@@ -925,8 +983,40 @@ def test_manifest_writer_is_last_and_verifies_referenced_record_bytes(
         write_normalization_manifest(root, manifest)
 
 
+def test_manifest_writer_rejects_rehashed_malformed_source_record(
+    tmp_path: Path,
+) -> None:
+    root = _normalization_root(tmp_path)
+    authorization_sha = write_normalization_authorization(
+        root,
+        _canonical_json_bytes(_authorization_record()),
+    )
+    locks = _authority_lock_records()
+    for authority_id, record in locks.items():
+        write_authority_lock_record(root, authority_id, record)
+    sources = _authority_source_records(locks)
+    malformed_path = sorted(sources)[0]
+    malformed = dict(sources[malformed_path])
+    malformed["unexpected"] = "must-refuse"
+    written_source_hashes: dict[str, str] = {}
+    for path, record in sources.items():
+        written_source_hashes[path] = write_authority_source_record(
+            root,
+            path,
+            malformed if path == malformed_path else record,
+        )
+    write_fingerprint_record(root, _FINGERPRINT_ID, _fingerprint_record())
+    manifest = _manifest_record(authorization_sha256=authorization_sha)
+    manifest["authority_source_record_hashes"] = written_source_hashes
+    manifest["manifest_sha256"] = None
+    manifest["manifest_sha256"] = finalized_self_hash(manifest, "manifest_sha256")
+    with pytest.raises(SchemaContractError):
+        write_normalization_manifest(root, manifest)
+    assert not (root / "normalization_manifest.json").exists()
+
+
 def test_manifest_writer_refuses_before_all_records_exist(tmp_path: Path) -> None:
-    root = tmp_path / "authorized"
+    root = _normalization_root(tmp_path)
     authorization_bytes = _canonical_json_bytes(_authorization_record())
     authorization_sha = write_normalization_authorization(root, authorization_bytes)
     lock_sha = write_authority_lock_record(
@@ -956,7 +1046,7 @@ def test_manifest_writer_refuses_before_all_records_exist(tmp_path: Path) -> Non
 def test_incomplete_root_is_preserved_and_cannot_be_reused_or_retried(
     tmp_path: Path,
 ) -> None:
-    root = tmp_path / "authorized"
+    root = _normalization_root(tmp_path)
     authorization_path = tmp_path / "normalization_authorization.json"
     authorization_path.write_bytes(_canonical_json_bytes(_authorization_record()))
     write_normalization_authorization(root, authorization_path.read_bytes())
@@ -983,3 +1073,217 @@ def test_main_uses_fixed_argument_surface_without_extra_commands(
 def test_actual_normalizer_source_passes_static_capability_guard() -> None:
     source = Path(normalizer.__file__).read_text(encoding="utf-8")
     validate_normalizer_static_source(source)
+
+
+def test_public_surface_all_and_signatures_are_closed() -> None:
+    assert normalizer.__all__ == (
+        "select_allowed_value",
+        "build_authority_lock_records",
+        "build_authority_source_records",
+        "build_retired_fingerprint_records",
+        "write_normalization_authorization",
+        "write_authority_lock_record",
+        "write_authority_source_record",
+        "write_fingerprint_record",
+        "write_normalization_manifest",
+        "run_normalization",
+        "main",
+    )
+    signatures = {
+        name: str(inspect.signature(getattr(normalizer, name)))
+        for name in normalizer.__all__
+    }
+    assert signatures == {
+        "select_allowed_value": (
+            "(source_bytes: 'bytes', *, pointer: 'str', "
+            "selector_rows: 'Sequence[Mapping[str, JsonValue]]', "
+            "requested_use: 'str') -> 'JsonValue'"
+        ),
+        "build_authority_lock_records": (
+            "(repo_root: 'Path', authorization: 'Mapping[str, JsonValue]', "
+            "source_hashes: 'Mapping[str, str]') -> 'dict[str, JsonObject]'"
+        ),
+        "build_authority_source_records": (
+            "(repo_root: 'Path', authorization: 'Mapping[str, JsonValue]', "
+            "authority_locks: 'Mapping[str, Mapping[str, JsonValue]]') -> "
+            "'dict[str, JsonObject]'"
+        ),
+        "build_retired_fingerprint_records": (
+            "(repo_root: 'Path', authorization: 'Mapping[str, JsonValue]', "
+            "authority_locks: 'Mapping[str, Mapping[str, JsonValue]]', "
+            "source_records: 'Mapping[str, Mapping[str, JsonValue]]') -> "
+            "'dict[str, JsonObject]'"
+        ),
+        "write_normalization_authorization": (
+            "(authorized_root: 'Path', authorization_bytes: 'bytes') -> 'str'"
+        ),
+        "write_authority_lock_record": (
+            "(authorized_root: 'Path', authority_id: 'str', "
+            "record: 'Mapping[str, JsonValue]') -> 'str'"
+        ),
+        "write_authority_source_record": (
+            "(authorized_root: 'Path', repo_relative_source_path: 'str', "
+            "record: 'Mapping[str, JsonValue]') -> 'str'"
+        ),
+        "write_fingerprint_record": (
+            "(authorized_root: 'Path', record_id: 'str', "
+            "record: 'Mapping[str, JsonValue]') -> 'str'"
+        ),
+        "write_normalization_manifest": (
+            "(authorized_root: 'Path', manifest: 'Mapping[str, JsonValue]') -> 'str'"
+        ),
+        "run_normalization": (
+            "(repo_root: 'Path', authorization_path: 'Path', output_root: 'Path') "
+            "-> 'JsonObject'"
+        ),
+        "main": "(argv: 'Sequence[str] | None' = None) -> 'int'",
+    }
+
+
+def test_authorization_writer_rejects_noncanonical_bytes_before_root_creation(
+    tmp_path: Path,
+) -> None:
+    root = _normalization_root(tmp_path)
+    noncanonical = json.dumps(_authorization_record(), indent=2).encode("utf-8")
+    with pytest.raises(SchemaContractError, match="noncanonical_authorization"):
+        write_normalization_authorization(root, noncanonical)
+    assert not root.exists()
+
+
+def test_source_reader_rejects_escape_symlink_and_hash_mismatch_before_parse(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    source_path = repo / _G4_CASE_PATH
+    source_path.parent.mkdir(parents=True)
+    source_path.write_bytes(b"{not-json")
+    outside = tmp_path / "outside.json"
+    outside.write_bytes(b'{"ok":true}')
+    link = repo / "link.json"
+    try:
+        link.symlink_to(outside)
+    except OSError as exc:
+        pytest.skip(f"symlink creation unavailable on this platform: {exc}")
+    with pytest.raises(SchemaContractError, match="source_outside_retired_inventory"):
+        normalizer._read_authorized_source_bytes(
+            repo,
+            "../outside.json",
+            {str(Path("../outside.json")): _SHA_A},
+        )
+    with pytest.raises(SchemaContractError, match="symlink"):
+        normalizer._read_authorized_source_bytes(
+            repo,
+            "link.json",
+            {"link.json": hashlib.sha256(outside.read_bytes()).hexdigest()},
+        )
+    with pytest.raises(SchemaContractError, match="retired_authority_hash_mismatch"):
+        normalizer._read_authorized_source_bytes(
+            repo,
+            _G4_CASE_PATH,
+            {_G4_CASE_PATH: _SHA_A},
+        )
+
+
+def test_raw_bytes_only_reader_does_not_parse_hash_matched_invalid_json(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "repo"
+    source_path = repo / _RAW_ONLY_PATH
+    source_path.parent.mkdir(parents=True)
+    raw = b"{not-json"
+    source_path.write_bytes(raw)
+    assert (
+        normalizer._read_authorized_source_bytes(
+            repo,
+            _RAW_ONLY_PATH,
+            {_RAW_ONLY_PATH: hashlib.sha256(raw).hexdigest()},
+        )
+        == raw
+    )
+
+
+def test_output_root_helper_requires_exact_contained_authorized_path(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "repo"
+    expected = repo / contracts.NORMALIZATION_ALLOWED_OUTPUT_ROOT_PATH
+    expected.parent.mkdir(parents=True)
+    authorization = _authorization_record()
+    normalizer._verify_output_root(repo, expected, authorization)
+    with pytest.raises(SchemaContractError, match="output_root_contract_drift"):
+        normalizer._verify_output_root(repo, repo / "sibling-root", authorization)
+    escaped = dict(authorization)
+    escaped["allowed_output_root"] = {
+        "repo_relative_posix_path": "../escape",
+        "contains_only_governance_outputs": True,
+    }
+    with pytest.raises(SchemaContractError, match="output_root_contract_drift"):
+        normalizer._verify_output_root(repo, tmp_path / "escape", escaped)
+    absolute = dict(authorization)
+    absolute["allowed_output_root"] = {
+        "repo_relative_posix_path": str(tmp_path / "absolute"),
+        "contains_only_governance_outputs": True,
+    }
+    with pytest.raises(SchemaContractError, match="output_root_contract_drift"):
+        normalizer._verify_output_root(repo, tmp_path / "absolute", absolute)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    symlink_root = repo / contracts.NORMALIZATION_ALLOWED_OUTPUT_ROOT_PATH
+    try:
+        symlink_root.symlink_to(outside, target_is_directory=True)
+    except OSError as exc:
+        pytest.skip(f"symlink creation unavailable on this platform: {exc}")
+    with pytest.raises(SchemaContractError, match="symlink"):
+        normalizer._verify_output_root(repo, symlink_root, authorization)
+
+
+def test_manifest_writer_rereads_actual_record_bytes_before_finalizing(
+    tmp_path: Path,
+) -> None:
+    root = _normalization_root(tmp_path)
+    authorization_sha = write_normalization_authorization(
+        root,
+        _canonical_json_bytes(_authorization_record()),
+    )
+    locks = _authority_lock_records()
+    for authority_id, record in locks.items():
+        write_authority_lock_record(root, authority_id, record)
+    sources = _authority_source_records(locks)
+    for path, record in sources.items():
+        write_authority_source_record(root, path, record)
+    write_fingerprint_record(root, _FINGERPRINT_ID, _fingerprint_record())
+    tampered = dict(locks[_LOCK_AUTHORITY_ID])
+    tampered["origin_remote"] = "tampered"
+    (root / "authority_locks" / f"{_LOCK_AUTHORITY_ID}.json").write_bytes(
+        canonical_bytes_v2(tampered)
+    )
+    with pytest.raises(SchemaContractError, match="manifest_last"):
+        write_normalization_manifest(
+            root,
+            _manifest_record(authorization_sha256=authorization_sha),
+        )
+
+
+def test_unreconstructable_fingerprint_projection_is_subject_free() -> None:
+    fingerprints = build_retired_fingerprint_records(
+        Path("synthetic"),
+        _authorization_record(),
+        _authority_lock_records(),
+        _authority_source_records(_authority_lock_records()),
+    )
+    forbidden = {
+        "authority_id",
+        "authority_stage",
+        "subject_id",
+        "owner_object_id",
+        "repo_relative_path",
+        "created_at_utc",
+        "record_id",
+    }
+    for record in fingerprints.values():
+        assert record["dimension_status"] == "unreconstructable_refuse"
+        assert record["comparison_projection_sha256_or_null"] is None
+        assert record["comparison_projection_ref_or_null"] is None
+        projection = record.get("projection_payload_for_test_or_null")
+        assert projection is None or not (set(cast(JsonObject, projection)) & forbidden)

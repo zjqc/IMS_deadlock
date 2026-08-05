@@ -2575,6 +2575,181 @@ def test_normalizer_guard_allows_direct_listed_safe_call_result_methods() -> Non
     validate_normalizer_static_source(source)
 
 
+def test_normalizer_guard_allows_same_named_data_helper_call_argument() -> None:
+    source = (
+        "from ims_deadlock.g6b_schema_contracts import "
+        "validate_authority_source_record\n"
+        "def normalize(record):\n"
+        "    return record\n"
+        "def emit(record):\n"
+        "    record = normalize(record)\n"
+        "    validate_authority_source_record(record)\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_allows_typed_local_data_helper_call_argument() -> None:
+    source = (
+        "from collections.abc import Mapping\n"
+        "from ims_deadlock.g6b_schema_contracts import "
+        "validate_authority_source_record\n"
+        "def normalize(record: Mapping[str, object]) -> dict[str, object]:\n"
+        "    return dict(record)\n"
+        "def emit(record: Mapping[str, object]) -> None:\n"
+        "    payload = normalize(record)\n"
+        "    validate_authority_source_record(payload)\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_allows_nested_local_data_helper_call_argument() -> None:
+    source = (
+        "def leaf(value):\n"
+        "    return bool(value)\n"
+        "def helper(value):\n"
+        "    return leaf(value)\n"
+        "def normalize(value):\n"
+        "    return helper(value)\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_allows_closed_pure_data_builtin_arguments() -> None:
+    source = (
+        "def normalize(text, payload):\n"
+        "    width = len(text)\n"
+        "    index = int(width)\n"
+        "    raw = bytes(payload)\n"
+        "    pairs = list(zip(text, raw))\n"
+        "    return {'source_sha256': str(index or len(pairs))}\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_allows_local_hash_hexdigest_data_helper_argument() -> None:
+    source = (
+        "from hashlib import sha256\n"
+        "from ims_deadlock.g6b_schema_contracts import "
+        "validate_authority_source_record\n"
+        "def digest(source_bytes):\n"
+        "    return sha256(source_bytes).hexdigest()\n"
+        "def emit(record, source_bytes):\n"
+        "    record = dict(record, raw_byte_sha256=digest(source_bytes))\n"
+        "    validate_authority_source_record(record)\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_allows_direct_schema_contract_error_raise() -> None:
+    source = (
+        "from ims_deadlock.g6b_schema_contracts import SchemaContractError\n"
+        "def normalize(record):\n"
+        "    raise SchemaContractError('retired_normalizer_error')\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        (
+            "from ims_deadlock.g6b_schema_contracts import SchemaContractError\n"
+            "def normalize(record):\n"
+            "    ctor = SchemaContractError\n"
+            "    ctor('retired_normalizer_error')\n"
+        ),
+        (
+            "from ims_deadlock.g6b_schema_contracts import SchemaContractError\n"
+            "def normalize(record):\n"
+            "    SchemaContractError = lambda code: code\n"
+            "    SchemaContractError('retired_normalizer_error')\n"
+        ),
+        (
+            "from ims_deadlock.g6b_schema_contracts import SchemaContractError\n"
+            "def normalize(record):\n"
+            "    SchemaContractError('retired_normalizer_error')\n"
+        ),
+    ],
+)
+def test_normalizer_guard_rejects_schema_contract_error_misuse(
+    source: str,
+) -> None:
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_rejects_safe_call_result_as_callable() -> None:
+    source = (
+        "import json\n"
+        "def normalize(source_text):\n"
+        "    parsed = json.loads(source_text)\n"
+        "    parsed()\n"
+        "    return {'source_sha256': ''}\n"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_rejects_direct_callback_alias_dispatch() -> None:
+    source = (
+        "def normalize(callback):\n"
+        "    alias = callback\n"
+        "    alias('outside.json', 'w')\n"
+        "    return {'source_sha256': ''}\n"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_rejects_concrete_sensitive_validator_payload() -> None:
+    source = (
+        "import os\n"
+        "from ims_deadlock.g6b_schema_contracts import "
+        "validate_authority_lock_record\n"
+        "def normalize():\n"
+        "    validate_authority_lock_record(os.system)\n"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_rejects_concrete_sensitive_sorted_key() -> None:
+    source = (
+        "def normalize():\n"
+        "    sorted([1], key=open)\n"
+        "    return {'source_sha256': ''}\n"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        ("def normalize(callback):\n    return list(map(callback, [1]))\n"),
+        ("def normalize(callback):\n    return list(filter(callback, [1]))\n"),
+        ("def normalize(callback):\n    return sorted([1], key=callback)\n"),
+        ("def normalize(callback):\n    return min([1], key=callback)\n"),
+        ("def normalize(callback):\n    return max([1], key=callback)\n"),
+    ],
+)
+def test_normalizer_guard_rejects_arbitrary_callback_sinks(source: str) -> None:
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_rejects_safe_data_result_methods() -> None:
+    source = (
+        "def normalize(record):\n"
+        "    return record\n"
+        "def emit(record):\n"
+        "    payload = normalize(record)\n"
+        "    payload.get('source_sha256')\n"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
 def test_normalizer_guard_allows_exact_retired_normalizer_surface() -> None:
     source = (
         "from pathlib import Path\n"
@@ -2832,14 +3007,6 @@ def test_normalizer_guard_rejects_governance_import_and_unlisted_schema_call() -
         ("import ims_deadlock.g6b_governance\n", "capability_import_violation"),
         (
             (
-                "from ims_deadlock.g6b_schema_contracts import SchemaContractError\n"
-                "def normalize(record):\n"
-                "    SchemaContractError('bad')\n"
-            ),
-            "retired_normalizer_error",
-        ),
-        (
-            (
                 "from ims_deadlock.g6b_schema_contracts import validate_exact_keys\n"
                 "def normalize(record):\n"
                 "    validate_exact_keys(record, set(), label='x')\n"
@@ -2867,6 +3034,24 @@ def test_normalizer_guard_rejects_retired_operation_order_drift() -> None:
         "    write_fingerprint_record()\n"
         "    write_normalization_manifest()\n"
     )
+    with pytest.raises(SchemaContractError, match="operation_contract_drift"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        ("def normalize():\n    step = verify_source_hashes\n    step()\n"),
+        (
+            "def normalize():\n"
+            "    verify_source_hashes = lambda: None\n"
+            "    verify_source_hashes()\n"
+        ),
+    ],
+)
+def test_normalizer_guard_rejects_retired_operation_alias_or_rebind(
+    source: str,
+) -> None:
     with pytest.raises(SchemaContractError, match="operation_contract_drift"):
         validate_normalizer_static_source(source)
 
