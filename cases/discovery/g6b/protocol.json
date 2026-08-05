@@ -1,5 +1,5 @@
 {
-  "schema_version": "ims-deadlock/g6b-discovery-protocol/v1",
+  "schema_version": "ims-deadlock/g6b-discovery-protocol/v2",
   "protocol_id": "G6-B-DISCOVERY-PROTOCOL-FOUNDATION",
   "study_role": "discovery_only",
   "confirmation_use": "prohibited",
@@ -25,6 +25,13 @@
     "evidence/g6/G6_HISTORICAL_REPLAY_FAILURE_LEDGER.json",
     "evidence/g6/G6_HISTORICAL_REPLAY_R3_REPORT.json"
   ],
+  "typed_capability_vocabulary": [
+    "case_construction_authorized",
+    "retired_authority_fingerprint_normalization_authorized",
+    "target_certification_preflight_authorized",
+    "quantitative_execution_authorized"
+  ],
+  "current_row_family_capability_reference": "row_families/structural_discovery_v1/row_family_protocol.json#/typed_capabilities",
   "execution_boundary": {
     "creates_cases": false,
     "authorizes_enumeration": false,

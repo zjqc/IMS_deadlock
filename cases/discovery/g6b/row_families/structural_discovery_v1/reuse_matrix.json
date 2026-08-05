@@ -1,13 +1,99 @@
 {
-  "schema_version": "ims-deadlock/g6b-row-family-reuse/v1",
+  "schema_version": "ims-deadlock/g6b-row-family-reuse/v2",
   "study_role": "discovery_only",
   "confirmation_use": "prohibited",
-  "scientific_execution_authorized": false,
-  "case_creation_authorized": false,
+  "schema_role": "schema_only",
+  "canonicalization_contract": {
+    "version": "ims-deadlock/g6b-canonical-json/v2",
+    "duplicate_members": "reject_at_every_depth",
+    "unicode_normalization": {
+      "member_names": "require_nfc_reject_non_nfc",
+      "string_values": "require_nfc_reject_non_nfc",
+      "silent_normalization": "prohibited"
+    },
+    "object_key_order": "unicode_code_point",
+    "array_order_policy": {
+      "declared_array_order": "preserve",
+      "schema_declared_set_like_arrays": "unique_and_already_sorted"
+    },
+    "utf8_serialization": {
+      "encoding": "utf-8",
+      "ensure_ascii": false,
+      "sort_keys": true,
+      "separators": [
+        ",",
+        ":"
+      ],
+      "allow_nan": false
+    },
+    "numeric_policy": {
+      "json_nan_infinity_negative_zero_float": "prohibited",
+      "counts_and_integral_budgets": "json_integers",
+      "non_integral_values": {
+        "encoding": "canonical_decimal_string",
+        "grammar": "^-?(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+        "negative_zero": "prohibited",
+        "exponent": "prohibited"
+      },
+      "historical_json_numbers": "parse_lexical_token_as_exact_decimal_not_binary_float"
+    },
+    "path_policy": {
+      "committed_paths": "case_sensitive_repo_relative_posix",
+      "drive_letter_leading_slash_backslash_empty_dot_dotdot": "prohibited",
+      "symlink_dependent_resolution": "prohibited",
+      "runtime_executables": "logical_id_plus_byte_and_environment_hashes_not_absolute_path"
+    },
+    "timestamp_policy": {
+      "timezone": "utc",
+      "format": "YYYY-MM-DDTHH:MM:SSZ",
+      "precision": "seconds"
+    }
+  },
+  "self_hash_finalization_contract": {
+    "version": "ims-deadlock/g6b-self-hash-finalization/v2",
+    "placeholder_value": null,
+    "replaced_field_count": 1,
+    "omitted_field_allowed": false,
+    "prepopulated_digest_allowed": false,
+    "excluded_field_escape_hatch_allowed": false,
+    "cross_record_reference_order": {
+      "graph": "directed_acyclic_lifecycle_order",
+      "record_may_reference": "already_finalized_upstream_records_only",
+      "upstream_embeds_downstream_back_reference": "prohibited",
+      "self_hash_field": "schema_fixed"
+    },
+    "digest_algorithm": "sha256",
+    "digest_encoding": "lowercase_hexadecimal"
+  },
+  "subject_identity_rules": {
+    "family_id": "structural_family_context_only",
+    "case_unit_id": "one_scientific_case_subject",
+    "method_observation_id": "distinct_method_subject_not_independent_case",
+    "method_companion_group_id": "same_target_metric_comparability_subject"
+  },
+  "controlled_metric_reuse_contract": {
+    "explicitly_preregistered": true,
+    "same_target_comparability": true,
+    "not_derived_from_outcomes": true,
+    "exact_reuse_record_required": true,
+    "reuse_proves_independence": false
+  },
+  "exact_des_pair_counting_contract": {
+    "case_unit_count": 1,
+    "method_observation_count": 2,
+    "required_method_roles": [
+      "des_companion",
+      "exact_companion"
+    ],
+    "same_target_required": true,
+    "counting_mode": "one_case_unit_two_method_observations",
+    "method_observations_are_independent_cases": false
+  },
   "relations": [
     {
       "id": "exact_des_companion",
       "same_case_unit_id": true,
+      "method_companion_group_required": true,
       "allowed_shared_dimensions": [
         "case_content_sha256",
         "state_snapshot_sha256",
@@ -19,7 +105,7 @@
       "required_distinct_fields": [
         "method_observation_id",
         "method_role",
-        "output_root"
+        "output_root_reservation_sha256"
       ],
       "evidence_counting": "one_case_unit"
     },
@@ -27,15 +113,15 @@
       "id": "controlled_family_variant",
       "same_case_unit_id": false,
       "allowed_shared_dimensions": [
+        "declared_held_fixed_dimensions",
         "family_id",
-        "ontology_version",
         "metric_schema_sha256",
-        "selected_target_version",
-        "declared_held_fixed_dimensions"
+        "ontology_version",
+        "selected_target_version"
       ],
       "required_fields": [
-        "declared_variation_axis",
         "declared_held_fixed_dimensions",
+        "declared_variation_axis",
         "outcome_independent_declaration"
       ],
       "evidence_counting": "distinct_case_units_not_independent_replicates"
@@ -45,29 +131,29 @@
       "same_case_unit_id": false,
       "allowed_shared_dimensions": [
         "family_id",
-        "ontology_version",
-        "metric_schema_sha256"
+        "metric_schema_sha256",
+        "ontology_version"
       ],
       "required_fields": [
-        "required_negative_control_id",
         "hypothesis_attacked",
-        "mechanism_difference"
+        "mechanism_difference",
+        "required_negative_control_id"
       ],
       "evidence_counting": "control_pair"
     },
     {
-      "id": "method_schema_reuse",
-      "same_case_unit_id": false,
+      "id": "method_companion_group_metric_reuse",
+      "subject_type": "method_companion_group",
       "allowed_shared_dimensions": [
-        "metric_schema_sha256",
-        "orthogonal_scoring_layers"
+        "metric_schema_sha256"
       ],
       "required_fields": [
-        "explicitly_preregistered",
-        "same_target_comparability",
-        "not_derived_from_outcomes"
+        "method_companion_group_id",
+        "member_method_observation_ids",
+        "allowed_reuse_reason_code",
+        "controlled_metric_reuse_record_hash_or_null"
       ],
-      "evidence_counting": "no_independence_claim_from_schema_reuse"
+      "evidence_counting": "controlled_reuse_not_independent_method"
     },
     {
       "id": "retired_authority_overlap",
@@ -75,7 +161,8 @@
       "allowed_shared_dimensions": [],
       "required_fields": [
         "retired_authority",
-        "overlap_dimension",
+        "comparison_projection_sha256",
+        "semantic_lineage_audit_sha256",
         "refusal_ledger_entry"
       ],
       "admission": "refused"

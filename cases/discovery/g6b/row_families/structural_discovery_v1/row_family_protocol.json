@@ -1,13 +1,12 @@
 {
-  "schema_version": "ims-deadlock/g6b-row-family-protocol/v1",
+  "schema_version": "ims-deadlock/g6b-row-family-protocol/v2",
   "study_role": "discovery_only",
   "confirmation_use": "prohibited",
-  "scientific_execution_authorized": false,
-  "case_creation_authorized": false,
-  "protocol_id": "G6-B-ROW-FAMILY-STRUCTURAL-DISCOVERY-V1",
+  "protocol_id": "G6-B-ROW-FAMILY-STRUCTURAL-DISCOVERY-V2",
   "adversarial_review_status": "PENDING",
   "bundle_role": "schema_only",
-  "source_design": "docs/superpowers/specs/2026-07-31-g6b-row-family-design.md",
+  "source_design": "docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md",
+  "source_design_sha256": "b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6",
   "artifact_paths": [
     "cases/discovery/g6b/row_families/structural_discovery_v1/identity_schema.json",
     "cases/discovery/g6b/row_families/structural_discovery_v1/row_family_matrix.json",
@@ -15,13 +14,90 @@
     "cases/discovery/g6b/row_families/structural_discovery_v1/overlap_report_schema.json",
     "cases/discovery/g6b/row_families/structural_discovery_v1/runtime_lock_schema.json",
     "cases/discovery/g6b/row_families/structural_discovery_v1/review_state.json",
-    "cases/discovery/g6b/row_families/structural_discovery_v1/failure_ledger.json"
+    "cases/discovery/g6b/row_families/structural_discovery_v1/failure_ledger.json",
+    "cases/discovery/g6b/row_families/structural_discovery_v1/case_construction_schema.json",
+    "cases/discovery/g6b/row_families/structural_discovery_v1/retired_authority_fingerprint_schema.json",
+    "cases/discovery/g6b/row_families/structural_discovery_v1/target_certification_schema.json",
+    "cases/discovery/g6b/row_families/structural_discovery_v1/quantitative_authorization_schema.json"
   ],
+  "canonicalization_contract": {
+    "version": "ims-deadlock/g6b-canonical-json/v2",
+    "duplicate_members": "reject_at_every_depth",
+    "unicode_normalization": {
+      "member_names": "require_nfc_reject_non_nfc",
+      "string_values": "require_nfc_reject_non_nfc",
+      "silent_normalization": "prohibited"
+    },
+    "object_key_order": "unicode_code_point",
+    "array_order_policy": {
+      "declared_array_order": "preserve",
+      "schema_declared_set_like_arrays": "unique_and_already_sorted"
+    },
+    "utf8_serialization": {
+      "encoding": "utf-8",
+      "ensure_ascii": false,
+      "sort_keys": true,
+      "separators": [
+        ",",
+        ":"
+      ],
+      "allow_nan": false
+    },
+    "numeric_policy": {
+      "json_nan_infinity_negative_zero_float": "prohibited",
+      "counts_and_integral_budgets": "json_integers",
+      "non_integral_values": {
+        "encoding": "canonical_decimal_string",
+        "grammar": "^-?(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+        "negative_zero": "prohibited",
+        "exponent": "prohibited"
+      },
+      "historical_json_numbers": "parse_lexical_token_as_exact_decimal_not_binary_float"
+    },
+    "path_policy": {
+      "committed_paths": "case_sensitive_repo_relative_posix",
+      "drive_letter_leading_slash_backslash_empty_dot_dotdot": "prohibited",
+      "symlink_dependent_resolution": "prohibited",
+      "runtime_executables": "logical_id_plus_byte_and_environment_hashes_not_absolute_path"
+    },
+    "timestamp_policy": {
+      "timezone": "utc",
+      "format": "YYYY-MM-DDTHH:MM:SSZ",
+      "precision": "seconds"
+    }
+  },
+  "self_hash_finalization_contract": {
+    "version": "ims-deadlock/g6b-self-hash-finalization/v2",
+    "placeholder_value": null,
+    "replaced_field_count": 1,
+    "omitted_field_allowed": false,
+    "prepopulated_digest_allowed": false,
+    "excluded_field_escape_hatch_allowed": false,
+    "cross_record_reference_order": {
+      "graph": "directed_acyclic_lifecycle_order",
+      "record_may_reference": "already_finalized_upstream_records_only",
+      "upstream_embeds_downstream_back_reference": "prohibited",
+      "self_hash_field": "schema_fixed"
+    },
+    "digest_algorithm": "sha256",
+    "digest_encoding": "lowercase_hexadecimal"
+  },
+  "typed_capabilities": {
+    "case_construction_authorized": false,
+    "retired_authority_fingerprint_normalization_authorized": false,
+    "target_certification_preflight_authorized": false,
+    "quantitative_execution_authorized": false
+  },
+  "typed_capabilities_sha256": "21ad3b3663fe1a693a7f64c19a91010c6eb1bc2ac3f3018b8c54de38997135fc",
   "execution_boundary": {
     "case_creation": "prohibited",
+    "retired_authority_fingerprint_normalization": "prohibited",
+    "target_certification_preflight": "prohibited",
     "enumeration": "prohibited",
     "ctmc": "prohibited",
     "des": "prohibited",
-    "output_inspection": "prohibited"
+    "output_inspection": "prohibited",
+    "quantitative_execution": "prohibited",
+    "status_advance": "prohibited"
   }
 }

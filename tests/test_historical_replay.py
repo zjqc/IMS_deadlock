@@ -1,3 +1,4 @@
+import errno
 import hashlib
 import json
 import os
@@ -1482,6 +1483,128 @@ def test_windows_schedule_lock_timeout_never_reads_sentinel_or_launches_child(
     assert audit["classification"] == "windows_schedule_lease_contention_timeout"
     assert audit["owner_liveness"] == "unknown"
     assert audit["lease_metadata"] is None
+
+
+def test_windows_existing_schedule_lock_permission_error_records_incident(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _patch_valid_environment(monkeypatch)
+    monkeypatch.setattr(sys, "platform", "win32")
+    monkeypatch.setattr(replay, "SCHEDULE_LOCK_CONTENTION_WAIT_SECONDS", 0.0)
+    lock = _base_lock(tmp_path)
+    lock_path = _write_lock(tmp_path, lock)
+    output_root = Path(lock["output_root"])
+    state_lock = output_root / ".schedule.lock"
+    state_lock.parent.mkdir(parents=True)
+    state_lock.write_text("manual incident", encoding="utf-8")
+    child_launches = 0
+
+    def permission_denied_open(path: str, flags: int) -> int:
+        assert Path(path) == state_lock
+        assert flags & os.O_EXCL
+        exc = PermissionError(errno.EACCES, "sharing violation", path, 32)
+        raise exc
+
+    def fail_popen(*args: object, **kwargs: object) -> _CompletedProcess:
+        nonlocal child_launches
+        child_launches += 1
+        pytest.fail("Windows schedule lock PermissionError must block child launch")
+
+    monkeypatch.setattr(
+        "ims_deadlock.historical_replay.os.open", permission_denied_open
+    )
+    monkeypatch.setattr("ims_deadlock.historical_replay.subprocess.Popen", fail_popen)
+
+    with pytest.raises(
+        replay.ReplayError,
+        match=(
+            "existing schedule lease requires manual incident classification; "
+            "automatic recovery is forbidden"
+        ),
+    ):
+        replay.capture(lock_path, BUNDLE_ROOT, CASE_IDS[0], "primary", "HEAD1", "TREE1")
+
+    assert child_launches == 0
+    assert state_lock.read_text(encoding="utf-8") == "manual incident"
+    audits = list(output_root.glob(".schedule.lock.incident-*.json"))
+    assert len(audits) == 1
+    audit = json.loads(audits[0].read_text(encoding="utf-8"))
+    assert audit["classification"] == "windows_schedule_lease_contention_timeout"
+    assert audit["owner_liveness"] == "unknown"
+    assert audit["lease_metadata"] is None
+    assert not _schedule_state_path(lock).exists()
+
+
+def test_windows_missing_schedule_lock_permission_error_fails_create(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _patch_valid_environment(monkeypatch)
+    monkeypatch.setattr(sys, "platform", "win32")
+    monkeypatch.setattr(replay, "SCHEDULE_LOCK_CONTENTION_WAIT_SECONDS", 0.0)
+    lock = _base_lock(tmp_path)
+    lock_path = _write_lock(tmp_path, lock)
+    output_root = Path(lock["output_root"])
+    state_lock = output_root / ".schedule.lock"
+    child_launches = 0
+
+    def permission_denied_open(path: str, flags: int) -> int:
+        assert Path(path) == state_lock
+        assert flags & os.O_EXCL
+        exc = PermissionError(errno.EACCES, "sharing violation", path, 32)
+        raise exc
+
+    def fail_popen(*args: object, **kwargs: object) -> _CompletedProcess:
+        nonlocal child_launches
+        child_launches += 1
+        pytest.fail("missing schedule lock PermissionError must block child launch")
+
+    monkeypatch.setattr(
+        "ims_deadlock.historical_replay.os.open", permission_denied_open
+    )
+    monkeypatch.setattr("ims_deadlock.historical_replay.subprocess.Popen", fail_popen)
+
+    with pytest.raises(replay.ReplayError, match="cannot create schedule lease"):
+        replay.capture(lock_path, BUNDLE_ROOT, CASE_IDS[0], "primary", "HEAD1", "TREE1")
+
+    assert child_launches == 0
+    assert not state_lock.exists()
+    assert not _schedule_state_path(lock).exists()
+    assert not list(output_root.glob(".schedule.lock.incident-*.json"))
+
+
+def test_windows_transient_schedule_lock_permission_error_retries_after_race(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(sys, "platform", "win32")
+    monkeypatch.setattr(replay, "SCHEDULE_LOCK_CONTENTION_WAIT_SECONDS", 0.1)
+    state_lock = tmp_path / ".schedule.lock"
+    state_lock.write_text("transient owner", encoding="utf-8")
+    original_open = os.open
+    attempts = 0
+
+    def transient_permission_error(path: str, flags: int) -> int:
+        nonlocal attempts
+        attempts += 1
+        assert Path(path) == state_lock
+        assert flags & os.O_EXCL
+        if attempts == 1:
+            state_lock.unlink()
+            raise PermissionError(errno.EACCES, "sharing violation", path, 32)
+        return original_open(path, flags)
+
+    monkeypatch.setattr(
+        "ims_deadlock.historical_replay.os.open", transient_permission_error
+    )
+
+    replay._acquire_schedule_state_lock(state_lock, CASE_IDS[0], "primary")
+
+    assert attempts == 2
+    assert state_lock.exists()
+    assert not list(tmp_path.glob(".schedule.lock.incident-*.json"))
+    replay._release_schedule_state_lock(state_lock)
 
 
 def test_windows_schedule_owner_liveness_never_calls_os_kill(

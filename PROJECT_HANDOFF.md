@@ -1,6 +1,6 @@
 # IMS Deadlock 当前项目交接
 
-更新时间：2026-07-30（Asia/Shanghai）
+更新时间：2026-08-02（Asia/Shanghai）
 
 本文件是下一 Codex 进程接管 `IMS_deadlock` 的单一入口。它汇总当前权威
 版本、已经成立的受限结论、失败与负证据、可复现实验状态、尚未通过的硬门、
@@ -24,18 +24,99 @@
 - `G6-C/D/E = 均未开始，均未通过`；
 - 尚无完整论文主文件，也不能声称达到投稿或顶刊就绪状态。
 
-G6-B protocol foundation、row-family nested bundle 和 data-only validator 已在
-feature branch 上完成；foundation review verdict 是
-`PASS FOUNDATION ONLY`，artifact 为
-`docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md`。Row-family 三道独立
-review 已完成：specification compliance 为 `APPROVED`、code quality 为
-`APPROVED` 且无 Critical/Important/Minor blockers、scientific boundary 为
-`PASS PROTOCOL ONLY`，artifact 为
-`docs/verification/G6_B_ROW_FAMILY_PROTOCOL_REVIEW.md`。这些 verdict 只批准
-protocol/spec/code/boundary，不授权 case construction 或 science。当前只建立
-execution-disabled/PENDING 的协议基础和 `IMPLEMENTED / DATA-ONLY` nested
-bundle：没有创建 discovery case，没有运行 enumeration、CTMC 或 DES，没有检查
-任何新科学输出，不能把 G6-B 改为 PASS。
+G6-B 当前为 schema-only governance v2 的 exact-twelve nested bundle，状态是
+`ROW_FAMILY_BUNDLE_IMPLEMENTED` 和 `OPEN/PENDING`。初始 Section 18
+evidence-publication successor 是
+`8336131af19dfa98fceda80fc79dd349b43f19a9`；其后的 handoff 修订仍只是
+document-only successor。包含本文件的实际当前文档提交必须用
+`git log -1 --format=%H -- PROJECT_HANDOFF.md` 重新定位。最终 Section 18
+evidence subject commit 仍是
+`948ff5746adcb66b68fb9c47e519f070dd2c96ba`；批准规格
+SHA-256 是 `b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6`，
+冻结 matrix raw SHA-256 是
+`487d81aa79a7bca681db81f19a4d6bd315668c43b1c4538c47f01f099d8e205f`。
+四个 capability 仍严格为 `case_construction_authorized=false`、
+`retired_authority_fingerprint_normalization_authorized=false`、
+`target_certification_preflight_authorized=false`、
+`quantitative_execution_authorized=false`。later instance roots 全部 absent；
+没有创建 case，没有运行 retired-authority normalization、Barrier-A preflight、
+CTMC 或 DES，没有检查 quantitative/scientific output，也没有 G6-B scientific
+verdict。Section 18 independent review 已完成并批准：ontology 无 P0-P2，
+scientific/boundary 无 P0-P2，code/capability P0-P3 为零；审稿时唯一指出的
+P3 evidence-publication sync 由本次文档更新关闭。first unchecked next step 只能是 separately approved
+case-construction plan，不能直接进入 science。
+
+2026-08-02 的 PR 独立审查随后发现两个工程/治理授权缺口：缺少显式 fail-closed
+Barrier-A preflight authorization validator，以及 retired-normalization
+authorization 未强制 `authorized is True` 和
+`invalidated_by_identity_drift is False`。两项均在 remediation subject
+`b2f2f285a68793ce9ca4cb1b47a05dd7a3cfb9bb` 修复；focused schema
+`379 passed`、preflight focus `20 passed`、Ruff/format/strict mypy/diff
+通过，fresh full repository 为
+`2145 passed, 2 skipped in 2766.88s (0:46:06)`；完整记录见
+`docs/verification/G6_B_AUTHORIZATION_GATE_REMEDIATION_REVIEW.md`。该修复没有
+打开任何 capability，也没有创建 later root。另发现 case-construction schema
+对 predeclared `estimand_id` 同时 required/prohibited 的 future-instance 矛盾；它
+必须由下一份 exact plan/corrigendum 关闭，不能由执行者自行解释。
+
+包含 remediation review 的文档后继只额外修改
+`tests/test_g6b_row_family_protocol.py` 中两条相互对应的 declared-path
+allowlist/精确集合断言。未列入新文档时 scope guard 按预期 RED
+（`1 failed, 1 passed`）；只更新 allowlist 后，精确集合断言又按预期 RED
+（`1 failed, 1 passed`）；同步断言后 direct `2 passed`、Task-6 selection
+`17 passed, 1111 deselected`，该测试文件 Ruff/format/strict mypy 与 diff
+check 均通过；无 production code/schema 变化。`2145` 项 full suite 仍精确
+绑定 `b2f2f285...`，不得误写成文档后继自身的 full-suite count。
+
+### 1.1 2026-08-02 当前接管快照
+
+| 工作面 | 当前状态 | 下一动作 |
+| --- | --- | --- |
+| Section 18 schema/governance v2 | `COMPLETE / PASS_SCHEMA_ONLY`；代码审查对象固定为 `948ff5746adcb66b68fb9c47e519f070dd2c96ba` | 不再重跑 Task 1-7；仅在代码/schema/冻结协议/证据对象变化时重跑完整验证 |
+| G6-B case construction | `NOT STARTED`；`case_construction_authorized=false`；已定位 `estimand_id` future-instance scope blocker | 发布 exact case-construction plan/corrigendum，完成三路独立审查并获得用户对 exact hashes 的另行批准；批准前不得造 case |
+| retired-authority normalization | `NOT AUTHORIZED / NOT RUN` | case sealing 后另开 data-only authorization；不得读取历史 outcome 反推案例 |
+| overlap audit | `NOT RUN` | 仅在 sealed inputs 完成后运行；hash 不等同于语义独立性证明 |
+| Barrier A target preflight | `NOT AUTHORIZED / NOT RUN` | overlap PASS 后另行授权，只能产出 certificate/refusal/preflight evidence |
+| Barrier B quantitative science | `NOT AUTHORIZED / NOT RUN` | exact/DES same-target locks 与单独定量授权完成后，才可运行 CTMC/DES |
+| G6-C/D/E | 全部 `NOT STARTED / NOT PASSED` | 只有 G6-B 全条件通过后才能进入 confirmation preregistration、freeze、一次性执行 |
+| 论文 | 无统一主稿，paper gate 未通过 | 保留 G5 FAIL、R1/R2 failure、R3 historical-only 与 minimality failures；G6-E 后重建 paper gate |
+| Git 集成 | Draft PR #4 `https://github.com/zjqc/IMS_deadlock/pull/4` 已建立；`main` 仍是 `9c707ce3d990541847aee745bec211bb55c74f6b`；授权门 remediation subject 为 `b2f2f285a68793ce9ca4cb1b47a05dd7a3cfb9bb` | 保持 PR #4 为 draft，核对 remediation/full-suite/docs successor 后推送；不得在已知 pre-case blocker 或未获 merge authority 时合并 |
+| 非阻塞工程卫生 | 批准门 `ruff format --check src tests` 为 47 files green；更宽的 `ruff format --check .` 仍会对 3 个历史 plan 文档代码块提出格式建议 | 作为历史文档格式债保留；若清理，必须单独审查且不得改动批准规格 digest、冻结协议或证据 bytes |
+
+当前没有代码运行失败，也不是因理论—实现比较得出矛盾而停机。最近的停顿发生
+在交接状态审查层：文档一度混淆 review subject、document successor 与 `main`
+基线，并把本地不完整镜像缺少的 plan 文件误判为远程权威仓库缺失。远程仓库
+实际保有 `docs/superpowers/plans/` 下的历史执行计划；本文件已按远程事实恢复
+索引。该问题不改变代码 tree 或科学结论。
+
+上述 3 处 broad-format 建议不是 Python 代码失败、测试失败或科学不一致，也不能
+包装成全仓 format clean。它们目前不阻塞 case-construction plan，但下一进程在
+报告质量门时必须区分“批准的 `src tests` scope green”和“历史 Markdown plan
+代码块仍有格式建议”。
+
+### 1.2 状态源层级与两个冻结旧字段
+
+下一进程必须按以下优先级解释状态，低层记录不得覆盖高层实时证据：
+
+1. 实时远程 Git 锁：exact worktree、branch、HEAD、upstream、dirty state、
+   `main...HEAD` 与 task-owned diff；
+2. 科学身份锁：批准规格 digest、冻结 matrix digest、Section 18 review subject；
+3. 当前状态文档：本交接、`docs/ROADMAP.md`、Section 18 review record 和 ledger；
+4. 历史 implementation plan 的 checkbox、旧标题或旧 footer，仅说明当时的写作
+   状态，不是当前 progress oracle。
+
+批准规格 `docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md`
+内部仍有 `HARDENED REVISION AWAITING USER REVIEW` 及同义 footer。这是批准前
+写入、现被冻结在 SHA-256
+`b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6`
+中的历史 metadata；用户后来批准的是这组 exact bytes。外部批准记录覆盖该旧
+状态文字，但不授权修改规格 bytes。若修改该规格，digest 会改变，必须重新审查
+和批准。
+
+`docs/superpowers/plans/2026-08-01-g6b-schema-only-governance-v2-implementation.md`
+中的 checkbox 仍为未勾选，不能据此重跑 Task 1。Tasks 1-7 已实施并由 Section 18
+证据关闭；该文件是历史 execution instruction，不是进度账本。当前真正的 first
+unchecked task 是创建一份新的、单独审查和批准的 case-construction plan。
 
 ## 2. 权威目标与版本锁
 
@@ -50,11 +131,53 @@ bundle：没有创建 discovery case，没有运行 enumeration、CTMC 或 DES�
   `REMOTE_PROJECT_OPERATIONS.md` 读取并在每个会话重新核验；不要把本机
   用户名、私有网络地址或个人 SSH 配置复制进 Git
 - GitHub：`git@github.com:zjqc/IMS_deadlock.git`
-- 交接编写前实时锁定：
-  `main@235b69a189a869578d9760fcc5585fbfe21a7808`
-- 交接编写前 tree：
-  `9ffa5974ced053e3ffd9943f34e163c4606eddf2`
-- 交接编写前状态：clean，`HEAD...origin/main = 0/0`
+- 当前 G6-B v2 权威工作树：
+  `D:\worktree\IMS_deadlock-g6b-spec-final-review`，branch
+  `codex/g6b-case-target-certification-final-review`。初始 Section 18 发布 HEAD
+  `8336131af19dfa98fceda80fc79dd349b43f19a9` 已推送且提交后
+  `HEAD...upstream = 0/0`、工作树 clean；它相对最终 Section 18 evidence subject
+  `948ff5746adcb66b68fb9c47e519f070dd2c96ba` 只改四个文档：
+  `PROJECT_HANDOFF.md`、`docs/ROADMAP.md`、
+  `docs/cases/CASE_CHANGE_LEDGER.md` 和
+  `docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md`。包含本文件的当前
+  continuation commit 是上述发布 HEAD 的 document-only 后继，必须实时锁定，
+  不应硬编码成 scientific review subject。其后的授权门 remediation code
+  subject 是 `b2f2f285a68793ce9ca4cb1b47a05dd7a3cfb9bb`；包含 remediation review
+  与本交接更新的 documentation successor 仍须从实时 Git history 定位。
+- 当前批准规格：
+  `docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md`，
+  SHA-256
+  `b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6`。
+- Historical/pre-repair Task-5 权威远端证据：四文件集成 suite
+  `1478 passed, 2 skipped in 2672.43s (0:44:32)`；schema suite
+  `160 passed`；Section 17.3 requirements 1-44 的 manifest/collection audit
+  `1 passed, 1108 deselected`；touched Python Ruff、format、mypy 和
+  `git diff --check` 均通过。两个 skip 是既有受控 skip，不是 xfail 或隐藏失败。
+- Task-6 / final Section 18 权威远端证据：schema suite `356 passed`；
+  Git-scope audit `19 passed`；four-file suite `1695 passed, 2 skipped`；
+  full repository suite `2122 passed, 2 skipped`；retired focus `1 passed`；
+  manifest audit `1 passed`；Ruff full green；Ruff format `47 files already
+  formatted`；strict mypy `src` passed on 25 source files；strict mypy
+  `src tests` passed on 47 source/test files；tracked JSON parse/duplicate
+  checks covered `53 files`；sets check `5/12`；authorization fields `21` with
+  true count `0`；future roots/modules `0`；canonical vectors `19` matched on
+  remote Python 3.13.9, local Python 3.12.3, and local Python 3.13.5；diff
+  checks green。
+- `D:\worktree\IMS_deadlock-g6b-case-target-design@719194c` 是 stale
+  exact-eleven plan 的隔离证据，不是代码源、测试 oracle 或当前状态依据；当前
+  candidate diff 不得包含其路径或字节。
+- 当前主线对照基线：`main@9c707ce3d990541847aee745bec211bb55c74f6b`。
+  当前 G6-B 发布分支相对其保持隔离，不得把 feature 分支 HEAD 误写成主线
+  通过状态。当前 code remediation subject 为 `b2f2f285...`；包含本文件的
+  documentation successor 会使领先数增加，下一进程必须实时重算
+  `main...HEAD`、`HEAD...upstream` 和 clean state。
+- 分支处置方式已由用户选择为方式 2：推送当前 feature branch 并创建 PR。
+  Draft PR #4 已建立：`https://github.com/zjqc/IMS_deadlock/pull/4`。它尚未
+  merge，也没有获得 merge authority；已知 pre-case blocker 和计划审批门关闭前
+  必须保持 draft，不能写成已进入 `main`。
+- 历史交接编写前锁定 `main@235b69a189a869578d9760fcc5585fbfe21a7808`
+  和 tree `9ffa5974ced053e3ffd9943f34e163c4606eddf2` 仅是旧交接快照，
+  不再是当前 G6-B continuation 的目标锁。
 - G6-B protocol foundation feature-branch pre-integration evidence:
   worktree `D:\worktree\IMS_deadlock-g6b-discovery`, branch
   `codex/g6b-discovery-estimand-lock`, base
@@ -120,9 +243,10 @@ bundle：没有创建 discovery case，没有运行 enumeration、CTMC 或 DES�
   create a new HEAD and must be re-locked/revalidated before being externally
   claimed complete.
 
-若本文件已发布到 `main`，包含它的提交会是上述 source baseline 的后继。
-下一进程不得把交接前 SHA 当作当前 SHA，必须重新运行锁定命令。实际包含
-本文件的提交可用以下命令定位：
+若本文件已发布为 feature 分支上的 evidence-only 文档后继，包含它的提交会
+是上述 Section 18 evidence subject 的后继，但不替代该 evidence subject。
+下一进程不得把交接前 SHA 或 review subject SHA 当作当前发布 HEAD，必须重新
+运行锁定命令。实际包含本文件的提交可用以下命令定位：
 
 ```bash
 git log -1 --format=%H -- PROJECT_HANDOFF.md
@@ -165,15 +289,16 @@ protocol 可解析九个案例且返回 `valid=true`，但本地 `g4_freeze chec
 建议的只读锁定命令：
 
 ```bash
-# <SSH_ALIAS> 和 <REMOTE_PROJECT_PATH> 必须取自本地操作契约。
+# <SSH_ALIAS> 必须取自本地操作契约。
 ssh -o BatchMode=yes -o ConnectTimeout=10 <SSH_ALIAS> \
   "echo SSH_OK && hostname && whoami"
 ssh -o BatchMode=yes -o ConnectTimeout=10 <SSH_ALIAS> \
-  "cd /d <REMOTE_PROJECT_PATH> && git rev-parse --show-toplevel && git branch --show-current && git rev-parse HEAD && git status --short && git remote get-url origin && git rev-list --left-right --count HEAD...origin/main && git worktree list --porcelain"
+  "cd /d D:\worktree\IMS_deadlock-g6b-spec-final-review && git rev-parse --show-toplevel && git branch --show-current && git rev-parse HEAD && git status --short && git remote get-url origin && git rev-list --left-right --count @{u}...HEAD && git worktree list --porcelain"
 ```
 
-若本地契约要求单独的 Tailscale 连通性检查，按契约中的当前目标执行；不要
-把私有网络地址复制进仓库文档。
+若任务不是继续当前 G6-B publication/review 分支，才按
+`REMOTE_PROJECT_OPERATIONS.md` 重新选择对应远程路径；不要把私有网络地址
+复制进仓库文档。
 
 任何结论中都应记录：
 
@@ -229,7 +354,7 @@ IMS-RAS^CW 稳定语义
 | G3 算法门 | PASS | 稳定 LTS、证书、Petri/refusal、阈值、CTMC、监督器、G4/G5/G6 审计；全库 341 tests | 枚举只核验证明，不替代证明 |
 | G4 案例冻结门 | PASS（历史 seal） | 九个 held-out 案例在结果检查前冻结，并在 G5 原样执行 | 该面板已退役，不能再次作为 held-out |
 | G5 论文门 | FAIL（evidence closed） | 9/9 primary/repro 精确一致，失败、反例和 inconclusive 已固定 | 不得补跑、改 sealed input、重调参或宣称通过 |
-| G6 恢复门 | IN PROGRESS | G6-A 和 G6-R 通过；G6-B protocol foundation、row-family nested bundle 和 validator 在 feature branch 完成且 execution disabled/PENDING；earlier Phase A HEAD `4fda4896d2284c360f3021e48475f7678b0f37fd` 通过 row-family data-only checks；committed HEAD `13adc15e8b7b8047a25ab5a340880621ee3ad0bd` 已通过 full pytest `1307 passed in 144.93s (0:02:24)`、Ruff、format check、strict mypy、eight nested JSON parse checks、52 top-level foundation tests、canonical row-family test、foundation/row validators、recursive 13-JSON scan、base diff forbidden-path/actual-marker scan 和 `git diff --check`；row-family independent reviews 完成：specification compliance `APPROVED`、code quality `APPROVED` 且无 Critical/Important/Minor blockers、scientific boundary `PASS PROTOCOL ONLY` | G6-B 仍 OPEN；`adversarial_review_status=PENDING`、`scientific_execution_authorized=false`、`case_creation_authorized=false` 不变；actual overlap report、overlap-authority lock、execution-runtime lock、discovery outcomes、output root 和 row-family discovery-model/execution plan 仍开放；G6-C/D/E 未通过 |
+| G6 恢复门 | IN PROGRESS | G6-A 和 G6-R 通过；G6-B schema-only governance v2 exact-twelve bundle 已在 historical/pre-repair Task-5 subject `9ef6fcec9e410b2ab7afc4144df8b948a238d95f` 实现，并在 final Section 18 evidence subject `948ff5746adcb66b68fb9c47e519f070dd2c96ba` 完成 independent review publication；final evidence 包括 schema `356 passed`、Git-scope `19 passed`、four-file `1695 passed, 2 skipped`、full repo `2122 passed, 2 skipped`、JSON duplicate parse `53 files`、canonical `19` on three runtimes、Ruff/format/mypy/diff checks green；批准规格 SHA-256 与 frozen matrix raw SHA-256 均匹配 | G6-B 保持 `OPEN/PENDING`；四个 typed capabilities 全 false，later instance roots absent；无 case、normalization run、overlap instance、preflight、CTMC、DES、output inspection 或 scientific verdict；G6-C/D/E 未通过；first unchecked next step 只能是 separately approved case-construction plan |
 
 状态源：`docs/ROADMAP.md`。
 
@@ -582,7 +707,7 @@ python -m mypy --no-incremental --strict --explicit-package-bases src tests
 git diff --check
 ```
 
-交接前最后一次 Dell 主工作区验证：
+历史 Dell 主工作区验证：
 
 - full pytest：`341 passed in 50.48s`
 - Ruff check：PASS
@@ -591,6 +716,59 @@ git diff --check
 - strict mypy `src tests`：39 source files PASS
 - tracked evidence JSON：10 files parsed
 - independent focused review：0 issues
+
+Historical/pre-repair G6-B v2 Task-5 候选在权威 Windows 工作树的提交前内容验证：
+
+- four-file pytest：`1478 passed, 2 skipped in 2672.43s (0:44:32)`
+- schema pytest：`160 passed in 0.36s`
+- Section 17.3 manifest/collection audit：`1 passed, 1108 deselected`
+- Ruff touched-file check：PASS
+- Ruff touched-file format check：PASS
+- mypy touched source/tests：3 source files PASS
+- `git diff --check`：PASS
+- 提交后 subject：`9ef6fcec9e410b2ab7afc4144df8b948a238d95f`，push 后
+  upstream `0/0`、clean
+
+该证据验证 schema/guard 行为，不是 future runtime capability 或 G6-B science。
+
+当前 G6-B v2 final Section 18 evidence subject 在权威 Windows 工作树的验证：
+
+- authority worktree：
+  `D:\worktree\IMS_deadlock-g6b-spec-final-review`
+- branch：
+  `codex/g6b-case-target-certification-final-review`
+- subject commit：
+  `948ff5746adcb66b68fb9c47e519f070dd2c96ba`
+- push/dirty state：已推送，`HEAD...upstream = 0/0`，clean
+- schema suite：`356 passed`
+- Git-scope audit：`19 passed`
+- four-file suite：`1695 passed, 2 skipped`
+- full repository suite：`2122 passed, 2 skipped`
+- retired focus：`1 passed`
+- manifest audit：`1 passed`
+- Ruff full check：PASS
+- Ruff format check：`47 files already formatted`
+- strict mypy `src`：25 source files PASS
+- strict mypy `src tests`：47 source/test files PASS
+- tracked JSON parse/duplicate checks：`53 files parsed`
+- sets check：`5/12`
+- authorization fields：21 checked，true count `0`
+- future roots/modules：`0`
+- approved spec digest：
+  `b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6` matched
+- frozen matrix raw SHA-256：
+  `487d81aa79a7bca681db81f19a4d6bd315668c43b1c4538c47f01f099d8e205f` matched
+- canonical vector parity：19 vectors matched on remote Python 3.13.9,
+  local Python 3.12.3, and local Python 3.13.5
+- diff checks：green
+- independent reviews：ontology `APPROVE` with no P0-P2 findings；
+  scientific/boundary `APPROVE` with no P0-P2 findings；code/capability
+  `APPROVE` with zero P0-P3 findings；the sole P3 evidence-publication sync
+  noted during review is closed by this documentation update
+
+该证据完成 Section 18 schema/governance review publication，不创建 case，不运行
+retired-authority normalization、Barrier-A preflight、CTMC 或 DES，不检查输出根，
+也不形成 G6-B scientific verdict。
 
 文档-only 后继提交至少要重新运行 Markdown 固定检查、链接/路径检查、
 `git diff --check` 和目标锁；若 README 或源代码未变，可引用上一完整
@@ -613,46 +791,29 @@ git log -1 --format=%H -- PROJECT_HANDOFF.md
 
 ## 13. 下一硬门：G6-B
 
-下一进程不要继续重放 G4/G5，也不要先写成投稿稿件。第一未完成工作是
-单独编写 row-family discovery-model/execution plan，并对该计划做
-adversarial review。该计划与审查完成且另获明确授权前，不得把下一步描述
-为科学案例构造或执行。
+下一进程不要继续重放 G4/G5，也不要先写成投稿稿件。当前 first unchecked
+next step after evidence publication 只能是 separately approved
+case-construction plan，不是 normalization、preflight、CTMC、DES 或科学执行。
+Final Section 18 evidence subject 是
+`948ff5746adcb66b68fb9c47e519f070dd2c96ba`。Historical/pre-repair Task-5
+schema-code subject 是 `9ef6fcec9e410b2ab7afc4144df8b948a238d95f`，仅作为已保留
+的 schema-code baseline 和 pre-repair count evidence；不得把它当作当前继续
+入口。top-level bundle 保持 exact-five，nested row-family bundle 为 exact-twelve，
+validator 为
+`src/ims_deadlock/g6b_row_family_protocol.py` 和
+`src/ims_deadlock/g6b_schema_contracts.py`。
 
-G6-B protocol foundation 和 row-family nested bundle 已在 feature branch
-`codex/g6b-discovery-estimand-lock` 中完成协议文档、top-level 精确五个 JSON、
-nested 精确八个 JSON 和 strict data-only validator。其状态仍是
-`scientific_execution_authorized=false`、`case_creation_authorized=false`、
-`adversarial_review_status=PENDING`；G6-B 仍为 `OPEN`，G6-C/D/E 仍未开始。
-该批次没有创建 discovery case，没有运行 enumeration、CTMC 或 DES，没有改变
-G4/G5/R1/R2/R3 历史证据。
-Task2 targeted+adjacent 验证为 52 validator tests + 59 adjacent = 111
-passed；随后 locked worktree `D:\worktree\IMS_deadlock-g6b-discovery` at HEAD
-`4c24f39` 在 state-doc commit 前通过 full pytest `393 passed in 47.22s`、
-Ruff check、Ruff format 41 files already formatted、strict mypy `src`
-22 source files、strict mypy `src+tests` 41 source files、five protocol JSON
-parse checks、targeted protocol tests `52 passed in 2.48s` 和
-`git diff --check`。Row-family Phase A at HEAD
-`4fda4896d2284c360f3021e48475f7678b0f37fd` 又通过 full pytest
-`1307 passed in 150.84s`、Ruff check、Ruff format `43 files already formatted`、
-strict mypy `src` 23 source files、strict mypy `src tests` 43 source files、
-eight nested JSON parse checks、top-level foundation suite
-`52 passed in 5.00s`、canonical row-family test `1 passed in 0.12s`、
-canonical validator `valid=True`/errors empty/`science=False`/`case=False`/
-`PENDING`/`ROW_FAMILY_BUNDLE_IMPLEMENTED`/8 hashes、recursive authorization
-scan 和 `git diff --check`。Git diff `a4897ab..4fda489` 只包含 exact-eight
-nested JSON、row-family validator source 和 row-family tests；这些验证不改变
-`OPEN/PENDING` 状态，也不表示执行了 science、创建了 cases 或检查了 outcomes。
-Independent foundation review 已通过 `PASS FOUNDATION ONLY`，artifact 为
-`docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md`，无
-Critical/Important/Minor protocol findings；这不改变
-`adversarial_review_status=PENDING`、`scientific_execution_authorized=false`、
-G6-B `OPEN` 或 G6-C/D/E 未开始状态。
-Row-family independent spec review 已给出 `APPROVED` 且无 blockers；
-code-quality review 已给出 `APPROVED` 且无 Critical/Important/Minor blockers；
-scientific-boundary review 的 verdict 是 `PASS PROTOCOL ONLY` 且无 blockers。
-这些 verdict 只批准 protocol/spec/code/boundary，不改变
-`adversarial_review_status=PENDING`、不使 G6-B PASS、不授权 case construction
-或 science。唯一后续仍是另行批准的 case-construction plan。
+当前 `scientific_execution_authorized=false`、
+`case_construction_authorized=false`、
+`retired_authority_fingerprint_normalization_authorized=false`、
+`target_certification_preflight_authorized=false`、
+`quantitative_execution_authorized=false`、
+`adversarial_review_status=PENDING`；G6-B 保持 `OPEN/PENDING`，G6-C/D/E
+仍未开始。四个 later instance roots 和四个 future capability modules 均 absent。
+本 tranche 没有创建 case、运行 normalization/overlap/preflight/CTMC/DES 或检查
+科学输出。independent schema review 已在 Section 18 final evidence subject 上
+通过；它只允许下一步提出 separately approved case-construction plan，不自动授权
+case construction、normalization、preflight 或 science。
 
 ### 13.1 G6-B 必须冻结前定义的内容
 
@@ -671,15 +832,16 @@ scientific-boundary review 的 verdict 是 `PASS PROTOCOL ONLY` 且无 blockers�
 ### 13.2 独立性要求
 
 退役证据范围包括 retired G4、retired G5 和 G6-R historical replay。G6-B
-discovery rows 相对这些退役证据必须在以下八个 canonical dimensions 上
-全部 zero overlap：
+未来经单独授权构造的 G6-B discovery subjects 相对这些退役证据，必须按各
+subject 所有权在以下八个 fingerprint dimensions 上完成适用的 overlap 审计；
+当前 schema-only tranche 没有 subjects，也没有 actual overlap result：
 
 - `case_content_sha256`
 - `state_snapshot_sha256`
 - `route_signature_sha256`
 - `parameter_tuple_sha256`
 - `random_stream_manifest_sha256`
-- `output_root`
+- `output_root_reservation_sha256`
 - `sealed_prediction_sha256`
 - `metric_schema_sha256`
 
@@ -694,11 +856,11 @@ rows 必须在七个 canonical identity/provenance dimensions 上 zero overlap�
 - `output_root`
 - `sealed_prediction_sha256`
 
-`metric_schema_sha256` 不属于 future confirmation 的强制 zero-overlap 维度；
+`metric_schema_sha256` 不属于 future confirmation 的无条件 strict-distinct 维度；
 metric schema reuse 只允许在预注册中明确用于 same-target comparability，且
-不得由 discovery outcome 派生。该规则不声明 discovery rows 内部必须彼此在
-八个维度上无条件 zero overlap；discovery-internal family/row 独立性必须由
-后续 row-family discovery-model/execution plan 单独定义并接受审查。
+不得由 discovery outcome 派生。该规则不声明未来 discovery subjects 在所有
+八个维度上彼此无条件 distinct；case、method observation 和 companion group
+必须按批准 schema 的 subject map、policy map 与 lineage 逐项审计。
 
 “改名”“参数平移”或从退役案例复制后轻微修改不构成独立。必须生成
 机器可审计的 overlap report，按上述适用范围逐项证明不重合。
@@ -823,24 +985,46 @@ G6-B 推进期间可以建立诚实的 working manuscript skeleton，但必须�
 可逆的分支—编辑—测试步骤不需要反复询问。若会话仅获本地或只读权限，则
 必须停在相应边界，不得把本文件中的命令当作 standing authorization：
 
-1. 原始步骤 1 已在 feature branch 中完成：从本地操作契约读取并实时锁定
-   `<REMOTE_PROJECT_PATH>`，目标 worktree 为
-   `D:\worktree\IMS_deadlock-g6b-discovery`。
-2. 原始步骤 2 已在 feature branch 中完成：专用分支为
-   `codex/g6b-discovery-estimand-lock`，base 为
-   `main@9c707ce3d990541847aee745bec211bb55c74f6b`。
-3. 原始步骤 3 已在 feature branch 中完成：阅读本文件、`docs/ROADMAP.md`、
-   `docs/theory/G6_LOCAL_FIRST_HIT_AND_STOPPING_THEOREMS.md`、
-   `docs/verification/G6_HARD_PROBLEM_ROOT_CAUSE_AND_R3_REPAIR.md` 和
-   G6 recovery plan。
-4. 原始步骤 4 已在 feature branch 中完成：写入
-   `docs/cases/G6_B_DISCOVERY_PROTOCOL.md`、独立性 schema、estimand
-   schema、negative-control table、failure ledger 和 validator。
-5. 下一未完成工作：单独编写 row-family discovery-model/execution plan，
-   并对该计划做 adversarial review；通过前不得把 G6-B 标为 PASS。
-6. 只有该计划审查通过且另获明确授权后，才可进入 discovery science；actual
-   overlap report、runtime lock 和 discovery outcomes 目前仍开放。
-7. 达到 G6-B 通过条件后，独立复核并冻结结论；否则保留失败并继续修正。
+1. 从本地操作契约读取 SSH/远程路径并重锁
+   `D:\worktree\IMS_deadlock-g6b-spec-final-review`、branch、HEAD、upstream、
+   clean/expected-dirty scope 和批准规格 digest。
+2. 以 `git log -1 --format=%H -- PROJECT_HANDOFF.md` 定位到的当前文档
+   continuation commit 作为文档 continuation 基线；以 final Section 18 evidence subject
+   `948ff5746adcb66b68fb9c47e519f070dd2c96ba` 作为 schema/governance review
+   evidence subject；以 historical/pre-repair Task-5 subject
+   `9ef6fcec9e410b2ab7afc4144df8b948a238d95f` 只作为历史 diff/count evidence。
+   拒绝 G4/G5/G6-R evidence、case-instance roots、scientific artifact roots、
+   批准规格或 task-declared files 之外的变更。
+3. 确认 `docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md` Section 18
+   已完成 independent schema、ontology/boundary 和 code/capability review
+   publication：每行必须绑定 exact subject、命令/审稿人和 count/finding；不得把
+   review verdict 写回 JSON bundle state。
+4. 核验批准规格内的 `AWAITING USER REVIEW` 和历史 implementation plan 未勾选
+   checkbox 均按第 1.2 节解释，不得修改批准规格 bytes，不得重跑已关闭的
+   schema Tasks 1-7。
+5. 新建一份独立的 G6-B case-construction plan，至少冻结候选来源、sealed input
+   schema、prediction/negative-control schema、metric schema、provenance/nonreuse
+   义务、拒绝状态、允许写路径、测试形状与 stop condition；该批次只写计划，
+   不创建 case、normalization、overlap 值、preflight lock、CTMC/DES 或输出。
+6. 对新计划做 ontology、scientific-boundary、code/capability 三路审查；只有用户
+   对 exact plan 明确批准后，才可进入 case materialization。
+
+后续依赖顺序不得并行越门：
+
+1. approved case-construction plan；
+2. materialize sealed case inputs/predictions/controls/metric schemas，仍不执行科学；
+3. 单独授权并完成 retired-authority data-only normalization；
+4. sealing 后做 input-level overlap audit；
+5. overlap PASS 后另行授权 Barrier A target-certification preflight；
+6. review target certificate/refusal evidence，并建立 exact/DES same-target locks；
+7. 另行授权 Barrier B 后才可运行 CTMC、DES、metric observation 和定量输出；
+8. G6-B 全条件通过后才进入 G6-C confirmation preregistration；
+9. G6-D freeze 与 G6-E 一次性执行；
+10. 重建 paper gate，完成主稿、claim-evidence audit、复现包和投稿元数据。
+
+Git 管理可与“写新计划”并行但不改变科学顺序：按已批准方式 2 为当前分支创建
+PR 到 `main`。不得在未核对 PR diff、review subject 和负证据保留情况时直接
+merge；PR/merge 状态必须在下一次交接中实时更新。
 
 ## 17. 科学与工程停止条件
 
@@ -869,6 +1053,11 @@ G6-B 推进期间可以建立诚实的 working manuscript skeleton，但必须�
 - `docs/ROADMAP.md`
 - `docs/superpowers/plans/2026-07-30-g6-local-core-terminal-class-recovery.md`
 - `docs/superpowers/plans/2026-07-30-g6b-protocol-foundation.md`
+- `docs/theory/G6_LOCAL_FIRST_HIT_AND_STOPPING_THEOREMS.md`
+- `docs/verification/G6_B_PROTOCOL_FOUNDATION_REVIEW.md`
+- `docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md`
+- `docs/superpowers/plans/2026-08-01-g6b-schema-only-governance-v2-implementation.md`
+- `docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md`
 
 ### 理论
 

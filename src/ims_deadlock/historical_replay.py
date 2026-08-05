@@ -8,6 +8,7 @@ never writes or regenerates G5 evidence files.
 from __future__ import annotations
 
 import argparse
+import errno
 import hashlib
 import json
 import os
@@ -1678,12 +1679,39 @@ def _acquire_schedule_state_lock(path: Path, case_id: str, run_label: str) -> No
                 "existing schedule lease requires manual incident classification; "
                 "automatic recovery is forbidden"
             ) from exc
+        except PermissionError as exc:
+            if _is_windows_schedule_lock_permission_contention(exc):
+                if time.monotonic() < deadline:
+                    time.sleep(0.01)
+                    continue
+                if path.exists():
+                    _write_schedule_lock_incident(
+                        path,
+                        case_id=case_id,
+                        run_label=run_label,
+                        classification="windows_schedule_lease_contention_timeout",
+                        owner_liveness="unknown",
+                        read_lease_metadata=False,
+                    )
+                    raise ReplayError(
+                        "existing schedule lease requires manual incident "
+                        "classification; automatic recovery is forbidden"
+                    ) from exc
+            raise ReplayError(f"cannot create schedule lease: {path}") from exc
         except OSError as exc:
             raise ReplayError(f"cannot create schedule lease: {path}") from exc
     try:
         os.write(fd, _json_text(payload).encode("utf-8"))
     finally:
         os.close(fd)
+
+
+def _is_windows_schedule_lock_permission_contention(exc: PermissionError) -> bool:
+    if sys.platform != "win32":
+        return False
+    if exc.errno != errno.EACCES and getattr(exc, "winerror", None) not in {5, 32}:
+        return False
+    return True
 
 
 def _schedule_lock_status(path: Path) -> dict[str, object]:

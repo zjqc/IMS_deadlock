@@ -1,27 +1,82 @@
 import ast
+import hashlib
 import json
+import os
 import shutil
+import subprocess
+import sys
+from collections import Counter
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 import pytest
 
 from ims_deadlock.g6b_row_family_protocol import (
-    G6B_ROW_FAMILY_FAILURE_LEDGER_VERSION,
-    G6B_ROW_FAMILY_IDENTITY_VERSION,
-    G6B_ROW_FAMILY_MATRIX_VERSION,
-    G6B_ROW_FAMILY_OVERLAP_VERSION,
-    G6B_ROW_FAMILY_PROTOCOL_VERSION,
-    G6B_ROW_FAMILY_REUSE_VERSION,
-    G6B_ROW_FAMILY_REVIEW_STATE_VERSION,
-    G6B_ROW_FAMILY_RUNTIME_LOCK_VERSION,
     validate_g6b_row_family_bundle,
 )
 
 PathPart = str | int
 
+
+class _SpecRequirementStatus(TypedDict):
+    schema_tranche: str
+    runtime_capability: str
+
+
+class _SpecRequirementEntry(TypedDict, total=False):
+    test_id: str
+    owner: str
+    task: str
+    aspect: str
+    labels: tuple[str, ...]
+
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
 BUNDLE = Path("cases/discovery/g6b/row_families/structural_discovery_v1")
+_TASK5_SCHEMA_CODE_SUBJECT_COMMIT = "9ef6fcec9e410b2ab7afc4144df8b948a238d95f"
+_TASK6_DECLARED_CHANGED_PATHS = {
+    "PROJECT_HANDOFF.md",
+    "docs/ROADMAP.md",
+    "docs/cases/CASE_CHANGE_LEDGER.md",
+    "docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md",
+    "tests/test_g6b_protocol.py",
+    "tests/test_g6b_row_family_protocol.py",
+}
+_TASK7_REPAIR_DECLARED_CHANGED_PATHS = {
+    "docs/verification/G6_B_AUTHORIZATION_GATE_REMEDIATION_REVIEW.md",
+    "src/ims_deadlock/g6b_schema_contracts.py",
+    "tests/test_g6b_schema_contracts.py",
+    "tests/test_g6b_row_family_protocol.py",
+}
+_FINAL_SCHEMA_REVIEW_DECLARED_CHANGED_PATHS = (
+    _TASK6_DECLARED_CHANGED_PATHS | _TASK7_REPAIR_DECLARED_CHANGED_PATHS
+)
+_TASK6_FORBIDDEN_EXACT_PATHS = {
+    "docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md": (
+        "approved_specification"
+    ),
+}
+_TASK6_FORBIDDEN_PATH_PREFIXES = (
+    ("cases/confirmation/g4/", "retired_g4_evidence"),
+    ("evidence/g5/", "retired_g5_evidence"),
+    ("evidence/g6/", "retired_g6r_evidence"),
+    ("evidence/g6b/", "target_certification_evidence"),
+    ("artifacts/", "scientific_artifact_root"),
+    (
+        "cases/discovery/g6b/row_families/structural_discovery_v1/governance/",
+        "case_governance_instance_root",
+    ),
+    (
+        "cases/discovery/g6b/row_families/structural_discovery_v1/case_units/",
+        "case_instance_root",
+    ),
+)
+_TASK6_BENIGN_IGNORED_ROOT_PREFIXES = (
+    ".mypy_cache/",
+    ".pytest_cache/",
+    ".ruff_cache/",
+)
 _NAMES = (
     "row_family_protocol.json",
     "identity_schema.json",
@@ -31,143 +86,335 @@ _NAMES = (
     "runtime_lock_schema.json",
     "review_state.json",
     "failure_ledger.json",
+    "case_construction_schema.json",
+    "retired_authority_fingerprint_schema.json",
+    "target_certification_schema.json",
+    "quantitative_authorization_schema.json",
 )
 SCHEMA_FILES = {
-    "row_family_protocol.json": G6B_ROW_FAMILY_PROTOCOL_VERSION,
-    "identity_schema.json": G6B_ROW_FAMILY_IDENTITY_VERSION,
-    "row_family_matrix.json": G6B_ROW_FAMILY_MATRIX_VERSION,
-    "reuse_matrix.json": G6B_ROW_FAMILY_REUSE_VERSION,
-    "overlap_report_schema.json": G6B_ROW_FAMILY_OVERLAP_VERSION,
-    "runtime_lock_schema.json": G6B_ROW_FAMILY_RUNTIME_LOCK_VERSION,
-    "review_state.json": G6B_ROW_FAMILY_REVIEW_STATE_VERSION,
-    "failure_ledger.json": G6B_ROW_FAMILY_FAILURE_LEDGER_VERSION,
+    "row_family_protocol.json": "ims-deadlock/g6b-row-family-protocol/v2",
+    "identity_schema.json": "ims-deadlock/g6b-row-family-identity/v2",
+    "row_family_matrix.json": "ims-deadlock/g6b-row-family-matrix/v1",
+    "reuse_matrix.json": "ims-deadlock/g6b-row-family-reuse/v2",
+    "overlap_report_schema.json": "ims-deadlock/g6b-row-family-overlap-schema/v2",
+    "runtime_lock_schema.json": "ims-deadlock/g6b-row-family-runtime-lock-schema/v2",
+    "review_state.json": "ims-deadlock/g6b-row-family-review-state/v2",
+    "failure_ledger.json": "ims-deadlock/g6b-row-family-failure-ledger/v2",
+    "case_construction_schema.json": "ims-deadlock/g6b-case-construction-schema/v1",
+    "retired_authority_fingerprint_schema.json": (
+        "ims-deadlock/g6b-retired-authority-fingerprint-schema/v1"
+    ),
+    "target_certification_schema.json": (
+        "ims-deadlock/g6b-target-certification-schema/v1"
+    ),
+    "quantitative_authorization_schema.json": (
+        "ims-deadlock/g6b-quantitative-authorization-schema/v1"
+    ),
 }
 EXPECTED_DOCUMENTS = _NAMES
-_RETIRED_DIMENSIONS = (
-    "case_content_sha256",
-    "state_snapshot_sha256",
-    "route_signature_sha256",
-    "parameter_tuple_sha256",
-    "random_stream_manifest_sha256",
-    "output_root",
-    "sealed_prediction_sha256",
-    "metric_schema_sha256",
+NEW_SCHEMA_DOCUMENTS = (
+    "case_construction_schema.json",
+    "retired_authority_fingerprint_schema.json",
+    "target_certification_schema.json",
+    "quantitative_authorization_schema.json",
 )
-_FUTURE_CONFIRMATION_DIMENSIONS = (
-    "case_content_sha256",
-    "state_snapshot_sha256",
-    "route_signature_sha256",
-    "parameter_tuple_sha256",
-    "random_stream_manifest_sha256",
-    "output_root",
-    "sealed_prediction_sha256",
-)
-_CONFIRMATION_METRIC_FLAGS = (
-    "explicitly_preregistered",
-    "same_target_comparability",
-    "not_derived_from_outcomes",
-)
-_AUTHORITY_LOCK_REQUIRED_FIELDS = (
-    "target_path",
-    "target_branch",
-    "target_head",
-    "target_dirty_state",
-    "upstream_ahead_behind",
-    "worktree_identity",
-    "repo_remote_url",
-    "source_tree_hash",
-    "sealed_case_artifact_hashes",
-    "retired_authority_paths_and_hashes",
-)
-_RUNTIME_LOCK_REQUIRED_FIELDS = (
-    "python_executable",
-    "python_version",
-    "package_lock_or_environment_hash",
-    "validation_commands",
-    "validation_results",
-    "runtime_lock_created_at_utc",
-    "science_execution_authorized_by_artifact",
-    "pythondontwritebytecode_or_cache_policy",
-    "output_root_policy",
-)
-_EXPECTED_OVERLAP_REPORT_SCHEMA = {
-    "schema_version": "ims-deadlock/g6b-row-family-overlap-schema/v1",
-    "study_role": "discovery_only",
-    "confirmation_use": "prohibited",
-    "scientific_execution_authorized": False,
-    "case_creation_authorized": False,
-    "report_role": "schema_only",
-    "actual_overlap_checked": False,
-    "actual_overlap_report_available": False,
-    "schema_only_overlap_report_cannot_authorize_execution": True,
-    "missing_actual_overlap_report_blocks_execution": True,
-    "retired_authorities": ["G4", "G5", "G6_R"],
-    "retired_dimensions": list(_RETIRED_DIMENSIONS),
-    "future_confirmation_dimensions": list(_FUTURE_CONFIRMATION_DIMENSIONS),
-    "future_confirmation_metric_reuse": {
-        _CONFIRMATION_METRIC_FLAGS[0]: True,
-        _CONFIRMATION_METRIC_FLAGS[1]: True,
-        _CONFIRMATION_METRIC_FLAGS[2]: True,
-    },
-    "required_lock_before_actual_report": "overlap_authority_lock",
-    "remote_only_G5_authority_paths": [
-        "evidence/g5/G5_RAW_HASH_MANIFEST.json",
-        "evidence/g5/G5_RESULT_SUMMARY.json",
-    ],
-    "local_absence_is_nonoverlap_evidence": False,
-    "later_actual_report_required_fields": [
-        "locked_target_identity",
-        "retired_authority_hashes",
-        "discovery_case_unit_hashes",
-        "per_dimension_results",
-        "per_unit_results",
-        "refusal_entries",
-    ],
+EXISTING_SCHEMA_FILES = {
+    name: version
+    for name, version in SCHEMA_FILES.items()
+    if name not in NEW_SCHEMA_DOCUMENTS
 }
-_EXPECTED_RUNTIME_LOCK_SCHEMA = {
-    "schema_version": "ims-deadlock/g6b-row-family-runtime-lock-schema/v1",
-    "study_role": "discovery_only",
-    "confirmation_use": "prohibited",
-    "scientific_execution_authorized": False,
-    "case_creation_authorized": False,
-    "overlap_authority_lock": {
-        "status": "required_later",
-        "authorizes_execution": False,
-        "required_fields": list(_AUTHORITY_LOCK_REQUIRED_FIELDS),
+APPROVED_SOURCE_DESIGN = (
+    "docs/superpowers/specs/2026-08-01-g6b-case-target-certification-design.md"
+)
+APPROVED_SOURCE_DESIGN_SHA256 = (
+    "b51b35848bec77ed787696a9c4fc88b4f299bde7368cc34380c2fc9143df3da6"
+)
+EXPECTED_TYPED_CAPABILITIES = {
+    "case_construction_authorized": False,
+    "retired_authority_fingerprint_normalization_authorized": False,
+    "target_certification_preflight_authorized": False,
+    "quantitative_execution_authorized": False,
+}
+EXPECTED_TYPED_CAPABILITIES_SHA256 = hashlib.sha256(
+    json.dumps(
+        EXPECTED_TYPED_CAPABILITIES,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+).hexdigest()
+EXPECTED_CANONICALIZATION_CONTRACT = {
+    "version": "ims-deadlock/g6b-canonical-json/v2",
+    "duplicate_members": "reject_at_every_depth",
+    "unicode_normalization": {
+        "member_names": "require_nfc_reject_non_nfc",
+        "string_values": "require_nfc_reject_non_nfc",
+        "silent_normalization": "prohibited",
     },
-    "execution_runtime_lock": {
-        "status": "required_later",
-        "allowed_only_after": "ACTUAL_OVERLAP_REPORT_PASSED",
-        "authorizes_execution": False,
-        "required_fields": list(_RUNTIME_LOCK_REQUIRED_FIELDS),
+    "object_key_order": "unicode_code_point",
+    "array_order_policy": {
+        "declared_array_order": "preserve",
+        "schema_declared_set_like_arrays": "unique_and_already_sorted",
+    },
+    "utf8_serialization": {
+        "encoding": "utf-8",
+        "ensure_ascii": False,
+        "sort_keys": True,
+        "separators": [",", ":"],
+        "allow_nan": False,
+    },
+    "numeric_policy": {
+        "json_nan_infinity_negative_zero_float": "prohibited",
+        "counts_and_integral_budgets": "json_integers",
+        "non_integral_values": {
+            "encoding": "canonical_decimal_string",
+            "grammar": r"^-?(0|[1-9][0-9]*)(\.[0-9]*[1-9])?$",
+            "negative_zero": "prohibited",
+            "exponent": "prohibited",
+        },
+        "historical_json_numbers": (
+            "parse_lexical_token_as_exact_decimal_not_binary_float"
+        ),
+    },
+    "path_policy": {
+        "committed_paths": "case_sensitive_repo_relative_posix",
+        "drive_letter_leading_slash_backslash_empty_dot_dotdot": "prohibited",
+        "symlink_dependent_resolution": "prohibited",
+        "runtime_executables": (
+            "logical_id_plus_byte_and_environment_hashes_not_absolute_path"
+        ),
+    },
+    "timestamp_policy": {
+        "timezone": "utc",
+        "format": "YYYY-MM-DDTHH:MM:SSZ",
+        "precision": "seconds",
     },
 }
+EXPECTED_SELF_HASH_FINALIZATION_CONTRACT = {
+    "version": "ims-deadlock/g6b-self-hash-finalization/v2",
+    "placeholder_value": None,
+    "replaced_field_count": 1,
+    "omitted_field_allowed": False,
+    "prepopulated_digest_allowed": False,
+    "excluded_field_escape_hatch_allowed": False,
+    "cross_record_reference_order": {
+        "graph": "directed_acyclic_lifecycle_order",
+        "record_may_reference": "already_finalized_upstream_records_only",
+        "upstream_embeds_downstream_back_reference": "prohibited",
+        "self_hash_field": "schema_fixed",
+    },
+    "digest_algorithm": "sha256",
+    "digest_encoding": "lowercase_hexadecimal",
+}
+EXPECTED_FINGERPRINT_PAYLOAD_SCHEMA_KEYS = (
+    "projection_kind",
+    "subject_type",
+    "required_fields",
+    "set_like_array_paths",
+    "nested_field_contracts",
+    "additional_properties",
+    "prohibited_fields",
+)
+EXPECTED_FINGERPRINT_PROJECTION_KINDS = {
+    "case_content_sha256": "semantic_content",
+    "state_snapshot_sha256": "semantic_content",
+    "route_signature_sha256": "semantic_content",
+    "parameter_tuple_sha256": "semantic_content",
+    "random_stream_manifest_sha256": "random_process",
+    "output_root_reservation_sha256": "provenance_containment",
+    "sealed_prediction_sha256": "semantic_content",
+    "metric_schema_sha256": "controlled_schema",
+}
+EXPECTED_FINGERPRINT_SUBJECT_TYPES = {
+    "case_content_sha256": "case_unit",
+    "state_snapshot_sha256": "case_unit",
+    "route_signature_sha256": "case_unit",
+    "parameter_tuple_sha256": "case_unit",
+    "random_stream_manifest_sha256": "method_observation",
+    "output_root_reservation_sha256": "method_observation",
+    "sealed_prediction_sha256": "case_unit",
+    "metric_schema_sha256": "method_companion_group",
+}
+EXPECTED_FINGERPRINT_RECORD_KEYS = (
+    "record_schema_version",
+    "record_id",
+    "dimension",
+    "projection_kind",
+    "subject_type",
+    "subject_id",
+    "owner_object_id",
+    "projection_schema_version",
+    "comparison_projection_ref_or_null",
+    "comparison_projection_sha256_or_null",
+    "canonicalization_version",
+    "source_authority_id",
+    "source_stage",
+    "source_method_role_or_null",
+    "source_run_role_or_null",
+    "source_artifact_refs",
+    "source_artifact_byte_hashes",
+    "normalizer_version",
+    "dimension_status",
+    "lineage_id",
+    "inherited_from_record_id_or_null",
+    "duplicate_lineage_of_record_id_or_null",
+    "depends_on_dimensions",
+    "correlated_with_dimensions",
+    "comparison_policy",
+    "applicability_reason_code_or_null",
+    "record_provenance_sha256",
+)
+EXPECTED_REUSE_RELATION_IDS = (
+    "exact_des_companion",
+    "controlled_family_variant",
+    "negative_control_pair",
+    "method_companion_group_metric_reuse",
+    "retired_authority_overlap",
+)
 _TASK5_MATRIX_ERROR = "row_family_matrix.json: document must match"
-_ALLOWED_REVIEW_STATES = (
-    "SPEC_DRAFTED",
-    "ROW_FAMILY_BUNDLE_IMPLEMENTED",
-    "DATA_ONLY_VALIDATION_PASSED",
-    "ADVERSARIAL_ROW_FAMILY_REVIEW_PASSED",
-    "CASE_CONSTRUCTION_PLAN_APPROVED",
-    "CASE_ARTIFACTS_SEALED_NO_SCIENCE",
-    "OVERLAP_AUTHORITY_LOCK_RECORDED",
-    "ACTUAL_OVERLAP_REPORT_PASSED",
-    "EXECUTION_RUNTIME_LOCK_RECORDED",
-    "EXPLICIT_SCIENCE_AUTHORIZATION_RECORDED",
+_LEGACY_GLOBAL_AUTHORIZATION_FIELDS = (
+    "scientific_execution_authorized",
+    "case_creation_authorized",
 )
-_LATER_REVIEW_STATES = _ALLOWED_REVIEW_STATES[2:]
 _REQUIRED_FUTURE_REASON_CODES = (
-    "schema_drift",
-    "ontology_drift",
-    "target_drift",
-    "overlap_hit",
-    "missing_hash",
+    "batch_incomplete",
+    "canonicalization_violation",
+    "capability_call_violation",
+    "capability_import_violation",
+    "certificate_schema_violation",
+    "command_scope_violation",
+    "duplicate_lineage_miscount",
+    "exact_des_target_mismatch",
     "failed_negative_control",
-    "incomplete_LTS_audit",
+    "filesystem_scope_violation",
+    "incomplete_stable_lts",
+    "metric_reuse_unauthorized",
+    "missing_hash",
+    "missing_normalization_authorization",
+    "missing_retired_authority",
+    "non_almost_sure_absorption_domain",
     "outcome_leakage",
+    "output_root_reuse_or_materialized",
+    "overlap_hit",
+    "policy_filter_drift",
+    "prediction_semantic_reuse",
+    "quantitative_scope_violation",
+    "random_stream_disjointness_unproved",
+    "random_stream_overlap",
+    "rate_manifest_drift",
+    "rename_or_cosmetic_shift_detected",
+    "retired_authority_hash_mismatch",
+    "retired_normalizer_error",
+    "retired_projection_unreconstructable",
+    "retry_stop_policy_violation",
+    "runtime_identity_drift",
+    "same_target_lock_stale",
+    "sealed_input_drift",
+    "selected_target_drift",
+    "self_hash_mismatch",
+    "semantic_identity_reuse",
+    "semantic_lineage_ambiguous",
+    "source_field_read_violation",
+    "state_bound_truncation",
+    "subject_id_contaminated_projection",
     "unauthorized_case_creation_attempt",
-    "unauthorized_science_execution_attempt",
+    "unauthorized_quantitative_execution_attempt",
+    "unauthorized_retired_normalization_attempt",
+    "unauthorized_target_certification_attempt",
+    "unavailable_transition_branch",
+    "unclassified_scientific_input",
+    "unexpected_preflight_side_effect",
+    "unverified_lts_provenance",
 )
+EXPECTED_SCHEMA_REFUSAL_CODES = {
+    "case_construction_schema.json": (
+        "batch_incomplete",
+        "canonicalization_violation",
+        "missing_hash",
+        "outcome_leakage",
+        "output_root_reuse_or_materialized",
+        "runtime_identity_drift",
+        "sealed_input_drift",
+        "self_hash_mismatch",
+        "subject_id_contaminated_projection",
+        "unauthorized_case_creation_attempt",
+        "unclassified_scientific_input",
+    ),
+    "retired_authority_fingerprint_schema.json": (
+        "batch_incomplete",
+        "canonicalization_violation",
+        "capability_call_violation",
+        "capability_import_violation",
+        "duplicate_lineage_miscount",
+        "metric_reuse_unauthorized",
+        "missing_hash",
+        "missing_normalization_authorization",
+        "missing_retired_authority",
+        "outcome_leakage",
+        "output_root_reuse_or_materialized",
+        "overlap_hit",
+        "prediction_semantic_reuse",
+        "random_stream_disjointness_unproved",
+        "random_stream_overlap",
+        "rename_or_cosmetic_shift_detected",
+        "retired_authority_hash_mismatch",
+        "retired_normalizer_error",
+        "retired_projection_unreconstructable",
+        "runtime_identity_drift",
+        "sealed_input_drift",
+        "self_hash_mismatch",
+        "semantic_identity_reuse",
+        "semantic_lineage_ambiguous",
+        "source_field_read_violation",
+        "subject_id_contaminated_projection",
+        "unauthorized_retired_normalization_attempt",
+        "unclassified_scientific_input",
+    ),
+    "target_certification_schema.json": (
+        "batch_incomplete",
+        "canonicalization_violation",
+        "capability_call_violation",
+        "capability_import_violation",
+        "certificate_schema_violation",
+        "command_scope_violation",
+        "filesystem_scope_violation",
+        "incomplete_stable_lts",
+        "missing_hash",
+        "non_almost_sure_absorption_domain",
+        "outcome_leakage",
+        "policy_filter_drift",
+        "rate_manifest_drift",
+        "runtime_identity_drift",
+        "sealed_input_drift",
+        "selected_target_drift",
+        "self_hash_mismatch",
+        "state_bound_truncation",
+        "unauthorized_target_certification_attempt",
+        "unavailable_transition_branch",
+        "unexpected_preflight_side_effect",
+        "unverified_lts_provenance",
+    ),
+    "quantitative_authorization_schema.json": (
+        "batch_incomplete",
+        "canonicalization_violation",
+        "exact_des_target_mismatch",
+        "failed_negative_control",
+        "missing_hash",
+        "outcome_leakage",
+        "output_root_reuse_or_materialized",
+        "quantitative_scope_violation",
+        "retry_stop_policy_violation",
+        "runtime_identity_drift",
+        "same_target_lock_stale",
+        "sealed_input_drift",
+        "self_hash_mismatch",
+        "unauthorized_quantitative_execution_attempt",
+    ),
+}
+EXPECTED_SCHEMA_REFUSAL_CODES["overlap_report_schema.json"] = (
+    EXPECTED_SCHEMA_REFUSAL_CODES["retired_authority_fingerprint_schema.json"]
+)
+EXPECTED_OVERLAP_SUBJECT_STATUSES = ("admitted", "refused", "pending")
 _PROHIBITED_OUTCOME_KEYS = (
     "observed_result",
     "exact_output",
@@ -177,6 +424,305 @@ _PROHIBITED_OUTCOME_KEYS = (
     "actual_overlap_result",
     "current_runtime_lock",
 )
+TASK4_RECURSIVE_PROHIBITED_FIELDS = (
+    "authorized",
+    "authorization_id",
+    "bundle_id",
+    "case_unit_id",
+    "method_observation_id",
+    *_PROHIBITED_OUTCOME_KEYS,
+)
+CHANGED_SCHEMA_DOCUMENTS = tuple(
+    name for name in _NAMES if name != "row_family_matrix.json"
+)
+EXPECTED_TOP_LEVEL_KEYS = {
+    "row_family_protocol.json": (
+        "schema_version",
+        "study_role",
+        "confirmation_use",
+        "protocol_id",
+        "adversarial_review_status",
+        "bundle_role",
+        "source_design",
+        "source_design_sha256",
+        "artifact_paths",
+        "canonicalization_contract",
+        "self_hash_finalization_contract",
+        "typed_capabilities",
+        "typed_capabilities_sha256",
+        "execution_boundary",
+    ),
+    "identity_schema.json": (
+        "schema_version",
+        "study_role",
+        "confirmation_use",
+        "schema_role",
+        "canonicalization_contract",
+        "self_hash_finalization_contract",
+        "identity_levels",
+        "canonical_dimensions",
+        "fingerprint_record_keys",
+        "fingerprint_subject_map",
+        "fingerprint_payload_schemas",
+        "dimension_dependence_contract",
+        "projection_descriptors",
+        "provenance_envelope_fields",
+        "output_root_reservation_contract",
+        "no_stochastic_method_manifest",
+        "method_roles",
+        "method_observations_are_independent_cases",
+    ),
+    "reuse_matrix.json": (
+        "schema_version",
+        "study_role",
+        "confirmation_use",
+        "schema_role",
+        "canonicalization_contract",
+        "self_hash_finalization_contract",
+        "subject_identity_rules",
+        "controlled_metric_reuse_contract",
+        "exact_des_pair_counting_contract",
+        "relations",
+    ),
+    "overlap_report_schema.json": (
+        "schema_version",
+        "study_role",
+        "confirmation_use",
+        "schema_role",
+        "canonicalization_contract",
+        "self_hash_finalization_contract",
+        "retired_authorities",
+        "typed_admission_contract",
+        "per_case_overlap_required_fields",
+        "per_method_overlap_required_fields",
+        "per_companion_group_overlap_required_fields",
+        "terminal_partition_contract",
+        "semantic_lineage_audit_required_fields",
+        "metric_schema_reuse_record_required_fields",
+        "input_overlap_report_required_fields",
+        "input_overlap_subject_status_values",
+        "input_overlap_report_status_values",
+        "recursive_prohibited_fields",
+        "refusal_code_vocabulary_version",
+        "refusal_reason_codes",
+        "schema_only_overlap_report_cannot_authorize_execution",
+    ),
+    "runtime_lock_schema.json": (
+        "schema_version",
+        "study_role",
+        "confirmation_use",
+        "schema_role",
+        "canonicalization_contract",
+        "self_hash_finalization_contract",
+        "input_overlap_authority_lock",
+        "target_certification_runtime_lock",
+        "quantitative_runtime_lock",
+        "runtime_lock_must_not_contain_downstream_authorization",
+    ),
+    "review_state.json": (
+        "schema_version",
+        "study_role",
+        "confirmation_use",
+        "schema_role",
+        "canonicalization_contract",
+        "self_hash_finalization_contract",
+        "current_state",
+        "allowed_states_in_order",
+        "case_state_values",
+        "method_state_values",
+        "adversarial_review_status",
+        "forward_only",
+        "aggregate_predicates",
+        "current_capability_reference",
+        "current_capability_sha256",
+    ),
+    "failure_ledger.json": (
+        "schema_version",
+        "study_role",
+        "confirmation_use",
+        "schema_role",
+        "canonicalization_contract",
+        "self_hash_finalization_contract",
+        "append_only",
+        "entries",
+        "empty_entries_meaning",
+        "empty_entries_do_not_mean_no_historical_failures",
+        "refusal_code_vocabulary_version",
+        "required_future_reason_codes",
+        "refusal_reason_code_groups",
+    ),
+    "case_construction_schema.json": (
+        "schema_version",
+        "study_role",
+        "confirmation_use",
+        "schema_role",
+        "current_capability_reference",
+        "prerequisite_bundle_state",
+        "canonicalization_contract",
+        "self_hash_finalization_contract",
+        "governance_instance_root_template",
+        "case_unit_root_template",
+        "construction_authorization_required_fields",
+        "sealed_bundle_manifest_required_fields",
+        "case_unit_required_fields",
+        "method_observation_required_fields",
+        "method_companion_group_required_fields",
+        "semantic_lineage_declaration_required_fields",
+        "metric_schema_reuse_record_required_fields",
+        "fingerprint_record_required_fields",
+        "fingerprint_subject_map",
+        "fingerprint_payload_schemas",
+        "dimension_dependence_contract",
+        "allowed_input_modes",
+        "output_root_reservation_contract",
+        "nested_field_contracts",
+        "recursive_prohibited_fields",
+        "prohibited_instance_fields",
+        "refusal_code_vocabulary_version",
+        "refusal_reason_codes",
+        "schema_does_not_authorize_case_creation",
+    ),
+    "retired_authority_fingerprint_schema.json": (
+        "schema_version",
+        "study_role",
+        "confirmation_use",
+        "schema_role",
+        "canonicalization_contract",
+        "self_hash_finalization_contract",
+        "retired_authority_ids",
+        "expected_source_inventory",
+        "authority_lock_record_required_fields",
+        "authority_source_record_required_fields",
+        "fingerprint_record_required_fields",
+        "fingerprint_payload_schemas",
+        "dimension_status_values",
+        "comparison_status_values",
+        "normalization_manifest_required_fields",
+        "normalization_authorization_required_fields",
+        "allowed_use_values",
+        "allowed_json_fields_by_source",
+        "input_overlap_authority_lock_required_fields",
+        "source_worktree_identity_required_fields",
+        "per_dimension_comparison_required_fields",
+        "semantic_lineage_audit_required_fields",
+        "metric_schema_reuse_record_required_fields",
+        "input_overlap_report_required_fields",
+        "input_overlap_subject_status_values",
+        "input_overlap_report_status_values",
+        "retired_subject_type_values",
+        "retired_protocol_kind_by_case_id",
+        "retired_subject_expansion_contract",
+        "source_projection_map",
+        "lineage_deduplication_contract",
+        "typed_admission_contract",
+        "recursive_prohibited_fields",
+        "refusal_code_vocabulary_version",
+        "refusal_reason_codes",
+        "schema_does_not_authorize_normalization",
+    ),
+    "target_certification_schema.json": (
+        "schema_version",
+        "study_role",
+        "confirmation_use",
+        "schema_role",
+        "current_capability_reference",
+        "prerequisite_bundle_states",
+        "canonicalization_contract",
+        "self_hash_finalization_contract",
+        "preflight_runtime_lock_required_fields",
+        "preflight_authorization_required_fields",
+        "allowed_command_manifest_required_fields",
+        "allowed_command_record_required_fields",
+        "allowed_command_placeholder_codes",
+        "allowed_environment_variable_names",
+        "allowed_operations",
+        "allowed_output_schema_ids",
+        "allowed_file_roles",
+        "file_role_to_schema_id",
+        "file_role_cardinality_contract",
+        "allowed_result_fields",
+        "allowed_project_imports",
+        "allowed_writer_symbols",
+        "forbidden_imports",
+        "forbidden_calls",
+        "forbidden_result_fields",
+        "nested_field_contracts",
+        "recursive_prohibited_fields",
+        "preflight_evidence_root_contract",
+        "per_case_result_required_fields",
+        "result_status_values",
+        "batch_manifest_required_fields",
+        "batch_status_values",
+        "refusal_code_vocabulary_version",
+        "refusal_reason_codes",
+        "schema_does_not_authorize_preflight",
+    ),
+    "quantitative_authorization_schema.json": (
+        "schema_version",
+        "study_role",
+        "confirmation_use",
+        "schema_role",
+        "current_capability_reference",
+        "prerequisite_bundle_states",
+        "canonicalization_contract",
+        "self_hash_finalization_contract",
+        "same_target_lock_required_fields",
+        "quantitative_runtime_lock_required_fields",
+        "quantitative_authorization_required_fields",
+        "authorized_scope_required_fields",
+        "allowed_command_manifest_required_fields",
+        "allowed_command_record_required_fields",
+        "allowed_command_placeholder_codes",
+        "allowed_environment_variable_names",
+        "nested_field_contracts",
+        "recursive_prohibited_fields",
+        "allowed_method_roles",
+        "wildcard_scope_allowed",
+        "survivor_scope_claim_contract",
+        "refusal_code_vocabulary_version",
+        "refusal_reason_codes",
+        "schema_does_not_authorize_quantitative_execution",
+    ),
+}
+REORDER_SENSITIVE_FIELDS: dict[str, tuple[PathPart, ...]] = {
+    "row_family_protocol.json": ("artifact_paths",),
+    "identity_schema.json": ("canonical_dimensions",),
+    "reuse_matrix.json": ("relations",),
+    "overlap_report_schema.json": ("retired_authorities",),
+    "runtime_lock_schema.json": (),
+    "review_state.json": ("allowed_states_in_order",),
+    "failure_ledger.json": ("required_future_reason_codes",),
+    "case_construction_schema.json": ("allowed_input_modes",),
+    "retired_authority_fingerprint_schema.json": ("retired_authority_ids",),
+    "target_certification_schema.json": ("allowed_operations",),
+    "quantitative_authorization_schema.json": ("allowed_method_roles",),
+}
+WRONG_NESTED_FIELD_PATHS: dict[str, tuple[PathPart, ...]] = {
+    "row_family_protocol.json": ("execution_boundary", "case_creation"),
+    "identity_schema.json": ("no_stochastic_method_manifest", "allowed"),
+    "reuse_matrix.json": ("relations", 0),
+    "overlap_report_schema.json": ("typed_admission_contract",),
+    "runtime_lock_schema.json": ("target_certification_runtime_lock",),
+    "review_state.json": ("aggregate_predicates",),
+    "failure_ledger.json": ("refusal_reason_code_groups",),
+    "case_construction_schema.json": ("nested_field_contracts",),
+    "retired_authority_fingerprint_schema.json": ("source_projection_map",),
+    "target_certification_schema.json": ("nested_field_contracts",),
+    "quantitative_authorization_schema.json": ("nested_field_contracts",),
+}
+LIVE_INJECTION_PARENT_PATHS: dict[str, tuple[PathPart, ...]] = {
+    "row_family_protocol.json": ("execution_boundary",),
+    "identity_schema.json": ("no_stochastic_method_manifest",),
+    "reuse_matrix.json": ("relations", 0),
+    "overlap_report_schema.json": ("typed_admission_contract",),
+    "runtime_lock_schema.json": ("target_certification_runtime_lock",),
+    "review_state.json": ("aggregate_predicates",),
+    "failure_ledger.json": ("refusal_reason_code_groups",),
+    "case_construction_schema.json": ("nested_field_contracts",),
+    "retired_authority_fingerprint_schema.json": ("source_projection_map",),
+    "target_certification_schema.json": ("nested_field_contracts",),
+    "quantitative_authorization_schema.json": ("nested_field_contracts",),
+}
 
 
 def _matrix() -> dict[str, Any]:
@@ -469,36 +1015,6 @@ def _nested_scientific_list_cases() -> Iterable[Any]:
             "overlap_report_schema.json: document must match",
         ),
         (
-            "overlap_report_schema.json",
-            ("retired_dimensions",),
-            "overlap_report_schema.json: document must match",
-        ),
-        (
-            "overlap_report_schema.json",
-            ("future_confirmation_dimensions",),
-            "overlap_report_schema.json: document must match",
-        ),
-        (
-            "overlap_report_schema.json",
-            ("remote_only_G5_authority_paths",),
-            "overlap_report_schema.json: document must match",
-        ),
-        (
-            "overlap_report_schema.json",
-            ("later_actual_report_required_fields",),
-            "overlap_report_schema.json: document must match",
-        ),
-        (
-            "runtime_lock_schema.json",
-            ("overlap_authority_lock", "required_fields"),
-            "runtime_lock_schema.json: document must match",
-        ),
-        (
-            "runtime_lock_schema.json",
-            ("execution_runtime_lock", "required_fields"),
-            "runtime_lock_schema.json: document must match",
-        ),
-        (
             "review_state.json",
             ("allowed_states_in_order",),
             "review_state.json: allowed_states_in_order must match",
@@ -650,26 +1166,11 @@ def _nested_scientific_object_cases() -> Iterable[Any]:
             ("relations", 4),
             "reuse_matrix.json: document must match",
         ),
-        (
-            "overlap_report_schema.json",
-            ("future_confirmation_metric_reuse",),
-            "overlap_report_schema.json: document must match",
-        ),
-        (
-            "runtime_lock_schema.json",
-            ("overlap_authority_lock",),
-            "runtime_lock_schema.json: document must match",
-        ),
-        (
-            "runtime_lock_schema.json",
-            ("execution_runtime_lock",),
-            "runtime_lock_schema.json: document must match",
-        ),
     )
     for name, path, expected_error in object_cases:
         value = _path_get(_load(BUNDLE, name), path)
         assert isinstance(value, dict)
-        semantic_key = sorted(value)[0]
+        semantic_key = min(value)
         case_id = "_".join(str(item) for item in path).replace("[", "").replace("]", "")
         for operation in ("remove_key", "add_key", "semantic"):
             yield pytest.param(
@@ -687,6 +1188,8 @@ def _drift_value(value: Any) -> Any:
         return "TASK5_DETERMINISTIC_DRIFT"
     if isinstance(value, bool):
         return not value
+    if isinstance(value, int | float):
+        return value + 1
     if value is None:
         return "TASK5_NON_NULL_OBSERVED_OUTCOME"
     if isinstance(value, dict):
@@ -715,10 +1218,15 @@ def _copy_bundle(tmp_path: Path) -> Path:
     repo = tmp_path / "repo"
     target = repo / "cases/discovery/g6b/row_families/structural_discovery_v1"
     shutil.copytree(BUNDLE, target)
-    design = Path("docs/superpowers/specs/2026-07-31-g6b-row-family-design.md")
-    copied_design = repo / design
-    copied_design.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(design, copied_design)
+    for design in (
+        Path("docs/superpowers/specs/2026-07-31-g6b-row-family-design.md"),
+        Path(APPROVED_SOURCE_DESIGN),
+    ):
+        if not design.is_file():
+            continue
+        copied_design = repo / design
+        copied_design.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(design, copied_design)
     return target
 
 
@@ -836,8 +1344,365 @@ def _nested_pop(document: dict[str, Any], path: tuple[str, ...]) -> None:
     target.pop(path[-1])
 
 
+def _iter_scalar_paths(value: Any, prefix: tuple[PathPart, ...] = ()) -> Iterable[Any]:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            yield from _iter_scalar_paths(child, (*prefix, key))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            yield from _iter_scalar_paths(child, (*prefix, index))
+    else:
+        yield prefix
+
+
+def _iter_member_paths(value: Any, prefix: tuple[PathPart, ...] = ()) -> Iterable[Any]:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            yield (*prefix, key)
+            yield from _iter_member_paths(child, (*prefix, key))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            yield (*prefix, index)
+            yield from _iter_member_paths(child, (*prefix, index))
+
+
+def _representative_scalar_paths(
+    document: dict[str, Any],
+) -> tuple[tuple[PathPart, ...], ...]:
+    return tuple(_iter_scalar_paths(document))[:12]
+
+
+def _representative_member_paths(
+    document: dict[str, Any],
+) -> tuple[tuple[PathPart, ...], ...]:
+    return tuple(_iter_member_paths(document))[:12]
+
+
+def _assert_task4_baseline_valid(bundle: Path) -> None:
+    result = validate_g6b_row_family_bundle(bundle)
+    assert result.valid is True, result.errors
+
+
 def _insert_prohibited_key(document: dict[str, Any], key: str) -> None:
     document["task6_leakage_probe"] = [{"nested": {key: "TASK6_INERT_SENTINEL"}}]
+
+
+def _insert_live_instance_key_at_path(
+    document: dict[str, Any], path: tuple[PathPart, ...], key: str
+) -> None:
+    parent = _path_get(document, path)
+    if isinstance(parent, dict):
+        parent[key] = "TASK4_LIVE_INSTANCE_SENTINEL"
+    elif isinstance(parent, list):
+        parent.append({key: "TASK4_LIVE_INSTANCE_SENTINEL"})
+    else:
+        raise TypeError(f"cannot inject beneath scalar path: {path!r}")
+
+
+def _protocol_manifest_names(protocol: dict[str, Any]) -> tuple[str, ...]:
+    paths = protocol.get("artifact_paths")
+    assert isinstance(paths, list)
+    return ("row_family_protocol.json",) + tuple(Path(path).name for path in paths)
+
+
+def test_task4_inventory_freezes_exact_ordered_twelve_document_tuple() -> None:
+    protocol = _load(BUNDLE, "row_family_protocol.json")
+    result = validate_g6b_row_family_bundle(BUNDLE)
+
+    assert tuple(result.bundle_hashes) == EXPECTED_DOCUMENTS
+    assert _protocol_manifest_names(protocol) == EXPECTED_DOCUMENTS
+
+
+@pytest.mark.parametrize(("name", "version"), SCHEMA_FILES.items())
+def test_task4_version_contract_freezes_exact_v2_and_new_schema_versions(
+    name: str, version: str
+) -> None:
+    document = _load(BUNDLE, name)
+
+    assert document["schema_version"] == version
+
+
+def test_task4_capability_contract_is_typed_and_all_false() -> None:
+    protocol = _load(BUNDLE, "row_family_protocol.json")
+
+    assert protocol["source_design"] == APPROVED_SOURCE_DESIGN
+    assert protocol["source_design_sha256"] == APPROVED_SOURCE_DESIGN_SHA256
+    assert protocol["typed_capabilities"] == EXPECTED_TYPED_CAPABILITIES
+    assert protocol["typed_capabilities_sha256"] == EXPECTED_TYPED_CAPABILITIES_SHA256
+
+
+def test_task4_review_state_uses_capability_reference_not_duplicate_booleans() -> None:
+    review_state = _load(BUNDLE, "review_state.json")
+
+    assert review_state["current_state"] == "ROW_FAMILY_BUNDLE_IMPLEMENTED"
+    assert review_state["adversarial_review_status"] == "PENDING"
+    assert (
+        review_state["current_capability_reference"]
+        == "row_family_protocol.json#/typed_capabilities"
+    )
+    assert (
+        review_state["current_capability_sha256"] == EXPECTED_TYPED_CAPABILITIES_SHA256
+    )
+    assert "current_state_authorizes_case_creation" not in review_state
+    assert "current_state_authorizes_science" not in review_state
+
+
+def test_spec_17_3_02_schema_row_family_typed_capabilities_all_false() -> None:
+    protocol = _load(BUNDLE, "row_family_protocol.json")
+    review_state = _load(BUNDLE, "review_state.json")
+
+    assert review_state["current_state"] == "ROW_FAMILY_BUNDLE_IMPLEMENTED"
+    assert review_state["adversarial_review_status"] == "PENDING"
+    assert protocol["typed_capabilities"] == EXPECTED_TYPED_CAPABILITIES
+    assert all(value is False for value in protocol["typed_capabilities"].values())
+    assert protocol["typed_capabilities_sha256"] == EXPECTED_TYPED_CAPABILITIES_SHA256
+    assert (
+        review_state["current_capability_reference"]
+        == "row_family_protocol.json#/typed_capabilities"
+    )
+    assert (
+        review_state["current_capability_sha256"] == EXPECTED_TYPED_CAPABILITIES_SHA256
+    )
+
+
+@pytest.mark.parametrize("name", CHANGED_SCHEMA_DOCUMENTS)
+def test_task4_oracle_freezes_exact_top_level_keys_for_changed_documents(
+    name: str,
+) -> None:
+    document = _load(BUNDLE, name)
+
+    assert tuple(document) == EXPECTED_TOP_LEVEL_KEYS[name]
+
+
+@pytest.mark.parametrize("name", CHANGED_SCHEMA_DOCUMENTS)
+def test_task4_oracle_uses_closed_field_level_canonical_and_self_hash_contracts(
+    name: str,
+) -> None:
+    document = _load(BUNDLE, name)
+
+    assert document["canonicalization_contract"] == EXPECTED_CANONICALIZATION_CONTRACT
+    assert (
+        document["self_hash_finalization_contract"]
+        == EXPECTED_SELF_HASH_FINALIZATION_CONTRACT
+    )
+
+
+@pytest.mark.parametrize(
+    "name",
+    (
+        "identity_schema.json",
+        "case_construction_schema.json",
+        "retired_authority_fingerprint_schema.json",
+    ),
+)
+def test_task4_oracle_fingerprint_payload_schemas_are_closed_typed_objects(
+    name: str,
+) -> None:
+    document = _load(BUNDLE, name)
+    payload_schemas = document["fingerprint_payload_schemas"]
+
+    assert tuple(payload_schemas) == tuple(EXPECTED_FINGERPRINT_PROJECTION_KINDS)
+    for dimension, payload_schema in payload_schemas.items():
+        assert tuple(payload_schema) == EXPECTED_FINGERPRINT_PAYLOAD_SCHEMA_KEYS
+        assert (
+            payload_schema["projection_kind"]
+            == EXPECTED_FINGERPRINT_PROJECTION_KINDS[dimension]
+        )
+        assert (
+            payload_schema["subject_type"]
+            == EXPECTED_FINGERPRINT_SUBJECT_TYPES[dimension]
+        )
+        assert payload_schema["additional_properties"] is False
+        assert isinstance(payload_schema["set_like_array_paths"], list)
+        assert payload_schema["set_like_array_paths"] == sorted(
+            set(payload_schema["set_like_array_paths"])
+        )
+        assert isinstance(payload_schema["nested_field_contracts"], dict)
+        assert payload_schema["nested_field_contracts"]
+        assert isinstance(payload_schema["prohibited_fields"], list)
+        assert payload_schema["prohibited_fields"]
+        assert payload_schema["prohibited_fields"] == sorted(
+            set(payload_schema["prohibited_fields"])
+        )
+
+    random_required = payload_schemas["random_stream_manifest_sha256"][
+        "required_fields"
+    ]
+    assert tuple(random_required) == ("stochastic", "exact")
+    assert all(
+        isinstance(fields, list) and fields for fields in random_required.values()
+    )
+    for dimension, payload_schema in payload_schemas.items():
+        if dimension != "random_stream_manifest_sha256":
+            assert isinstance(payload_schema["required_fields"], list)
+            assert payload_schema["required_fields"]
+
+
+@pytest.mark.parametrize(("name", "expected"), EXPECTED_SCHEMA_REFUSAL_CODES.items())
+def test_task4_oracle_refusal_code_union_matches_exact_gate_contract(
+    name: str, expected: tuple[str, ...]
+) -> None:
+    document = _load(BUNDLE, name)
+
+    assert tuple(document["refusal_reason_codes"]) == expected
+    assert tuple(document["refusal_reason_codes"]) == tuple(
+        sorted(set(document["refusal_reason_codes"]))
+    )
+
+
+@pytest.mark.parametrize(
+    "name",
+    ("overlap_report_schema.json", "retired_authority_fingerprint_schema.json"),
+)
+def test_task4_oracle_overlap_subject_status_order_matches_spec(name: str) -> None:
+    document = _load(BUNDLE, name)
+
+    assert tuple(document["input_overlap_subject_status_values"]) == (
+        EXPECTED_OVERLAP_SUBJECT_STATUSES
+    )
+
+
+@pytest.mark.parametrize("name", CHANGED_SCHEMA_DOCUMENTS)
+def test_task4_oracle_missing_top_level_key_is_rejected(
+    tmp_path: Path, name: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    _assert_task4_baseline_valid(bundle)
+    document = _load(bundle, name)
+    document.pop(EXPECTED_TOP_LEVEL_KEYS[name][0])
+    _write(bundle, name, document)
+
+    assert validate_g6b_row_family_bundle(bundle).valid is False
+
+
+@pytest.mark.parametrize("name", CHANGED_SCHEMA_DOCUMENTS)
+def test_task4_oracle_extra_top_level_key_is_rejected(
+    tmp_path: Path, name: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    _assert_task4_baseline_valid(bundle)
+    document = _load(bundle, name)
+    document["task4_unexpected_top_level_key"] = "not allowed"
+    _write(bundle, name, document)
+
+    assert validate_g6b_row_family_bundle(bundle).valid is False
+
+
+@pytest.mark.parametrize(("name", "version"), SCHEMA_FILES.items())
+def test_task4_oracle_version_drift_is_rejected(
+    tmp_path: Path, name: str, version: str
+) -> None:
+    if name == "row_family_matrix.json":
+        pytest.skip("Task4 preserves row_family_matrix.json byte-for-byte.")
+    bundle = _copy_bundle(tmp_path)
+    _assert_task4_baseline_valid(bundle)
+    document = _load(bundle, name)
+    document["schema_version"] = f"{version}-drift"
+    _write(bundle, name, document)
+
+    assert validate_g6b_row_family_bundle(bundle).valid is False
+
+
+@pytest.mark.parametrize("name", CHANGED_SCHEMA_DOCUMENTS)
+def test_task4_oracle_representative_reorder_sensitive_array_drift_is_rejected(
+    tmp_path: Path, name: str
+) -> None:
+    field_path = REORDER_SENSITIVE_FIELDS[name]
+    if not field_path:
+        pytest.skip(f"{name} has no Task4-assigned reorder-sensitive array.")
+    bundle = _copy_bundle(tmp_path)
+    _assert_task4_baseline_valid(bundle)
+    document = _load(bundle, name)
+    value = _path_get(document, field_path)
+    assert isinstance(value, list)
+    assert len(value) >= 2
+    value[0], value[1] = value[1], value[0]
+    _write(bundle, name, document)
+
+    assert validate_g6b_row_family_bundle(bundle).valid is False
+
+
+@pytest.mark.parametrize("name", CHANGED_SCHEMA_DOCUMENTS)
+def test_task4_oracle_wrong_nested_field_is_rejected(tmp_path: Path, name: str) -> None:
+    bundle = _copy_bundle(tmp_path)
+    _assert_task4_baseline_valid(bundle)
+    document = _load(bundle, name)
+    path = WRONG_NESTED_FIELD_PATHS[name]
+    value = _path_get(document, path)
+    _path_set(document, path, _drift_value(value))
+    _write(bundle, name, document)
+
+    assert validate_g6b_row_family_bundle(bundle).valid is False
+
+
+@pytest.mark.parametrize("name", CHANGED_SCHEMA_DOCUMENTS)
+@pytest.mark.parametrize("prohibited_key", TASK4_RECURSIVE_PROHIBITED_FIELDS)
+def test_task4_oracle_recursive_live_instance_injection_is_rejected(
+    tmp_path: Path, name: str, prohibited_key: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    _assert_task4_baseline_valid(bundle)
+    document = _load(bundle, name)
+    _insert_live_instance_key_at_path(
+        document, LIVE_INJECTION_PARENT_PATHS[name], prohibited_key
+    )
+    _write(bundle, name, document)
+
+    result = validate_g6b_row_family_bundle(bundle)
+    assert result.valid is False
+    assert f"{name}: prohibited outcome key present: {prohibited_key}" in result.errors
+
+
+@pytest.mark.parametrize("name", CHANGED_SCHEMA_DOCUMENTS)
+def test_task4_oracle_scalar_leaf_mutation_walker_is_rejected(
+    tmp_path: Path, name: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    _assert_task4_baseline_valid(bundle)
+    baseline = _load(bundle, name)
+    paths = tuple(_iter_scalar_paths(baseline))
+    assert paths
+    for index, path in enumerate(paths):
+        isolated = _copy_bundle(tmp_path / f"scalar_{index}")
+        _assert_task4_baseline_valid(isolated)
+        document = _load(isolated, name)
+        _path_set(document, path, _drift_value(_path_get(document, path)))
+        _write(isolated, name, document)
+        assert validate_g6b_row_family_bundle(isolated).valid is False, path
+
+
+@pytest.mark.parametrize("name", CHANGED_SCHEMA_DOCUMENTS)
+def test_task4_oracle_list_and_map_member_removal_walker_is_rejected(
+    tmp_path: Path, name: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    _assert_task4_baseline_valid(bundle)
+    baseline = _load(bundle, name)
+    paths = tuple(_iter_member_paths(baseline))
+    assert paths
+    for index, path in enumerate(paths):
+        isolated = _copy_bundle(tmp_path / f"member_{index}")
+        _assert_task4_baseline_valid(isolated)
+        document = _load(isolated, name)
+        _path_pop(document, path)
+        _write(isolated, name, document)
+        assert validate_g6b_row_family_bundle(isolated).valid is False, path
+
+
+def test_task4_oracle_prohibited_vocabularies_are_not_live_instances(
+    tmp_path: Path,
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    _assert_task4_baseline_valid(bundle)
+    for name in CHANGED_SCHEMA_DOCUMENTS:
+        document = _load(bundle, name)
+        for field in ("recursive_prohibited_fields", "prohibited_instance_fields"):
+            if field in document:
+                assert isinstance(document[field], list)
+
+    result = validate_g6b_row_family_bundle(bundle)
+
+    assert result.valid is True, result.errors
 
 
 def test_canonical_row_family_bundle_is_valid_and_disabled() -> None:
@@ -852,7 +1717,7 @@ def test_canonical_row_family_bundle_is_valid_and_disabled() -> None:
     assert set(result.bundle_hashes) == set(_NAMES)
 
 
-@pytest.mark.parametrize(("name", "version"), sorted(SCHEMA_FILES.items()))
+@pytest.mark.parametrize(("name", "version"), sorted(EXISTING_SCHEMA_FILES.items()))
 def test_wrong_schema_version_is_rejected(
     tmp_path: Path, name: str, version: str
 ) -> None:
@@ -869,8 +1734,6 @@ def test_wrong_schema_version_is_rejected(
     [
         ("study_role", "confirmation"),
         ("confirmation_use", "allowed"),
-        ("scientific_execution_authorized", True),
-        ("case_creation_authorized", True),
     ],
 )
 def test_common_contract_drift_is_rejected(
@@ -881,6 +1744,55 @@ def test_common_contract_drift_is_rejected(
     value[field] = drift
     _write(bundle, name, value)
     _assert_invalid(bundle, f"{name}: {field}")
+
+
+@pytest.mark.parametrize("field", _LEGACY_GLOBAL_AUTHORIZATION_FIELDS)
+@pytest.mark.parametrize("name", CHANGED_SCHEMA_DOCUMENTS)
+def test_changed_v2_documents_reject_inserted_legacy_global_authorization_flags(
+    tmp_path: Path, name: str, field: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    value = _load(bundle, name)
+    value[field] = True
+    _write(bundle, name, value)
+    _assert_invalid(bundle, f"{name}: prohibited outcome key present: {field}")
+
+
+@pytest.mark.parametrize("field", sorted(EXPECTED_TYPED_CAPABILITIES))
+def test_protocol_typed_capability_true_drift_is_rejected(
+    tmp_path: Path, field: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    protocol = _load(bundle, "row_family_protocol.json")
+    protocol["typed_capabilities"][field] = True
+    protocol["typed_capabilities_sha256"] = hashlib.sha256(
+        json.dumps(
+            protocol["typed_capabilities"],
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    _write(bundle, "row_family_protocol.json", protocol)
+    result = validate_g6b_row_family_bundle(bundle)
+    assert result.valid is False
+    assert any(
+        "row_family_protocol.json: document must match" in error
+        for error in result.errors
+    )
+    assert result.scientific_execution_authorized is False
+    assert result.case_creation_authorized is False
+
+
+@pytest.mark.parametrize("field", _LEGACY_GLOBAL_AUTHORIZATION_FIELDS)
+def test_row_family_matrix_legacy_false_authorization_flags_are_immutable(
+    tmp_path: Path, field: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    matrix = _row_family_matrix_from(bundle)
+    matrix[field] = True
+    _write(bundle, "row_family_matrix.json", matrix)
+    _assert_invalid(bundle, _TASK5_MATRIX_ERROR)
 
 
 @pytest.mark.parametrize("name", sorted(EXPECTED_DOCUMENTS))
@@ -896,7 +1808,7 @@ def test_unknown_key_is_rejected_for_every_document(tmp_path: Path, name: str) -
 def test_missing_key_is_rejected_for_every_document(tmp_path: Path, name: str) -> None:
     bundle = _copy_bundle(tmp_path)
     value = _load(bundle, name)
-    key = sorted(value)[0]
+    key = min(value)
     value.pop(key)
     _write(bundle, name, value)
     _assert_invalid(bundle, f"{name}: document must match")
@@ -951,36 +1863,6 @@ def test_missing_key_is_rejected_for_every_document(tmp_path: Path, name: str) -
             "overlap_report_schema.json",
             ("retired_authorities",),
             "overlap_report_schema.json: document must match",
-        ),
-        (
-            "overlap_report_schema.json",
-            ("retired_dimensions",),
-            "overlap_report_schema.json: document must match",
-        ),
-        (
-            "overlap_report_schema.json",
-            ("future_confirmation_dimensions",),
-            "overlap_report_schema.json: document must match",
-        ),
-        (
-            "overlap_report_schema.json",
-            ("remote_only_G5_authority_paths",),
-            "overlap_report_schema.json: document must match",
-        ),
-        (
-            "overlap_report_schema.json",
-            ("later_actual_report_required_fields",),
-            "overlap_report_schema.json: document must match",
-        ),
-        (
-            "runtime_lock_schema.json",
-            ("overlap_authority_lock", "required_fields"),
-            "runtime_lock_schema.json: document must match",
-        ),
-        (
-            "runtime_lock_schema.json",
-            ("execution_runtime_lock", "required_fields"),
-            "runtime_lock_schema.json: document must match",
         ),
         (
             "review_state.json",
@@ -1080,24 +1962,6 @@ def test_empty_canonical_lists_reject_nonempty_drift(
             ("initial_scoring_state",),
             "execution_status",
             _TASK5_MATRIX_ERROR,
-        ),
-        (
-            "overlap_report_schema.json",
-            ("future_confirmation_metric_reuse",),
-            "explicitly_preregistered",
-            "overlap_report_schema.json: document must match",
-        ),
-        (
-            "runtime_lock_schema.json",
-            ("overlap_authority_lock",),
-            "status",
-            "runtime_lock_schema.json: document must match",
-        ),
-        (
-            "runtime_lock_schema.json",
-            ("execution_runtime_lock",),
-            "status",
-            "runtime_lock_schema.json: document must match",
         ),
     ],
 )
@@ -1264,29 +2128,44 @@ def test_review_state_order_drift_is_rejected(tmp_path: Path) -> None:
     _assert_invalid(bundle, "review_state.json: allowed_states_in_order must match")
 
 
-@pytest.mark.parametrize("state", _ALLOWED_REVIEW_STATES)
-def test_review_state_allowed_state_removal_is_rejected(
-    tmp_path: Path, state: str
-) -> None:
+def test_review_state_allowed_state_removal_is_rejected(tmp_path: Path) -> None:
     bundle = _copy_bundle(tmp_path)
-    review_state = _load(bundle, "review_state.json")
-    review_state["allowed_states_in_order"].remove(state)
-    _write(bundle, "review_state.json", review_state)
-    _assert_invalid(bundle, "review_state.json: allowed_states_in_order must match")
+    baseline = _load(bundle, "review_state.json")
+    states = baseline["allowed_states_in_order"]
+    assert isinstance(states, list)
+    assert states
+    for index, state in enumerate(states):
+        isolated = _copy_bundle(tmp_path / f"state_{index}")
+        review_state = _load(isolated, "review_state.json")
+        review_state["allowed_states_in_order"].remove(state)
+        _write(isolated, "review_state.json", review_state)
+        _assert_invalid(
+            isolated, "review_state.json: allowed_states_in_order must match"
+        )
 
 
-@pytest.mark.parametrize("state", _LATER_REVIEW_STATES)
-def test_review_state_forward_transition_is_rejected(
-    tmp_path: Path, state: str
-) -> None:
+def test_review_state_forward_transition_is_rejected(tmp_path: Path) -> None:
     bundle = _copy_bundle(tmp_path)
-    review_state = _load(bundle, "review_state.json")
-    review_state["current_state"] = state
-    _write(bundle, "review_state.json", review_state)
-    _assert_invalid(
-        bundle,
-        "review_state.json: current_state must remain ROW_FAMILY_BUNDLE_IMPLEMENTED",
-    )
+    baseline = _load(bundle, "review_state.json")
+    states = baseline["allowed_states_in_order"]
+    assert isinstance(states, list)
+    later_states = [
+        state
+        for state in states
+        if state != "ROW_FAMILY_BUNDLE_IMPLEMENTED"
+        and state != baseline["current_state"]
+    ]
+    assert later_states
+    for index, state in enumerate(later_states):
+        isolated = _copy_bundle(tmp_path / f"forward_{index}")
+        review_state = _load(isolated, "review_state.json")
+        review_state["current_state"] = state
+        _write(isolated, "review_state.json", review_state)
+        _assert_invalid(
+            isolated,
+            "review_state.json: current_state must remain "
+            "ROW_FAMILY_BUNDLE_IMPLEMENTED",
+        )
 
 
 def test_review_state_adversarial_status_drift_is_rejected(tmp_path: Path) -> None:
@@ -1308,28 +2187,24 @@ def test_review_state_forward_only_false_is_rejected(tmp_path: Path) -> None:
     _assert_invalid(bundle, "review_state.json: forward_only must be true")
 
 
-def test_review_state_case_creation_authorization_is_rejected(
+def test_review_state_inserted_case_creation_authorization_is_rejected(
     tmp_path: Path,
 ) -> None:
     bundle = _copy_bundle(tmp_path)
     review_state = _load(bundle, "review_state.json")
     review_state["current_state_authorizes_case_creation"] = True
     _write(bundle, "review_state.json", review_state)
-    _assert_invalid(
-        bundle,
-        "review_state.json: current_state_authorizes_case_creation must be false",
-    )
+    _assert_invalid(bundle, "review_state.json: document must match")
 
 
-def test_review_state_science_authorization_is_rejected(tmp_path: Path) -> None:
+def test_review_state_inserted_science_authorization_is_rejected(
+    tmp_path: Path,
+) -> None:
     bundle = _copy_bundle(tmp_path)
     review_state = _load(bundle, "review_state.json")
     review_state["current_state_authorizes_science"] = True
     _write(bundle, "review_state.json", review_state)
-    _assert_invalid(
-        bundle,
-        "review_state.json: current_state_authorizes_science must be false",
-    )
+    _assert_invalid(bundle, "review_state.json: document must match")
 
 
 def test_ledger_append_only_false_is_rejected(tmp_path: Path) -> None:
@@ -1397,34 +2272,6 @@ def test_prohibited_key_leakage_is_rejected_recursively(
     )
 
 
-def test_overlap_and_runtime_lock_canonical_objects_are_immutable() -> None:
-    overlap = _load(BUNDLE, "overlap_report_schema.json")
-    runtime = _load(BUNDLE, "runtime_lock_schema.json")
-
-    assert overlap == _EXPECTED_OVERLAP_REPORT_SCHEMA
-    assert runtime == _EXPECTED_RUNTIME_LOCK_SCHEMA
-    assert overlap["actual_overlap_checked"] is False
-    assert overlap["actual_overlap_report_available"] is False
-    assert overlap["schema_only_overlap_report_cannot_authorize_execution"] is True
-    assert overlap["missing_actual_overlap_report_blocks_execution"] is True
-    assert overlap["local_absence_is_nonoverlap_evidence"] is False
-    assert overlap["remote_only_G5_authority_paths"] == [
-        "evidence/g5/G5_RAW_HASH_MANIFEST.json",
-        "evidence/g5/G5_RESULT_SUMMARY.json",
-    ]
-    assert overlap["retired_authorities"] == ["G4", "G5", "G6_R"]
-    assert overlap["later_actual_report_required_fields"] == [
-        "locked_target_identity",
-        "retired_authority_hashes",
-        "discovery_case_unit_hashes",
-        "per_dimension_results",
-        "per_unit_results",
-        "refusal_entries",
-    ]
-    assert runtime["overlap_authority_lock"]["authorizes_execution"] is False
-    assert runtime["execution_runtime_lock"]["authorizes_execution"] is False
-
-
 @pytest.mark.parametrize("name", _NAMES)
 def test_missing_document_is_rejected(tmp_path: Path, name: str) -> None:
     bundle = _copy_bundle(tmp_path)
@@ -1442,15 +2289,15 @@ def test_copied_noncanonical_root_is_rejected(tmp_path: Path) -> None:
     )
 
 
-@pytest.mark.parametrize(
-    "field", ["scientific_execution_authorized", "case_creation_authorized"]
-)
-def test_true_authorization_is_rejected(tmp_path: Path, field: str) -> None:
+@pytest.mark.parametrize("field", sorted(EXPECTED_TYPED_CAPABILITIES))
+def test_true_typed_capability_without_matching_contract_is_rejected(
+    tmp_path: Path, field: str
+) -> None:
     bundle = _copy_bundle(tmp_path)
     value = _load(bundle, "row_family_protocol.json")
-    value[field] = True
+    value["typed_capabilities"][field] = True
     _write(bundle, "row_family_protocol.json", value)
-    _assert_invalid(bundle, f"{field} must be false")
+    _assert_invalid(bundle, "row_family_protocol.json: document must match")
 
 
 @pytest.mark.parametrize("name", _NAMES)
@@ -1473,143 +2320,49 @@ def test_duplicate_key_is_rejected(tmp_path: Path, name: str) -> None:
     _assert_invalid(bundle, f"{name}: duplicate JSON key")
 
 
+@pytest.mark.parametrize(
+    ("token", "expected_error"),
+    [
+        ("NaN", "non-finite JSON constant prohibited: NaN"),
+        ("Infinity", "non-finite JSON constant prohibited: Infinity"),
+        ("1.25", "JSON floating-point values are prohibited"),
+        ("-0", "JSON negative zero is prohibited"),
+    ],
+)
+def test_noncanonical_json_number_is_reported_as_invalid(
+    tmp_path: Path, token: str, expected_error: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    path = bundle / "row_family_protocol.json"
+    raw = path.read_text(encoding="utf-8")
+    raw = raw.replace('"study_role": "discovery_only"', f'"study_role": {token}', 1)
+    path.write_text(raw, encoding="utf-8")
+
+    _assert_invalid(bundle, expected_error)
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "expected_path"),
+    [
+        ('"study_role"', '"study_role_e\u0301"', "$.study_role_é"),
+        ('"discovery_only"', '"discovery_only_e\u0301"', "$.study_role"),
+    ],
+)
+def test_non_nfc_member_name_or_string_value_is_reported_as_invalid(
+    tmp_path: Path, old: str, new: str, expected_path: str
+) -> None:
+    bundle = _copy_bundle(tmp_path)
+    path = bundle / "row_family_protocol.json"
+    raw = path.read_text(encoding="utf-8").replace(old, new, 1)
+    path.write_text(raw, encoding="utf-8")
+
+    _assert_invalid(bundle, f"Unicode NFC at {expected_path}")
+
+
 def test_extra_nested_json_is_rejected(tmp_path: Path) -> None:
     bundle = _copy_bundle(tmp_path)
     _write(bundle, "extra.json", {"schema_version": "unexpected"})
     _assert_invalid(bundle, "unexpected JSON documents: ['extra.json']")
-
-
-@pytest.mark.parametrize("operation", ["remove", "duplicate", "replace"])
-@pytest.mark.parametrize("retired_dimension", _RETIRED_DIMENSIONS)
-def test_retired_overlap_dimension_contract_drift_is_rejected(
-    tmp_path: Path, retired_dimension: str, operation: str
-) -> None:
-    bundle = _copy_bundle(tmp_path)
-    overlap = _load(bundle, "overlap_report_schema.json")
-    overlap["retired_dimensions"] = _mutate_list(
-        overlap["retired_dimensions"], retired_dimension, operation
-    )
-    _write(bundle, "overlap_report_schema.json", overlap)
-    _assert_invalid(bundle, "overlap_report_schema.json: document must match")
-
-
-@pytest.mark.parametrize("operation", ["remove", "duplicate", "replace"])
-@pytest.mark.parametrize("confirmation_dimension", _FUTURE_CONFIRMATION_DIMENSIONS)
-def test_confirmation_overlap_dimension_contract_drift_is_rejected(
-    tmp_path: Path, confirmation_dimension: str, operation: str
-) -> None:
-    bundle = _copy_bundle(tmp_path)
-    overlap = _load(bundle, "overlap_report_schema.json")
-    overlap["future_confirmation_dimensions"] = _mutate_list(
-        overlap["future_confirmation_dimensions"], confirmation_dimension, operation
-    )
-    _write(bundle, "overlap_report_schema.json", overlap)
-    _assert_invalid(bundle, "overlap_report_schema.json: document must match")
-
-
-@pytest.mark.parametrize("confirmation_flag", _CONFIRMATION_METRIC_FLAGS)
-def test_confirmation_metric_reuse_false_is_rejected(
-    tmp_path: Path, confirmation_flag: str
-) -> None:
-    bundle = _copy_bundle(tmp_path)
-    overlap = _load(bundle, "overlap_report_schema.json")
-    metric_reuse = overlap["future_confirmation_metric_reuse"]
-    assert isinstance(metric_reuse, dict)
-    metric_reuse[confirmation_flag] = False
-    _write(bundle, "overlap_report_schema.json", overlap)
-    _assert_invalid(bundle, "overlap_report_schema.json: document must match")
-
-
-@pytest.mark.parametrize("confirmation_flag", _CONFIRMATION_METRIC_FLAGS)
-def test_confirmation_metric_reuse_key_removal_is_rejected(
-    tmp_path: Path, confirmation_flag: str
-) -> None:
-    bundle = _copy_bundle(tmp_path)
-    overlap = _load(bundle, "overlap_report_schema.json")
-    metric_reuse = overlap["future_confirmation_metric_reuse"]
-    assert isinstance(metric_reuse, dict)
-    metric_reuse.pop(confirmation_flag)
-    _write(bundle, "overlap_report_schema.json", overlap)
-    _assert_invalid(bundle, "overlap_report_schema.json: document must match")
-
-
-@pytest.mark.parametrize(
-    ("field", "value"),
-    [
-        ("actual_overlap_checked", True),
-        ("actual_overlap_report_available", True),
-    ],
-)
-def test_overlap_actual_report_state_drift_is_rejected(
-    tmp_path: Path, field: str, value: bool
-) -> None:
-    bundle = _copy_bundle(tmp_path)
-    overlap = _load(bundle, "overlap_report_schema.json")
-    overlap[field] = value
-    _write(bundle, "overlap_report_schema.json", overlap)
-    _assert_invalid(bundle, "overlap_report_schema.json: document must match")
-
-
-@pytest.mark.parametrize("operation", ["remove", "duplicate", "replace"])
-@pytest.mark.parametrize("authority_lock_field", _AUTHORITY_LOCK_REQUIRED_FIELDS)
-def test_authority_lock_required_field_contract_drift_is_rejected(
-    tmp_path: Path, authority_lock_field: str, operation: str
-) -> None:
-    bundle = _copy_bundle(tmp_path)
-    runtime = _load(bundle, "runtime_lock_schema.json")
-    authority_lock = runtime["overlap_authority_lock"]
-    assert isinstance(authority_lock, dict)
-    authority_lock["required_fields"] = _mutate_list(
-        authority_lock["required_fields"], authority_lock_field, operation
-    )
-    _write(bundle, "runtime_lock_schema.json", runtime)
-    _assert_invalid(bundle, "runtime_lock_schema.json: document must match")
-
-
-@pytest.mark.parametrize("operation", ["remove", "duplicate", "replace"])
-@pytest.mark.parametrize("runtime_lock_field", _RUNTIME_LOCK_REQUIRED_FIELDS)
-def test_runtime_lock_required_field_contract_drift_is_rejected(
-    tmp_path: Path, runtime_lock_field: str, operation: str
-) -> None:
-    bundle = _copy_bundle(tmp_path)
-    runtime = _load(bundle, "runtime_lock_schema.json")
-    runtime_lock = runtime["execution_runtime_lock"]
-    assert isinstance(runtime_lock, dict)
-    runtime_lock["required_fields"] = _mutate_list(
-        runtime_lock["required_fields"], runtime_lock_field, operation
-    )
-    _write(bundle, "runtime_lock_schema.json", runtime)
-    _assert_invalid(bundle, "runtime_lock_schema.json: document must match")
-
-
-def test_authority_lock_status_drift_is_rejected(tmp_path: Path) -> None:
-    bundle = _copy_bundle(tmp_path)
-    runtime = _load(bundle, "runtime_lock_schema.json")
-    authority_lock = runtime["overlap_authority_lock"]
-    assert isinstance(authority_lock, dict)
-    authority_lock["status"] = "ready_now"
-    _write(bundle, "runtime_lock_schema.json", runtime)
-    _assert_invalid(bundle, "runtime_lock_schema.json: document must match")
-
-
-def test_runtime_lock_status_drift_is_rejected(tmp_path: Path) -> None:
-    bundle = _copy_bundle(tmp_path)
-    runtime = _load(bundle, "runtime_lock_schema.json")
-    runtime_lock = runtime["execution_runtime_lock"]
-    assert isinstance(runtime_lock, dict)
-    runtime_lock["status"] = "ready_now"
-    _write(bundle, "runtime_lock_schema.json", runtime)
-    _assert_invalid(bundle, "runtime_lock_schema.json: document must match")
-
-
-def test_runtime_lock_allowed_only_after_drift_is_rejected(tmp_path: Path) -> None:
-    bundle = _copy_bundle(tmp_path)
-    runtime = _load(bundle, "runtime_lock_schema.json")
-    runtime_lock = runtime["execution_runtime_lock"]
-    assert isinstance(runtime_lock, dict)
-    runtime_lock["allowed_only_after"] = "SCHEMA_ONLY_REPORT_PRESENT"
-    _write(bundle, "runtime_lock_schema.json", runtime)
-    _assert_invalid(bundle, "runtime_lock_schema.json: document must match")
 
 
 def test_foundation_top_level_json_set_remains_exact_five() -> None:
@@ -1663,7 +2416,13 @@ def test_execution_boundary_drift_is_rejected(tmp_path: Path, field: str) -> Non
 
 
 @pytest.mark.parametrize(
-    "level", ["family_id", "case_unit_id", "method_observation_id"]
+    "level",
+    [
+        "family_id",
+        "case_unit_id",
+        "method_observation_id",
+        "method_companion_group_id",
+    ],
 )
 def test_missing_identity_level_is_rejected(tmp_path: Path, level: str) -> None:
     bundle = _copy_bundle(tmp_path)
@@ -1673,9 +2432,7 @@ def test_missing_identity_level_is_rejected(tmp_path: Path, level: str) -> None:
     _assert_invalid(bundle, "identity_levels must match")
 
 
-@pytest.mark.parametrize(
-    "key", ["dimension", "applicability_status", "artifact_role", "sha256_or_null"]
-)
+@pytest.mark.parametrize("key", EXPECTED_FINGERPRINT_RECORD_KEYS)
 def test_missing_fingerprint_record_key_is_rejected(tmp_path: Path, key: str) -> None:
     bundle = _copy_bundle(tmp_path)
     value = _load(bundle, "identity_schema.json")
@@ -1734,16 +2491,7 @@ def test_independent_method_observations_are_rejected(tmp_path: Path) -> None:
     )
 
 
-@pytest.mark.parametrize(
-    "relation_id",
-    [
-        "exact_des_companion",
-        "controlled_family_variant",
-        "negative_control_pair",
-        "method_schema_reuse",
-        "retired_authority_overlap",
-    ],
-)
+@pytest.mark.parametrize("relation_id", EXPECTED_REUSE_RELATION_IDS)
 def test_missing_reuse_relation_id_is_rejected(
     tmp_path: Path, relation_id: str
 ) -> None:
@@ -2010,6 +2758,7 @@ def test_validator_remains_data_only() -> None:
         "__future__",
         "hashlib",
         "json",
+        "unicodedata",
         "dataclasses",
         "pathlib",
         "typing",
@@ -2120,3 +2869,951 @@ def test_invalid_floating_copy_is_rejected_without_mutation(tmp_path: Path) -> N
         "review_state.json: document must match" in error for error in result.errors
     )
     assert after == before
+
+
+_SPEC_17_3_TEST_FILES = (
+    Path("tests/test_g6b_canonical_json.py"),
+    Path("tests/test_g6b_schema_contracts.py"),
+    Path("tests/test_g6b_protocol.py"),
+    Path("tests/test_g6b_row_family_protocol.py"),
+)
+_SPEC_17_3_PREFIX = "test_spec_17_3_"
+_SPEC_17_3_STATUSES: dict[int, _SpecRequirementStatus] = {
+    number: {
+        "schema_tranche": (
+            "PASS_SCHEMA_GUARD_ONLY" if number in {15, 27} else "PASS_SCHEMA_TRANCHE"
+        ),
+        "runtime_capability": (
+            "DEFERRED_REQUIRES_SEPARATE_GATE"
+            if number in {15, 27}
+            else "NOT_REQUIRED_BY_THIS_SCHEMA_ITEM"
+        ),
+    }
+    for number in range(1, 45)
+}
+_SPEC_17_3_REQUIREMENT_MANIFEST: dict[
+    int,
+    tuple[_SpecRequirementEntry, ...],
+] = {
+    1: (
+        {
+            "test_id": (
+                "tests/test_g6b_protocol.py::test_spec_17_3_01_schema_state_order"
+            ),
+            "owner": "Task 2",
+            "task": "protocol_state_surface",
+            "aspect": (
+                "state order places normalization and preflight before quantitative "
+                "authorization"
+            ),
+        },
+    ),
+    2: (
+        {
+            "test_id": (
+                "tests/test_g6b_protocol.py::"
+                "test_spec_17_3_02_schema_only_capabilities_false"
+            ),
+            "owner": "Task 2",
+            "task": "protocol_state_surface",
+            "aspect": "current state remains pending and all four capabilities false",
+        },
+        {
+            "test_id": (
+                "tests/test_g6b_row_family_protocol.py::"
+                "test_spec_17_3_02_schema_row_family_typed_capabilities_all_false"
+            ),
+            "owner": "Task 4",
+            "task": "row_family_capability_surface",
+            "aspect": (
+                "row-family review state references the typed capability hash with "
+                "all four capabilities false"
+            ),
+        },
+    ),
+    3: (
+        {
+            "test_id": (
+                "tests/test_g6b_canonical_json.py::"
+                "test_spec_17_3_03_schema_self_hash_and_dag"
+            ),
+            "owner": "Task 1",
+            "task": "canonical_json",
+            "aspect": "null-placeholder self-hash and DAG mutations fail",
+        },
+    ),
+    4: (
+        {
+            "test_id": (
+                "tests/test_g6b_canonical_json.py::"
+                "test_spec_17_3_04_schema_canonical_json_refusals"
+            ),
+            "owner": "Task 1",
+            "task": "canonical_json",
+            "aspect": "duplicate NFC number path and set-array mutations fail",
+        },
+    ),
+    5: (
+        {
+            "test_id": (
+                "tests/test_g6b_canonical_json.py::"
+                "test_spec_17_3_05_schema_historical_decimal_exactness"
+            ),
+            "owner": "Task 1",
+            "task": "canonical_json",
+            "aspect": "historical numeric tokens use exact Decimal conversion",
+        },
+    ),
+    6: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_06_schema_fingerprint_projection_relations"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "fingerprint subject projection payload dependency correlation "
+                "envelope relations are enforced"
+            ),
+        },
+    ),
+    7: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_07_schema_governance_only_projection_hash_invariance"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "governance-only ID path label timestamp changes leave subject-free "
+                "projection hashes invariant"
+            ),
+        },
+    ),
+    8: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_08_schema_renamed_content_predictions_refuse"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "renamed retired content and paraphrased unchanged predictions refuse"
+            ),
+        },
+    ),
+    9: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_09_schema_content_mutations_keep_correlations"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "scientific content mutations change owning projection without "
+                "converting correlations into independent evidence"
+            ),
+        },
+    ),
+    10: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_10_schema_state_snapshot_parent_link_free"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "state_snapshot is pre-enumeration parent-linked subject-free and "
+                "cannot be replaced by state_space_hash"
+            ),
+        },
+    ),
+    11: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_11_schema_unknown_scientific_inputs_refuse"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "unknown scientific input fields refuse rather than hash silently"
+            ),
+        },
+    ),
+    12: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_12_schema_retired_inventory_fail_closed"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "retired inventory missing stale mismatched local-only unverified "
+                "states fail closed"
+            ),
+        },
+    ),
+    13: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_13_schema_inherited_g4_records_keep_one_lineage_and_count"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "G5 and G6-R inherited G4 records keep one lineage and one evidence "
+                "count"
+            ),
+        },
+    ),
+    14: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_14_schema_lineage_statuses_remain_distinct"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "direct derived inherited not-applicable unreconstructable statuses "
+                "remain distinct"
+            ),
+        },
+    ),
+    15: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_15_schema_normalizer_allowlist_guard"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "normalizer source analyzer rejects imports calls reads and outputs "
+                "outside exact data-only allowlist"
+            ),
+            "labels": ("SCHEMA_REPRESENTABILITY_ONLY",),
+        },
+    ),
+    16: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_16_schema_not_applicable_projection_pass_is_protocol_only"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "equal subject-free not-applicable projections yield only "
+                "not_applicable_by_protocol_pass"
+            ),
+        },
+    ),
+    17: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_17_schema_stochastic_streams_require_disjoint_substream_proof"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "stochastic streams require disjoint-substream proof and unequal "
+                "hashes alone do not pass"
+            ),
+        },
+    ),
+    18: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_18_schema_output_root_reservations_are_inert"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "output-root reservations are deterministic inert containment-only and "
+                "cannot rescue copied content"
+            ),
+        },
+    ),
+    19: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_19_schema_root_projection_boundaries"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "G4 root is not-applicable and G5 G6-R root projections exclude "
+                "absolute prefixes and output content"
+            ),
+        },
+    ),
+    20: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_20_schema_metric_reuse_requires_companion_auth"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "metric reuse requires one exact companion-group authorization and "
+                "preserves one-case two-method counting"
+            ),
+        },
+    ),
+    21: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_21_schema_method_refusal_propagates_to_case"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "method refusal propagates to its case and sealed methods cannot be "
+                "dropped"
+            ),
+        },
+    ),
+    22: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_22_schema_overlap_report_covers_every_object_and_dimension"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "overlap report covers every case method group unique lineage and "
+                "required dimension with zero pending for complete state"
+            ),
+        },
+    ),
+    23: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_23_schema_refused_and_superseded_objects_remain_in_manifests"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": "refused and superseded objects remain in later manifests",
+        },
+    ),
+    24: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_24_schema_forbidden_keys_reject_recursively"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "unknown forbidden keys are rejected recursively under every permitted "
+                "nested container"
+            ),
+        },
+    ),
+    25: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_25_schema_runtime_locks_have_no_downstream_authorization"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "preflight and quantitative locks are distinct and contain no "
+                "downstream authorization circularity"
+            ),
+        },
+    ),
+    26: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_26_schema_preflight_authorization_exact_scope_and_commands"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "preflight authorization has exact scope imports writers and tokenized "
+                "command records"
+            ),
+            "labels": ("SCHEMA_REPRESENTABILITY_ONLY",),
+        },
+    ),
+    27: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_27_schema_preflight_allowlist_guard"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "preflight source analyzer rejects hazardous imports calls and writers "
+                "while governance validator remains import-guarded from any runner"
+            ),
+        },
+    ),
+    28: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_28_schema_preflight_results_reject_quantitative_fields"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "preflight result fixtures reject quantitative scoring summary "
+                "output-root fields at every depth"
+            ),
+        },
+    ),
+    29: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_29_schema_every_preflight_case_is_terminal_or_incomplete"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "every declared preflight case is terminal or the batch is incomplete"
+            ),
+        },
+    ),
+    30: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_30_schema_terminal_partition_counts_reconcile"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "batch terminal sets are disjoint complete and counts hash-map keys "
+                "match"
+            ),
+        },
+    ),
+    31: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_31_schema_certified_records_require_runtime_hashes"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": "certified records require all runtime hashes and estimand_id",
+        },
+    ),
+    32: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_32_schema_exact_des_same_case_target_certificate_domain_metric"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "Exact and DES share one case target certificate domain hash and "
+                "metric schema while retaining distinct method IDs"
+            ),
+        },
+    ),
+    33: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_33_schema_failed_control_blocks_quant_authorization"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": "failed mandatory control blocks quantitative authorization",
+        },
+    ),
+    34: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_34_schema_quantitative_scope_rejects_implicit_expansion"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "quantitative authorization rejects wildcard implicit prefix glob null "
+                "or expanded scope"
+            ),
+            "labels": ("SCHEMA_REPRESENTABILITY_ONLY",),
+        },
+    ),
+    35: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_35_schema_failure_refusal_evidence_append_only"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": "failure refusal negative boundary evidence is append-only",
+        },
+    ),
+    36: (
+        {
+            "test_id": (
+                "tests/test_g6b_protocol.py::"
+                "test_spec_17_3_36_schema_no_status_upgrade_from_intermediate_state"
+            ),
+            "owner": "Task 2",
+            "task": "protocol_state_surface",
+            "aspect": (
+                "no schema normalization overlap or preflight state implies G6-B or "
+                "later-stage status upgrade"
+            ),
+        },
+    ),
+    37: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_37_schema_g4_manifest_freeze_sets_reconcile_exactly"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "G4 manifest freeze path ID hash sets reconcile exactly with missing "
+                "extra duplicate cross-ID wrong-base failures"
+            ),
+        },
+    ),
+    38: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_38_schema_subunits_reject_renamed_enclosing_ids"
+            ),
+            "owner": "Task 5",
+            "task": "schema_contracts",
+            "aspect": (
+                "grid cells L30 inequalities and B05 monitors expand as deterministic "
+                "parent-owned subunits"
+            ),
+        },
+    ),
+    39: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_39_schema_source_dimension_uses_exact_producer_row"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": "each retired dimension uses only its exact producer row",
+        },
+    ),
+    40: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_40_schema_source_selector_grants_one_use_only"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "each source selector grants one use only and result streams never "
+                "enter comparison projections"
+            ),
+        },
+    ),
+    41: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_41_schema_barrier_a_rejects_operation_and_role_drift"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "Barrier A rejects aliases wrong order schema role map cardinality "
+                "drift and duplicate file ownership"
+            ),
+        },
+    ),
+    42: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_42_schema_refusal_code_unions_are_gate_specific"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "each gate accepts exactly cross-gate union named-gate refusal codes"
+            ),
+        },
+    ),
+    43: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_43_schema_overlap_lock_rejects_admin_identity_drift"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "overlap lock rejects branch dirty non-linked tree admin-hash "
+                "privacy-path drift"
+            ),
+        },
+    ),
+    44: (
+        {
+            "test_id": (
+                "tests/test_g6b_schema_contracts.py::"
+                "test_spec_17_3_44_schema_command_manifest_hash_maps_and_placeholders"
+            ),
+            "owner": "Task 3",
+            "task": "schema_contracts",
+            "aspect": (
+                "command manifests reconcile hashes maps placeholders environments and "
+                "cannot reference downstream locks or authorizations"
+            ),
+        },
+    ),
+}
+
+
+def _test_number(test_name: str) -> int:
+    prefix = _SPEC_17_3_PREFIX
+    assert test_name.startswith(prefix)
+    number_text = test_name[len(prefix) : len(prefix) + 2]
+    assert test_name[len(prefix) + 2 :].startswith("_schema_")
+    return int(number_text)
+
+
+def _test_id(path: Path, test_name: str) -> str:
+    return f"{path.as_posix()}::{test_name}"
+
+
+def _is_skip_or_xfail_decorator(decorator: ast.expr) -> bool:
+    target = decorator.func if isinstance(decorator, ast.Call) else decorator
+    if isinstance(target, ast.Attribute):
+        parts: list[str] = []
+        current: ast.expr = target
+        while isinstance(current, ast.Attribute):
+            parts.append(current.attr)
+            current = current.value
+        if isinstance(current, ast.Name):
+            parts.append(current.id)
+        return ".".join(reversed(parts)) in {
+            "pytest.mark.skip",
+            "pytest.mark.skipif",
+            "pytest.mark.xfail",
+        }
+    return isinstance(target, ast.Name) and target.id in {"skip", "skipif", "xfail"}
+
+
+def _collect_spec_17_3_tests() -> tuple[list[tuple[str, int]], list[str]]:
+    collected: list[tuple[str, int]] = []
+    decorated: list[str] = []
+    for path in _SPEC_17_3_TEST_FILES:
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+                continue
+            if not node.name.startswith(_SPEC_17_3_PREFIX):
+                continue
+            if not node.name[len(_SPEC_17_3_PREFIX) + 2 :].startswith("_schema_"):
+                continue
+            test_id = _test_id(path, node.name)
+            collected.append((test_id, _test_number(node.name)))
+            if any(_is_skip_or_xfail_decorator(item) for item in node.decorator_list):
+                decorated.append(test_id)
+    return collected, decorated
+
+
+def _collect_pytest_nodeids() -> set[str]:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-p",
+            "no:cacheprovider",
+            "--collect-only",
+            "-q",
+            *[path.as_posix() for path in _SPEC_17_3_TEST_FILES],
+        ],
+        check=False,
+        env={
+            **os.environ,
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONPATH": "src",
+        },
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    return {
+        line
+        for line in result.stdout.splitlines()
+        if "::" in line and not line.startswith("<")
+    }
+
+
+def test_spec_17_3_requirement_manifest_status_and_collection_are_mechanical() -> None:
+    assert set(_SPEC_17_3_REQUIREMENT_MANIFEST) == set(range(1, 45))
+    assert set(_SPEC_17_3_STATUSES) == set(range(1, 45))
+    for number, status in _SPEC_17_3_STATUSES.items():
+        if number in {15, 27}:
+            assert status == {
+                "schema_tranche": "PASS_SCHEMA_GUARD_ONLY",
+                "runtime_capability": "DEFERRED_REQUIRES_SEPARATE_GATE",
+            }
+        else:
+            assert status == {
+                "schema_tranche": "PASS_SCHEMA_TRANCHE",
+                "runtime_capability": "NOT_REQUIRED_BY_THIS_SCHEMA_ITEM",
+            }
+
+    manifest_entries = [
+        (number, entry)
+        for number, entries in _SPEC_17_3_REQUIREMENT_MANIFEST.items()
+        for entry in entries
+    ]
+    manifest_ids = [entry["test_id"] for _, entry in manifest_entries]
+    assert len(manifest_ids) == len(set(manifest_ids))
+    for number, entry in manifest_entries:
+        assert entry["test_id"].startswith("tests/test_g6b_")
+        assert f"::test_spec_17_3_{number:02d}_schema_" in entry["test_id"]
+        assert entry["owner"]
+        assert entry["task"]
+        assert entry["aspect"]
+        labels = entry.get("labels", ())
+        if labels:
+            assert labels == ("SCHEMA_REPRESENTABILITY_ONLY",)
+            assert _SPEC_17_3_STATUSES[number]["runtime_capability"] != (
+                "PASS_RUNTIME_CAPABILITY"
+            )
+
+    aspects_by_number = {
+        number: {(entry["owner"], entry["aspect"]) for entry in entries}
+        for number, entries in _SPEC_17_3_REQUIREMENT_MANIFEST.items()
+    }
+    for number, entries in _SPEC_17_3_REQUIREMENT_MANIFEST.items():
+        assert len(aspects_by_number[number]) == len(entries)
+
+    ast_collected, skip_or_xfail_ids = _collect_spec_17_3_tests()
+    ast_collected_ids = [test_id for test_id, _number in ast_collected]
+    ast_collected_numbers = {number for _test_id_value, number in ast_collected}
+    duplicate_ast_ids = [
+        test_id for test_id, count in Counter(ast_collected_ids).items() if count != 1
+    ]
+
+    pytest_nodeids = _collect_pytest_nodeids()
+    uncollected_manifest_ids = [
+        manifest_id
+        for manifest_id in manifest_ids
+        if manifest_id not in pytest_nodeids
+        and not any(nodeid.startswith(f"{manifest_id}[") for nodeid in pytest_nodeids)
+    ]
+    errors = {
+        "missing_requirement_numbers": sorted(
+            set(range(1, 45)) - ast_collected_numbers
+        ),
+        "missing_manifest_ids_from_ast": sorted(
+            set(manifest_ids) - set(ast_collected_ids)
+        ),
+        "orphan_ast_ids_not_in_manifest": sorted(
+            set(ast_collected_ids) - set(manifest_ids)
+        ),
+        "duplicate_ast_ids": duplicate_ast_ids,
+        "skip_skipif_xfail_ids": skip_or_xfail_ids,
+        "manifest_ids_not_collected_by_pytest": uncollected_manifest_ids,
+    }
+    errors = {key: value for key, value in errors.items() if value}
+    assert errors == {}, json.dumps(errors, indent=2, sort_keys=True)
+
+
+def _task6_scope_policy_category(path: str) -> str | None:
+    normalized = path.replace("\\", "/").removeprefix("./")
+    exact_category = _TASK6_FORBIDDEN_EXACT_PATHS.get(normalized)
+    if exact_category is not None:
+        return exact_category
+    for prefix, category in _TASK6_FORBIDDEN_PATH_PREFIXES:
+        if normalized.startswith(prefix):
+            return category
+    if normalized not in _FINAL_SCHEMA_REVIEW_DECLARED_CHANGED_PATHS:
+        return "outside_task6_declared_files"
+    return None
+
+
+def _task6_is_benign_ignored_path(path: str) -> bool:
+    normalized = path.replace("\\", "/").removeprefix("./")
+    if normalized.startswith(_TASK6_BENIGN_IGNORED_ROOT_PREFIXES):
+        return True
+    return "__pycache__" in normalized.split("/")
+
+
+def _task6_changed_and_untracked_paths() -> list[str]:
+    diff = subprocess.run(
+        [
+            "git",
+            "diff",
+            "--name-status",
+            "--no-renames",
+            _TASK5_SCHEMA_CODE_SUBJECT_COMMIT,
+            "--",
+        ],
+        cwd=_REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert diff.returncode == 0, diff.stdout + diff.stderr
+    changed: list[str] = []
+    for line in diff.stdout.splitlines():
+        parts = line.split("\t")
+        assert len(parts) == 2, f"unexpected git diff --name-status row: {line!r}"
+        changed.append(parts[1])
+
+    untracked = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard"],
+        cwd=_REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert untracked.returncode == 0, untracked.stdout + untracked.stderr
+    changed.extend(line for line in untracked.stdout.splitlines() if line)
+
+    ignored = subprocess.run(
+        ["git", "ls-files", "--others", "--ignored", "--exclude-standard"],
+        cwd=_REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert ignored.returncode == 0, ignored.stdout + ignored.stderr
+    for line in ignored.stdout.splitlines():
+        if not line:
+            continue
+        if not _task6_is_benign_ignored_path(line):
+            changed.append(line)
+    return sorted(set(changed))
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        (".mypy_cache/3.13/src.data.json", True),
+        (".pytest_cache/v/cache/nodeids", True),
+        (".ruff_cache/0.14.4/123456", True),
+        ("src/ims_deadlock/__pycache__/g6b.cpython-313.pyc", True),
+        ("evidence/g6b/.pytest_cache_like_result.json", False),
+        ("scratch/outside.json", False),
+    ],
+)
+def test_task6_ignored_scope_policy_only_excludes_benign_cache_paths(
+    path: str,
+    expected: bool,
+) -> None:
+    assert _task6_is_benign_ignored_path(path) is expected
+
+
+def test_task6_ignored_outside_declared_paths_remain_scope_violations() -> None:
+    path = "scratch/outside.json"
+
+    assert _task6_scope_policy_category(path) == "outside_task6_declared_files"
+    assert not _task6_is_benign_ignored_path(path)
+
+
+def test_task7_repair_scope_is_exact_and_keeps_future_capabilities_forbidden() -> None:
+    assert _TASK7_REPAIR_DECLARED_CHANGED_PATHS == {
+        "docs/verification/G6_B_AUTHORIZATION_GATE_REMEDIATION_REVIEW.md",
+        "src/ims_deadlock/g6b_schema_contracts.py",
+        "tests/test_g6b_schema_contracts.py",
+        "tests/test_g6b_row_family_protocol.py",
+    }
+    assert all(
+        _task6_scope_policy_category(path) is None
+        for path in _TASK7_REPAIR_DECLARED_CHANGED_PATHS
+    )
+    assert (
+        _task6_scope_policy_category("src/ims_deadlock/g6b_target_preflight.py")
+        == "outside_task6_declared_files"
+    )
+
+
+@pytest.mark.parametrize(
+    ("path", "expected_category"),
+    [
+        (
+            "cases/confirmation/g4/FREEZE_ENTRY.json",
+            "retired_g4_evidence",
+        ),
+        ("evidence/g5/G5_RESULT_SUMMARY.json", "retired_g5_evidence"),
+        (
+            "evidence/g6/G6_HISTORICAL_REPLAY_R3_REPORT.json",
+            "retired_g6r_evidence",
+        ),
+        (
+            "evidence/g6b/target_certification/case.json",
+            "target_certification_evidence",
+        ),
+        ("artifacts/g6b/quantitative/result.json", "scientific_artifact_root"),
+        (
+            (
+                "cases/discovery/g6b/row_families/structural_discovery_v1/"
+                "governance/authorization.json"
+            ),
+            "case_governance_instance_root",
+        ),
+        (
+            (
+                "cases/discovery/g6b/row_families/structural_discovery_v1/"
+                "case_units/case.json"
+            ),
+            "case_instance_root",
+        ),
+        (
+            (
+                "docs/superpowers/specs/"
+                "2026-08-01-g6b-case-target-certification-design.md"
+            ),
+            "approved_specification",
+        ),
+        ("src/ims_deadlock/g6b_quantitative_runner.py", "outside_task6_declared_files"),
+    ],
+)
+def test_task6_diff_scope_policy_rejects_forbidden_paths(
+    path: str,
+    expected_category: str,
+) -> None:
+    assert _task6_scope_policy_category(path) == expected_category
+
+
+def test_task6_git_diff_scope_excludes_science_and_capability_surfaces() -> None:
+    changed_paths = _task6_changed_and_untracked_paths()
+    assert changed_paths
+    assert "docs/verification/G6_B_CASE_TARGET_SCHEMA_V2_REVIEW.md" in changed_paths
+    violations = [
+        (path, category)
+        for path in changed_paths
+        if (category := _task6_scope_policy_category(path)) is not None
+    ]
+    assert violations == [], violations[0] if violations else None

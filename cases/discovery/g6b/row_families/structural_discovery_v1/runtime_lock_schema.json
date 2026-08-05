@@ -1,39 +1,163 @@
 {
-  "schema_version": "ims-deadlock/g6b-row-family-runtime-lock-schema/v1",
+  "schema_version": "ims-deadlock/g6b-row-family-runtime-lock-schema/v2",
   "study_role": "discovery_only",
   "confirmation_use": "prohibited",
-  "scientific_execution_authorized": false,
-  "case_creation_authorized": false,
-  "overlap_authority_lock": {
+  "schema_role": "schema_only",
+  "canonicalization_contract": {
+    "version": "ims-deadlock/g6b-canonical-json/v2",
+    "duplicate_members": "reject_at_every_depth",
+    "unicode_normalization": {
+      "member_names": "require_nfc_reject_non_nfc",
+      "string_values": "require_nfc_reject_non_nfc",
+      "silent_normalization": "prohibited"
+    },
+    "object_key_order": "unicode_code_point",
+    "array_order_policy": {
+      "declared_array_order": "preserve",
+      "schema_declared_set_like_arrays": "unique_and_already_sorted"
+    },
+    "utf8_serialization": {
+      "encoding": "utf-8",
+      "ensure_ascii": false,
+      "sort_keys": true,
+      "separators": [
+        ",",
+        ":"
+      ],
+      "allow_nan": false
+    },
+    "numeric_policy": {
+      "json_nan_infinity_negative_zero_float": "prohibited",
+      "counts_and_integral_budgets": "json_integers",
+      "non_integral_values": {
+        "encoding": "canonical_decimal_string",
+        "grammar": "^-?(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+        "negative_zero": "prohibited",
+        "exponent": "prohibited"
+      },
+      "historical_json_numbers": "parse_lexical_token_as_exact_decimal_not_binary_float"
+    },
+    "path_policy": {
+      "committed_paths": "case_sensitive_repo_relative_posix",
+      "drive_letter_leading_slash_backslash_empty_dot_dotdot": "prohibited",
+      "symlink_dependent_resolution": "prohibited",
+      "runtime_executables": "logical_id_plus_byte_and_environment_hashes_not_absolute_path"
+    },
+    "timestamp_policy": {
+      "timezone": "utc",
+      "format": "YYYY-MM-DDTHH:MM:SSZ",
+      "precision": "seconds"
+    }
+  },
+  "self_hash_finalization_contract": {
+    "version": "ims-deadlock/g6b-self-hash-finalization/v2",
+    "placeholder_value": null,
+    "replaced_field_count": 1,
+    "omitted_field_allowed": false,
+    "prepopulated_digest_allowed": false,
+    "excluded_field_escape_hatch_allowed": false,
+    "cross_record_reference_order": {
+      "graph": "directed_acyclic_lifecycle_order",
+      "record_may_reference": "already_finalized_upstream_records_only",
+      "upstream_embeds_downstream_back_reference": "prohibited",
+      "self_hash_field": "schema_fixed"
+    },
+    "digest_algorithm": "sha256",
+    "digest_encoding": "lowercase_hexadecimal"
+  },
+  "input_overlap_authority_lock": {
     "status": "required_later",
-    "authorizes_execution": false,
+    "prerequisite_bundle_state": "CASE_INPUTS_SEALED_NO_EXECUTION",
+    "does_not_authorize_execution": true,
     "required_fields": [
-      "target_path",
-      "target_branch",
-      "target_head",
-      "target_dirty_state",
-      "upstream_ahead_behind",
-      "worktree_identity",
-      "repo_remote_url",
+      "schema_version",
+      "lock_id",
+      "source_remote",
+      "source_branch",
+      "source_head",
       "source_tree_hash",
-      "sealed_case_artifact_hashes",
-      "retired_authority_paths_and_hashes"
+      "source_dirty_state",
+      "source_worktree_identity",
+      "sealed_bundle_manifest_hash",
+      "normalization_authorization_sha256",
+      "normalization_manifest_sha256",
+      "authority_lock_record_hashes",
+      "unique_lineage_map_sha256",
+      "comparison_command_manifest_sha256",
+      "validator_code_hashes",
+      "canonicalization_versions",
+      "normalizer_version",
+      "planned_case_unit_ids",
+      "planned_method_observation_ids",
+      "planned_method_companion_group_ids",
+      "ledger_head_hash",
+      "created_at_utc",
+      "lock_sha256"
+    ],
+    "source_worktree_identity_required_fields": [
+      "logical_worktree_id",
+      "worktree_kind",
+      "gitdir_file_sha256_or_null",
+      "common_dir_identity_sha256",
+      "worktree_admin_identity_sha256",
+      "checked_out_tree_hash"
     ]
   },
-  "execution_runtime_lock": {
+  "target_certification_runtime_lock": {
     "status": "required_later",
-    "allowed_only_after": "ACTUAL_OVERLAP_REPORT_PASSED",
-    "authorizes_execution": false,
+    "prerequisite_bundle_state": "INPUT_OVERLAP_AUDIT_COMPLETE",
+    "does_not_authorize_execution": true,
     "required_fields": [
-      "python_executable",
-      "python_version",
-      "package_lock_or_environment_hash",
-      "validation_commands",
-      "validation_results",
-      "runtime_lock_created_at_utc",
-      "science_execution_authorized_by_artifact",
-      "pythondontwritebytecode_or_cache_policy",
-      "output_root_policy"
+      "schema_version",
+      "runtime_lock_id",
+      "source_head",
+      "source_tree_hash",
+      "source_dirty_state",
+      "sealed_bundle_manifest_hash",
+      "python_runtime_identity",
+      "pythonpath_source_hash",
+      "bytecode_cache_policy",
+      "entrypoint_hash",
+      "allowed_command_manifest_hash",
+      "target_certificate_schema_version",
+      "canonicalization_version",
+      "case_unit_ids",
+      "expected_input_hashes",
+      "preflight_evidence_root",
+      "resource_budget",
+      "capture_policy",
+      "failure_budget",
+      "ledger_head_hash",
+      "created_at_utc",
+      "runtime_lock_sha256"
     ]
-  }
+  },
+  "quantitative_runtime_lock": {
+    "status": "required_later",
+    "prerequisite_bundle_state": "TARGET_CERTIFICATION_PREFLIGHT_COMPLETE",
+    "does_not_authorize_execution": true,
+    "required_fields": [
+      "schema_version",
+      "runtime_lock_id",
+      "source_head",
+      "source_tree_hash",
+      "source_dirty_state",
+      "sealed_bundle_manifest_hash",
+      "target_certification_batch_manifest_hash",
+      "case_unit_ids",
+      "method_observation_ids",
+      "same_target_lock_hashes",
+      "python_runtime_identity",
+      "allowed_command_manifest_hash",
+      "random_stream_manifest_hashes",
+      "output_root_reservations",
+      "resource_budget",
+      "run_retry_stop_policy",
+      "capture_policy",
+      "ledger_head_hash",
+      "created_at_utc",
+      "runtime_lock_sha256"
+    ]
+  },
+  "runtime_lock_must_not_contain_downstream_authorization": true
 }

@@ -1,55 +1,299 @@
 {
-  "schema_version": "ims-deadlock/g6b-row-family-overlap-schema/v1",
+  "schema_version": "ims-deadlock/g6b-row-family-overlap-schema/v2",
   "study_role": "discovery_only",
   "confirmation_use": "prohibited",
-  "scientific_execution_authorized": false,
-  "case_creation_authorized": false,
-  "report_role": "schema_only",
-  "actual_overlap_checked": false,
-  "actual_overlap_report_available": false,
-  "schema_only_overlap_report_cannot_authorize_execution": true,
-  "missing_actual_overlap_report_blocks_execution": true,
-  "retired_authorities": [
-    "G4",
-    "G5",
-    "G6_R"
-  ],
-  "retired_dimensions": [
-    "case_content_sha256",
-    "state_snapshot_sha256",
-    "route_signature_sha256",
-    "parameter_tuple_sha256",
-    "random_stream_manifest_sha256",
-    "output_root",
-    "sealed_prediction_sha256",
-    "metric_schema_sha256"
-  ],
-  "future_confirmation_dimensions": [
-    "case_content_sha256",
-    "state_snapshot_sha256",
-    "route_signature_sha256",
-    "parameter_tuple_sha256",
-    "random_stream_manifest_sha256",
-    "output_root",
-    "sealed_prediction_sha256"
-  ],
-  "future_confirmation_metric_reuse": {
-    "explicitly_preregistered": true,
-    "same_target_comparability": true,
-    "not_derived_from_outcomes": true
+  "schema_role": "schema_only",
+  "canonicalization_contract": {
+    "version": "ims-deadlock/g6b-canonical-json/v2",
+    "duplicate_members": "reject_at_every_depth",
+    "unicode_normalization": {
+      "member_names": "require_nfc_reject_non_nfc",
+      "string_values": "require_nfc_reject_non_nfc",
+      "silent_normalization": "prohibited"
+    },
+    "object_key_order": "unicode_code_point",
+    "array_order_policy": {
+      "declared_array_order": "preserve",
+      "schema_declared_set_like_arrays": "unique_and_already_sorted"
+    },
+    "utf8_serialization": {
+      "encoding": "utf-8",
+      "ensure_ascii": false,
+      "sort_keys": true,
+      "separators": [
+        ",",
+        ":"
+      ],
+      "allow_nan": false
+    },
+    "numeric_policy": {
+      "json_nan_infinity_negative_zero_float": "prohibited",
+      "counts_and_integral_budgets": "json_integers",
+      "non_integral_values": {
+        "encoding": "canonical_decimal_string",
+        "grammar": "^-?(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+        "negative_zero": "prohibited",
+        "exponent": "prohibited"
+      },
+      "historical_json_numbers": "parse_lexical_token_as_exact_decimal_not_binary_float"
+    },
+    "path_policy": {
+      "committed_paths": "case_sensitive_repo_relative_posix",
+      "drive_letter_leading_slash_backslash_empty_dot_dotdot": "prohibited",
+      "symlink_dependent_resolution": "prohibited",
+      "runtime_executables": "logical_id_plus_byte_and_environment_hashes_not_absolute_path"
+    },
+    "timestamp_policy": {
+      "timezone": "utc",
+      "format": "YYYY-MM-DDTHH:MM:SSZ",
+      "precision": "seconds"
+    }
   },
-  "required_lock_before_actual_report": "overlap_authority_lock",
-  "remote_only_G5_authority_paths": [
-    "evidence/g5/G5_RAW_HASH_MANIFEST.json",
-    "evidence/g5/G5_RESULT_SUMMARY.json"
+  "self_hash_finalization_contract": {
+    "version": "ims-deadlock/g6b-self-hash-finalization/v2",
+    "placeholder_value": null,
+    "replaced_field_count": 1,
+    "omitted_field_allowed": false,
+    "prepopulated_digest_allowed": false,
+    "excluded_field_escape_hatch_allowed": false,
+    "cross_record_reference_order": {
+      "graph": "directed_acyclic_lifecycle_order",
+      "record_may_reference": "already_finalized_upstream_records_only",
+      "upstream_embeds_downstream_back_reference": "prohibited",
+      "self_hash_field": "schema_fixed"
+    },
+    "digest_algorithm": "sha256",
+    "digest_encoding": "lowercase_hexadecimal"
+  },
+  "retired_authorities": [
+    "G4_FREEZE",
+    "G5_EXECUTION",
+    "G6_R_REPLAY_R3"
   ],
-  "local_absence_is_nonoverlap_evidence": false,
-  "later_actual_report_required_fields": [
-    "locked_target_identity",
-    "retired_authority_hashes",
-    "discovery_case_unit_hashes",
-    "per_dimension_results",
-    "per_unit_results",
-    "refusal_entries"
-  ]
+  "typed_admission_contract": {
+    "case_content_sha256": [
+      "pass_distinct",
+      "semantic_lineage_audit_passed"
+    ],
+    "state_snapshot_sha256": [
+      "pass_distinct",
+      "semantic_lineage_audit_passed"
+    ],
+    "route_signature_sha256": [
+      "pass_distinct",
+      "semantic_lineage_audit_passed"
+    ],
+    "parameter_tuple_sha256": [
+      "pass_distinct",
+      "semantic_lineage_audit_passed"
+    ],
+    "random_stream_manifest_sha256_exact": [
+      "not_applicable_by_protocol_pass"
+    ],
+    "random_stream_manifest_sha256_stochastic": [
+      "disjoint_stream_pass"
+    ],
+    "output_root_reservation_sha256": [
+      "containment_separation_pass"
+    ],
+    "sealed_prediction_sha256": [
+      "pass_distinct",
+      "semantic_lineage_audit_passed"
+    ],
+    "metric_schema_sha256": [
+      "controlled_reuse_pass_with_exact_record",
+      "pass_distinct"
+    ],
+    "hash_inequality_count_is_admission_rule": false,
+    "unique_retired_lineage_compared_once": true
+  },
+  "per_case_overlap_required_fields": [
+    "subject_type",
+    "subject_id",
+    "required_fingerprint_record_hashes",
+    "required_comparison_record_hashes",
+    "required_lineage_audit_hashes",
+    "required_reuse_record_hashes",
+    "admission_status",
+    "refusal_reason_codes",
+    "ledger_entry_ids"
+  ],
+  "per_method_overlap_required_fields": [
+    "subject_type",
+    "subject_id",
+    "required_fingerprint_record_hashes",
+    "required_comparison_record_hashes",
+    "required_lineage_audit_hashes",
+    "required_reuse_record_hashes",
+    "admission_status",
+    "refusal_reason_codes",
+    "ledger_entry_ids"
+  ],
+  "per_companion_group_overlap_required_fields": [
+    "subject_type",
+    "subject_id",
+    "required_fingerprint_record_hashes",
+    "required_comparison_record_hashes",
+    "required_lineage_audit_hashes",
+    "required_reuse_record_hashes",
+    "admission_status",
+    "refusal_reason_codes",
+    "ledger_entry_ids"
+  ],
+  "terminal_partition_contract": {
+    "case_partition_fields": [
+      "passed_case_count",
+      "pending_case_count",
+      "planned_case_count",
+      "refused_case_count"
+    ],
+    "method_partition_fields": [
+      "passed_method_count",
+      "pending_method_count",
+      "planned_method_count",
+      "refused_method_count"
+    ],
+    "companion_group_partition_fields": [
+      "passed_companion_group_count",
+      "pending_companion_group_count",
+      "planned_companion_group_count",
+      "refused_companion_group_count"
+    ],
+    "partitions_pairwise_disjoint": true,
+    "partitions_cover_declared_subjects": true,
+    "counts_equal_partition_cardinalities": true,
+    "complete_status_requires_all_pending_counts_zero": true,
+    "incomplete_refused_cannot_advance": true
+  },
+  "semantic_lineage_audit_required_fields": [
+    "schema_version",
+    "audit_id",
+    "new_case_unit_id",
+    "retired_authority_id",
+    "retired_lineage_id",
+    "new_case_content_projection_sha256",
+    "retired_case_content_projection_sha256",
+    "lineage_declaration_sha256",
+    "typed_graph_canonicalizer_version",
+    "typed_graph_isomorphism_status",
+    "parameter_transform_audit_status",
+    "prediction_semantic_reuse_status",
+    "declared_provenance_consistency_status",
+    "outcome_driven_adjustment_status",
+    "construction_log_sha256",
+    "audit_status",
+    "reason_codes",
+    "review_artifact_hash",
+    "audit_record_sha256"
+  ],
+  "metric_schema_reuse_record_required_fields": [
+    "schema_version",
+    "reuse_record_id",
+    "dimension",
+    "retired_authority_id",
+    "retired_lineage_id",
+    "retired_metric_schema_sha256",
+    "new_metric_schema_sha256",
+    "method_companion_group_id",
+    "reuse_reason_code",
+    "comparability_requirement",
+    "permitted_claim_codes",
+    "forbidden_claim_codes",
+    "review_artifact_hash",
+    "reuse_record_sha256"
+  ],
+  "input_overlap_report_required_fields": [
+    "schema_version",
+    "report_id",
+    "bundle_id",
+    "input_overlap_authority_lock_sha256",
+    "sealed_bundle_manifest_sha256",
+    "normalization_manifest_sha256",
+    "declared_case_unit_ids",
+    "declared_method_observation_ids",
+    "declared_method_companion_group_ids",
+    "new_fingerprint_record_hashes",
+    "retired_fingerprint_record_hashes",
+    "comparison_record_hashes",
+    "semantic_lineage_audit_hashes",
+    "metric_schema_reuse_record_hashes",
+    "per_case_status",
+    "per_method_status",
+    "per_companion_group_status",
+    "unique_retired_lineage_count",
+    "inherited_record_count",
+    "duplicate_lineage_record_count",
+    "planned_case_count",
+    "passed_case_count",
+    "refused_case_count",
+    "pending_case_count",
+    "planned_method_count",
+    "passed_method_count",
+    "refused_method_count",
+    "pending_method_count",
+    "planned_companion_group_count",
+    "passed_companion_group_count",
+    "refused_companion_group_count",
+    "pending_companion_group_count",
+    "admission_policy_version",
+    "report_status",
+    "ledger_head_hash",
+    "report_sha256"
+  ],
+  "input_overlap_subject_status_values": [
+    "admitted",
+    "refused",
+    "pending"
+  ],
+  "input_overlap_report_status_values": [
+    "complete_all_admitted",
+    "complete_with_refusals",
+    "incomplete_refused"
+  ],
+  "recursive_prohibited_fields": [
+    "authorized",
+    "authorization_id",
+    "bundle_id",
+    "case_unit_id",
+    "method_observation_id",
+    "observed_result",
+    "exact_output",
+    "des_output",
+    "state_enumeration_result",
+    "metric_value",
+    "actual_overlap_result",
+    "current_runtime_lock"
+  ],
+  "refusal_code_vocabulary_version": "ims-deadlock/g6b-refusal-codes/v1",
+  "refusal_reason_codes": [
+    "batch_incomplete",
+    "canonicalization_violation",
+    "capability_call_violation",
+    "capability_import_violation",
+    "duplicate_lineage_miscount",
+    "metric_reuse_unauthorized",
+    "missing_hash",
+    "missing_normalization_authorization",
+    "missing_retired_authority",
+    "outcome_leakage",
+    "output_root_reuse_or_materialized",
+    "overlap_hit",
+    "prediction_semantic_reuse",
+    "random_stream_disjointness_unproved",
+    "random_stream_overlap",
+    "rename_or_cosmetic_shift_detected",
+    "retired_authority_hash_mismatch",
+    "retired_normalizer_error",
+    "retired_projection_unreconstructable",
+    "runtime_identity_drift",
+    "sealed_input_drift",
+    "self_hash_mismatch",
+    "semantic_identity_reuse",
+    "semantic_lineage_ambiguous",
+    "source_field_read_violation",
+    "subject_id_contaminated_projection",
+    "unauthorized_retired_normalization_attempt",
+    "unclassified_scientific_input"
+  ],
+  "schema_only_overlap_report_cannot_authorize_execution": true
 }

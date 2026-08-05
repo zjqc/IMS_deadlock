@@ -1,8 +1,10 @@
 {
-  "schema_version": "ims-deadlock/g6b-row-family-identity/v2",
+  "schema_version": "ims-deadlock/g6b-case-construction-schema/v1",
   "study_role": "discovery_only",
   "confirmation_use": "prohibited",
   "schema_role": "schema_only",
+  "current_capability_reference": "row_family_protocol.json#/typed_capabilities",
+  "prerequisite_bundle_state": "ADVERSARIAL_ROW_FAMILY_REVIEW_PASSED",
   "canonicalization_contract": {
     "version": "ims-deadlock/g6b-canonical-json/v2",
     "duplicate_members": "reject_at_every_depth",
@@ -65,23 +67,138 @@
     "digest_algorithm": "sha256",
     "digest_encoding": "lowercase_hexadecimal"
   },
-  "identity_levels": [
-    "family_id",
-    "case_unit_id",
-    "method_observation_id",
-    "method_companion_group_id"
+  "governance_instance_root_template": "cases/discovery/g6b/row_families/structural_discovery_v1/governance/{bundle_id}/",
+  "case_unit_root_template": "cases/discovery/g6b/row_families/structural_discovery_v1/case_units/{case_unit_id}/",
+  "construction_authorization_required_fields": [
+    "schema_version",
+    "artifact_id",
+    "capability",
+    "authorized",
+    "bundle_id",
+    "case_unit_ids",
+    "method_observation_ids",
+    "source_head",
+    "source_tree_hash",
+    "approved_plan_artifact_hash",
+    "allowed_operations",
+    "forbidden_operations",
+    "review_artifact_hash",
+    "issued_at_utc",
+    "invalidated_by_identity_drift",
+    "artifact_sha256"
   ],
-  "canonical_dimensions": [
+  "sealed_bundle_manifest_required_fields": [
+    "schema_version",
+    "bundle_id",
+    "construction_authorization_hash",
+    "planned_case_unit_ids",
+    "planned_method_observation_ids",
+    "planned_method_companion_group_ids",
+    "case_unit_record_hashes",
+    "method_observation_record_hashes",
+    "method_companion_group_record_hashes",
+    "mandatory_control_ids",
+    "fingerprint_record_hashes",
+    "sealed_prediction_hashes",
+    "semantic_lineage_declaration_hashes",
+    "metric_schema_hashes",
+    "quantitative_output_root_reservations",
+    "planned_case_unit_count",
+    "planned_method_count",
+    "planned_companion_group_count",
+    "manifest_sha256"
+  ],
+  "case_unit_required_fields": [
+    "schema_version",
+    "bundle_id",
+    "case_unit_id",
+    "family_id",
+    "input_mode",
+    "structural_family_role",
+    "negative_control_id_or_null",
+    "case_artifact_paths",
     "case_content_sha256",
     "state_snapshot_sha256",
     "route_signature_sha256",
     "parameter_tuple_sha256",
+    "sealed_prediction_sha256",
+    "rate_manifest_ref",
+    "policy_declaration_ref",
+    "selected_target_ref",
+    "control_declaration_ref",
+    "state_bound",
+    "state_snapshot_payload_schema_version",
+    "state_snapshot_nesting_relation",
+    "state_snapshot_parent_case_content_sha256",
+    "fingerprint_record_hashes",
+    "semantic_lineage_declaration_hash",
+    "method_observation_ids",
+    "case_unit_state"
+  ],
+  "method_observation_required_fields": [
+    "schema_version",
+    "bundle_id",
+    "method_observation_id",
+    "case_unit_id",
+    "method_companion_group_id",
+    "method_role",
     "random_stream_manifest_sha256",
     "output_root_reservation_sha256",
-    "sealed_prediction_sha256",
-    "metric_schema_sha256"
+    "metric_schema_sha256",
+    "fingerprint_record_hashes",
+    "stopping_rule_ref",
+    "des_stopping_rule_ref_or_null",
+    "method_state"
   ],
-  "fingerprint_record_keys": [
+  "method_companion_group_required_fields": [
+    "schema_version",
+    "bundle_id",
+    "method_companion_group_id",
+    "case_unit_id",
+    "member_method_observation_ids",
+    "member_method_roles",
+    "metric_schema_ref",
+    "metric_schema_sha256",
+    "same_target_required",
+    "allowed_reuse_reason_code",
+    "reuse_authorization_ref_or_null",
+    "evidence_counting_rule",
+    "fingerprint_record_hashes",
+    "companion_group_state"
+  ],
+  "semantic_lineage_declaration_required_fields": [
+    "schema_version",
+    "declaration_id",
+    "case_unit_id",
+    "constructor_role",
+    "visible_retired_authority_ids",
+    "declared_source_template_ids",
+    "declared_source_artifact_hashes",
+    "declared_semantic_parent_ids",
+    "declared_transform_codes",
+    "construction_log_sha256",
+    "graph_isomorphism_check_required",
+    "outcome_driven_tuning_prohibited",
+    "review_artifact_hash",
+    "declaration_sha256"
+  ],
+  "metric_schema_reuse_record_required_fields": [
+    "schema_version",
+    "reuse_record_id",
+    "dimension",
+    "retired_authority_id",
+    "retired_lineage_id",
+    "retired_metric_schema_sha256",
+    "new_metric_schema_sha256",
+    "method_companion_group_id",
+    "reuse_reason_code",
+    "comparability_requirement",
+    "permitted_claim_codes",
+    "forbidden_claim_codes",
+    "review_artifact_hash",
+    "reuse_record_sha256"
+  ],
+  "fingerprint_record_required_fields": [
     "record_schema_version",
     "record_id",
     "dimension",
@@ -689,63 +806,10 @@
       "controlled_reuse_requires_exact_reuse_record": true
     }
   },
-  "projection_descriptors": {
-    "case_content_sha256": {
-      "projection_kind": "semantic_content",
-      "comparison_policy": "strict_semantic_distinctness"
-    },
-    "state_snapshot_sha256": {
-      "projection_kind": "semantic_content",
-      "comparison_policy": "strict_semantic_distinctness"
-    },
-    "route_signature_sha256": {
-      "projection_kind": "semantic_content",
-      "comparison_policy": "strict_semantic_distinctness"
-    },
-    "parameter_tuple_sha256": {
-      "projection_kind": "semantic_content",
-      "comparison_policy": "strict_semantic_distinctness"
-    },
-    "random_stream_manifest_sha256": {
-      "projection_kind": "random_process",
-      "comparison_policy": "disjoint_random_substreams"
-    },
-    "output_root_reservation_sha256": {
-      "projection_kind": "provenance_containment",
-      "comparison_policy": "provenance_containment_only"
-    },
-    "sealed_prediction_sha256": {
-      "projection_kind": "semantic_content",
-      "comparison_policy": "strict_semantic_distinctness"
-    },
-    "metric_schema_sha256": {
-      "projection_kind": "controlled_schema",
-      "comparison_policy": "controlled_schema_reuse"
-    }
-  },
-  "provenance_envelope_fields": {
-    "subject_fields": [
-      "bundle_id",
-      "case_unit_id",
-      "method_observation_id",
-      "method_companion_group_id"
-    ],
-    "subject_free_projection_excludes": [
-      "author",
-      "bundle_id",
-      "case_unit_id",
-      "display_name",
-      "filename",
-      "g6b_provenance_label",
-      "method_companion_group_id",
-      "method_observation_id",
-      "repo_path",
-      "review_id",
-      "timestamp"
-    ],
-    "output_root_containment_projection_is_declared_exception": true,
-    "provenance_hash_inequality_is_nonoverlap_evidence": false
-  },
+  "allowed_input_modes": [
+    "model_generated_lts",
+    "explicit_finite_lts_input"
+  ],
   "output_root_reservation_contract": {
     "deterministic_template_expansion_required": true,
     "reserved": true,
@@ -754,18 +818,133 @@
     "fallback_path_prohibited": true,
     "filesystem_inspection_before_quantitative_authorization": "prohibited"
   },
-  "no_stochastic_method_manifest": {
-    "allowed": true,
-    "must_be_case_unit_specific": true,
-    "shared_global_sentinel_prohibited": true,
-    "proves_provenance_only": true,
-    "proves_stochastic_independence": false
+  "nested_field_contracts": {
+    "case_artifact_paths_required_keys": [
+      "case_input",
+      "state_snapshot",
+      "route_signature",
+      "parameter_tuple",
+      "rate_manifest",
+      "policy_declaration",
+      "selected_target_declaration",
+      "control_declaration",
+      "sealed_prediction",
+      "semantic_lineage_declaration",
+      "method_observations",
+      "metric_schema",
+      "fingerprint_records"
+    ],
+    "ref_type_path_keys": [
+      "repo_relative_posix_path",
+      "schema_version",
+      "content_sha256"
+    ],
+    "construction_authorization_contract": {
+      "capability": "case_construction",
+      "schema_file_contains_authorized_true": false,
+      "allowed_operations": [
+        "write_sealed_case_input",
+        "write_input_projection",
+        "write_method_declaration",
+        "write_companion_group_declaration",
+        "write_inert_random_stream_manifest",
+        "reserve_inert_output_root",
+        "write_sealed_prediction",
+        "write_metric_schema",
+        "write_semantic_lineage_declaration",
+        "compute_input_hash",
+        "write_sealed_bundle_manifest",
+        "append_construction_ledger"
+      ],
+      "forbidden_operations": [
+        "enumerate_states",
+        "classify_terminal_sets",
+        "certify_target",
+        "construct_ctmc",
+        "solve_ctmc",
+        "run_des",
+        "score_hypothesis",
+        "inspect_g6b_output",
+        "materialize_quantitative_root",
+        "write_observation",
+        "advance_scientific_status"
+      ]
+    },
+    "sealed_bundle_manifest_relations": {
+      "all_id_arrays_unique_sorted": true,
+      "record_hash_map_keys_equal_planned_ids": true,
+      "count_fields_equal_array_lengths": true,
+      "sealed_prediction_and_lineage_keys_equal_case_ids": true,
+      "metric_schema_keys_equal_companion_group_ids": true,
+      "output_root_reservation_keys_equal_method_ids": true
+    },
+    "case_unit_relations": {
+      "state_snapshot_nesting_relation": "declared_subidentity_of_case_content",
+      "state_snapshot_parent_hash_equals_case_content_hash": true,
+      "all_case_artifact_paths_repo_relative_posix": true
+    },
+    "method_companion_group_relations": {
+      "members_unique_sorted": true,
+      "members_share_case_unit": true,
+      "exact_des_member_count": 2,
+      "exact_des_roles": [
+        "des_companion",
+        "exact_companion"
+      ],
+      "evidence_counting": "one_case_unit_distinct_method_observations_not_independent_cases"
+    },
+    "output_root_reservation_instance_required_fields": [
+      "projection_schema_version",
+      "bundle_id",
+      "case_unit_id",
+      "method_observation_id",
+      "run_role",
+      "logical_root_id",
+      "repo_relative_posix_path",
+      "reserved",
+      "materialized",
+      "reservation_sha256"
+    ],
+    "additional_properties_allowed_recursively": false,
+    "bounded_text_may_embed_json_path_numeric_result_or_key_value_serialization": false
   },
-  "method_roles": [
-    "exact_companion",
-    "des_companion",
-    "schema_only_refusal",
-    "review_only_placeholder"
+  "recursive_prohibited_fields": [
+    "state_space_hash",
+    "partition_hash",
+    "positive_rate_graph_hash",
+    "policy_filter_hash",
+    "absorption_domain_hash",
+    "estimand_id",
+    "metric_observations",
+    "theorem_prediction_status_observed",
+    "execution_result",
+    "quantitative_execution_authorized"
   ],
-  "method_observations_are_independent_cases": false
+  "prohibited_instance_fields": [
+    "state_space_hash",
+    "partition_hash",
+    "positive_rate_graph_hash",
+    "policy_filter_hash",
+    "absorption_domain_hash",
+    "estimand_id",
+    "metric_observations",
+    "theorem_prediction_status_observed",
+    "execution_result",
+    "quantitative_execution_authorized"
+  ],
+  "refusal_code_vocabulary_version": "ims-deadlock/g6b-refusal-codes/v1",
+  "refusal_reason_codes": [
+    "batch_incomplete",
+    "canonicalization_violation",
+    "missing_hash",
+    "outcome_leakage",
+    "output_root_reuse_or_materialized",
+    "runtime_identity_drift",
+    "sealed_input_drift",
+    "self_hash_mismatch",
+    "subject_id_contaminated_projection",
+    "unauthorized_case_creation_attempt",
+    "unclassified_scientific_input"
+  ],
+  "schema_does_not_authorize_case_creation": true
 }
