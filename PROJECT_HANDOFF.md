@@ -1484,3 +1484,111 @@ original Task2 stopped on the materialization-contract gap. Exact v2 approval
 then occurred and repaired R1-R7 completed. The current transition is no
 execution: the mandatory post-R7 stop remains active until separate data-only
 normalization authorization; this is not a partial-domain production solve.
+
+## 2026-08-06 Minimal Article Closure — Current Continuation Entry
+
+This section supersedes older “stop before overlap” continuation language only
+for the separately versioned minimal article scope authorized by the user. It
+does not convert the original 13-case G6-B overlap programme into PASS and does
+not authorize G6-C/D/E.
+
+### Authoritative target
+
+- path: `D:\worktree\IMS_deadlock-g6b-retired-normalization`;
+- branch: `codex/g6b-minimal-article-closure`;
+- pre-outcome scope commit:
+  `4e385b6bca685454082ced7465b254c5b95017b8`;
+- RED contract commit: `635b1f82c06bf2eb728a56e3a88cad4fd8cc18a3`;
+- implementation commit: `7aefab705865a57efdaa143d2e2daa8c295a3dfc`;
+- write-once evidence commit: `7d0603a`;
+- historical Task6 guard repair commit: `a82ccfb`;
+- runtime:
+  `D:\worktree\IMS_deadlock-final-integration\.venv\Scripts\python.exe`;
+- Python: `3.13.9`.
+
+Re-lock branch, full HEAD/tree, upstream, status, and PR state before later
+work. The short commit identities above are historical anchors, not standing
+claims about the live HEAD after documentation commits.
+
+### Scope decision
+
+The article does not require one method to cover every case. It uses a frozen
+matched panel:
+
+1. time-zero `D_global` positive;
+2. request-closed A2b `D_local` positive;
+3. complete-LTS multi-kernel `D_local` positive;
+4. reachable-completion bypass negative control;
+5. `D_global` precedence/no-double-count control;
+6. a predeclared competing local/completion bridge with rates `1` and `2`.
+
+The first five bind exact case-input bytes from the sealed discovery bundle.
+The sixth was frozen before execution. Failed-case substitution is prohibited.
+The scope-lock self SHA-256 is
+`86ec7b80c888c7758d326a9de7793b0f0f65f4740ecf0303e1b17d2d14344660`.
+
+### Scientific result
+
+The unique write-once run completed in `0.702 s` with 4096 replications per
+case and master seed `2026080601`:
+
+- all `18/18` exact/DES cells compatible;
+- frozen simultaneous tolerance: `0.028340`;
+- maximum absolute error: `0.0030924479166667`;
+- bridge exact selected-bad probability: `1/3`;
+- bridge DES selected-bad probability: `0.33642578125` from `1378/4096`
+  local hits;
+- mechanically selected tier: `tier_a_dual_route_closure`;
+- original G6-B gate: `OPEN_PENDING`.
+
+Interpret Tier A narrowly: both method routes have matched constructive
+witnesses, both boundary controls pass, and exact/DES share the declared target.
+It is not held-out confirmation, a universal IMS result, a method-superiority
+result, or a production-performance result.
+
+### Immutable article evidence
+
+Write-once root:
+`evidence/article_core/minimal_closure_v1/`.
+
+Manifest self SHA-256:
+`1693342ac470b72f9b813edccb772f85751045940a243f7abc9241877cab0c77`.
+
+Do not rerun into or modify this root. Any future protocol change requires a new
+scope id, new pre-outcome commit, and new versioned evidence root. The current
+evidence binds all six cases, 18 comparison cells, exact results, DES results,
+case certificates, forbidden claims, and the unchanged original G6-B state.
+
+### Article and verification entry points
+
+- `docs/superpowers/specs/2026-08-06-g6b-minimal-article-closure-scope.md`;
+- `docs/superpowers/plans/2026-08-06-g6b-minimal-article-closure.md`;
+- `docs/verification/G6_B_MINIMAL_ARTICLE_CLOSURE_REPORT.md`;
+- `docs/paper/IMS_LOCAL_FIRST_HIT_THEORY_AND_CASES.md`;
+- `docs/paper/ARTICLE_CLAIM_EVIDENCE_MATRIX.md`;
+- `src/ims_deadlock/article_core.py`;
+- `tests/test_article_core.py`.
+
+### Test-status nuance
+
+The initial broad baseline completed with `1884 passed, 2 skipped, 1 failed in
+2561.74s`. The sole failure was the historical Task6 Git-diff guard comparing a
+fixed 2026-08-01 base to the moving current worktree. It therefore treated all
+later, separately authorized normalization and article work as an old Task6
+scope leak. Commit `a82ccfb` pins both ends of the historical reviewed range;
+the focused guard slice then passed `18 passed, 1120 deselected in 0.43s`.
+This repair changes no model, classifier, solver, case, rate, or evidence.
+
+Before declaring the branch integration-complete, rerun the repaired targeted
+suite and full suite, then record the fresh results in the verification report.
+
+### First unfinished tasks
+
+1. finish documentation transfer and commit;
+2. run repaired targeted article/CTMC/stochastic tests and repository-wide
+   pytest, Ruff, format, strict mypy, and `git diff --check`;
+3. update this section and the verification report with final HEAD/tree and test
+   evidence;
+4. push `codex/g6b-minimal-article-closure` and open a fully described Draft PR;
+5. keep original full-overlap G6-B and G6-C/D/E as separate future work rather
+   than prerequisites for this scoped article.

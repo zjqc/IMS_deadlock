@@ -531,3 +531,66 @@ closedness is checked against the full stopped graph including selected `A_stop`
 distinct from explicit empty rates. G6-B remains OPEN/PENDING,
 `case_creation_authorized=false`, and `scientific_execution_authorized=false`;
 G6-C, G6-D, and G6-E are not started.
+
+## 2026-08-06 Minimal Article-Core Closure
+
+This is the current continuation entry. It supersedes older “stop before
+overlap” language only for a separately versioned constructive article scope.
+The original 13-case G6-B eight-dimension gate remains `OPEN_PENDING`.
+
+### Current gate table
+
+| Workstream | State | Evidence-bound interpretation |
+| --- | --- | --- |
+| G5 confirmation | `CLOSED / NEGATIVE-BOUNDARY` | Raw `4/3/2`, transparent `6/1/2`, and both minimality failures remain frozen. |
+| G6 historical replay R1/R2 | `FAILED` | Failures remain negative evidence. |
+| G6 historical replay R3 | `HISTORICAL_ONLY` | Diagnostic regression only; not held-out confirmation. |
+| G6-B sealed construction | `COMPLETE / NO EXECUTION CLAIM` | 13 cases, 26 observations, and 13 companion groups remain intact. |
+| G6-B retired normalization | `COMPLETE / NOT OVERLAP` | 181 fingerprints, 165 lineages, 119 eligible, and 62 typed refusals. |
+| Original G6-B overlap | `OPEN_PENDING` | Missing eligible random-stream and metric-schema projections remain refusals. |
+| Minimal article-core v1 | `TIER A COMPLETE` | Six predeclared cases; 18/18 exact-DES cells compatible; maximum error `0.0030924479166667`. |
+| Article draft and claim matrix | `DRAFT COMPLETE / INTEGRATION PENDING` | Theory, cases, quantitative result, and forbidden claims are written. |
+| G6-C/D/E | `NOT STARTED` | Separate future scopes; not prerequisites for this constructive article. |
+
+### Achieved closure
+
+The scope does not require one method to cover every case:
+
+- A2b supplies a sufficient structural route for request-closed models;
+- complete finite-LTS completion nonreachability supplies a model-specific
+  fallback;
+- a completion-bypass case prevents unsound promotion of a local candidate;
+- a global/local control enforces `D_global` precedence;
+- a predeclared rate-`1` versus rate-`2` bridge yields exact selected-bad
+  probability `1/3`;
+- the unique 4096-replication DES run yields `0.33642578125`, within the frozen
+  simultaneous tolerance `0.028340`.
+
+The mechanically selected status is `tier_a_dual_route_closure`. This is a
+scoped constructive theorem-to-witness closure, not held-out confirmation,
+universal IMS coverage, method superiority, or production validation.
+
+Primary artifacts:
+
+- `cases/article_core/article_scope_lock_v1.json`;
+- `evidence/article_core/minimal_closure_v1/article_closure_manifest.json`;
+- `docs/verification/G6_B_MINIMAL_ARTICLE_CLOSURE_REPORT.md`;
+- `docs/paper/IMS_LOCAL_FIRST_HIT_THEORY_AND_CASES.md`;
+- `docs/paper/ARTICLE_CLAIM_EVIDENCE_MATRIX.md`.
+
+Scope-lock self SHA-256:
+`86ec7b80c888c7758d326a9de7793b0f0f65f4740ecf0303e1b17d2d14344660`.
+
+Evidence-manifest self SHA-256:
+`1693342ac470b72f9b813edccb772f85751045940a243f7abc9241877cab0c77`.
+
+### Immediate remaining work
+
+1. complete repaired targeted and full-repository validation;
+2. record final branch HEAD/tree and validation counts;
+3. commit and push the manuscript/handoff update;
+4. open a fully described Draft PR and verify its stacked ancestry and CI.
+
+Optional future work—full 13-case overlap, a held-out G6-C set, broader timing
+models, or production metrics—requires a new pre-outcome scope. None may rewrite
+the v1 article evidence or upgrade its claim boundary.
