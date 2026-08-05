@@ -2728,6 +2728,96 @@ def test_normalizer_guard_rejects_writer_binding_escapes(source: str) -> None:
         validate_normalizer_static_source(source)
 
 
+@pytest.mark.parametrize(
+    "source",
+    [
+        (
+            "def outer():\n"
+            "    def write_fingerprint_record():\n"
+            "        return None\n"
+            "    alias = write_fingerprint_record\n"
+        ),
+        (
+            "def write_fingerprint_record():\n"
+            "    return None\n"
+            "if True:\n"
+            "    alias = write_fingerprint_record\n"
+        ),
+        "def probe(write_fingerprint_record):\n    return write_fingerprint_record\n",
+        "(alias := write_fingerprint_record)\n",
+        (
+            "def outer():\n"
+            "    from ims_deadlock.g6b_retired_normalizer import "
+            "write_fingerprint_record\n"
+            "    return write_fingerprint_record\n"
+        ),
+        (
+            "def outer():\n"
+            "    return lambda write_fingerprint_record: write_fingerprint_record\n"
+        ),
+        "async def write_fingerprint_record():\n    return None\n",
+        (
+            "def source(values):\n"
+            "    for write_fingerprint_record in values:\n"
+            "        return write_fingerprint_record\n"
+        ),
+        (
+            "def source(values):\n"
+            "    return [\n"
+            "        write_fingerprint_record\n"
+            "        for write_fingerprint_record in values\n"
+            "    ]\n"
+        ),
+        (
+            "def source(ctx):\n"
+            "    with ctx as write_fingerprint_record:\n"
+            "        return write_fingerprint_record\n"
+        ),
+        (
+            "def source():\n"
+            "    try:\n"
+            "        raise RuntimeError()\n"
+            "    except RuntimeError as write_fingerprint_record:\n"
+            "        return write_fingerprint_record\n"
+        ),
+        (
+            "def source(value):\n"
+            "    match value:\n"
+            "        case write_fingerprint_record:\n"
+            "            return write_fingerprint_record\n"
+        ),
+        (
+            "def outer():\n"
+            "    global write_fingerprint_record\n"
+            "    write_fingerprint_record = None\n"
+        ),
+        (
+            "def outer():\n"
+            "    write_fingerprint_record = None\n"
+            "    def inner():\n"
+            "        nonlocal write_fingerprint_record\n"
+            "        return write_fingerprint_record\n"
+        ),
+        (
+            "def write_fingerprint_record():\n"
+            "    return None\n"
+            "def source():\n"
+            "    return write_fingerprint_record\n"
+        ),
+        (
+            "def write_fingerprint_record():\n"
+            "    return None\n"
+            "WRITERS = [write_fingerprint_record]\n"
+        ),
+    ],
+)
+def test_normalizer_guard_rejects_scope_wide_writer_binding_escapes(
+    source: str,
+) -> None:
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
 @pytest.mark.parametrize("method", ["iterdir", "glob", "unlink", "write_text", "open"])
 def test_normalizer_guard_rejects_unlisted_path_methods(method: str) -> None:
     source = (
@@ -3756,6 +3846,83 @@ def test_authority_source_record_binds_exact_27_sources_and_projection_use() -> 
             authority_lock_hashes=_authority_lock_hashes({"G5_EXECUTION": g5_lock}),
             expected_source_hashes=_retired_source_hashes(),
             selector_rows=schema["allowed_json_fields_by_source"],
+        )
+
+
+def test_normalization_manifest_rejects_unverified_projection_suppliers() -> None:
+    locks = _retired_authority_lock_records()
+    unverified_lock = _with_rehashed(
+        {
+            **locks["G4_FREEZE"],
+            "identity_verification_status": "unverified_refuse",
+        },
+        "authority_lock_record_sha256",
+    )
+    locks["G4_FREEZE"] = unverified_lock
+    sources = _retired_authority_source_records(locks)
+    fingerprints = _normalization_fingerprint_records()
+    assert any(
+        record["authority_id"] == "G4_FREEZE" and record["allowed_projection_uses"]
+        for record in sources.values()
+    )
+    manifest = valid_normalization_manifest(
+        authority_locks=locks,
+        authority_sources=sources,
+        fingerprint_records=fingerprints,
+    )
+
+    with pytest.raises(SchemaContractError, match="unverified_projection_refusal"):
+        contracts.validate_normalization_manifest(
+            manifest,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+    sources_with_hash_evidence_only = {
+        path: (
+            {**record, "allowed_projection_uses": ["source_hash_validation"]}
+            if record["authority_id"] == "G4_FREEZE"
+            else record
+        )
+        for path, record in sources.items()
+    }
+    manifest_with_hash_evidence_only = valid_normalization_manifest(
+        authority_locks=locks,
+        authority_sources=sources_with_hash_evidence_only,
+        fingerprint_records=fingerprints,
+    )
+    contracts.validate_normalization_manifest(
+        manifest_with_hash_evidence_only,
+        authority_lock_records=locks,
+        authority_source_records=sources_with_hash_evidence_only,
+        fingerprint_records=fingerprints,
+    )
+
+    verified_locks = _retired_authority_lock_records()
+    for status in (
+        "verified_historical_identity",
+        "verified_merged_copy_against_historical_hashes",
+    ):
+        verified_lock = _with_rehashed(
+            {
+                **verified_locks["G4_FREEZE"],
+                "identity_verification_status": status,
+            },
+            "authority_lock_record_sha256",
+        )
+        status_locks = {**verified_locks, "G4_FREEZE": verified_lock}
+        status_sources = _retired_authority_source_records(status_locks)
+        status_manifest = valid_normalization_manifest(
+            authority_locks=status_locks,
+            authority_sources=status_sources,
+            fingerprint_records=fingerprints,
+        )
+        contracts.validate_normalization_manifest(
+            status_manifest,
+            authority_lock_records=status_locks,
+            authority_source_records=status_sources,
+            fingerprint_records=fingerprints,
         )
 
 

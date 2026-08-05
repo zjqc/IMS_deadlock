@@ -2235,6 +2235,10 @@ def validate_normalization_manifest(
         manifest.get("authority_source_record_hashes"),
         authority_source_records=authority_source_records,
     )
+    _validate_manifest_verified_projection_suppliers(
+        authority_lock_records=authority_lock_records,
+        authority_source_records=authority_source_records,
+    )
     _validate_manifest_fingerprint_hashes(
         manifest.get("fingerprint_record_hashes"),
         fingerprint_records=fingerprint_records,
@@ -4418,6 +4422,30 @@ def _validate_manifest_authority_source_hashes(
             raise SchemaContractError("authority_source_ref_mismatch", path)
 
 
+def _validate_manifest_verified_projection_suppliers(
+    *,
+    authority_lock_records: Mapping[str, Mapping[str, JsonValue]],
+    authority_source_records: Mapping[str, Mapping[str, JsonValue]],
+) -> None:
+    for path, source_record in authority_source_records.items():
+        authority_id = _require_nonempty_string(
+            source_record.get("authority_id"),
+            "authority_id",
+        )
+        if authority_id not in authority_lock_records:
+            raise SchemaContractError("absent_authority_lock_ref", authority_id)
+        identity_status = authority_lock_records[authority_id].get(
+            "identity_verification_status"
+        )
+        allowed_projection_uses = _as_string_sequence(
+            source_record.get("allowed_projection_uses"),
+            "allowed_projection_uses",
+        )
+        projection_uses = set(allowed_projection_uses) - {"source_hash_validation"}
+        if identity_status == "unverified_refuse" and projection_uses:
+            raise SchemaContractError("unverified_projection_refusal", path)
+
+
 def _validate_manifest_fingerprint_hashes(
     value: object,
     *,
@@ -4688,65 +4716,130 @@ def _node_contains(root: ast.AST, target: ast.AST) -> bool:
 
 
 def _validate_normalizer_writer_bindings(tree: ast.Module) -> None:
+    parent_map = _ast_parent_map(tree)
     definition_counts: dict[str, int] = {}
-    for statement in tree.body:
-        if isinstance(statement, ast.FunctionDef):
-            if statement.name in ALLOWED_NORMALIZER_WRITER_FUNCTIONS:
-                definition_counts[statement.name] = (
-                    definition_counts.get(statement.name, 0) + 1
-                )
-        elif isinstance(statement, ast.AsyncFunctionDef):
-            if statement.name in ALLOWED_NORMALIZER_WRITER_FUNCTIONS:
-                raise SchemaContractError("retired_normalizer_error", statement.name)
-        elif isinstance(statement, ast.Import):
-            for alias in statement.names:
-                if _normalizer_writer_binding_name(alias.asname):
-                    raise SchemaContractError(
-                        "retired_normalizer_error",
-                        alias.asname or "",
-                    )
-        elif isinstance(statement, ast.ImportFrom):
-            module_name = statement.module or ""
-            for alias in statement.names:
-                imported_name = f"{module_name}.{alias.name}"
-                bound_name = alias.asname or alias.name
-                if _normalizer_writer_symbol(imported_name):
-                    raise SchemaContractError("retired_normalizer_error", imported_name)
-                if _normalizer_writer_binding_name(bound_name):
-                    raise SchemaContractError("retired_normalizer_error", bound_name)
-        elif isinstance(statement, ast.Assign):
-            _validate_normalizer_writer_assignment(statement.targets, statement.value)
-        elif isinstance(statement, ast.AnnAssign):
-            if statement.value is not None:
-                _validate_normalizer_writer_assignment(
-                    (statement.target,),
-                    statement.value,
-                )
-        elif isinstance(statement, ast.NamedExpr):
-            _validate_normalizer_writer_assignment((statement.target,), statement.value)
+    top_level_writer_defs = {
+        id(statement)
+        for statement in tree.body
+        if isinstance(statement, ast.FunctionDef)
+        and statement.name in ALLOWED_NORMALIZER_WRITER_FUNCTIONS
+    }
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef):
+            if node.name in ALLOWED_NORMALIZER_WRITER_FUNCTIONS:
+                if id(node) not in top_level_writer_defs:
+                    raise SchemaContractError("retired_normalizer_error", node.name)
+                definition_counts[node.name] = definition_counts.get(node.name, 0) + 1
+            _validate_normalizer_writer_arguments(node.args)
+        elif isinstance(node, ast.AsyncFunctionDef):
+            if node.name in ALLOWED_NORMALIZER_WRITER_FUNCTIONS:
+                raise SchemaContractError("retired_normalizer_error", node.name)
+            _validate_normalizer_writer_arguments(node.args)
+        elif isinstance(node, ast.Lambda):
+            _validate_normalizer_writer_arguments(node.args)
+        elif isinstance(node, ast.Import):
+            _validate_normalizer_writer_import(node)
+        elif isinstance(node, ast.ImportFrom):
+            _validate_normalizer_writer_import_from(node)
+        elif isinstance(node, ast.Assign):
+            _validate_normalizer_writer_assignment(node.targets, node.value)
+        elif isinstance(node, ast.AnnAssign):
+            if node.value is not None:
+                _validate_normalizer_writer_assignment((node.target,), node.value)
+            else:
+                _validate_normalizer_writer_binding_targets((node.target,))
+        elif isinstance(node, ast.AugAssign):
+            _validate_normalizer_writer_binding_targets((node.target,))
+        elif isinstance(node, ast.NamedExpr):
+            _validate_normalizer_writer_assignment((node.target,), node.value)
+        elif isinstance(node, ast.For | ast.AsyncFor | ast.comprehension):
+            _validate_normalizer_writer_binding_targets((node.target,))
+        elif isinstance(node, ast.With | ast.AsyncWith):
+            for item in node.items:
+                if item.optional_vars is not None:
+                    _validate_normalizer_writer_binding_targets((item.optional_vars,))
+        elif isinstance(node, ast.ExceptHandler):
+            if _normalizer_writer_binding_name(node.name):
+                raise SchemaContractError("retired_normalizer_error", node.name or "")
+        elif isinstance(node, ast.Match):
+            for case in node.cases:
+                _validate_normalizer_writer_pattern(case.pattern)
+        elif isinstance(node, ast.Global | ast.Nonlocal):
+            for name in node.names:
+                if _normalizer_writer_binding_name(name):
+                    raise SchemaContractError("retired_normalizer_error", name)
+        elif isinstance(node, ast.expr):
+            _validate_normalizer_writer_value(node, parent_map)
     if any(count > 1 for count in definition_counts.values()):
         raise SchemaContractError("retired_normalizer_error")
+
+
+def _ast_parent_map(tree: ast.AST) -> dict[int, ast.AST]:
+    parent_map: dict[int, ast.AST] = {}
+    for parent in ast.walk(tree):
+        for child in ast.iter_child_nodes(parent):
+            parent_map[id(child)] = parent
+    return parent_map
+
+
+def _validate_normalizer_writer_arguments(arguments: ast.arguments) -> None:
+    args = (
+        *arguments.posonlyargs,
+        *arguments.args,
+        *arguments.kwonlyargs,
+    )
+    for argument in args:
+        if _normalizer_writer_binding_name(argument.arg):
+            raise SchemaContractError("retired_normalizer_error", argument.arg)
+    for nullable_argument in (arguments.vararg, arguments.kwarg):
+        if nullable_argument is not None and _normalizer_writer_binding_name(
+            nullable_argument.arg
+        ):
+            raise SchemaContractError(
+                "retired_normalizer_error",
+                nullable_argument.arg,
+            )
+
+
+def _validate_normalizer_writer_import(node: ast.Import) -> None:
+    for alias in node.names:
+        if _normalizer_writer_binding_name(alias.asname):
+            raise SchemaContractError(
+                "retired_normalizer_error",
+                alias.asname or "",
+            )
+
+
+def _validate_normalizer_writer_import_from(node: ast.ImportFrom) -> None:
+    module_name = node.module or ""
+    for alias in node.names:
+        imported_name = f"{module_name}.{alias.name}"
+        bound_name = alias.asname or alias.name
+        if _normalizer_writer_symbol(imported_name):
+            raise SchemaContractError("retired_normalizer_error", imported_name)
+        if _normalizer_writer_binding_name(bound_name):
+            raise SchemaContractError("retired_normalizer_error", bound_name)
 
 
 def _validate_normalizer_writer_assignment(
     targets: Iterable[ast.expr],
     value: ast.expr,
 ) -> None:
+    _validate_normalizer_writer_binding_targets(targets)
+    parent_map = _ast_parent_map(value)
+    for node in ast.walk(value):
+        if isinstance(node, ast.expr):
+            _validate_normalizer_writer_value(node, parent_map)
+
+
+def _validate_normalizer_writer_binding_targets(targets: Iterable[ast.expr]) -> None:
     for target in targets:
         for binding_name in _normalizer_assignment_binding_names(target):
             if _normalizer_writer_binding_name(binding_name):
                 raise SchemaContractError("retired_normalizer_error", binding_name)
-    for node in ast.walk(value):
-        if isinstance(node, ast.Name):
-            if _normalizer_writer_binding_name(node.id):
-                raise SchemaContractError("retired_normalizer_error", node.id)
-        elif isinstance(node, ast.Attribute):
-            call_name = _ast_call_name(node)
-            if _normalizer_writer_symbol(call_name):
-                raise SchemaContractError("retired_normalizer_error", call_name)
 
 
-def _normalizer_assignment_binding_names(target: ast.expr) -> set[str]:
+def _normalizer_assignment_binding_names(target: ast.AST) -> set[str]:
     if isinstance(target, ast.Name):
         return {target.id}
     if isinstance(target, ast.Attribute):
@@ -4756,7 +4849,65 @@ def _normalizer_assignment_binding_names(target: ast.expr) -> set[str]:
         for element in target.elts:
             names.update(_normalizer_assignment_binding_names(element))
         return names
+    if isinstance(target, ast.Starred):
+        return _normalizer_assignment_binding_names(target.value)
     return set()
+
+
+def _validate_normalizer_writer_pattern(pattern: ast.pattern) -> None:
+    for binding_name in _normalizer_pattern_binding_names(pattern):
+        if _normalizer_writer_binding_name(binding_name):
+            raise SchemaContractError("retired_normalizer_error", binding_name)
+
+
+def _normalizer_pattern_binding_names(pattern: ast.pattern) -> set[str]:
+    if isinstance(pattern, ast.MatchAs):
+        names = {pattern.name} if pattern.name is not None else set()
+        if pattern.pattern is not None:
+            names.update(_normalizer_pattern_binding_names(pattern.pattern))
+        return names
+    if isinstance(pattern, ast.MatchStar):
+        return {pattern.name} if pattern.name is not None else set()
+    if isinstance(pattern, ast.MatchMapping):
+        mapping_names = {pattern.rest} if pattern.rest is not None else set()
+        for nested_pattern in pattern.patterns:
+            mapping_names.update(_normalizer_pattern_binding_names(nested_pattern))
+        return mapping_names
+    if isinstance(pattern, ast.MatchClass):
+        class_names: set[str] = set()
+        for nested_pattern in (*pattern.patterns, *pattern.kwd_patterns):
+            class_names.update(_normalizer_pattern_binding_names(nested_pattern))
+        return class_names
+    if isinstance(pattern, ast.MatchSequence | ast.MatchOr):
+        sequence_names: set[str] = set()
+        for nested_pattern in pattern.patterns:
+            sequence_names.update(_normalizer_pattern_binding_names(nested_pattern))
+        return sequence_names
+    return set()
+
+
+def _validate_normalizer_writer_value(
+    node: ast.expr,
+    parent_map: Mapping[int, ast.AST],
+) -> None:
+    if isinstance(node, ast.Name) and _normalizer_writer_binding_name(node.id):
+        if not _is_direct_call_function_value(node, parent_map):
+            raise SchemaContractError("retired_normalizer_error", node.id)
+    elif isinstance(node, ast.Attribute):
+        call_name = _ast_call_name(node)
+        if _normalizer_writer_symbol(call_name) and not _is_direct_call_function_value(
+            node,
+            parent_map,
+        ):
+            raise SchemaContractError("retired_normalizer_error", call_name)
+
+
+def _is_direct_call_function_value(
+    node: ast.expr,
+    parent_map: Mapping[int, ast.AST],
+) -> bool:
+    parent = parent_map.get(id(node))
+    return isinstance(parent, ast.Call) and parent.func is node
 
 
 def _normalizer_writer_binding_name(name: str | None) -> bool:
