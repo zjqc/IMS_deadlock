@@ -1502,6 +1502,13 @@ not authorize G6-C/D/E.
 - implementation commit: `7aefab705865a57efdaa143d2e2daa8c295a3dfc`;
 - write-once evidence commit: `7d0603a`;
 - historical Task6 guard repair commit: `a82ccfb`;
+- manuscript/claim-matrix commit: `6d7bbd5`;
+- article-test typing repair commit: `965c73e`;
+- deferred-module historical guard repair commit: `98f429b`;
+- validated integration subject:
+  `98f429b5e0b1d377a9d4297d48a00532f1c8cbed`;
+- validated integration tree:
+  `9e204cbdc55e94ffcd5a362c1d4057112561c53b`;
 - runtime:
   `D:\worktree\IMS_deadlock-final-integration\.venv\Scripts\python.exe`;
 - Python: `3.13.9`.
@@ -1569,7 +1576,7 @@ case certificates, forbidden claims, and the unchanged original G6-B state.
 - `src/ims_deadlock/article_core.py`;
 - `tests/test_article_core.py`.
 
-### Test-status nuance
+### Final validation
 
 The initial broad baseline completed with `1884 passed, 2 skipped, 1 failed in
 2561.74s`. The sole failure was the historical Task6 Git-diff guard comparing a
@@ -1579,16 +1586,33 @@ scope leak. Commit `a82ccfb` pins both ends of the historical reviewed range;
 the focused guard slice then passed `18 passed, 1120 deselected in 0.43s`.
 This repair changes no model, classifier, solver, case, rate, or evidence.
 
-Before declaring the branch integration-complete, rerun the repaired targeted
-suite and full suite, then record the fresh results in the verification report.
+The first disjoint remainder run exposed one second guard with the same temporal
+error: it required deferred Task6 modules to remain absent from the moving
+worktree. Commit `98f429b` now inspects the historical Task6 subject tree at
+`42856b991059d6f800eb0244fa7847187da3bccd`; its focused test passed
+`1 passed, 195 deselected in 0.23s`. This repair is also test/governance-only.
+
+Fresh final validation on the repaired branch:
+
+- four-file G6-B long group, four xdist workers:
+  `1885 passed, 2 skipped in 2229.49s`;
+- disjoint repository remainder, eight xdist workers:
+  `808 passed in 88.95s`;
+- exact union: `2693 passed, 2 skipped, 0 failed`;
+- article-core focused tests: `9 passed in 0.74s`;
+- `ruff check .`: passed;
+- `ruff format --check src tests`: 53 files formatted;
+- strict mypy on `src tests`: 53 source files, no issues;
+- `git diff --check`: passed; validated worktree clean.
+
+The four historical Markdown plan files that a repo-root Ruff format invocation
+would rewrite remain intentionally untouched. All executable source and test
+files are format-clean.
 
 ### First unfinished tasks
 
-1. finish documentation transfer and commit;
-2. run repaired targeted article/CTMC/stochastic tests and repository-wide
-   pytest, Ruff, format, strict mypy, and `git diff --check`;
-3. update this section and the verification report with final HEAD/tree and test
-   evidence;
-4. push `codex/g6b-minimal-article-closure` and open a fully described Draft PR;
-5. keep original full-overlap G6-B and G6-C/D/E as separate future work rather
-   than prerequisites for this scoped article.
+1. push `codex/g6b-minimal-article-closure` and open a fully described Draft PR
+   with base `codex/g6b-retired-normalization`;
+2. verify the remote head/base, Draft state, and CI/check status;
+3. keep original full-overlap G6-B and G6-C/D/E as separate optional future
+   scopes rather than prerequisites for this article.

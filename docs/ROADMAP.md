@@ -549,7 +549,7 @@ The original 13-case G6-B eight-dimension gate remains `OPEN_PENDING`.
 | G6-B retired normalization | `COMPLETE / NOT OVERLAP` | 181 fingerprints, 165 lineages, 119 eligible, and 62 typed refusals. |
 | Original G6-B overlap | `OPEN_PENDING` | Missing eligible random-stream and metric-schema projections remain refusals. |
 | Minimal article-core v1 | `TIER A COMPLETE` | Six predeclared cases; 18/18 exact-DES cells compatible; maximum error `0.0030924479166667`. |
-| Article draft and claim matrix | `DRAFT COMPLETE / INTEGRATION PENDING` | Theory, cases, quantitative result, and forbidden claims are written. |
+| Article draft and claim matrix | `DRAFT COMPLETE / LOCALLY VALIDATED` | Theory, cases, quantitative result, forbidden claims, and full repository validation are written. |
 | G6-C/D/E | `NOT STARTED` | Separate future scopes; not prerequisites for this constructive article. |
 
 ### Achieved closure
@@ -586,10 +586,18 @@ Evidence-manifest self SHA-256:
 
 ### Immediate remaining work
 
-1. complete repaired targeted and full-repository validation;
-2. record final branch HEAD/tree and validation counts;
-3. commit and push the manuscript/handoff update;
-4. open a fully described Draft PR and verify its stacked ancestry and CI.
+Validated integration subject:
+`98f429b5e0b1d377a9d4297d48a00532f1c8cbed` with tree
+`9e204cbdc55e94ffcd5a362c1d4057112561c53b`.
+
+The disjoint full-repository run closed with `2693 passed, 2 skipped, 0 failed`:
+the four-file long group contributed `1885 passed, 2 skipped in 2229.49s`, and
+the eight-worker remainder contributed `808 passed in 88.95s`. Ruff, executable
+format, strict mypy, and `git diff --check` are green.
+
+1. commit and push the final validation/handoff update;
+2. open a fully described Draft PR stacked on
+   `codex/g6b-retired-normalization` and verify its head/base/Draft/CI state.
 
 Optional future work—full 13-case overlap, a held-out G6-C set, broader timing
 models, or production metrics—requires a new pre-outcome scope. None may rewrite

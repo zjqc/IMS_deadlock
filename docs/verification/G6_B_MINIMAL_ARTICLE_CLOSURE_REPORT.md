@@ -34,6 +34,8 @@ Date: 2026-08-06
 | executable implementation commit | `7aefab705865a57efdaa143d2e2daa8c295a3dfc` |
 | implementation tree | `b1bc6710bcf4937c3ce10f50ca26a4641a69d22e` |
 | write-once evidence commit | `7d0603a` |
+| validated integration subject | `98f429b5e0b1d377a9d4297d48a00532f1c8cbed` |
+| validated integration tree | `9e204cbdc55e94ffcd5a362c1d4057112561c53b` |
 | runtime | `D:\worktree\IMS_deadlock-final-integration\.venv\Scripts\python.exe` |
 | Python | `3.13.9` |
 | import root | `D:\worktree\IMS_deadlock-g6b-retired-normalization\src` |
@@ -173,18 +175,33 @@ self-hashes, and the manifest-last flag.
 Completed checks:
 
 - article-core RED test: expected import failure before implementation;
-- article-core GREEN test: `9 passed in 0.78s`;
-- Ruff check: passed;
-- Ruff format check: passed;
-- strict mypy for `src/ims_deadlock/article_core.py`: passed;
+- article-core GREEN test after final typing repair: `9 passed in 0.74s`;
 - full in-memory preflight: 18/18 compatible, Tier A, `0.635 s`;
 - write-once execution: 18/18 compatible, Tier A, `0.702 s`;
-- artifact raw/self hash verification: passed.
+- artifact raw/self hash verification: passed;
+- four-file G6-B long group with four xdist workers:
+  `1885 passed, 2 skipped in 2229.49s` (`2230.28 s` observed wall time);
+- disjoint remainder of the repository with eight xdist workers:
+  `808 passed in 88.95s`;
+- full disjoint-union result: `2693 passed, 2 skipped, 0 failed`;
+- `ruff check .`: passed;
+- `ruff format --check src tests`: `53 files already formatted`;
+- strict mypy with `--explicit-package-bases src tests`:
+  `Success: no issues found in 53 source files`;
+- `git diff --check`: passed and the validated worktree was clean.
 
-The pre-existing broad G6-B baseline test command was started before the new
-article files were introduced and is intentionally allowed to finish. Its final
-result, together with targeted CTMC/stochastic and repository-wide validation,
-must be appended before the Draft PR is declared integration-complete.
+The repository-root Ruff format command also scans fenced Python examples in
+Markdown and would reformat four pre-existing historical plan documents. Those
+frozen plans were deliberately left unchanged; the complete executable
+`src tests` surface is format-clean.
+
+Two historical Task6 guards initially compared old absence/scope claims against
+the moving current worktree. The repairs pin both assertions to the reviewed
+Task6 subject commit `42856b991059d6f800eb0244fa7847187da3bccd`.
+Focused verification passed `18 passed, 1120 deselected in 0.43s` for the path
+scope guard and `1 passed, 195 deselected in 0.23s` for the deferred-module
+absence guard. Neither repair changes a model, case, rate, solver, classifier,
+or evidence object.
 
 ## 9. Claim decision
 
@@ -214,13 +231,11 @@ Forbidden interpretation:
 
 ## 10. Remaining work
 
-The article-core scientific result itself is closed. Remaining integration work
-is bounded and non-scientific:
+The article-core science, manuscript, claim matrix, and local repository
+validation are closed. Remaining work is publication/integration only:
 
-1. finish the already-running baseline and targeted/full repository tests;
-2. write the article draft and claim-evidence matrix from these frozen results;
-3. update `PROJECT_HANDOFF.md` and a concise roadmap without changing the original
-   G6-B gate;
-4. commit, push, and open a fully described Draft PR;
-5. leave original full-overlap G6-B and later G6-C/D/E as separate future work,
-   not prerequisites for this scoped article.
+1. publish this validated branch as a Draft PR stacked on the still-open retired
+   normalization PR;
+2. verify the remote PR head/base and any CI result without upgrading the claim;
+3. leave original full-overlap G6-B and later G6-C/D/E as separately scoped
+   optional future work, not prerequisites for this article.
