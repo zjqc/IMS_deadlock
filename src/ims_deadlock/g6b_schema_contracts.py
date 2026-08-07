@@ -6,7 +6,7 @@ import ast
 import hashlib
 import re
 from collections import Counter
-from collections.abc import Collection, Mapping, Sequence
+from collections.abc import Collection, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from types import MappingProxyType
@@ -19,7 +19,9 @@ JsonValue: TypeAlias = (
 )
 JsonPath: TypeAlias = tuple[str | int, ...]
 _UNKNOWN_CALLABLE_ALIAS = "__g6b_unknown_callable__"
+_FUNCTION_RETURN_ALIAS_PREFIX = "__g6b_function_return__."
 _SAFE_PATH_OBJECT_ALIAS = "__g6b_safe_path_object__"
+_SAFE_DATA_OBJECT_ALIAS = "__g6b_safe_data_object__"
 _SAFE_HASH_OBJECT_ALIAS = "__g6b_safe_hash_object__"
 _SAFE_JSON_OBJECT_ALIAS = "__g6b_safe_json_object__"
 _SAFE_MAPPING_OBJECT_ALIAS = "__g6b_safe_mapping_object__"
@@ -30,9 +32,45 @@ _SAFE_PARAMETER_DATA_METHODS = frozenset(
         ("source_bytes", "strip"),
     }
 )
+_SAFE_DATA_CONSTRUCTOR_CALLS = frozenset(
+    {
+        "all",
+        "any",
+        "bool",
+        "bytes",
+        "canonical_bytes_v2",
+        "canonical_sha256_v2",
+        "dict",
+        "finalized_self_hash",
+        "frozenset",
+        "hashlib.sha256",
+        "ims_deadlock.g6b_canonical_json.canonical_bytes_v2",
+        "ims_deadlock.g6b_canonical_json.canonical_sha256_v2",
+        "ims_deadlock.g6b_canonical_json.finalized_self_hash",
+        "isinstance",
+        "int",
+        "len",
+        "list",
+        "loads_v2",
+        "pathlib.Path",
+        "Path",
+        "range",
+        "set",
+        "sha256",
+        "sorted",
+        "str",
+        "sum",
+        "tuple",
+        "typing.cast",
+        "zip",
+    }
+)
 _SAFE_CALL_RESULT_OBJECTS: Mapping[str, str] = {
     "pathlib.Path": _SAFE_PATH_OBJECT_ALIAS,
     "Path": _SAFE_PATH_OBJECT_ALIAS,
+    "pathlib.Path.resolve": _SAFE_PATH_OBJECT_ALIAS,
+    "Path.resolve": _SAFE_PATH_OBJECT_ALIAS,
+    "__g6b_safe_path_object__.resolve": _SAFE_PATH_OBJECT_ALIAS,
     "hashlib.sha256": _SAFE_HASH_OBJECT_ALIAS,
     "sha256": _SAFE_HASH_OBJECT_ALIAS,
     "json.loads": _SAFE_JSON_OBJECT_ALIAS,
@@ -40,7 +78,18 @@ _SAFE_CALL_RESULT_OBJECTS: Mapping[str, str] = {
     "record.copy": _SAFE_MAPPING_OBJECT_ALIAS,
 }
 _SAFE_OBJECT_METHODS: Mapping[str, frozenset[str]] = {
-    _SAFE_PATH_OBJECT_ALIAS: frozenset({"exists", "read_text"}),
+    _SAFE_DATA_OBJECT_ALIAS: frozenset(),
+    _SAFE_PATH_OBJECT_ALIAS: frozenset(
+        {
+            "exists",
+            "is_file",
+            "is_symlink",
+            "read_bytes",
+            "read_text",
+            "relative_to",
+            "resolve",
+        }
+    ),
     _SAFE_HASH_OBJECT_ALIAS: frozenset({"hexdigest"}),
     _SAFE_JSON_OBJECT_ALIAS: frozenset({"get"}),
     _SAFE_MAPPING_OBJECT_ALIAS: frozenset({"get"}),
@@ -219,6 +268,56 @@ NORMALIZATION_AUTHORIZATION_REQUIRED_FIELDS = (
     "invalidated_by_identity_drift",
     "authorization_sha256",
 )
+AUTHORITY_LOCK_RECORD_REQUIRED_FIELDS = (
+    "authority_id",
+    "origin_remote",
+    "origin_commit_or_null",
+    "origin_tree_hash_or_null",
+    "origin_lock_artifact_ref",
+    "origin_artifact_inventory_hash",
+    "current_merged_copy_tree_hash",
+    "identity_verification_status",
+    "authority_lock_record_sha256",
+)
+AUTHORITY_SOURCE_RECORD_REQUIRED_FIELDS = (
+    "authority_id",
+    "authority_stage",
+    "authority_lock_record_sha256",
+    "repo_relative_path",
+    "raw_byte_sha256",
+    "declared_historical_hash_or_null",
+    "declared_hash_algorithm_or_null",
+    "declared_hash_verified",
+    "allowed_projection_uses",
+    "contains_outcome_fields",
+)
+NORMALIZATION_MANIFEST_REQUIRED_FIELDS = (
+    "schema_version",
+    "manifest_id",
+    "source_remote",
+    "source_head",
+    "source_tree_hash",
+    "source_dirty_state",
+    "authority_ids",
+    "expected_file_manifest",
+    "verified_file_byte_hashes",
+    "frozen_hash_validation_results",
+    "historical_canonicalization_versions",
+    "projection_canonicalization_version",
+    "normalizer_version",
+    "normalizer_code_sha256",
+    "normalization_authorization_sha256",
+    "authority_lock_record_hashes",
+    "authority_source_record_hashes",
+    "fingerprint_record_hashes",
+    "unique_lineage_map",
+    "dimension_status_counts",
+    "missing_source_records",
+    "unreconstructable_records",
+    "comparison_eligibility",
+    "created_at_utc",
+    "manifest_sha256",
+)
 PREFLIGHT_AUTHORIZATION_REQUIRED_FIELDS = (
     "schema_version",
     "authorization_id",
@@ -278,6 +377,24 @@ G6B_ESTIMAND_ID_SCOPE_CONTRACT: Mapping[str, object] = MappingProxyType(
     }
 )
 RETIRED_AUTHORITY_IDS = ("G4_FREEZE", "G5_EXECUTION", "G6_R_REPLAY_R3")
+RETIRED_SUBJECT_TYPES = (
+    "retired_case",
+    "retired_case_subunit",
+    "retired_method_observation",
+    "retired_method_companion_group",
+)
+RETIRED_DIMENSION_SUBJECTS = MappingProxyType(
+    {
+        "case_content_sha256": frozenset({"retired_case", "retired_case_subunit"}),
+        "state_snapshot_sha256": frozenset({"retired_case", "retired_case_subunit"}),
+        "route_signature_sha256": frozenset({"retired_case", "retired_case_subunit"}),
+        "parameter_tuple_sha256": frozenset({"retired_case", "retired_case_subunit"}),
+        "random_stream_manifest_sha256": frozenset({"retired_method_observation"}),
+        "output_root_reservation_sha256": frozenset({"retired_method_observation"}),
+        "sealed_prediction_sha256": frozenset({"retired_case", "retired_case_subunit"}),
+        "metric_schema_sha256": frozenset({"retired_method_companion_group"}),
+    }
+)
 EXPECTED_RETIRED_SOURCE_INVENTORY = (
     "cases/confirmation/g4/FREEZE_ENTRY.json",
     "cases/confirmation/g4/case_manifest.json",
@@ -327,17 +444,49 @@ NORMALIZATION_ALLOWED_OPERATIONS = (
     "apply_static_input_projection",
     "canonicalize_projection_v2",
     "compute_sha256",
-    "write_normalization_manifest",
+    "write_normalization_authorization",
+    "write_authority_lock_record",
+    "write_authority_source_record",
     "write_fingerprint_record",
+    "write_normalization_manifest",
 )
 NORMALIZATION_ALLOWED_PROJECT_IMPORTS = (
     "ims_deadlock.g6b_retired_normalizer",
     "ims_deadlock.g6b_canonical_json",
+    "ims_deadlock.g6b_schema_contracts",
     "ims_deadlock.g6b_governance",
 )
 ALLOWED_NORMALIZER_WRITER_SYMBOLS = (
+    "ims_deadlock.g6b_retired_normalizer.write_normalization_authorization",
+    "ims_deadlock.g6b_retired_normalizer.write_authority_lock_record",
+    "ims_deadlock.g6b_retired_normalizer.write_authority_source_record",
     "ims_deadlock.g6b_retired_normalizer.write_fingerprint_record",
     "ims_deadlock.g6b_retired_normalizer.write_normalization_manifest",
+)
+ALLOWED_NORMALIZER_WRITER_FUNCTIONS = (
+    "write_normalization_authorization",
+    "write_authority_lock_record",
+    "write_authority_source_record",
+    "write_fingerprint_record",
+    "write_normalization_manifest",
+)
+ALLOWED_NORMALIZER_SCHEMA_CONTRACT_CALLS = (
+    "ims_deadlock.g6b_schema_contracts.validate_normalization_authorization",
+    "ims_deadlock.g6b_schema_contracts.validate_authority_lock_record",
+    "ims_deadlock.g6b_schema_contracts.validate_authority_source_record",
+    "ims_deadlock.g6b_schema_contracts.validate_fingerprint_record",
+    "ims_deadlock.g6b_schema_contracts.validate_normalization_manifest",
+)
+NORMALIZATION_PATH_WRITER_METHODS = frozenset({"mkdir", "write_bytes", "replace"})
+NORMALIZATION_ALLOWED_OUTPUT_SCHEMA = MappingProxyType(
+    {
+        "schema_id": "ims-deadlock/g6b-retired-normalization-records/v1",
+        "schema_version": "v1",
+    }
+)
+NORMALIZATION_ALLOWED_OUTPUT_ROOT_PATH = (
+    "cases/discovery/g6b/row_families/structural_discovery_v1/"
+    "governance/g6b_retired_authority_normalization_v1"
 )
 NORMALIZATION_FORBIDDEN_IMPORTS = (
     "ims_deadlock.analysis",
@@ -1519,7 +1668,11 @@ def validate_fingerprint_record(
         raise SchemaContractError("unknown_dimension")
     if record.get("projection_kind") != DIMENSION_PROJECTION_KINDS[dimension]:
         raise SchemaContractError("projection_kind_mismatch", dimension)
-    if record.get("subject_type") != DIMENSION_SUBJECTS[dimension]:
+    subject_type = record.get("subject_type")
+    if record.get("source_authority_id") in RETIRED_AUTHORITY_IDS:
+        if subject_type not in RETIRED_DIMENSION_SUBJECTS[dimension]:
+            raise SchemaContractError("subject_type_mismatch", dimension)
+    elif subject_type != DIMENSION_SUBJECTS[dimension]:
         raise SchemaContractError("subject_type_mismatch", dimension)
     if record.get("comparison_policy") != DIMENSION_POLICIES[dimension]:
         raise SchemaContractError("comparison_policy_mismatch", dimension)
@@ -1833,9 +1986,19 @@ def validate_lineage_deduplication(
 def validate_normalization_authorization(
     record: Mapping[str, JsonValue],
     *,
-    expected_inventory: Sequence[str] | None = None,
-    expected_selector_matrix: Sequence[Mapping[str, JsonValue]] | None = None,
+    expected_schema_inventory_patterns: Sequence[str],
+    expected_concrete_source_paths: Sequence[str],
+    expected_selector_matrix: Sequence[Mapping[str, JsonValue]],
+    expected_git_object_format: str,
+    expected_source_head: str,
+    expected_source_tree_hash: str,
+    expected_file_manifest_hash: str,
+    expected_normalizer_code_sha256: str,
+    expected_review_artifact_hash: str,
+    expected_output_root: str,
 ) -> None:
+    if expected_output_root != NORMALIZATION_ALLOWED_OUTPUT_ROOT_PATH:
+        raise SchemaContractError("output_root_contract_drift")
     validate_exact_keys(
         record,
         NORMALIZATION_AUTHORIZATION_REQUIRED_FIELDS,
@@ -1856,24 +2019,45 @@ def validate_normalization_authorization(
         != RETIRED_AUTHORITY_IDS
     ):
         raise SchemaContractError("missing_retired_authority")
-    for field in (
-        "source_head",
-        "source_tree_hash",
-        "expected_file_manifest_hash",
-        "normalizer_code_sha256",
-        "review_artifact_hash",
-    ):
-        _validate_lower_sha256(record.get(field), label=field)
+    if expected_git_object_format != "sha1":
+        raise SchemaContractError("source_identity_drift")
+    source_head = _validate_git_sha1(record.get("source_head"), label="source_head")
+    source_tree_hash = _validate_git_sha1(
+        record.get("source_tree_hash"),
+        label="source_tree_hash",
+    )
+    if source_head != expected_source_head:
+        raise SchemaContractError("source_identity_drift")
+    if source_tree_hash != expected_source_tree_hash:
+        raise SchemaContractError("source_identity_drift")
+    expected_file_manifest = _validate_lower_sha256(
+        record.get("expected_file_manifest_hash"),
+        label="expected_file_manifest_hash",
+    )
+    if expected_file_manifest != expected_file_manifest_hash:
+        raise SchemaContractError("file_manifest_drift")
+    normalizer_code = _validate_lower_sha256(
+        record.get("normalizer_code_sha256"),
+        label="normalizer_code_sha256",
+    )
+    if normalizer_code != expected_normalizer_code_sha256:
+        raise SchemaContractError("normalizer_code_drift")
+    review_artifact = _validate_lower_sha256(
+        record.get("review_artifact_hash"),
+        label="review_artifact_hash",
+    )
+    if review_artifact != expected_review_artifact_hash:
+        raise SchemaContractError("review_artifact_drift")
     allowed_source_paths = _as_string_sequence(
         record.get("allowed_source_paths"),
         "allowed_source_paths",
     )
-    if expected_inventory is None or expected_selector_matrix is None:
-        raise SchemaContractError("missing_normalization_authorization")
-    schema_inventory = tuple(expected_inventory)
+    schema_inventory = tuple(expected_schema_inventory_patterns)
     if schema_inventory != EXPECTED_RETIRED_SOURCE_INVENTORY:
         raise SchemaContractError("missing_retired_authority")
-    expected_paths = EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+    expected_paths = tuple(expected_concrete_source_paths)
+    if expected_paths != EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY:
+        raise SchemaContractError("missing_retired_authority")
     validate_retired_inventory(
         expected_paths=expected_paths,
         observed_paths=allowed_source_paths,
@@ -1921,11 +2105,243 @@ def validate_normalization_authorization(
     _validate_output_schema_and_root(
         record.get("allowed_output_schema"),
         record.get("allowed_output_root"),
+        expected_output_root=expected_output_root,
     )
     _validate_utc_timestamp(record.get("issued_at_utc"), label="issued_at_utc")
     if record.get("invalidated_by_identity_drift") is not False:
         raise SchemaContractError("runtime_identity_drift")
     _verify_finalized_self_hash(record, "authorization_sha256")
+
+
+def validate_authority_lock_record(record: Mapping[str, JsonValue]) -> None:
+    validate_exact_keys(
+        record,
+        AUTHORITY_LOCK_RECORD_REQUIRED_FIELDS,
+        label="authority_lock_record",
+    )
+    authority_id = _require_nonempty_string(record.get("authority_id"), "authority_id")
+    if authority_id not in RETIRED_AUTHORITY_IDS:
+        raise SchemaContractError("illegal_retired_authority", authority_id)
+    if record.get("origin_remote") != "zjqc/IMS_deadlock":
+        raise SchemaContractError("source_identity_drift")
+    for field in ("origin_commit_or_null", "origin_tree_hash_or_null"):
+        value = record.get(field)
+        if value is not None:
+            _validate_git_object_id(value, label=field)
+    _validate_repo_relative_path(
+        _require_nonempty_string(
+            record.get("origin_lock_artifact_ref"),
+            "origin_lock_artifact_ref",
+        )
+    )
+    _validate_lower_sha256(
+        record.get("origin_artifact_inventory_hash"),
+        label="origin_artifact_inventory_hash",
+    )
+    _validate_lower_sha256(
+        record.get("current_merged_copy_tree_hash"),
+        label="current_merged_copy_tree_hash",
+    )
+    identity_status = record.get("identity_verification_status")
+    if identity_status not in {
+        "verified_historical_identity",
+        "verified_merged_copy_against_historical_hashes",
+        "unverified_refuse",
+    }:
+        raise SchemaContractError("unverified_projection_refusal", authority_id)
+    _verify_finalized_self_hash(record, "authority_lock_record_sha256")
+
+
+def validate_authority_source_record(
+    record: Mapping[str, JsonValue],
+    *,
+    authority_lock_hashes: Mapping[str, str],
+    expected_source_hashes: Mapping[str, str],
+    selector_rows: Sequence[Mapping[str, JsonValue]],
+) -> None:
+    validate_exact_keys(
+        record,
+        AUTHORITY_SOURCE_RECORD_REQUIRED_FIELDS,
+        label="authority_source_record",
+    )
+    _validate_closed_hash_map(
+        expected_source_hashes,
+        expected_keys=EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY,
+        mismatch_code="retired_authority_hash_mismatch",
+    )
+    authority_id = _require_nonempty_string(record.get("authority_id"), "authority_id")
+    if authority_id not in RETIRED_AUTHORITY_IDS:
+        raise SchemaContractError("illegal_retired_authority", authority_id)
+    _validate_authority_lock_hash_refs(
+        authority_lock_hashes,
+        required_authority_id=authority_id,
+    )
+    if record.get("authority_stage") != authority_id:
+        raise SchemaContractError("missing_retired_authority", authority_id)
+    path = _require_nonempty_string(
+        record.get("repo_relative_path"), "repo_relative_path"
+    )
+    _validate_repo_relative_path(path)
+    if path not in EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY:
+        raise SchemaContractError("source_outside_retired_inventory", path)
+    if _authority_id_for_retired_source_path(path) != authority_id:
+        raise SchemaContractError("missing_retired_authority", path)
+    lock_hash = _validate_lower_sha256(
+        record.get("authority_lock_record_sha256"),
+        label="authority_lock_record_sha256",
+    )
+    if authority_lock_hashes.get(authority_id) != lock_hash:
+        raise SchemaContractError("unverified_projection_refusal", authority_id)
+    raw_hash = _validate_lower_sha256(record.get("raw_byte_sha256"), label=path)
+    if raw_hash != expected_source_hashes[path]:
+        raise SchemaContractError("retired_authority_hash_mismatch", path)
+    declared_hash = record.get("declared_historical_hash_or_null")
+    algorithm = record.get("declared_hash_algorithm_or_null")
+    declared_verified = record.get("declared_hash_verified")
+    if declared_hash is not None:
+        _validate_lower_sha256(declared_hash, label="declared_historical_hash_or_null")
+        if declared_hash != raw_hash:
+            raise SchemaContractError("retired_authority_hash_mismatch", path)
+        if algorithm != "sha256" or declared_verified is not True:
+            raise SchemaContractError("retired_authority_hash_mismatch", path)
+    elif algorithm is not None or declared_verified is not False:
+        raise SchemaContractError("retired_authority_hash_mismatch", path)
+    uses = _as_string_sequence(
+        record.get("allowed_projection_uses"),
+        "allowed_projection_uses",
+    )
+    _validate_sorted_unique_strings(uses, label="allowed_projection_uses")
+    contains_outcome = record.get("contains_outcome_fields")
+    if not isinstance(contains_outcome, bool):
+        raise SchemaContractError("source_outcome_field_violation", path)
+    if contains_outcome and set(uses) != {"source_hash_validation"}:
+        raise SchemaContractError("source_outcome_field_violation", path)
+    allowed_uses = _allowed_projection_uses_for_retired_path(path, selector_rows)
+    if set(uses) != allowed_uses:
+        raise SchemaContractError("source_projection_use_violation", path)
+
+
+def validate_normalization_manifest(
+    manifest: Mapping[str, JsonValue],
+    *,
+    authority_lock_records: Mapping[str, Mapping[str, JsonValue]],
+    authority_source_records: Mapping[str, Mapping[str, JsonValue]],
+    fingerprint_records: Mapping[str, Mapping[str, JsonValue]],
+) -> None:
+    validate_exact_keys(
+        manifest,
+        NORMALIZATION_MANIFEST_REQUIRED_FIELDS,
+        label="normalization_manifest",
+    )
+    if manifest.get("schema_version") != (
+        "ims-deadlock/g6b-retired-normalization-manifest/v1"
+    ):
+        raise SchemaContractError("schema_version_drift")
+    _require_nonempty_string(manifest.get("manifest_id"), "manifest_id")
+    if manifest.get("source_remote") != "zjqc/IMS_deadlock":
+        raise SchemaContractError("source_identity_drift")
+    _validate_git_object_id(manifest.get("source_head"), label="source_head")
+    _validate_git_object_id(manifest.get("source_tree_hash"), label="source_tree_hash")
+    if manifest.get("source_dirty_state") != "clean":
+        raise SchemaContractError("source_identity_drift")
+    if _as_string_sequence(manifest.get("authority_ids"), "authority_ids") != (
+        RETIRED_AUTHORITY_IDS
+    ):
+        raise SchemaContractError("missing_retired_authority")
+    expected_hashes = _validate_sorted_hash_map(
+        manifest.get("expected_file_manifest"),
+        expected_keys=EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY,
+        mismatch_code="retired_authority_hash_mismatch",
+    )
+    verified_hashes = _validate_sorted_hash_map(
+        manifest.get("verified_file_byte_hashes"),
+        expected_keys=EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY,
+        mismatch_code="retired_authority_hash_mismatch",
+    )
+    if verified_hashes != expected_hashes:
+        raise SchemaContractError("retired_authority_hash_mismatch")
+    _validate_frozen_hash_validation_results(
+        manifest.get("frozen_hash_validation_results"),
+        expected_hashes=expected_hashes,
+    )
+    canonical_versions = _validate_string_map(
+        manifest.get("historical_canonicalization_versions"),
+        expected_keys=RETIRED_AUTHORITY_IDS,
+        mismatch_code="missing_retired_authority",
+    )
+    if any(
+        value != G6B_CANONICAL_JSON_VERSION for value in canonical_versions.values()
+    ):
+        raise SchemaContractError("canonicalization_version_mismatch")
+    if (
+        manifest.get("projection_canonicalization_version")
+        != G6B_CANONICAL_JSON_VERSION
+    ):
+        raise SchemaContractError("canonicalization_version_mismatch")
+    _require_nonempty_string(manifest.get("normalizer_version"), "normalizer_version")
+    _validate_lower_sha256(
+        manifest.get("normalizer_code_sha256"),
+        label="normalizer_code_sha256",
+    )
+    _validate_lower_sha256(
+        manifest.get("normalization_authorization_sha256"),
+        label="normalization_authorization_sha256",
+    )
+    _validate_manifest_authority_lock_hashes(
+        manifest.get("authority_lock_record_hashes"),
+        authority_lock_records=authority_lock_records,
+    )
+    _validate_manifest_authority_source_hashes(
+        manifest.get("authority_source_record_hashes"),
+        authority_source_records=authority_source_records,
+    )
+    _validate_manifest_verified_projection_suppliers(
+        authority_lock_records=authority_lock_records,
+        authority_source_records=authority_source_records,
+    )
+    _validate_manifest_fingerprint_hashes(
+        manifest.get("fingerprint_record_hashes"),
+        fingerprint_records=fingerprint_records,
+    )
+    _validate_unique_lineage_map(
+        manifest.get("unique_lineage_map"),
+        fingerprint_records=fingerprint_records,
+    )
+    _validate_dimension_status_counts(
+        manifest.get("dimension_status_counts"),
+        fingerprint_records=fingerprint_records,
+    )
+    missing_records = _as_string_sequence(
+        manifest.get("missing_source_records"),
+        "missing_source_records",
+    )
+    _validate_sorted_unique_strings(missing_records, label="missing_source_records")
+    if missing_records:
+        raise SchemaContractError("missing_source_records_not_empty")
+    unreconstructable = _as_string_sequence(
+        manifest.get("unreconstructable_records"),
+        "unreconstructable_records",
+    )
+    _validate_sorted_unique_strings(
+        unreconstructable, label="unreconstructable_records"
+    )
+    expected_unreconstructable = tuple(
+        sorted(
+            record_id
+            for record_id, record in fingerprint_records.items()
+            if record.get("dimension_status") == "unreconstructable_refuse"
+        )
+    )
+    if unreconstructable != expected_unreconstructable:
+        raise SchemaContractError("unreconstructable_not_eligible")
+    _validate_comparison_eligibility(
+        manifest.get("comparison_eligibility"),
+        fingerprint_records=fingerprint_records,
+        missing_source_records=missing_records,
+        unreconstructable_records=unreconstructable,
+    )
+    _validate_utc_timestamp(manifest.get("created_at_utc"), label="created_at_utc")
+    _verify_finalized_self_hash(manifest, "manifest_sha256")
 
 
 def validate_normalizer_source_guard(source: str) -> None:
@@ -1939,6 +2355,7 @@ def validate_normalizer_source_guard(source: str) -> None:
         raise SchemaContractError("retired_normalizer_error")
     if _uses_reserved_safe_alias_name(tree):
         raise SchemaContractError("retired_normalizer_error")
+    _validate_normalizer_writer_bindings(tree)
     aliases: dict[str, set[str]] = {}
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -1958,6 +2375,17 @@ def validate_normalizer_source_guard(source: str) -> None:
                     {f"{module_name}.{alias.name}"},
                 )
     _extend_callable_assignment_aliases(tree, aliases)
+    safe_data_argument_calls = _safe_data_argument_call_names(tree, aliases)
+    parent_map = _ast_parent_map(tree)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            _reject_sensitive_callable_escapes(
+                node,
+                aliases,
+                safe_data_argument_calls=safe_data_argument_calls,
+                error_code="retired_normalizer_error",
+            )
+    _validate_normalizer_operation_sequence(tree, aliases)
     for node in ast.walk(tree):
         if isinstance(node, ast.Call):
             if isinstance(node.func, ast.Subscript):
@@ -1968,10 +2396,25 @@ def validate_normalizer_source_guard(source: str) -> None:
             for call_name in call_names:
                 if _is_unknown_callable_alias(call_name):
                     raise SchemaContractError("retired_normalizer_error", call_name)
-                _validate_normalizer_call(call_name, node)
+                if call_name == "ims_deadlock.g6b_schema_contracts.SchemaContractError":
+                    if not _is_allowed_schema_contract_error_call(
+                        node,
+                        parent_map,
+                    ):
+                        raise SchemaContractError(
+                            "retired_normalizer_error",
+                            call_name,
+                        )
+                    continue
+                _validate_normalizer_call(
+                    call_name,
+                    node,
+                    top_level_function=_top_level_function_context(tree, node),
+                )
             _reject_sensitive_callable_escapes(
                 node,
                 aliases,
+                safe_data_argument_calls=safe_data_argument_calls,
                 error_code="retired_normalizer_error",
             )
         elif isinstance(node, ast.Constant) and isinstance(node.value, str):
@@ -3824,7 +4267,12 @@ def _reject_failure_status_upgrade(
         raise SchemaContractError("retired_projection_unreconstructable")
 
 
-def _validate_output_schema_and_root(schema: object, root: object) -> None:
+def _validate_output_schema_and_root(
+    schema: object,
+    root: object,
+    *,
+    expected_output_root: str | None = None,
+) -> None:
     if not isinstance(schema, Mapping):
         raise SchemaContractError("output_schema_id_drift")
     validate_exact_keys(
@@ -3832,8 +4280,8 @@ def _validate_output_schema_and_root(schema: object, root: object) -> None:
         {"schema_id", "schema_version"},
         label="allowed_output_schema",
     )
-    _require_nonempty_string(schema.get("schema_id"), "schema_id")
-    _require_nonempty_string(schema.get("schema_version"), "schema_version")
+    if dict(schema) != dict(NORMALIZATION_ALLOWED_OUTPUT_SCHEMA):
+        raise SchemaContractError("output_schema_id_drift")
     if not isinstance(root, Mapping):
         raise SchemaContractError("repo_relative_path_violation")
     validate_exact_keys(
@@ -3846,8 +4294,349 @@ def _validate_output_schema_and_root(schema: object, root: object) -> None:
         "repo_relative_posix_path",
     )
     _validate_repo_relative_path(path)
+    if path != (expected_output_root or NORMALIZATION_ALLOWED_OUTPUT_ROOT_PATH):
+        raise SchemaContractError("output_root_contract_drift")
     if root.get("contains_only_governance_outputs") is not True:
         raise SchemaContractError("output_root_reuse_or_materialized")
+
+
+def _authority_id_for_retired_source_path(path: str) -> str:
+    if path.startswith("cases/confirmation/g4/"):
+        return "G4_FREEZE"
+    if path.startswith("evidence/g5/"):
+        return "G5_EXECUTION"
+    if path.startswith("evidence/g6/"):
+        return "G6_R_REPLAY_R3"
+    raise SchemaContractError("source_outside_retired_inventory", path)
+
+
+def _validate_sorted_unique_strings(values: Sequence[str], *, label: str) -> None:
+    if tuple(values) != tuple(sorted(values)):
+        raise SchemaContractError("set_array_not_sorted", label)
+    if len(set(values)) != len(values):
+        raise SchemaContractError("set_array_duplicate", label)
+
+
+def _validate_sorted_hash_map(
+    value: object,
+    *,
+    expected_keys: Sequence[str],
+    mismatch_code: str,
+) -> dict[str, str]:
+    if not isinstance(value, Mapping):
+        raise SchemaContractError(mismatch_code)
+    if tuple(value.keys()) != tuple(sorted(value.keys())):
+        raise SchemaContractError("hash_map_not_sorted")
+    if set(value) != set(expected_keys):
+        raise SchemaContractError(mismatch_code)
+    result: dict[str, str] = {}
+    for key, digest in value.items():
+        if not isinstance(key, str):
+            raise SchemaContractError(mismatch_code)
+        result[key] = _validate_lower_sha256(digest, label=key)
+    return result
+
+
+def _validate_closed_hash_map(
+    value: object,
+    *,
+    expected_keys: Sequence[str],
+    mismatch_code: str,
+) -> dict[str, str]:
+    if not isinstance(value, Mapping):
+        raise SchemaContractError(mismatch_code)
+    if set(value) != set(expected_keys):
+        raise SchemaContractError(mismatch_code)
+    result: dict[str, str] = {}
+    for key, digest in value.items():
+        if not isinstance(key, str):
+            raise SchemaContractError(mismatch_code)
+        result[key] = _validate_lower_sha256(digest, label=key)
+    return result
+
+
+def _validate_authority_lock_hash_refs(
+    value: Mapping[str, str],
+    *,
+    required_authority_id: str,
+) -> None:
+    if not isinstance(value, Mapping):
+        raise SchemaContractError("absent_authority_lock_ref")
+    if tuple(value.keys()) != tuple(sorted(value.keys())):
+        raise SchemaContractError("hash_map_not_sorted")
+    if required_authority_id not in value:
+        raise SchemaContractError("absent_authority_lock_ref", required_authority_id)
+    if not set(value) <= set(RETIRED_AUTHORITY_IDS):
+        raise SchemaContractError("absent_authority_lock_ref")
+    for authority_id, digest in value.items():
+        if not isinstance(authority_id, str):
+            raise SchemaContractError("absent_authority_lock_ref")
+        _validate_lower_sha256(digest, label=authority_id)
+
+
+def _validate_string_map(
+    value: object,
+    *,
+    expected_keys: Sequence[str],
+    mismatch_code: str,
+) -> dict[str, str]:
+    if not isinstance(value, Mapping):
+        raise SchemaContractError(mismatch_code)
+    if tuple(value.keys()) != tuple(sorted(value.keys())):
+        raise SchemaContractError("hash_map_not_sorted")
+    if set(value) != set(expected_keys):
+        raise SchemaContractError(mismatch_code)
+    result: dict[str, str] = {}
+    for key, item in value.items():
+        if not isinstance(key, str) or not isinstance(item, str):
+            raise SchemaContractError(mismatch_code)
+        result[key] = item
+    return result
+
+
+def _allowed_projection_uses_for_retired_path(
+    path: str,
+    selector_rows: Sequence[Mapping[str, JsonValue]],
+) -> set[str]:
+    validate_source_selector_matrix(selector_rows)
+    uses: set[str] = set()
+    for row in selector_rows:
+        pattern = _require_nonempty_string(
+            row.get("source_path_pattern"),
+            "source_path_pattern",
+        )
+        if _retired_source_pattern_matches_path(pattern, path):
+            uses.add(_require_nonempty_string(row.get("allowed_use"), "allowed_use"))
+    return uses or {"source_hash_validation"}
+
+
+def _retired_source_pattern_matches_path(pattern: str, path: str) -> bool:
+    if "{case_id}" in pattern:
+        return any(
+            path == pattern.replace("{case_id}", case_id)
+            for case_id in G4_MANIFEST_CASE_IDS
+        )
+    if "{" not in pattern:
+        return path == pattern
+    prefix, remainder = pattern.split("{", 1)
+    alternatives, suffix = remainder.split("}", 1)
+    return any(
+        path == f"{prefix}{alternative}{suffix}"
+        for alternative in alternatives.split(",")
+    )
+
+
+def _validate_frozen_hash_validation_results(
+    value: object,
+    *,
+    expected_hashes: Mapping[str, str],
+) -> None:
+    if not isinstance(value, Mapping):
+        raise SchemaContractError("retired_authority_hash_mismatch")
+    if tuple(value.keys()) != tuple(sorted(value.keys())):
+        raise SchemaContractError("hash_map_not_sorted")
+    if set(value) != set(expected_hashes):
+        raise SchemaContractError("retired_authority_hash_mismatch")
+    for path, result in value.items():
+        if not isinstance(path, str) or not isinstance(result, Mapping):
+            raise SchemaContractError("retired_authority_hash_mismatch")
+        validate_exact_keys(
+            result,
+            {"declared_sha256", "observed_sha256", "status"},
+            label="frozen_hash_validation_result",
+        )
+        if result.get("declared_sha256") != expected_hashes[path]:
+            raise SchemaContractError("retired_authority_hash_mismatch", path)
+        if result.get("observed_sha256") != expected_hashes[path]:
+            raise SchemaContractError("retired_authority_hash_mismatch", path)
+        if result.get("status") != "match":
+            raise SchemaContractError("retired_authority_hash_mismatch", path)
+
+
+def _validate_manifest_authority_lock_hashes(
+    value: object,
+    *,
+    authority_lock_records: Mapping[str, Mapping[str, JsonValue]],
+) -> None:
+    for record in authority_lock_records.values():
+        validate_authority_lock_record(record)
+    expected = {
+        authority_id: record.get("authority_lock_record_sha256")
+        for authority_id, record in authority_lock_records.items()
+    }
+    observed = _validate_sorted_hash_map(
+        value,
+        expected_keys=RETIRED_AUTHORITY_IDS,
+        mismatch_code="absent_authority_lock_ref",
+    )
+    if set(authority_lock_records) != set(RETIRED_AUTHORITY_IDS):
+        raise SchemaContractError("absent_authority_lock_ref")
+    for authority_id, digest in observed.items():
+        if expected.get(authority_id) != digest:
+            raise SchemaContractError("absent_authority_lock_ref", authority_id)
+
+
+def _validate_manifest_authority_source_hashes(
+    value: object,
+    *,
+    authority_source_records: Mapping[str, Mapping[str, JsonValue]],
+) -> None:
+    for record in authority_source_records.values():
+        validate_exact_keys(
+            record,
+            AUTHORITY_SOURCE_RECORD_REQUIRED_FIELDS,
+            label="authority_source_record",
+        )
+    observed = _validate_sorted_hash_map(
+        value,
+        expected_keys=EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY,
+        mismatch_code="authority_source_ref_mismatch",
+    )
+    if set(authority_source_records) != set(EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY):
+        raise SchemaContractError("authority_source_ref_mismatch")
+    for path, digest in observed.items():
+        expected_digest = g6b_canonical_json.canonical_sha256_v2(
+            dict(authority_source_records[path])
+        )
+        if digest != expected_digest:
+            raise SchemaContractError("authority_source_ref_mismatch", path)
+
+
+def _validate_manifest_verified_projection_suppliers(
+    *,
+    authority_lock_records: Mapping[str, Mapping[str, JsonValue]],
+    authority_source_records: Mapping[str, Mapping[str, JsonValue]],
+) -> None:
+    for path, source_record in authority_source_records.items():
+        authority_id = _require_nonempty_string(
+            source_record.get("authority_id"),
+            "authority_id",
+        )
+        if authority_id not in authority_lock_records:
+            raise SchemaContractError("absent_authority_lock_ref", authority_id)
+        lock_record = authority_lock_records[authority_id]
+        lock_hash = _validate_lower_sha256(
+            source_record.get("authority_lock_record_sha256"),
+            label="authority_lock_record_sha256",
+        )
+        if lock_hash != lock_record.get("authority_lock_record_sha256"):
+            raise SchemaContractError("absent_authority_lock_ref", authority_id)
+        identity_status = lock_record.get("identity_verification_status")
+        allowed_projection_uses = _as_string_sequence(
+            source_record.get("allowed_projection_uses"),
+            "allowed_projection_uses",
+        )
+        projection_uses = set(allowed_projection_uses) - {"source_hash_validation"}
+        if identity_status == "unverified_refuse" and projection_uses:
+            raise SchemaContractError("unverified_projection_refusal", path)
+
+
+def _validate_manifest_fingerprint_hashes(
+    value: object,
+    *,
+    fingerprint_records: Mapping[str, Mapping[str, JsonValue]],
+) -> None:
+    for record in fingerprint_records.values():
+        validate_exact_keys(
+            record,
+            FINGERPRINT_RECORD_REQUIRED_FIELDS,
+            label="fingerprint_record",
+        )
+        _verify_finalized_self_hash(record, "record_provenance_sha256")
+    expected_keys = tuple(sorted(fingerprint_records))
+    observed = _validate_sorted_hash_map(
+        value,
+        expected_keys=expected_keys,
+        mismatch_code="fingerprint_ref_mismatch",
+    )
+    for record_id, digest in observed.items():
+        if digest != fingerprint_records[record_id].get("record_provenance_sha256"):
+            raise SchemaContractError("fingerprint_ref_mismatch", record_id)
+
+
+def _validate_unique_lineage_map(
+    value: object,
+    *,
+    fingerprint_records: Mapping[str, Mapping[str, JsonValue]],
+) -> None:
+    if not isinstance(value, Mapping):
+        raise SchemaContractError("duplicate_lineage_miscount")
+    expected: dict[str, list[str]] = {}
+    for record_id, record in fingerprint_records.items():
+        lineage_id = _require_nonempty_string(record.get("lineage_id"), "lineage_id")
+        expected.setdefault(lineage_id, []).append(record_id)
+    expected = {key: sorted(record_ids) for key, record_ids in sorted(expected.items())}
+    if tuple(value.keys()) != tuple(expected.keys()):
+        raise SchemaContractError("duplicate_lineage_miscount")
+    for lineage_id, record_ids in value.items():
+        actual_ids = _as_string_sequence(record_ids, "unique_lineage_map")
+        if tuple(actual_ids) != tuple(sorted(actual_ids)):
+            raise SchemaContractError("duplicate_lineage_miscount", lineage_id)
+        if len(set(actual_ids)) != len(actual_ids):
+            raise SchemaContractError("duplicate_lineage_miscount", lineage_id)
+        if list(actual_ids) != expected[lineage_id]:
+            raise SchemaContractError("duplicate_lineage_miscount", lineage_id)
+
+
+def _validate_dimension_status_counts(
+    value: object,
+    *,
+    fingerprint_records: Mapping[str, Mapping[str, JsonValue]],
+) -> None:
+    if not isinstance(value, Mapping):
+        raise SchemaContractError("unknown_dimension_status")
+    if tuple(value.keys()) != tuple(sorted(DIMENSION_STATUS_VALUES)):
+        raise SchemaContractError("unknown_dimension_status")
+    expected = {
+        status: sum(
+            1
+            for record in fingerprint_records.values()
+            if record.get("dimension_status") == status
+        )
+        for status in DIMENSION_STATUS_VALUES
+    }
+    for status, count in value.items():
+        if not isinstance(count, int) or isinstance(count, bool):
+            raise SchemaContractError("unknown_dimension_status", status)
+        if expected[status] != count:
+            raise SchemaContractError("unknown_dimension_status", status)
+
+
+def _validate_comparison_eligibility(
+    value: object,
+    *,
+    fingerprint_records: Mapping[str, Mapping[str, JsonValue]],
+    missing_source_records: Sequence[str],
+    unreconstructable_records: Sequence[str],
+) -> None:
+    if not isinstance(value, Mapping):
+        raise SchemaContractError("unreconstructable_not_eligible")
+    if tuple(value.keys()) != tuple(sorted(fingerprint_records)):
+        raise SchemaContractError("unreconstructable_not_eligible")
+    for record_id, eligibility in value.items():
+        if not isinstance(record_id, str) or not isinstance(eligibility, Mapping):
+            raise SchemaContractError("unreconstructable_not_eligible")
+        validate_exact_keys(
+            eligibility,
+            {"eligible_for_overlap_comparison", "refusal_reason_code_or_null"},
+            label="comparison_eligibility",
+        )
+        status = fingerprint_records[record_id].get("dimension_status")
+        eligible = eligibility.get("eligible_for_overlap_comparison")
+        refusal = eligibility.get("refusal_reason_code_or_null")
+        fail_closed = (
+            status == "unreconstructable_refuse"
+            or record_id in missing_source_records
+            or record_id in unreconstructable_records
+        )
+        if fail_closed:
+            if (
+                eligible is not False
+                or refusal != "retired_projection_unreconstructable"
+            ):
+                raise SchemaContractError("unreconstructable_not_eligible", record_id)
+        elif eligible is not True or refusal is not None:
+            raise SchemaContractError("unreconstructable_not_eligible", record_id)
 
 
 def _reject_downstream_and_wildcard_refs(record: Mapping[str, JsonValue]) -> None:
@@ -3867,6 +4656,10 @@ def _reject_downstream_and_wildcard_refs(record: Mapping[str, JsonValue]) -> Non
 
 def _validate_normalizer_import(name: str) -> None:
     _reject_side_effect_import(name)
+    if name == "ims_deadlock.g6b_governance" or name.startswith(
+        "ims_deadlock.g6b_governance."
+    ):
+        raise SchemaContractError("capability_import_violation", name)
     if not name.startswith("ims_deadlock"):
         return
     if any(
@@ -3897,7 +4690,12 @@ def _validate_preflight_import(name: str) -> None:
         raise SchemaContractError("capability_import_violation", name)
 
 
-def _validate_normalizer_call(call_name: str, node: ast.Call) -> None:
+def _validate_normalizer_call(
+    call_name: str,
+    node: ast.Call,
+    *,
+    top_level_function: str | None = None,
+) -> None:
     if _is_dynamic_import_call(call_name):
         imported_name = node.args[0] if node.args else None
         if isinstance(imported_name, ast.Constant) and isinstance(
@@ -3908,10 +4706,27 @@ def _validate_normalizer_call(call_name: str, node: ast.Call) -> None:
         raise SchemaContractError("capability_import_violation", call_name)
     if _is_dynamic_builtin_call(call_name):
         raise SchemaContractError("capability_call_violation", call_name)
+    leaf_name = call_name.rsplit(".", 1)[-1]
+    if leaf_name in {"map", "filter", "reduce", "partial", "starmap"}:
+        raise SchemaContractError("retired_normalizer_error", call_name)
+    if leaf_name in {"sorted", "sort", "min", "max"} and any(
+        keyword.arg == "key" for keyword in node.keywords
+    ):
+        raise SchemaContractError("retired_normalizer_error", call_name)
+    if call_name in _SAFE_OBJECT_METHODS:
+        raise SchemaContractError("retired_normalizer_error", call_name)
     if _is_safe_object_method(call_name):
+        return
+    if _is_allowed_normalizer_path_write(call_name, node, top_level_function):
+        return
+    if call_name.rsplit(".", 1)[-1] in NORMALIZATION_ALLOWED_OPERATIONS:
         return
     if _is_unlisted_safe_object_method(call_name):
         raise SchemaContractError("retired_normalizer_error", call_name)
+    if call_name.startswith("ims_deadlock.g6b_schema_contracts."):
+        if call_name not in ALLOWED_NORMALIZER_SCHEMA_CONTRACT_CALLS:
+            raise SchemaContractError("retired_normalizer_error", call_name)
+        return
     _reject_unapproved_side_effect_call(
         call_name,
         node,
@@ -3952,6 +4767,320 @@ def _validate_normalizer_call(call_name: str, node: ast.Call) -> None:
             raise SchemaContractError(code, call_name)
     if call_name in NORMALIZATION_FORBIDDEN_CALLS:
         raise SchemaContractError("capability_call_violation", call_name)
+
+
+def _is_allowed_schema_contract_error_call(
+    node: ast.Call,
+    parent_map: Mapping[int, ast.AST],
+) -> bool:
+    if _ast_call_name(node.func) not in {
+        "contracts.SchemaContractError",
+        "SchemaContractError",
+        "ims_deadlock.g6b_schema_contracts.SchemaContractError",
+    }:
+        return False
+    parent = parent_map.get(id(node))
+    return isinstance(parent, ast.Raise) and parent.exc is node
+
+
+def _is_allowed_normalizer_path_write(
+    call_name: str,
+    node: ast.Call,
+    top_level_function: str | None,
+) -> bool:
+    base_name, separator, method_name = call_name.rpartition(".")
+    return bool(
+        separator
+        and base_name == _SAFE_PATH_OBJECT_ALIAS
+        and method_name in NORMALIZATION_PATH_WRITER_METHODS
+        and top_level_function in ALLOWED_NORMALIZER_WRITER_FUNCTIONS
+        and isinstance(node.func, ast.Attribute)
+    )
+
+
+def _top_level_function_context(tree: ast.Module, target: ast.AST) -> str | None:
+    for statement in tree.body:
+        if not isinstance(statement, ast.FunctionDef):
+            continue
+        if _call_belongs_directly_to_function_body(statement, target):
+            return statement.name
+    return None
+
+
+def _call_belongs_directly_to_function_body(
+    function: ast.FunctionDef,
+    target: ast.AST,
+) -> bool:
+    if not any(_node_contains(statement, target) for statement in function.body):
+        return False
+    for nested in ast.walk(function):
+        if nested is function:
+            continue
+        if isinstance(
+            nested,
+            ast.FunctionDef | ast.AsyncFunctionDef | ast.Lambda,
+        ) and any(child is target for child in ast.walk(nested)):
+            return False
+    return True
+
+
+def _node_contains(root: ast.AST, target: ast.AST) -> bool:
+    return any(node is target for node in ast.walk(root))
+
+
+def _validate_normalizer_writer_bindings(tree: ast.Module) -> None:
+    parent_map = _ast_parent_map(tree)
+    definition_counts: dict[str, int] = {}
+    top_level_writer_defs = {
+        id(statement)
+        for statement in tree.body
+        if isinstance(statement, ast.FunctionDef)
+        and statement.name in ALLOWED_NORMALIZER_WRITER_FUNCTIONS
+    }
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef):
+            if node.name in ALLOWED_NORMALIZER_WRITER_FUNCTIONS:
+                if id(node) not in top_level_writer_defs:
+                    raise SchemaContractError("retired_normalizer_error", node.name)
+                definition_counts[node.name] = definition_counts.get(node.name, 0) + 1
+            _validate_normalizer_writer_arguments(node.args)
+        elif isinstance(node, ast.AsyncFunctionDef):
+            if node.name in ALLOWED_NORMALIZER_WRITER_FUNCTIONS:
+                raise SchemaContractError("retired_normalizer_error", node.name)
+            _validate_normalizer_writer_arguments(node.args)
+        elif isinstance(node, ast.Lambda):
+            _validate_normalizer_writer_arguments(node.args)
+        elif isinstance(node, ast.Import):
+            _validate_normalizer_writer_import(node)
+        elif isinstance(node, ast.ImportFrom):
+            _validate_normalizer_writer_import_from(node)
+        elif isinstance(node, ast.Assign):
+            _validate_normalizer_writer_assignment(node.targets, node.value)
+        elif isinstance(node, ast.AnnAssign):
+            if node.value is not None:
+                _validate_normalizer_writer_assignment((node.target,), node.value)
+            else:
+                _validate_normalizer_writer_binding_targets((node.target,))
+        elif isinstance(node, ast.AugAssign):
+            _validate_normalizer_writer_binding_targets((node.target,))
+        elif isinstance(node, ast.NamedExpr):
+            _validate_normalizer_writer_assignment((node.target,), node.value)
+        elif isinstance(node, ast.For | ast.AsyncFor | ast.comprehension):
+            _validate_normalizer_writer_binding_targets((node.target,))
+        elif isinstance(node, ast.With | ast.AsyncWith):
+            for item in node.items:
+                if item.optional_vars is not None:
+                    _validate_normalizer_writer_binding_targets((item.optional_vars,))
+        elif isinstance(node, ast.ExceptHandler):
+            if _normalizer_writer_binding_name(node.name):
+                raise SchemaContractError("retired_normalizer_error", node.name or "")
+        elif isinstance(node, ast.Match):
+            for case in node.cases:
+                _validate_normalizer_writer_pattern(case.pattern)
+        elif isinstance(node, ast.Global | ast.Nonlocal):
+            for name in node.names:
+                if _normalizer_writer_binding_name(name):
+                    raise SchemaContractError("retired_normalizer_error", name)
+        elif isinstance(node, ast.expr):
+            _validate_normalizer_writer_value(node, parent_map)
+    if any(count > 1 for count in definition_counts.values()):
+        raise SchemaContractError("retired_normalizer_error")
+
+
+def _ast_parent_map(tree: ast.AST) -> dict[int, ast.AST]:
+    parent_map: dict[int, ast.AST] = {}
+    for parent in ast.walk(tree):
+        for child in ast.iter_child_nodes(parent):
+            parent_map[id(child)] = parent
+    return parent_map
+
+
+def _validate_normalizer_writer_arguments(arguments: ast.arguments) -> None:
+    args = (
+        *arguments.posonlyargs,
+        *arguments.args,
+        *arguments.kwonlyargs,
+    )
+    for argument in args:
+        if _normalizer_writer_binding_name(argument.arg):
+            raise SchemaContractError("retired_normalizer_error", argument.arg)
+    for nullable_argument in (arguments.vararg, arguments.kwarg):
+        if nullable_argument is not None and _normalizer_writer_binding_name(
+            nullable_argument.arg
+        ):
+            raise SchemaContractError(
+                "retired_normalizer_error",
+                nullable_argument.arg,
+            )
+
+
+def _validate_normalizer_writer_import(node: ast.Import) -> None:
+    for alias in node.names:
+        if _normalizer_writer_binding_name(alias.asname):
+            raise SchemaContractError(
+                "retired_normalizer_error",
+                alias.asname or "",
+            )
+
+
+def _validate_normalizer_writer_import_from(node: ast.ImportFrom) -> None:
+    module_name = node.module or ""
+    for alias in node.names:
+        imported_name = f"{module_name}.{alias.name}"
+        bound_name = alias.asname or alias.name
+        if _normalizer_writer_symbol(imported_name):
+            raise SchemaContractError("retired_normalizer_error", imported_name)
+        if _normalizer_writer_binding_name(bound_name):
+            raise SchemaContractError("retired_normalizer_error", bound_name)
+
+
+def _validate_normalizer_writer_assignment(
+    targets: Iterable[ast.expr],
+    value: ast.expr,
+) -> None:
+    _validate_normalizer_writer_binding_targets(targets)
+    parent_map = _ast_parent_map(value)
+    for node in ast.walk(value):
+        if isinstance(node, ast.expr):
+            _validate_normalizer_writer_value(node, parent_map)
+
+
+def _validate_normalizer_writer_binding_targets(targets: Iterable[ast.expr]) -> None:
+    for target in targets:
+        for binding_name in _normalizer_assignment_binding_names(target):
+            if _normalizer_writer_binding_name(binding_name):
+                raise SchemaContractError("retired_normalizer_error", binding_name)
+
+
+def _normalizer_assignment_binding_names(target: ast.AST) -> set[str]:
+    if isinstance(target, ast.Name):
+        return {target.id}
+    if isinstance(target, ast.Attribute):
+        return {_ast_call_name(target)}
+    if isinstance(target, ast.Tuple | ast.List):
+        names: set[str] = set()
+        for element in target.elts:
+            names.update(_normalizer_assignment_binding_names(element))
+        return names
+    if isinstance(target, ast.Starred):
+        return _normalizer_assignment_binding_names(target.value)
+    return set()
+
+
+def _validate_normalizer_writer_pattern(pattern: ast.pattern) -> None:
+    for binding_name in _normalizer_pattern_binding_names(pattern):
+        if _normalizer_writer_binding_name(binding_name):
+            raise SchemaContractError("retired_normalizer_error", binding_name)
+
+
+def _normalizer_pattern_binding_names(pattern: ast.pattern) -> set[str]:
+    if isinstance(pattern, ast.MatchAs):
+        names = {pattern.name} if pattern.name is not None else set()
+        if pattern.pattern is not None:
+            names.update(_normalizer_pattern_binding_names(pattern.pattern))
+        return names
+    if isinstance(pattern, ast.MatchStar):
+        return {pattern.name} if pattern.name is not None else set()
+    if isinstance(pattern, ast.MatchMapping):
+        mapping_names = {pattern.rest} if pattern.rest is not None else set()
+        for nested_pattern in pattern.patterns:
+            mapping_names.update(_normalizer_pattern_binding_names(nested_pattern))
+        return mapping_names
+    if isinstance(pattern, ast.MatchClass):
+        class_names: set[str] = set()
+        for nested_pattern in (*pattern.patterns, *pattern.kwd_patterns):
+            class_names.update(_normalizer_pattern_binding_names(nested_pattern))
+        return class_names
+    if isinstance(pattern, ast.MatchSequence | ast.MatchOr):
+        sequence_names: set[str] = set()
+        for nested_pattern in pattern.patterns:
+            sequence_names.update(_normalizer_pattern_binding_names(nested_pattern))
+        return sequence_names
+    return set()
+
+
+def _validate_normalizer_writer_value(
+    node: ast.expr,
+    parent_map: Mapping[int, ast.AST],
+) -> None:
+    if isinstance(node, ast.Name) and _normalizer_writer_binding_name(node.id):
+        if not _is_direct_call_function_value(node, parent_map):
+            raise SchemaContractError("retired_normalizer_error", node.id)
+    elif isinstance(node, ast.Attribute):
+        call_name = _ast_call_name(node)
+        if _normalizer_writer_symbol(call_name) and not _is_direct_call_function_value(
+            node,
+            parent_map,
+        ):
+            raise SchemaContractError("retired_normalizer_error", call_name)
+
+
+def _is_direct_call_function_value(
+    node: ast.expr,
+    parent_map: Mapping[int, ast.AST],
+) -> bool:
+    parent = parent_map.get(id(node))
+    return isinstance(parent, ast.Call) and parent.func is node
+
+
+def _normalizer_writer_binding_name(name: str | None) -> bool:
+    return bool(
+        name
+        and (
+            name in ALLOWED_NORMALIZER_WRITER_FUNCTIONS
+            or _normalizer_writer_symbol(name)
+        )
+    )
+
+
+def _normalizer_writer_symbol(call_name: str) -> bool:
+    return (
+        call_name in ALLOWED_NORMALIZER_WRITER_SYMBOLS
+        or call_name.rsplit(".", 1)[-1] in ALLOWED_NORMALIZER_WRITER_FUNCTIONS
+    )
+
+
+def _validate_normalizer_operation_sequence(
+    tree: ast.AST,
+    aliases: Mapping[str, set[str]],
+) -> None:
+    observed: list[str] = []
+    allowed_operations = set(NORMALIZATION_ALLOWED_OPERATIONS)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            assigned_names: set[str] = set()
+            for target in node.targets:
+                assigned_names.update(_normalizer_assignment_binding_names(target))
+            value_names = _ast_callable_value_names(node.value, aliases)
+        elif isinstance(node, ast.AnnAssign):
+            assigned_names = _normalizer_assignment_binding_names(node.target)
+            value_names = (
+                _ast_callable_value_names(node.value, aliases)
+                if node.value is not None
+                else set()
+            )
+        elif isinstance(node, ast.NamedExpr):
+            assigned_names = _normalizer_assignment_binding_names(node.target)
+            value_names = _ast_callable_value_names(node.value, aliases)
+        else:
+            continue
+        if assigned_names & allowed_operations:
+            raise SchemaContractError("operation_contract_drift")
+        if any(name.rsplit(".", 1)[-1] in allowed_operations for name in value_names):
+            raise SchemaContractError("operation_contract_drift")
+    calls = sorted(
+        (node for node in ast.walk(tree) if isinstance(node, ast.Call)),
+        key=lambda node: (
+            getattr(node, "lineno", -1),
+            getattr(node, "col_offset", -1),
+        ),
+    )
+    for node in calls:
+        leaf_name = _ast_call_name(node.func).rsplit(".", 1)[-1]
+        if leaf_name in allowed_operations:
+            observed.append(leaf_name)
+    if observed and tuple(observed) != NORMALIZATION_ALLOWED_OPERATIONS:
+        raise SchemaContractError("operation_contract_drift")
 
 
 def _reject_side_effect_import(name: str) -> None:
@@ -4020,6 +5149,7 @@ def _add_callable_alias(
     name: str,
     targets: set[str],
 ) -> None:
+    targets = targets - {name}
     if targets:
         aliases.setdefault(name, set()).update(targets)
 
@@ -4028,13 +5158,23 @@ def _ast_callable_value_names(
     node: ast.expr,
     aliases: Mapping[str, set[str]],
 ) -> set[str]:
+    if isinstance(node, ast.Name) and not isinstance(node.ctx, ast.Load):
+        return set()
     if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Call):
-        base_names = _safe_call_result_object_names(node.value, aliases)
+        base_names = _call_result_alias_names(node.value, aliases)
+        if not base_names:
+            base_names = _safe_call_result_object_names(node.value, aliases)
         if base_names:
             return {f"{base_name}.{node.attr}" for base_name in base_names}
     if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Subscript):
         base_names = _ast_callable_value_names(node.value, aliases)
         if base_names:
+            return {f"{base_name}.{node.attr}" for base_name in base_names}
+    if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Attribute):
+        base_names = _ast_callable_value_names(node.value, aliases)
+        if base_names:
+            if node.attr == "__call__":
+                return base_names
             return {f"{base_name}.{node.attr}" for base_name in base_names}
     if isinstance(node, ast.IfExp):
         return _ast_callable_value_names(
@@ -4075,10 +5215,27 @@ def _ast_callable_value_names(
             return _resolve_imported_symbols(base_name, aliases)
         if isinstance(node.value, ast.Subscript):
             return _ast_callable_value_names(node.value, aliases)
+    if isinstance(node, ast.Call):
+        return _call_result_alias_names(node, aliases)
     call_name = _ast_call_name(node)
     if call_name:
         return _resolve_imported_symbols(call_name, aliases)
     return set()
+
+
+def _call_result_alias_names(
+    node: ast.expr,
+    aliases: Mapping[str, set[str]],
+) -> set[str]:
+    if not isinstance(node, ast.Call):
+        return set()
+    raw_call_name = _ast_call_name(node.func)
+    if not raw_call_name:
+        return set()
+    alias_name = f"{_FUNCTION_RETURN_ALIAS_PREFIX}{raw_call_name}"
+    if alias_name not in aliases:
+        return set()
+    return _resolve_imported_symbols(alias_name, aliases)
 
 
 def _safe_call_result_object_names(
@@ -4186,6 +5343,9 @@ def _extend_callable_assignment_aliases(
             call_name == target_name or call_name.startswith(f"{target_name}.")
             for call_name in called_names
         )
+
+    def target_is_directly_called(target_name: str) -> bool:
+        return any(call_name == target_name for call_name in called_names)
 
     source_names: set[str] = set()
 
@@ -4316,6 +5476,22 @@ def _extend_callable_assignment_aliases(
         if (
             target_name
             and not value_names
+            and _function_call_result_is_safe_data(
+                value,
+                aliases,
+                function_defs,
+            )
+        ):
+            value_names = {_SAFE_DATA_OBJECT_ALIAS}
+        if (
+            target_name
+            and target_is_directly_called(target_name)
+            and any(name in parameter_names for name in value_names)
+        ):
+            value_names = {_UNKNOWN_CALLABLE_ALIAS}
+        if (
+            target_name
+            and not value_names
             and (target_is_called(target_name) or target_is_source(target_name))
             and _value_may_produce_unknown_callable(value)
         ):
@@ -4372,46 +5548,11 @@ def _extend_callable_assignment_aliases(
             elif isinstance(statement, ast.ClassDef):
                 add_class_aliases(statement, class_name)
 
+    parameter_names: set[str] = set()
     function_defs: dict[str, ast.FunctionDef | ast.AsyncFunctionDef] = {}
 
     def positional_args(args: ast.arguments) -> list[ast.arg]:
         return [*args.posonlyargs, *args.args]
-
-    def returned_callable_value_names(value: ast.expr) -> set[str]:
-        if isinstance(value, ast.IfExp):
-            return returned_callable_value_names(
-                value.body
-            ) | returned_callable_value_names(value.orelse)
-        if isinstance(value, ast.BoolOp):
-            value_names: set[str] = set()
-            for item in value.values:
-                value_names.update(returned_callable_value_names(item))
-            return value_names
-        if isinstance(value, ast.List | ast.Tuple | ast.Set):
-            value_names = set()
-            for element in value.elts:
-                value_names.update(returned_callable_value_names(element))
-            return value_names
-        if isinstance(value, ast.Dict):
-            value_names = set()
-            for key, item in zip(value.keys, value.values, strict=False):
-                if key is not None:
-                    value_names.update(returned_callable_value_names(key))
-                value_names.update(returned_callable_value_names(item))
-            return value_names
-        if isinstance(value, ast.Subscript):
-            selected_value = _literal_container_subscript_value(value)
-            if selected_value is not None:
-                return returned_callable_value_names(selected_value)
-            value_names = returned_callable_value_names(value.value)
-            return value_names or {_UNKNOWN_CALLABLE_ALIAS}
-        if isinstance(value, ast.Call):
-            value_names = _ast_callable_value_names(value.func, aliases)
-            raw_call_name = _ast_call_name(value.func)
-            if raw_call_name:
-                value_names.add(raw_call_name)
-            return value_names
-        return _ast_callable_value_names(value, aliases)
 
     def add_parameter_taints(args: ast.arguments, body: ast.AST) -> None:
         positional = positional_args(args)
@@ -4477,16 +5618,11 @@ def _extend_callable_assignment_aliases(
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
             function_defs[node.name] = node
+            function_parameter_names = {
+                arg.arg for arg in [*positional_args(node.args), *node.args.kwonlyargs]
+            }
+            parameter_names.update(function_parameter_names)
             add_parameter_taints(node.args, node)
-            for return_node in ast.walk(node):
-                if return_node is node or not isinstance(return_node, ast.Return):
-                    continue
-                if return_node.value is not None:
-                    _add_callable_alias(
-                        pending_aliases,
-                        node.name,
-                        returned_callable_value_names(return_node.value),
-                    )
         elif isinstance(node, ast.Lambda):
             add_parameter_taints(node.args, node.body)
 
@@ -4569,6 +5705,262 @@ def _extend_callable_assignment_aliases(
         if not changed:
             break
 
+    def combine_return_summaries(values: Iterable[ast.expr]) -> set[str]:
+        summary: set[str] = set()
+        for value in values:
+            summary.update(return_summary(value))
+        return summary or {_SAFE_DATA_OBJECT_ALIAS}
+
+    def return_summary(value: ast.expr) -> set[str]:
+        if isinstance(value, ast.Constant):
+            return {_SAFE_DATA_OBJECT_ALIAS}
+        if isinstance(value, ast.Name):
+            resolved_names = _ast_callable_value_names(value, aliases)
+            sensitive_names = {
+                name for name in resolved_names if _is_sensitive_callable_value(name)
+            }
+            if sensitive_names:
+                return sensitive_names
+            if value.id in function_defs:
+                return {_UNKNOWN_CALLABLE_ALIAS}
+            if resolved_names != {value.id}:
+                if resolved_names and all(
+                    name in _SAFE_OBJECT_METHODS for name in resolved_names
+                ):
+                    return set(resolved_names)
+                return {_UNKNOWN_CALLABLE_ALIAS}
+            if value.id in called_names or value.id in _SAFE_DATA_CONSTRUCTOR_CALLS:
+                return {_UNKNOWN_CALLABLE_ALIAS}
+            return {_SAFE_DATA_OBJECT_ALIAS}
+        if isinstance(value, ast.Attribute):
+            resolved_names = _ast_callable_value_names(value, aliases)
+            sensitive_names = {
+                name for name in resolved_names if _is_sensitive_callable_value(name)
+            }
+            return sensitive_names or {_UNKNOWN_CALLABLE_ALIAS}
+        if isinstance(value, ast.Call):
+            raw_call_name = _ast_call_name(value.func)
+            resolved_names = _ast_callable_value_names(value.func, aliases)
+            local_return_names = {
+                f"{_FUNCTION_RETURN_ALIAS_PREFIX}{name}"
+                for name in resolved_names | {raw_call_name}
+                if name in function_defs
+            }
+            if local_return_names:
+                return local_return_names
+            safe_object_names = _safe_call_result_object_names(value, aliases)
+            if safe_object_names:
+                return safe_object_names
+            if resolved_names and all(
+                name in _SAFE_DATA_CONSTRUCTOR_CALLS
+                or name in ALLOWED_NORMALIZER_SCHEMA_CONTRACT_CALLS
+                or _is_safe_object_method(name)
+                for name in resolved_names
+            ):
+                return {_SAFE_DATA_OBJECT_ALIAS}
+            return {_UNKNOWN_CALLABLE_ALIAS}
+        if isinstance(value, ast.IfExp):
+            return combine_return_summaries((value.body, value.orelse))
+        if isinstance(value, ast.BoolOp):
+            return combine_return_summaries(value.values)
+        if isinstance(value, ast.List | ast.Tuple | ast.Set):
+            return combine_return_summaries(value.elts)
+        if isinstance(value, ast.Dict):
+            return combine_return_summaries(
+                child
+                for key, item in zip(value.keys, value.values, strict=False)
+                for child in ((key, item) if key is not None else (item,))
+            )
+        if isinstance(value, ast.Subscript):
+            selected_value = _literal_container_subscript_value(value)
+            if selected_value is not None:
+                return return_summary(selected_value)
+            base_summary = return_summary(value.value)
+            sensitive_names = {
+                name for name in base_summary if _is_sensitive_callable_value(name)
+            }
+            return sensitive_names or {_UNKNOWN_CALLABLE_ALIAS}
+        if isinstance(
+            value,
+            ast.Compare | ast.BinOp | ast.UnaryOp | ast.JoinedStr | ast.FormattedValue,
+        ):
+            return {_SAFE_DATA_OBJECT_ALIAS}
+        if isinstance(value, ast.NamedExpr | ast.Starred):
+            return return_summary(value.value)
+        return {_UNKNOWN_CALLABLE_ALIAS}
+
+    return_nodes_by_function: dict[str, list[ast.expr]] = {
+        name: [] for name in function_defs
+    }
+    parent_map = _ast_parent_map(tree)
+    for name, function_def in function_defs.items():
+        for return_node in ast.walk(function_def):
+            if not isinstance(return_node, ast.Return) or return_node.value is None:
+                continue
+            ancestor = parent_map.get(id(return_node))
+            belongs_to_function = True
+            while ancestor is not None and ancestor is not function_def:
+                if isinstance(
+                    ancestor,
+                    ast.FunctionDef | ast.AsyncFunctionDef | ast.Lambda | ast.ClassDef,
+                ):
+                    belongs_to_function = False
+                    break
+                ancestor = parent_map.get(id(ancestor))
+            if belongs_to_function and ancestor is function_def:
+                return_nodes_by_function[name].append(return_node.value)
+    for name, return_values in return_nodes_by_function.items():
+        summary = combine_return_summaries(return_values)
+        _add_callable_alias(
+            aliases,
+            f"{_FUNCTION_RETURN_ALIAS_PREFIX}{name}",
+            summary,
+        )
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                add_alias(target, node.value)
+        elif isinstance(node, ast.AnnAssign) and node.value is not None:
+            add_alias(node.target, node.value)
+        elif isinstance(node, ast.NamedExpr):
+            add_alias(node.target, node.value)
+    for alias_name, alias_targets in pending_aliases.items():
+        _add_callable_alias(aliases, alias_name, alias_targets)
+    for _ in range(len(pending_aliases) + 1):
+        changed = False
+        for alias_name, alias_targets in pending_aliases.items():
+            resolved_return_targets: set[str] = set()
+            for alias_target in alias_targets:
+                resolved_return_targets.update(
+                    _resolve_imported_symbols(alias_target, aliases)
+                )
+            before = set(aliases.get(alias_name, set()))
+            _add_callable_alias(aliases, alias_name, resolved_return_targets)
+            if aliases.get(alias_name, set()) != before:
+                changed = True
+        if not changed:
+            break
+
+
+def _function_call_result_is_safe_data(
+    node: ast.expr,
+    aliases: Mapping[str, set[str]],
+    function_defs: Mapping[str, ast.FunctionDef | ast.AsyncFunctionDef],
+) -> bool:
+    if not isinstance(node, ast.Call):
+        return False
+    function_name = _ast_call_name(node.func)
+    function_def = function_defs.get(function_name)
+    if function_def is None:
+        return False
+    positional = [*function_def.args.posonlyargs, *function_def.args.args]
+    parameter_names = {arg.arg for arg in [*positional, *function_def.args.kwonlyargs]}
+    if function_def.args.vararg is not None:
+        parameter_names.add(function_def.args.vararg.arg)
+    if function_def.args.kwarg is not None:
+        parameter_names.add(function_def.args.kwarg.arg)
+    returned_names: set[str] = set()
+    saw_return = False
+    for return_node in ast.walk(function_def):
+        if return_node is function_def or not isinstance(return_node, ast.Return):
+            continue
+        if return_node.value is None:
+            continue
+        if not _return_value_is_safe_data(return_node.value, aliases, parameter_names):
+            return False
+        saw_return = True
+        returned_names.update(_ast_callable_value_names(return_node.value, aliases))
+    if not saw_return:
+        return True
+    if any(
+        _is_sensitive_callable_value(name) and name not in parameter_names
+        for name in returned_names
+    ):
+        return False
+    formal_actuals: dict[str, ast.expr] = {}
+    for formal, actual in zip(positional, node.args, strict=False):
+        formal_actuals[formal.arg] = actual
+    for keyword in node.keywords:
+        if keyword.arg is not None:
+            formal_actuals[keyword.arg] = keyword.value
+    for returned_name in returned_names & parameter_names:
+        actual_value = formal_actuals.get(returned_name)
+        if actual_value is None:
+            return False
+        actual_names = _ast_callable_value_names(actual_value, aliases)
+        if any(_is_sensitive_callable_value(name) for name in actual_names):
+            return False
+        if isinstance(actual_value, ast.Lambda | ast.Call):
+            return False
+    return True
+
+
+def _return_value_is_safe_data(
+    node: ast.expr,
+    aliases: Mapping[str, set[str]],
+    parameter_names: set[str],
+) -> bool:
+    if isinstance(node, ast.Constant):
+        return True
+    if isinstance(node, ast.Name):
+        return node.id in parameter_names or not _is_sensitive_module_name(node.id)
+    if isinstance(node, ast.Attribute):
+        return not _ast_callable_value_names(node, aliases)
+    if isinstance(node, ast.Call):
+        return any(
+            call_name in _SAFE_DATA_CONSTRUCTOR_CALLS
+            or call_name in ALLOWED_NORMALIZER_SCHEMA_CONTRACT_CALLS
+            or _is_safe_object_method(call_name)
+            for call_name in _ast_callable_value_names(node.func, aliases)
+        )
+    if isinstance(node, ast.IfExp):
+        return _return_value_is_safe_data(
+            node.body,
+            aliases,
+            parameter_names,
+        ) and _return_value_is_safe_data(node.orelse, aliases, parameter_names)
+    if isinstance(node, ast.BoolOp):
+        return all(
+            _return_value_is_safe_data(value, aliases, parameter_names)
+            for value in node.values
+        )
+    if isinstance(node, ast.List | ast.Tuple | ast.Set):
+        return all(
+            _return_value_is_safe_data(element, aliases, parameter_names)
+            for element in node.elts
+        )
+    if isinstance(node, ast.Dict):
+        return all(
+            (key is None or _return_value_is_safe_data(key, aliases, parameter_names))
+            and _return_value_is_safe_data(value, aliases, parameter_names)
+            for key, value in zip(node.keys, node.values, strict=False)
+        )
+    if isinstance(node, ast.Subscript):
+        value_names = _ast_callable_value_names(node, aliases)
+        return bool(value_names) and all(
+            name in parameter_names and not _is_sensitive_callable_value(name)
+            for name in value_names
+        )
+    return False
+
+
+def _is_sensitive_module_name(name: str) -> bool:
+    return name in {"io", "os", "pathlib", "socket", "subprocess"}
+
+
+def _safe_data_argument_call_names(
+    tree: ast.AST,
+    aliases: Mapping[str, set[str]],
+) -> frozenset[str]:
+    del aliases
+    safe_names = set(_SAFE_DATA_CONSTRUCTOR_CALLS)
+    safe_names.update(ALLOWED_NORMALIZER_SCHEMA_CONTRACT_CALLS)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            safe_names.add(node.name)
+    return frozenset(safe_names)
+
 
 def _resolve_imported_symbols(
     call_name: str,
@@ -4582,8 +5974,10 @@ def _resolve_imported_symbols(
             return {name}
         resolved: set[str] = set()
         for target in targets:
+            if target == name:
+                continue
             resolved.update(resolve_name(target, seen | {name}))
-        return resolved
+        return resolved or {name}
 
     def resolve_name(name: str, seen: set[str]) -> set[str]:
         exact = resolve_exact(name, seen)
@@ -4638,6 +6032,8 @@ def _is_dynamic_builtin_call(call_name: str) -> bool:
 def _is_sensitive_callable_value(call_name: str) -> bool:
     if _is_unknown_callable_alias(call_name):
         return True
+    if _is_sensitive_module_name(call_name):
+        return True
     if _is_unlisted_safe_object_method(call_name):
         return True
     if _is_dynamic_import_call(call_name) or _is_dynamic_builtin_call(call_name):
@@ -4645,6 +6041,8 @@ def _is_sensitive_callable_value(call_name: str) -> bool:
     if call_name in {"open", "io.open"}:
         return True
     leaf_name = call_name.rsplit(".", 1)[-1]
+    if _normalizer_writer_symbol(call_name):
+        return True
     if call_name.startswith("os."):
         return True
     if leaf_name in FILESYSTEM_MUTATOR_NAMES:
@@ -4662,15 +6060,22 @@ def _reject_sensitive_callable_escapes(
     node: ast.Call,
     aliases: Mapping[str, set[str]],
     *,
+    safe_data_argument_calls: Collection[str] = frozenset(),
     error_code: str,
 ) -> None:
     values = list(node.args) + [keyword.value for keyword in node.keywords]
+    callee_names = _ast_callable_value_names(node.func, aliases)
+    allow_unknown_data_payload = any(
+        callee_name in safe_data_argument_calls for callee_name in callee_names
+    )
     for value in values:
         for child in ast.walk(value):
             if not isinstance(child, ast.expr):
                 continue
             call_names = _ast_callable_value_names(child, aliases)
             for call_name in call_names:
+                if allow_unknown_data_payload and _is_unknown_callable_alias(call_name):
+                    continue
                 if _is_sensitive_callable_value(call_name):
                     code = (
                         "capability_import_violation"
@@ -4935,6 +6340,14 @@ def _validate_lower_sha256(value: object, *, label: str) -> str:
 
 def _validate_git_object_id(value: object, *, label: str) -> str:
     if not isinstance(value, str) or len(value) not in {40, 64}:
+        raise SchemaContractError("invalid_hash_digest", label)
+    if any(character not in LOWER_SHA256_HEX_DIGITS for character in value):
+        raise SchemaContractError("invalid_hash_digest", label)
+    return value
+
+
+def _validate_git_sha1(value: object, *, label: str) -> str:
+    if not isinstance(value, str) or len(value) != 40:
         raise SchemaContractError("invalid_hash_digest", label)
     if any(character not in LOWER_SHA256_HEX_DIGITS for character in value):
         raise SchemaContractError("invalid_hash_digest", label)

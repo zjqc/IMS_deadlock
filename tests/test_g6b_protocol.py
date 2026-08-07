@@ -1,5 +1,6 @@
 import json
 import shutil
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +9,7 @@ import pytest
 from ims_deadlock.g6b_protocol import validate_g6b_protocol_bundle
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
+_TASK6_SCOPE_SUBJECT_COMMIT = "42856b991059d6f800eb0244fa7847187da3bccd"
 _TASK6_LATER_INSTANCE_ROOTS = (
     "cases/discovery/g6b/row_families/structural_discovery_v1/governance",
     "cases/discovery/g6b/row_families/structural_discovery_v1/case_units",
@@ -656,9 +658,28 @@ def test_task6_later_instance_roots_remain_absent_from_schema_fixture(
 
 
 def test_task6_deferred_capability_modules_remain_absent() -> None:
-    source_root = _REPO_ROOT / "src/ims_deadlock"
+    # This is a historical Task6 absence certificate. Inspect the reviewed
+    # Task6 subject tree instead of the moving worktree, where later approved
+    # tranches may legitimately add one of these capability modules.
+    listing = subprocess.run(
+        [
+            "git",
+            "ls-tree",
+            "-r",
+            "--name-only",
+            _TASK6_SCOPE_SUBJECT_COMMIT,
+            "--",
+            "src/ims_deadlock",
+        ],
+        cwd=_REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert listing.returncode == 0, listing.stdout + listing.stderr
+    subject_paths = set(listing.stdout.splitlines())
     for module_name in _TASK6_DEFERRED_CAPABILITY_MODULES:
-        assert not (source_root / module_name).exists(), module_name
+        assert f"src/ims_deadlock/{module_name}" not in subject_paths, module_name
 
 
 def test_task6_current_documents_record_exact_twelve_open_pending_boundary() -> None:

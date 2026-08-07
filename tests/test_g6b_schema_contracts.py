@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+# ruff: noqa: I001
+
 import hashlib
 import json
+import sys
+import ast
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Literal, cast
 
-import pytest
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+import pytest
 from ims_deadlock import g6b_schema_contracts as contracts
 from ims_deadlock.g6b_canonical_json import (
     canonical_bytes_v2,
@@ -39,7 +44,6 @@ from ims_deadlock.g6b_schema_contracts import (
     validate_file_role_cardinality,
     validate_fingerprint_record,
     validate_g4_manifest_freeze_reconciliation,
-    validate_normalization_authorization,
     validate_normalizer_static_source,
     validate_output_root_reservation,
     validate_refusal_codes,
@@ -333,8 +337,8 @@ def valid_normalization_authorization() -> JsonObject:
         "authorization_id": "normalization-authorization-test",
         "capability": "retired_authority_fingerprint_normalization",
         "authorized": True,
-        "source_head": "1" * 64,
-        "source_tree_hash": "2" * 64,
+        "source_head": _git_sha1("normalization-source-head"),
+        "source_tree_hash": _git_sha1("normalization-source-tree"),
         "authority_ids": list(schema["retired_authority_ids"]),
         "expected_file_manifest_hash": "3" * 64,
         "allowed_source_paths": list(
@@ -356,7 +360,7 @@ def valid_normalization_authorization() -> JsonObject:
             "schema_version": "v1",
         },
         "allowed_output_root": {
-            "repo_relative_posix_path": "governance/g6b/normalization-test",
+            "repo_relative_posix_path": _approved_normalization_governance_root(),
             "contains_only_governance_outputs": True,
         },
         "review_artifact_hash": "5" * 64,
@@ -409,8 +413,426 @@ def _retired_source_hashes() -> dict[str, str]:
     }
 
 
+def valid_authority_lock_record(authority_id: str) -> JsonObject:
+    record: JsonObject = {
+        "authority_id": authority_id,
+        "origin_remote": "zjqc/IMS_deadlock",
+        "origin_commit_or_null": _git_sha1(f"{authority_id}:origin-commit"),
+        "origin_tree_hash_or_null": _git_sha1(f"{authority_id}:origin-tree"),
+        "origin_lock_artifact_ref": (
+            "cases/discovery/g6b/row_families/structural_discovery_v1/"
+            f"governance/retired_authority_locks/{authority_id}.json"
+        ),
+        "origin_artifact_inventory_hash": _synthetic_hash(
+            f"{authority_id}:artifact-inventory"
+        ),
+        "current_merged_copy_tree_hash": _synthetic_hash(
+            f"{authority_id}:merged-copy-tree"
+        ),
+        "identity_verification_status": (
+            "verified_merged_copy_against_historical_hashes"
+        ),
+        "authority_lock_record_sha256": None,
+    }
+    record["authority_lock_record_sha256"] = finalized_self_hash(
+        record,
+        "authority_lock_record_sha256",
+    )
+    return record
+
+
+def _authority_id_for_retired_path(path: str) -> str:
+    if path.startswith("cases/confirmation/g4/"):
+        return "G4_FREEZE"
+    if path.startswith("evidence/g5/"):
+        return "G5_EXECUTION"
+    return "G6_R_REPLAY_R3"
+
+
+def _allowed_projection_uses_for_path(path: str) -> list[str]:
+    uses: set[str] = set()
+
+    def expanded_patterns(pattern: str) -> list[str]:
+        if "{case_id}" in pattern:
+            return [
+                pattern.replace("{case_id}", case_id)
+                for case_id in contracts.G4_MANIFEST_CASE_IDS
+            ]
+        if "{" in pattern:
+            prefix, remainder = pattern.split("{", 1)
+            alternatives, suffix = remainder.split("}", 1)
+            return [
+                f"{prefix}{alternative}{suffix}"
+                for alternative in alternatives.split(",")
+            ]
+        return [pattern]
+
+    for row in _retired_selector_rows():
+        if path in expanded_patterns(row["source_path_pattern"]):
+            uses.add(row["allowed_use"])
+    return sorted(uses) or ["source_hash_validation"]
+
+
+def valid_authority_source_record(
+    path: str,
+    *,
+    authority_lock_record_sha256: str | None = None,
+) -> JsonObject:
+    authority_id = _authority_id_for_retired_path(path)
+    lock_hash = (
+        valid_authority_lock_record(authority_id)["authority_lock_record_sha256"]
+        if authority_lock_record_sha256 is None
+        else authority_lock_record_sha256
+    )
+    return {
+        "authority_id": authority_id,
+        "authority_stage": authority_id,
+        "authority_lock_record_sha256": lock_hash,
+        "repo_relative_path": path,
+        "raw_byte_sha256": canonical_sha256_v2({"synthetic_source_path": path}),
+        "declared_historical_hash_or_null": canonical_sha256_v2(
+            {"synthetic_source_path": path}
+        ),
+        "declared_hash_algorithm_or_null": "sha256",
+        "declared_hash_verified": True,
+        "allowed_projection_uses": _allowed_projection_uses_for_path(path),
+        "contains_outcome_fields": path == "evidence/g5/G5_RESULT_SUMMARY.json",
+    }
+
+
+def _retired_authority_lock_records() -> dict[str, JsonObject]:
+    schema = _load_retired_schema_definition()
+    return {
+        authority_id: valid_authority_lock_record(authority_id)
+        for authority_id in schema["retired_authority_ids"]
+    }
+
+
+def _retired_authority_source_records(
+    lock_records: Mapping[str, JsonObject],
+) -> dict[str, JsonObject]:
+    return {
+        path: valid_authority_source_record(
+            path,
+            authority_lock_record_sha256=lock_records[
+                _authority_id_for_retired_path(path)
+            ]["authority_lock_record_sha256"],
+        )
+        for path in contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+    }
+
+
+def _authority_lock_hashes(
+    lock_records: Mapping[str, JsonObject],
+) -> dict[str, str]:
+    return {
+        authority_id: record["authority_lock_record_sha256"]
+        for authority_id, record in lock_records.items()
+    }
+
+
+def _relineage_fingerprint_record(record: JsonObject) -> JsonObject:
+    updated = dict(record)
+    lineage_preimage = {
+        "origin_authority_id": updated["source_authority_id"],
+        "origin_subject_type": updated["subject_type"],
+        "origin_subject_id": updated["subject_id"],
+        "origin_dimension": updated["dimension"],
+        "origin_comparison_projection_sha256_or_null": updated[
+            "comparison_projection_sha256_or_null"
+        ],
+        "origin_source_artifact_byte_hashes": updated["source_artifact_byte_hashes"],
+    }
+    updated["lineage_id"] = f"sha256:{canonical_sha256_v2(lineage_preimage)}"
+    return _with_rehashed(updated, "record_provenance_sha256")
+
+
+def _first_g4_case_source_path() -> str:
+    return next(
+        path
+        for path in contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+        if path.startswith("cases/confirmation/g4/cases/") and path.endswith(".json")
+    )
+
+
+def _normalization_source_refs_for_dimension(dimension: str) -> list[JsonObject]:
+    g4_case = _first_g4_case_source_path()
+    refs_by_dimension: dict[str, list[JsonObject]] = {
+        "case_content_sha256": [
+            {
+                "authority_id": "G4_FREEZE",
+                "repo_relative_posix_path": g4_case,
+                "json_pointer_or_null": "/input_payload",
+                "source_role": "case_content_projection",
+            }
+        ],
+        "state_snapshot_sha256": [
+            {
+                "authority_id": "G4_FREEZE",
+                "repo_relative_posix_path": g4_case,
+                "json_pointer_or_null": "/input_payload",
+                "source_role": "case_content_projection",
+            }
+        ],
+        "route_signature_sha256": [
+            {
+                "authority_id": "G4_FREEZE",
+                "repo_relative_posix_path": g4_case,
+                "json_pointer_or_null": "/input_payload",
+                "source_role": "case_content_projection",
+            }
+        ],
+        "parameter_tuple_sha256": [
+            {
+                "authority_id": "G4_FREEZE",
+                "repo_relative_posix_path": g4_case,
+                "json_pointer_or_null": "/input_payload",
+                "source_role": "case_content_projection",
+            }
+        ],
+        "random_stream_manifest_sha256": [
+            {
+                "authority_id": "G4_FREEZE",
+                "repo_relative_posix_path": (
+                    "cases/confirmation/g4/random_stream_manifest.json"
+                ),
+                "json_pointer_or_null": "/streams_by_case",
+                "source_role": "random_stream_projection",
+            }
+        ],
+        "sealed_prediction_sha256": [
+            {
+                "authority_id": "G4_FREEZE",
+                "repo_relative_posix_path": "cases/confirmation/g4/predictions.json",
+                "json_pointer_or_null": "/predictions",
+                "source_role": "prediction_projection",
+            }
+        ],
+        "metric_schema_sha256": [
+            {
+                "authority_id": "G4_FREEZE",
+                "repo_relative_posix_path": (
+                    "cases/confirmation/g4/metrics_schema.json"
+                ),
+                "json_pointer_or_null": "/metrics",
+                "source_role": "metric_projection",
+            }
+        ],
+        "output_root_reservation_sha256": [
+            {
+                "authority_id": "G4_FREEZE",
+                "repo_relative_posix_path": "cases/confirmation/g4/FREEZE_ENTRY.json",
+                "json_pointer_or_null": "/freeze_id",
+                "source_role": "authority_identity",
+            }
+        ],
+    }
+    return refs_by_dimension[dimension]
+
+
+def _source_hashes_for_refs(refs: Sequence[JsonObject]) -> dict[str, str]:
+    retired_hashes = _retired_source_hashes()
+    return {
+        ref["repo_relative_posix_path"]: retired_hashes[ref["repo_relative_posix_path"]]
+        for ref in refs
+    }
+
+
+def _normalization_fingerprint_records() -> dict[str, JsonObject]:
+    records: dict[str, JsonObject] = {}
+    retired_subject_type_by_dimension = {
+        "case_content_sha256": "retired_case",
+        "state_snapshot_sha256": "retired_case",
+        "route_signature_sha256": "retired_case",
+        "parameter_tuple_sha256": "retired_case",
+        "sealed_prediction_sha256": "retired_case",
+        "random_stream_manifest_sha256": "retired_method_observation",
+        "output_root_reservation_sha256": "retired_method_observation",
+        "metric_schema_sha256": "retired_method_companion_group",
+    }
+    for dimension in contracts.FINGERPRINT_DIMENSIONS:
+        record = valid_fingerprint_record(dimension=dimension)
+        record["record_id"] = f"g4-freeze-{dimension}"
+        record["source_authority_id"] = "G4_FREEZE"
+        record["subject_type"] = retired_subject_type_by_dimension[dimension]
+        source_refs = _normalization_source_refs_for_dimension(dimension)
+        record["source_artifact_refs"] = source_refs
+        record["source_artifact_byte_hashes"] = _source_hashes_for_refs(source_refs)
+        if dimension == "output_root_reservation_sha256":
+            record["dimension_status"] = "not_applicable_retired_stage"
+            record["comparison_projection_ref_or_null"] = None
+            record["comparison_projection_sha256_or_null"] = None
+        record = _relineage_fingerprint_record(record)
+        projection = (
+            None
+            if dimension == "output_root_reservation_sha256"
+            else (_projection_for_record(record))
+        )
+        validate_fingerprint_record(record, projection)
+        records[record["record_id"]] = record
+    return records
+
+
+def valid_normalization_manifest(
+    *,
+    authority_locks: Mapping[str, JsonObject] | None = None,
+    authority_sources: Mapping[str, JsonObject] | None = None,
+    fingerprint_records: Mapping[str, JsonObject] | None = None,
+) -> JsonObject:
+    locks = (
+        _retired_authority_lock_records()
+        if authority_locks is None
+        else dict(authority_locks)
+    )
+    sources = (
+        _retired_authority_source_records(locks)
+        if authority_sources is None
+        else dict(authority_sources)
+    )
+    fingerprints = (
+        _normalization_fingerprint_records()
+        if fingerprint_records is None
+        else dict(fingerprint_records)
+    )
+    unique_lineage_map = {
+        record["lineage_id"]: sorted(
+            other["record_id"]
+            for other in fingerprints.values()
+            if other["lineage_id"] == record["lineage_id"]
+        )
+        for record in sorted(fingerprints.values(), key=lambda item: item["lineage_id"])
+    }
+    dimension_status_counts = {
+        status: sum(
+            1
+            for record in fingerprints.values()
+            if record["dimension_status"] == status
+        )
+        for status in sorted(contracts.DIMENSION_STATUS_VALUES)
+    }
+    comparison_eligibility = {
+        record_id: {
+            "eligible_for_overlap_comparison": (
+                record["dimension_status"] != "unreconstructable_refuse"
+            ),
+            "refusal_reason_code_or_null": (
+                "retired_projection_unreconstructable"
+                if record["dimension_status"] == "unreconstructable_refuse"
+                else None
+            ),
+        }
+        for record_id, record in fingerprints.items()
+    }
+    manifest: JsonObject = {
+        "schema_version": "ims-deadlock/g6b-retired-normalization-manifest/v1",
+        "manifest_id": "normalization-manifest-test",
+        "source_remote": "zjqc/IMS_deadlock",
+        "source_head": _git_sha1("normalization-manifest-source-head"),
+        "source_tree_hash": _git_sha1("normalization-manifest-source-tree"),
+        "source_dirty_state": "clean",
+        "authority_ids": list(
+            _load_retired_schema_definition()["retired_authority_ids"]
+        ),
+        "expected_file_manifest": dict(sorted(_retired_source_hashes().items())),
+        "verified_file_byte_hashes": dict(sorted(_retired_source_hashes().items())),
+        "frozen_hash_validation_results": {
+            path: {
+                "declared_sha256": digest,
+                "observed_sha256": digest,
+                "status": "match",
+            }
+            for path, digest in sorted(_retired_source_hashes().items())
+        },
+        "historical_canonicalization_versions": {
+            authority_id: contracts.G6B_CANONICAL_JSON_VERSION for authority_id in locks
+        },
+        "projection_canonicalization_version": contracts.G6B_CANONICAL_JSON_VERSION,
+        "normalizer_version": "retired-authority-normalizer-test-v1",
+        "normalizer_code_sha256": _synthetic_hash("normalizer-code"),
+        "normalization_authorization_sha256": _synthetic_hash(
+            "normalization-authorization"
+        ),
+        "authority_lock_record_hashes": {
+            authority_id: record["authority_lock_record_sha256"]
+            for authority_id, record in sorted(locks.items())
+        },
+        "authority_source_record_hashes": dict(
+            sorted(
+                (path, canonical_sha256_v2(record)) for path, record in sources.items()
+            )
+        ),
+        "fingerprint_record_hashes": {
+            record_id: record["record_provenance_sha256"]
+            for record_id, record in sorted(fingerprints.items())
+        },
+        "unique_lineage_map": unique_lineage_map,
+        "dimension_status_counts": dimension_status_counts,
+        "missing_source_records": [],
+        "unreconstructable_records": sorted(
+            record_id
+            for record_id, record in fingerprints.items()
+            if record["dimension_status"] == "unreconstructable_refuse"
+        ),
+        "comparison_eligibility": dict(sorted(comparison_eligibility.items())),
+        "created_at_utc": "2030-01-01T00:00:00Z",
+        "manifest_sha256": None,
+    }
+    manifest["manifest_sha256"] = finalized_self_hash(manifest, "manifest_sha256")
+    return manifest
+
+
 def _retired_selector_rows() -> list[JsonObject]:
     return deepcopy(_load_retired_schema_definition()["allowed_json_fields_by_source"])
+
+
+def _approved_normalization_governance_root() -> str:
+    return (
+        "cases/discovery/g6b/row_families/structural_discovery_v1/"
+        "governance/g6b_retired_authority_normalization_v1"
+    )
+
+
+def _alternate_normalization_governance_root() -> str:
+    return (
+        "cases/discovery/g6b/row_families/structural_discovery_v1/"
+        "governance/alternate_retired_authority_normalization_v1"
+    )
+
+
+def _validate_valid_normalization_authorization(
+    authorization: Mapping[str, Any],
+) -> None:
+    schema = _load_retired_schema_definition()
+    contracts.validate_normalization_authorization(
+        authorization,
+        expected_schema_inventory_patterns=(
+            contracts.EXPECTED_RETIRED_SOURCE_INVENTORY
+        ),
+        expected_concrete_source_paths=(
+            contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+        ),
+        expected_selector_matrix=schema["allowed_json_fields_by_source"],
+        expected_git_object_format="sha1",
+        expected_source_head=cast(str, authorization.get("source_head", "")),
+        expected_source_tree_hash=cast(str, authorization.get("source_tree_hash", "")),
+        expected_file_manifest_hash=cast(
+            str,
+            authorization.get("expected_file_manifest_hash", ""),
+        ),
+        expected_normalizer_code_sha256=cast(
+            str,
+            authorization.get("normalizer_code_sha256", ""),
+        ),
+        expected_review_artifact_hash=cast(
+            str,
+            authorization.get("review_artifact_hash", ""),
+        ),
+        expected_output_root=_approved_normalization_governance_root(),
+    )
+
+
+def _git_sha1(label: str) -> str:
+    return hashlib.sha1(canonical_bytes_v2({"synthetic_git_object": label})).hexdigest()
 
 
 def _retired_lineage_metadata() -> JsonObject:
@@ -872,11 +1294,7 @@ def test_spec_17_3_12_schema_retired_inventory_fail_closed() -> None:
     inventory = _retired_source_inventory()
     expected_hashes = _retired_source_hashes()
     authorization = valid_normalization_authorization()
-    validate_normalization_authorization(
-        authorization,
-        expected_inventory=schema["expected_source_inventory"],
-        expected_selector_matrix=schema["allowed_json_fields_by_source"],
-    )
+    _validate_valid_normalization_authorization(authorization)
     validate_retired_authority_source_inventory(
         inventory,
         schema_definition=schema,
@@ -2168,6 +2586,519 @@ def test_normalizer_guard_allows_direct_listed_safe_call_result_methods() -> Non
     validate_normalizer_static_source(source)
 
 
+def test_normalizer_guard_allows_same_named_data_helper_call_argument() -> None:
+    source = (
+        "from ims_deadlock.g6b_schema_contracts import "
+        "validate_authority_source_record\n"
+        "def normalize(record):\n"
+        "    return record\n"
+        "def emit(record):\n"
+        "    record = normalize(record)\n"
+        "    validate_authority_source_record(record)\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_allows_typed_local_data_helper_call_argument() -> None:
+    source = (
+        "from collections.abc import Mapping\n"
+        "from ims_deadlock.g6b_schema_contracts import "
+        "validate_authority_source_record\n"
+        "def normalize(record: Mapping[str, object]) -> dict[str, object]:\n"
+        "    return dict(record)\n"
+        "def emit(record: Mapping[str, object]) -> None:\n"
+        "    payload = normalize(record)\n"
+        "    validate_authority_source_record(payload)\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_allows_nested_local_data_helper_call_argument() -> None:
+    source = (
+        "def leaf(value):\n"
+        "    return bool(value)\n"
+        "def helper(value):\n"
+        "    return leaf(value)\n"
+        "def normalize(value):\n"
+        "    return helper(value)\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_allows_closed_pure_data_builtin_arguments() -> None:
+    source = (
+        "def normalize(text, payload):\n"
+        "    width = len(text)\n"
+        "    index = int(width)\n"
+        "    raw = bytes(payload)\n"
+        "    pairs = list(zip(text, raw))\n"
+        "    return {'source_sha256': str(index or len(pairs))}\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_allows_local_hash_hexdigest_data_helper_argument() -> None:
+    source = (
+        "from hashlib import sha256\n"
+        "from ims_deadlock.g6b_schema_contracts import "
+        "validate_authority_source_record\n"
+        "def digest(source_bytes):\n"
+        "    return sha256(source_bytes).hexdigest()\n"
+        "def emit(record, source_bytes):\n"
+        "    record = dict(record, raw_byte_sha256=digest(source_bytes))\n"
+        "    validate_authority_source_record(record)\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_allows_direct_schema_contract_error_raise() -> None:
+    source = (
+        "from ims_deadlock.g6b_schema_contracts import SchemaContractError\n"
+        "def normalize(record):\n"
+        "    raise SchemaContractError('retired_normalizer_error')\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        (
+            "from ims_deadlock.g6b_schema_contracts import SchemaContractError\n"
+            "def normalize(record):\n"
+            "    ctor = SchemaContractError\n"
+            "    ctor('retired_normalizer_error')\n"
+        ),
+        (
+            "from ims_deadlock.g6b_schema_contracts import SchemaContractError\n"
+            "def normalize(record):\n"
+            "    SchemaContractError = lambda code: code\n"
+            "    SchemaContractError('retired_normalizer_error')\n"
+        ),
+        (
+            "from ims_deadlock.g6b_schema_contracts import SchemaContractError\n"
+            "def normalize(record):\n"
+            "    SchemaContractError('retired_normalizer_error')\n"
+        ),
+    ],
+)
+def test_normalizer_guard_rejects_schema_contract_error_misuse(
+    source: str,
+) -> None:
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_rejects_safe_call_result_as_callable() -> None:
+    source = (
+        "import json\n"
+        "def normalize(source_text):\n"
+        "    parsed = json.loads(source_text)\n"
+        "    parsed()\n"
+        "    return {'source_sha256': ''}\n"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_rejects_direct_callback_alias_dispatch() -> None:
+    source = (
+        "def normalize(callback):\n"
+        "    alias = callback\n"
+        "    alias('outside.json', 'w')\n"
+        "    return {'source_sha256': ''}\n"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_rejects_concrete_sensitive_validator_payload() -> None:
+    source = (
+        "import os\n"
+        "from ims_deadlock.g6b_schema_contracts import "
+        "validate_authority_lock_record\n"
+        "def normalize():\n"
+        "    validate_authority_lock_record(os.system)\n"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_rejects_concrete_sensitive_sorted_key() -> None:
+    source = (
+        "def normalize():\n"
+        "    sorted([1], key=open)\n"
+        "    return {'source_sha256': ''}\n"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        ("def normalize(callback):\n    return list(map(callback, [1]))\n"),
+        ("def normalize(callback):\n    return list(filter(callback, [1]))\n"),
+        ("def normalize(callback):\n    return sorted([1], key=callback)\n"),
+        ("def normalize(callback):\n    return min([1], key=callback)\n"),
+        ("def normalize(callback):\n    return max([1], key=callback)\n"),
+    ],
+)
+def test_normalizer_guard_rejects_arbitrary_callback_sinks(source: str) -> None:
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_rejects_safe_data_result_methods() -> None:
+    source = (
+        "def normalize(record):\n"
+        "    return record\n"
+        "def emit(record):\n"
+        "    payload = normalize(record)\n"
+        "    payload.get('source_sha256')\n"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_allows_exact_retired_normalizer_surface() -> None:
+    source = (
+        "from pathlib import Path\n"
+        "from ims_deadlock.g6b_schema_contracts import SchemaContractError\n"
+        "from ims_deadlock.g6b_schema_contracts import "
+        "validate_normalization_authorization\n"
+        "from ims_deadlock.g6b_schema_contracts import validate_authority_lock_record\n"
+        "from ims_deadlock.g6b_schema_contracts import "
+        "validate_authority_source_record\n"
+        "from ims_deadlock.g6b_schema_contracts import validate_fingerprint_record\n"
+        "from ims_deadlock.g6b_schema_contracts import "
+        "validate_normalization_manifest\n"
+        "def write_normalization_authorization(path, payload):\n"
+        "    target = Path(path).resolve()\n"
+        "    if target.exists() and target.is_file() and not target.is_symlink():\n"
+        "        target.read_bytes()\n"
+        "        target.read_text()\n"
+        "        target.relative_to(Path('governance').resolve())\n"
+        "    target.mkdir()\n"
+        "    validate_normalization_authorization(payload)\n"
+        "    target.write_bytes(b'{}')\n"
+        "    target.replace(Path(path))\n"
+        "def write_authority_lock_record(path, payload):\n"
+        "    read_authority_bytes()\n"
+        "    parse_allowed_json_pointers()\n"
+        "    verify_source_hashes()\n"
+        "    parse_historical_decimal_exactly()\n"
+        "    apply_static_input_projection()\n"
+        "    canonicalize_projection_v2()\n"
+        "    compute_sha256()\n"
+        "    write_normalization_authorization()\n"
+        "    write_authority_lock_record()\n"
+        "    write_authority_source_record()\n"
+        "    write_fingerprint_record()\n"
+        "    write_normalization_manifest()\n"
+        "    validate_authority_lock_record(payload)\n"
+        "    Path(path).write_bytes(b'{}')\n"
+        "def write_authority_source_record(path, payload):\n"
+        "    validate_authority_source_record(payload)\n"
+        "    Path(path).write_bytes(b'{}')\n"
+        "def write_fingerprint_record(path, payload):\n"
+        "    try:\n"
+        "        validate_fingerprint_record(payload, None)\n"
+        "    except SchemaContractError:\n"
+        "        raise\n"
+        "    Path(path).write_bytes(b'{}')\n"
+        "def write_normalization_manifest(path, payload):\n"
+        "    validate_normalization_manifest(payload)\n"
+        "    Path(path).write_bytes(b'{}')\n"
+    )
+    validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "def normalize(path):\n    Path(path).write_bytes(b'bad')\n",
+        (
+            "def write_fingerprint_record(path):\n"
+            "    def nested():\n"
+            "        Path(path).write_bytes(b'bad')\n"
+            "    nested()\n"
+        ),
+        (
+            "def write_fingerprint_record(path):\n"
+            "    writer = Path(path).write_bytes\n"
+            "    writer(b'bad')\n"
+        ),
+    ],
+)
+def test_normalizer_guard_rejects_writer_outside_top_level_writer_boundary(
+    body: str,
+) -> None:
+    source = "from pathlib import Path\n" + body
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        (
+            "from pathlib import Path\n"
+            "def guard(fn):\n"
+            "    return fn\n"
+            "@Path('out').write_bytes(b'bad')\n"
+            "def write_fingerprint_record():\n"
+            "    return None\n"
+        ),
+        (
+            "from pathlib import Path\n"
+            "def write_fingerprint_record(path=Path('out').mkdir()):\n"
+            "    return None\n"
+        ),
+        (
+            "from pathlib import Path\n"
+            "def write_fingerprint_record(*, path=Path('out').replace(Path('tmp'))):\n"
+            "    return None\n"
+        ),
+        (
+            "from pathlib import Path\n"
+            "def write_fingerprint_record(path: Path('out').write_bytes(b'bad')):\n"
+            "    return None\n"
+        ),
+        (
+            "from pathlib import Path\n"
+            "def write_fingerprint_record() -> Path('out').mkdir():\n"
+            "    return None\n"
+        ),
+        (
+            "from pathlib import Path\n"
+            "def write_fingerprint_record[T: Path('out').replace(Path('tmp'))]():\n"
+            "    return None\n"
+        ),
+    ],
+)
+def test_normalizer_guard_rejects_definition_time_writer_escapes(
+    source: str,
+) -> None:
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        (
+            "def write_fingerprint_record():\n"
+            "    return None\n"
+            "alias = write_fingerprint_record\n"
+        ),
+        "write_fingerprint_record = lambda: None\n",
+        (
+            "def write_fingerprint_record():\n"
+            "    return None\n"
+            "def write_fingerprint_record():\n"
+            "    return None\n"
+        ),
+        "from ims_deadlock.g6b_retired_normalizer import write_fingerprint_record\n",
+        (
+            "def sink(value):\n"
+            "    return value\n"
+            "def write_fingerprint_record():\n"
+            "    return None\n"
+            "sink(write_fingerprint_record)\n"
+        ),
+    ],
+)
+def test_normalizer_guard_rejects_writer_binding_escapes(source: str) -> None:
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        (
+            "def outer():\n"
+            "    def write_fingerprint_record():\n"
+            "        return None\n"
+            "    alias = write_fingerprint_record\n"
+        ),
+        (
+            "def write_fingerprint_record():\n"
+            "    return None\n"
+            "if True:\n"
+            "    alias = write_fingerprint_record\n"
+        ),
+        "def probe(write_fingerprint_record):\n    return write_fingerprint_record\n",
+        "(alias := write_fingerprint_record)\n",
+        (
+            "def outer():\n"
+            "    from ims_deadlock.g6b_retired_normalizer import "
+            "write_fingerprint_record\n"
+            "    return write_fingerprint_record\n"
+        ),
+        (
+            "def outer():\n"
+            "    return lambda write_fingerprint_record: write_fingerprint_record\n"
+        ),
+        "async def write_fingerprint_record():\n    return None\n",
+        (
+            "def source(values):\n"
+            "    for write_fingerprint_record in values:\n"
+            "        return write_fingerprint_record\n"
+        ),
+        (
+            "def source(values):\n"
+            "    return [\n"
+            "        write_fingerprint_record\n"
+            "        for write_fingerprint_record in values\n"
+            "    ]\n"
+        ),
+        (
+            "def source(ctx):\n"
+            "    with ctx as write_fingerprint_record:\n"
+            "        return write_fingerprint_record\n"
+        ),
+        (
+            "def source():\n"
+            "    try:\n"
+            "        raise RuntimeError()\n"
+            "    except RuntimeError as write_fingerprint_record:\n"
+            "        return write_fingerprint_record\n"
+        ),
+        (
+            "def source(value):\n"
+            "    match value:\n"
+            "        case write_fingerprint_record:\n"
+            "            return write_fingerprint_record\n"
+        ),
+        (
+            "def outer():\n"
+            "    global write_fingerprint_record\n"
+            "    write_fingerprint_record = None\n"
+        ),
+        (
+            "def outer():\n"
+            "    write_fingerprint_record = None\n"
+            "    def inner():\n"
+            "        nonlocal write_fingerprint_record\n"
+            "        return write_fingerprint_record\n"
+        ),
+        (
+            "def write_fingerprint_record():\n"
+            "    return None\n"
+            "def source():\n"
+            "    return write_fingerprint_record\n"
+        ),
+        (
+            "def write_fingerprint_record():\n"
+            "    return None\n"
+            "WRITERS = [write_fingerprint_record]\n"
+        ),
+    ],
+)
+def test_normalizer_guard_rejects_scope_wide_writer_binding_escapes(
+    source: str,
+) -> None:
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize("method", ["iterdir", "glob", "unlink", "write_text", "open"])
+def test_normalizer_guard_rejects_unlisted_path_methods(method: str) -> None:
+    source = (
+        f"from pathlib import Path\ndef normalize(path):\n    Path(path).{method}()\n"
+    )
+    with pytest.raises(SchemaContractError, match="retired_normalizer_error"):
+        validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_rejects_governance_import_and_unlisted_schema_call() -> None:
+    for source, code in (
+        ("import ims_deadlock.g6b_governance\n", "capability_import_violation"),
+        (
+            (
+                "from ims_deadlock.g6b_schema_contracts import validate_exact_keys\n"
+                "def normalize(record):\n"
+                "    validate_exact_keys(record, set(), label='x')\n"
+            ),
+            "retired_normalizer_error",
+        ),
+    ):
+        with pytest.raises(SchemaContractError, match=code):
+            validate_normalizer_static_source(source)
+
+
+def test_normalizer_guard_rejects_retired_operation_order_drift() -> None:
+    source = (
+        "def normalize():\n"
+        "    read_authority_bytes()\n"
+        "    parse_allowed_json_pointers()\n"
+        "    parse_historical_decimal_exactly()\n"
+        "    verify_source_hashes()\n"
+        "    apply_static_input_projection()\n"
+        "    canonicalize_projection_v2()\n"
+        "    compute_sha256()\n"
+        "    write_normalization_authorization()\n"
+        "    write_authority_lock_record()\n"
+        "    write_authority_source_record()\n"
+        "    write_fingerprint_record()\n"
+        "    write_normalization_manifest()\n"
+    )
+    with pytest.raises(SchemaContractError, match="operation_contract_drift"):
+        validate_normalizer_static_source(source)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        ("def normalize():\n    step = verify_source_hashes\n    step()\n"),
+        (
+            "def normalize():\n"
+            "    verify_source_hashes = lambda: None\n"
+            "    verify_source_hashes()\n"
+        ),
+    ],
+)
+def test_normalizer_guard_rejects_retired_operation_alias_or_rebind(
+    source: str,
+) -> None:
+    with pytest.raises(SchemaContractError, match="operation_contract_drift"):
+        validate_normalizer_static_source(source)
+
+
+def test_normalization_allowed_project_imports_remain_exact_corrigendum_tuple() -> None:
+    assert contracts.NORMALIZATION_ALLOWED_PROJECT_IMPORTS == (
+        "ims_deadlock.g6b_retired_normalizer",
+        "ims_deadlock.g6b_canonical_json",
+        "ims_deadlock.g6b_schema_contracts",
+        "ims_deadlock.g6b_governance",
+    )
+
+
+def test_schema_contracts_import_closure_only_uses_canonical_json() -> None:
+    source_path = Path(contracts.__file__).resolve()
+    tree = ast.parse(source_path.read_text(encoding="utf-8"))
+    project_imports: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            project_imports.update(
+                alias.name
+                for alias in node.names
+                if alias.name.startswith("ims_deadlock")
+            )
+        elif isinstance(node, ast.ImportFrom) and node.module is not None:
+            if node.module == "ims_deadlock":
+                project_imports.update(
+                    f"ims_deadlock.{alias.name}"
+                    for alias in node.names
+                    if alias.name != "*"
+                )
+            elif node.module.startswith("ims_deadlock"):
+                project_imports.add(node.module)
+    assert project_imports == {"ims_deadlock.g6b_canonical_json"}
+
+
 def test_preflight_guard_allows_direct_listed_safe_call_result_methods() -> None:
     source = (
         "from hashlib import sha256\n"
@@ -2937,7 +3868,6 @@ def test_spec_17_3_35_schema_failure_refusal_evidence_append_only() -> None:
 
 
 def test_normalization_authorization_rejects_legacy_bypass_shape() -> None:
-    schema = _load_retired_schema_definition()
     legacy: JsonObject = {
         "schema_version": "ims-deadlock/g6b-retired-normalization-authorization/v1",
         "authorization_id": "legacy-bypass",
@@ -2957,18 +3887,13 @@ def test_normalization_authorization_rejects_legacy_bypass_shape() -> None:
     )
 
     with pytest.raises(SchemaContractError, match="missing_key"):
-        validate_normalization_authorization(
-            legacy,
-            expected_inventory=schema["expected_source_inventory"],
-            expected_selector_matrix=schema["allowed_json_fields_by_source"],
-        )
+        _validate_valid_normalization_authorization(legacy)
 
 
 @pytest.mark.parametrize("authorized", [False, 1, "true"])
 def test_normalization_authorization_requires_explicit_true(
     authorized: object,
 ) -> None:
-    schema = _load_retired_schema_definition()
     record = valid_normalization_authorization()
     record["authorized"] = authorized
     record = _with_rehashed(record, "authorization_sha256")
@@ -2977,24 +3902,597 @@ def test_normalization_authorization_requires_explicit_true(
         SchemaContractError,
         match="unauthorized_retired_normalization_attempt",
     ):
-        validate_normalization_authorization(
-            record,
-            expected_inventory=schema["expected_source_inventory"],
-            expected_selector_matrix=schema["allowed_json_fields_by_source"],
-        )
+        _validate_valid_normalization_authorization(record)
 
 
 def test_normalization_authorization_rejects_identity_drift() -> None:
-    schema = _load_retired_schema_definition()
     record = valid_normalization_authorization()
     record["invalidated_by_identity_drift"] = True
     record = _with_rehashed(record, "authorization_sha256")
 
     with pytest.raises(SchemaContractError, match="runtime_identity_drift"):
-        validate_normalization_authorization(
-            record,
-            expected_inventory=schema["expected_source_inventory"],
+        _validate_valid_normalization_authorization(record)
+
+
+def test_authority_lock_record_closes_identity_and_projection_lock() -> None:
+    record = valid_authority_lock_record("G4_FREEZE")
+    contracts.validate_authority_lock_record(record)
+
+    missing = dict(record)
+    missing.pop("origin_tree_hash_or_null")
+    with pytest.raises(SchemaContractError, match="missing_key"):
+        contracts.validate_authority_lock_record(missing)
+
+    extra = dict(record)
+    extra["legacy_projection_summary"] = "not-closed"
+    with pytest.raises(SchemaContractError, match="unexpected_key"):
+        contracts.validate_authority_lock_record(extra)
+
+    illegal = _with_rehashed(
+        {**record, "authority_id": "G6B_CURRENT_DISCOVERY"},
+        "authority_lock_record_sha256",
+    )
+    with pytest.raises(SchemaContractError, match="illegal_retired_authority"):
+        contracts.validate_authority_lock_record(illegal)
+
+    wrong_remote = _with_rehashed(
+        {**record, "origin_remote": "retired-authority-logical-origin"},
+        "authority_lock_record_sha256",
+    )
+    with pytest.raises(SchemaContractError, match="source_identity_drift"):
+        contracts.validate_authority_lock_record(wrong_remote)
+
+    unverified = _with_rehashed(
+        {**record, "identity_verification_status": "unverified_refuse"},
+        "authority_lock_record_sha256",
+    )
+    contracts.validate_authority_lock_record(unverified)
+
+    historical = _with_rehashed(
+        {**record, "identity_verification_status": "verified_historical_identity"},
+        "authority_lock_record_sha256",
+    )
+    contracts.validate_authority_lock_record(historical)
+
+
+def test_authority_source_record_binds_exact_27_sources_and_projection_use() -> None:
+    schema = _load_retired_schema_definition()
+    lock = valid_authority_lock_record("G4_FREEZE")
+    source = valid_authority_source_record(
+        contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY[0],
+        authority_lock_record_sha256=lock["authority_lock_record_sha256"],
+    )
+    inventory_order_hashes = _retired_source_hashes()
+    assert tuple(inventory_order_hashes) == (
+        contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+    )
+    assert tuple(inventory_order_hashes) != tuple(sorted(inventory_order_hashes))
+    contracts.validate_authority_source_record(
+        source,
+        authority_lock_hashes=_authority_lock_hashes({"G4_FREEZE": lock}),
+        expected_source_hashes=inventory_order_hashes,
+        selector_rows=schema["allowed_json_fields_by_source"],
+    )
+
+    outside = dict(source)
+    outside["repo_relative_path"] = (
+        "cases/discovery/g6b/row_families/structural_discovery_v1/"
+        "governance/unapproved-output.json"
+    )
+    with pytest.raises(SchemaContractError, match="source_outside_retired_inventory"):
+        contracts.validate_authority_source_record(
+            outside,
+            authority_lock_hashes=_authority_lock_hashes({"G4_FREEZE": lock}),
+            expected_source_hashes=_retired_source_hashes(),
+            selector_rows=schema["allowed_json_fields_by_source"],
+        )
+
+    use_violation = dict(source)
+    use_violation["allowed_projection_uses"] = []
+    with pytest.raises(SchemaContractError, match="source_projection_use_violation"):
+        contracts.validate_authority_source_record(
+            use_violation,
+            authority_lock_hashes=_authority_lock_hashes({"G4_FREEZE": lock}),
+            expected_source_hashes=_retired_source_hashes(),
+            selector_rows=schema["allowed_json_fields_by_source"],
+        )
+
+    undeclared = dict(source)
+    undeclared["declared_historical_hash_or_null"] = None
+    undeclared["declared_hash_algorithm_or_null"] = None
+    undeclared["declared_hash_verified"] = False
+    contracts.validate_authority_source_record(
+        undeclared,
+        authority_lock_hashes=_authority_lock_hashes({"G4_FREEZE": lock}),
+        expected_source_hashes=_retired_source_hashes(),
+        selector_rows=schema["allowed_json_fields_by_source"],
+    )
+
+    unverified_lock = _with_rehashed(
+        {**lock, "identity_verification_status": "unverified_refuse"},
+        "authority_lock_record_sha256",
+    )
+    unverified_projection = valid_authority_source_record(
+        contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY[0],
+        authority_lock_record_sha256=unverified_lock["authority_lock_record_sha256"],
+    )
+    with pytest.raises(SchemaContractError, match="unverified_projection_refusal"):
+        contracts.validate_authority_source_record(
+            unverified_projection,
+            authority_lock_hashes=_authority_lock_hashes({"G4_FREEZE": lock}),
+            expected_source_hashes=_retired_source_hashes(),
+            selector_rows=schema["allowed_json_fields_by_source"],
+        )
+
+    g5_lock = valid_authority_lock_record("G5_EXECUTION")
+    outcome_source = valid_authority_source_record(
+        "evidence/g5/G5_RESULT_SUMMARY.json",
+        authority_lock_record_sha256=g5_lock["authority_lock_record_sha256"],
+    )
+    assert outcome_source["contains_outcome_fields"] is True
+    assert outcome_source["allowed_projection_uses"] == ["source_hash_validation"]
+    contracts.validate_authority_source_record(
+        outcome_source,
+        authority_lock_hashes=_authority_lock_hashes({"G5_EXECUTION": g5_lock}),
+        expected_source_hashes=_retired_source_hashes(),
+        selector_rows=schema["allowed_json_fields_by_source"],
+    )
+
+    outcome_projection = dict(outcome_source)
+    outcome_projection["allowed_projection_uses"] = [
+        "case_content_projection",
+        "source_hash_validation",
+    ]
+    with pytest.raises(SchemaContractError, match="source_outcome_field_violation"):
+        contracts.validate_authority_source_record(
+            outcome_projection,
+            authority_lock_hashes=_authority_lock_hashes({"G5_EXECUTION": g5_lock}),
+            expected_source_hashes=_retired_source_hashes(),
+            selector_rows=schema["allowed_json_fields_by_source"],
+        )
+
+
+def test_normalization_manifest_rejects_unverified_projection_suppliers() -> None:
+    locks = _retired_authority_lock_records()
+    unverified_lock = _with_rehashed(
+        {
+            **locks["G4_FREEZE"],
+            "identity_verification_status": "unverified_refuse",
+        },
+        "authority_lock_record_sha256",
+    )
+    locks["G4_FREEZE"] = unverified_lock
+    sources = _retired_authority_source_records(locks)
+    fingerprints = _normalization_fingerprint_records()
+    assert any(
+        record["authority_id"] == "G4_FREEZE" and record["allowed_projection_uses"]
+        for record in sources.values()
+    )
+    manifest = valid_normalization_manifest(
+        authority_locks=locks,
+        authority_sources=sources,
+        fingerprint_records=fingerprints,
+    )
+
+    with pytest.raises(SchemaContractError, match="unverified_projection_refusal"):
+        contracts.validate_normalization_manifest(
+            manifest,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+    sources_with_hash_evidence_only = {
+        path: (
+            {**record, "allowed_projection_uses": ["source_hash_validation"]}
+            if record["authority_id"] == "G4_FREEZE"
+            else record
+        )
+        for path, record in sources.items()
+    }
+    manifest_with_hash_evidence_only = valid_normalization_manifest(
+        authority_locks=locks,
+        authority_sources=sources_with_hash_evidence_only,
+        fingerprint_records=fingerprints,
+    )
+    contracts.validate_normalization_manifest(
+        manifest_with_hash_evidence_only,
+        authority_lock_records=locks,
+        authority_source_records=sources_with_hash_evidence_only,
+        fingerprint_records=fingerprints,
+    )
+
+    verified_locks = _retired_authority_lock_records()
+    for status in (
+        "verified_historical_identity",
+        "verified_merged_copy_against_historical_hashes",
+    ):
+        verified_lock = _with_rehashed(
+            {
+                **verified_locks["G4_FREEZE"],
+                "identity_verification_status": status,
+            },
+            "authority_lock_record_sha256",
+        )
+        status_locks = {**verified_locks, "G4_FREEZE": verified_lock}
+        status_sources = _retired_authority_source_records(status_locks)
+        status_manifest = valid_normalization_manifest(
+            authority_locks=status_locks,
+            authority_sources=status_sources,
+            fingerprint_records=fingerprints,
+        )
+        contracts.validate_normalization_manifest(
+            status_manifest,
+            authority_lock_records=status_locks,
+            authority_source_records=status_sources,
+            fingerprint_records=fingerprints,
+        )
+
+
+def test_normalization_manifest_binds_sources_to_manifest_lock_records() -> None:
+    verified_locks = _retired_authority_lock_records()
+    unverified_lock = _with_rehashed(
+        {
+            **verified_locks["G4_FREEZE"],
+            "identity_verification_status": "unverified_refuse",
+        },
+        "authority_lock_record_sha256",
+    )
+    source_locks = {**verified_locks, "G4_FREEZE": unverified_lock}
+    sources = _retired_authority_source_records(source_locks)
+    sources = {
+        path: (
+            {**record, "allowed_projection_uses": ["source_hash_validation"]}
+            if record["authority_id"] == "G4_FREEZE"
+            else record
+        )
+        for path, record in sources.items()
+    }
+    fingerprints = _normalization_fingerprint_records()
+    manifest = valid_normalization_manifest(
+        authority_locks=verified_locks,
+        authority_sources=sources,
+        fingerprint_records=fingerprints,
+    )
+
+    with pytest.raises(SchemaContractError, match="absent_authority_lock_ref"):
+        contracts.validate_normalization_manifest(
+            manifest,
+            authority_lock_records=verified_locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+    truly_unverified_manifest = valid_normalization_manifest(
+        authority_locks=source_locks,
+        authority_sources=sources,
+        fingerprint_records=fingerprints,
+    )
+    contracts.validate_normalization_manifest(
+        truly_unverified_manifest,
+        authority_lock_records=source_locks,
+        authority_source_records=sources,
+        fingerprint_records=fingerprints,
+    )
+
+
+def test_normalization_manifest_closes_maps_refs_and_failure_eligibility() -> None:
+    locks = _retired_authority_lock_records()
+    sources = _retired_authority_source_records(locks)
+    fingerprints = _normalization_fingerprint_records()
+    manifest = valid_normalization_manifest(
+        authority_locks=locks,
+        authority_sources=sources,
+        fingerprint_records=fingerprints,
+    )
+    contracts.validate_normalization_manifest(
+        manifest,
+        authority_lock_records=locks,
+        authority_source_records=sources,
+        fingerprint_records=fingerprints,
+    )
+
+    missing = dict(manifest)
+    missing.pop("authority_source_record_hashes")
+    with pytest.raises(SchemaContractError, match="missing_key"):
+        contracts.validate_normalization_manifest(
+            missing,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+    extra = dict(manifest)
+    extra["legacy_summary"] = {"eligible_count": 24}
+    with pytest.raises(SchemaContractError, match="unexpected_key"):
+        contracts.validate_normalization_manifest(
+            extra,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+    unsorted_hash_map = deepcopy(manifest)
+    unsorted_hash_map["authority_source_record_hashes"] = dict(
+        reversed(list(manifest["authority_source_record_hashes"].items()))
+    )
+    unsorted_hash_map = _with_rehashed(unsorted_hash_map, "manifest_sha256")
+    with pytest.raises(SchemaContractError, match="hash_map_not_sorted"):
+        contracts.validate_normalization_manifest(
+            unsorted_hash_map,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+    duplicate_lineage = deepcopy(manifest)
+    first_lineage = next(iter(duplicate_lineage["unique_lineage_map"]))
+    duplicate_lineage["unique_lineage_map"][first_lineage].append(
+        duplicate_lineage["unique_lineage_map"][first_lineage][0]
+    )
+    duplicate_lineage = _with_rehashed(duplicate_lineage, "manifest_sha256")
+    with pytest.raises(SchemaContractError, match="duplicate_lineage_miscount"):
+        contracts.validate_normalization_manifest(
+            duplicate_lineage,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+    absent_ref = deepcopy(manifest)
+    absent_ref["authority_lock_record_hashes"].pop("G4_FREEZE")
+    absent_ref = _with_rehashed(absent_ref, "manifest_sha256")
+    with pytest.raises(SchemaContractError, match="absent_authority_lock_ref"):
+        contracts.validate_normalization_manifest(
+            absent_ref,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+    mismatched_ref = deepcopy(manifest)
+    first_source = next(iter(mismatched_ref["authority_source_record_hashes"]))
+    mismatched_ref["authority_source_record_hashes"][first_source] = "9" * 64
+    mismatched_ref = _with_rehashed(mismatched_ref, "manifest_sha256")
+    with pytest.raises(SchemaContractError, match="authority_source_ref_mismatch"):
+        contracts.validate_normalization_manifest(
+            mismatched_ref,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+    failed_record = next(iter(fingerprints.values()))
+    failed_record["dimension_status"] = "unreconstructable_refuse"
+    failed_record["comparison_projection_ref_or_null"] = None
+    failed_record["comparison_projection_sha256_or_null"] = None
+    failed_record = _with_rehashed(failed_record, "record_provenance_sha256")
+    failed_fingerprints = {**fingerprints, failed_record["record_id"]: failed_record}
+    upgraded = valid_normalization_manifest(
+        authority_locks=locks,
+        authority_sources=sources,
+        fingerprint_records=failed_fingerprints,
+    )
+    upgraded["comparison_eligibility"][failed_record["record_id"]] = {
+        "eligible_for_overlap_comparison": True,
+        "refusal_reason_code_or_null": None,
+    }
+    upgraded = _with_rehashed(upgraded, "manifest_sha256")
+    with pytest.raises(SchemaContractError, match="unreconstructable_not_eligible"):
+        contracts.validate_normalization_manifest(
+            upgraded,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=failed_fingerprints,
+        )
+
+
+def test_normalization_manifest_accepts_canonical_status_order_roundtrip() -> None:
+    locks = _retired_authority_lock_records()
+    sources = _retired_authority_source_records(locks)
+    fingerprints = _normalization_fingerprint_records()
+    manifest = valid_normalization_manifest(
+        authority_locks=locks,
+        authority_sources=sources,
+        fingerprint_records=fingerprints,
+    )
+    parsed = loads_v2(str(canonical_bytes_v2(manifest), "utf-8"))
+    assert isinstance(parsed, dict)
+    parsed_manifest = cast(JsonObject, parsed)
+    parsed_status_counts = cast(JsonObject, parsed_manifest["dimension_status_counts"])
+    assert parsed_manifest["source_remote"] == "zjqc/IMS_deadlock"
+    assert tuple(parsed_status_counts) == tuple(
+        sorted(contracts.DIMENSION_STATUS_VALUES)
+    )
+    contracts.validate_normalization_manifest(
+        parsed_manifest,
+        authority_lock_records=locks,
+        authority_source_records=sources,
+        fingerprint_records=fingerprints,
+    )
+
+    noncanonical = deepcopy(parsed_manifest)
+    noncanonical["dimension_status_counts"] = {
+        status: parsed_status_counts[status]
+        for status in contracts.DIMENSION_STATUS_VALUES
+    }
+    noncanonical = _with_rehashed(noncanonical, "manifest_sha256")
+    with pytest.raises(SchemaContractError, match="unknown_dimension_status"):
+        contracts.validate_normalization_manifest(
+            noncanonical,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+    wrong_remote = deepcopy(parsed)
+    wrong_remote["source_remote"] = "retired-authority-logical-origin"
+    wrong_remote = _with_rehashed(wrong_remote, "manifest_sha256")
+    with pytest.raises(SchemaContractError, match="source_identity_drift"):
+        contracts.validate_normalization_manifest(
+            wrong_remote,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+
+def test_normalization_manifest_rejects_tampered_authority_lock_content() -> None:
+    locks = _retired_authority_lock_records()
+    sources = _retired_authority_source_records(locks)
+    fingerprints = _normalization_fingerprint_records()
+    manifest = valid_normalization_manifest(
+        authority_locks=locks,
+        authority_sources=sources,
+        fingerprint_records=fingerprints,
+    )
+    tampered_locks = deepcopy(locks)
+    tampered_locks["G4_FREEZE"]["current_merged_copy_tree_hash"] = "9" * 64
+
+    with pytest.raises(SchemaContractError, match="self_hash_mismatch"):
+        contracts.validate_normalization_manifest(
+            manifest,
+            authority_lock_records=tampered_locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+
+def test_normalization_manifest_rejects_tampered_fingerprint_content() -> None:
+    locks = _retired_authority_lock_records()
+    sources = _retired_authority_source_records(locks)
+    fingerprints = _normalization_fingerprint_records()
+    manifest = valid_normalization_manifest(
+        authority_locks=locks,
+        authority_sources=sources,
+        fingerprint_records=fingerprints,
+    )
+    tampered_fingerprints = deepcopy(fingerprints)
+    first_record_id = next(iter(tampered_fingerprints))
+    tampered_fingerprints[first_record_id]["normalizer_version"] = (
+        "stale-tampered-normalizer"
+    )
+
+    with pytest.raises(SchemaContractError, match="self_hash_mismatch"):
+        contracts.validate_normalization_manifest(
+            manifest,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=tampered_fingerprints,
+        )
+
+
+def test_normalization_manifest_requires_empty_missing_source_records() -> None:
+    locks = _retired_authority_lock_records()
+    sources = _retired_authority_source_records(locks)
+    fingerprints = _normalization_fingerprint_records()
+    manifest = valid_normalization_manifest(
+        authority_locks=locks,
+        authority_sources=sources,
+        fingerprint_records=fingerprints,
+    )
+    manifest["missing_source_records"] = ["arbitrary-non-closed-record"]
+    manifest = _with_rehashed(manifest, "manifest_sha256")
+
+    with pytest.raises(SchemaContractError, match="missing_source_records_not_empty"):
+        contracts.validate_normalization_manifest(
+            manifest,
+            authority_lock_records=locks,
+            authority_source_records=sources,
+            fingerprint_records=fingerprints,
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "code"),
+    [
+        ("invalidated_by_identity_drift", True, "runtime_identity_drift"),
+        (
+            "allowed_output_root",
+            {
+                "repo_relative_posix_path": "governance/g6b/legacy-normalization",
+                "contains_only_governance_outputs": True,
+            },
+            "output_root_contract_drift",
+        ),
+        ("source_head", "0" * 40, "source_identity_drift"),
+        ("source_tree_hash", "1" * 40, "source_identity_drift"),
+        ("expected_file_manifest_hash", "8" * 64, "file_manifest_drift"),
+        ("normalizer_code_sha256", "2" * 64, "normalizer_code_drift"),
+        ("review_artifact_hash", "3" * 64, "review_artifact_drift"),
+    ],
+)
+def test_normalization_authorization_binds_exact_source_code_review_and_root(
+    field: str,
+    value: object,
+    code: str,
+) -> None:
+    schema = _load_retired_schema_definition()
+    authorization = valid_normalization_authorization()
+    contracts.validate_normalization_authorization(
+        authorization,
+        expected_schema_inventory_patterns=contracts.EXPECTED_RETIRED_SOURCE_INVENTORY,
+        expected_concrete_source_paths=(
+            contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+        ),
+        expected_selector_matrix=schema["allowed_json_fields_by_source"],
+        expected_git_object_format="sha1",
+        expected_source_head=authorization["source_head"],
+        expected_source_tree_hash=authorization["source_tree_hash"],
+        expected_file_manifest_hash=authorization["expected_file_manifest_hash"],
+        expected_normalizer_code_sha256=authorization["normalizer_code_sha256"],
+        expected_review_artifact_hash=authorization["review_artifact_hash"],
+        expected_output_root=_approved_normalization_governance_root(),
+    )
+
+    drifted = deepcopy(authorization)
+    drifted[field] = value
+    drifted = _with_rehashed(drifted, "authorization_sha256")
+    with pytest.raises(SchemaContractError, match=code):
+        contracts.validate_normalization_authorization(
+            drifted,
+            expected_schema_inventory_patterns=(
+                contracts.EXPECTED_RETIRED_SOURCE_INVENTORY
+            ),
+            expected_concrete_source_paths=(
+                contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+            ),
             expected_selector_matrix=schema["allowed_json_fields_by_source"],
+            expected_git_object_format="sha1",
+            expected_source_head=authorization["source_head"],
+            expected_source_tree_hash=authorization["source_tree_hash"],
+            expected_file_manifest_hash=authorization["expected_file_manifest_hash"],
+            expected_normalizer_code_sha256=authorization["normalizer_code_sha256"],
+            expected_review_artifact_hash=authorization["review_artifact_hash"],
+            expected_output_root=_approved_normalization_governance_root(),
+        )
+
+
+def test_normalization_authorization_rejects_alternate_caller_output_root() -> None:
+    schema = _load_retired_schema_definition()
+    authorization = valid_normalization_authorization()
+    alternate_root = _alternate_normalization_governance_root()
+    authorization["allowed_output_root"] = {
+        "repo_relative_posix_path": alternate_root,
+        "contains_only_governance_outputs": True,
+    }
+    authorization = _with_rehashed(authorization, "authorization_sha256")
+
+    with pytest.raises(SchemaContractError, match="output_root_contract_drift"):
+        contracts.validate_normalization_authorization(
+            authorization,
+            expected_schema_inventory_patterns=contracts.EXPECTED_RETIRED_SOURCE_INVENTORY,
+            expected_concrete_source_paths=(
+                contracts.EXPECTED_RETIRED_CONCRETE_SOURCE_INVENTORY
+            ),
+            expected_selector_matrix=schema["allowed_json_fields_by_source"],
+            expected_git_object_format="sha1",
+            expected_source_head=authorization["source_head"],
+            expected_source_tree_hash=authorization["source_tree_hash"],
+            expected_file_manifest_hash=authorization["expected_file_manifest_hash"],
+            expected_normalizer_code_sha256=authorization["normalizer_code_sha256"],
+            expected_review_artifact_hash=authorization["review_artifact_hash"],
+            expected_output_root=alternate_root,
         )
 
 
@@ -3145,6 +4643,38 @@ def test_spec_17_3_06_fingerprint_record_rejects_subject_relation_drift() -> Non
     record = valid_fingerprint_record(dimension="case_content_sha256")
     record["subject_type"] = "method_observation"
     record = _with_rehashed(record, "record_provenance_sha256")
+
+    with pytest.raises(SchemaContractError, match="subject_type_mismatch"):
+        validate_fingerprint_record(record, _projection_for_record(record))
+
+
+@pytest.mark.parametrize(
+    ("dimension", "retired_subject_type"),
+    [
+        ("case_content_sha256", "retired_case"),
+        ("state_snapshot_sha256", "retired_case_subunit"),
+        ("random_stream_manifest_sha256", "retired_method_observation"),
+        ("metric_schema_sha256", "retired_method_companion_group"),
+    ],
+)
+def test_retired_fingerprint_record_accepts_only_retired_subject_vocabulary(
+    dimension: str,
+    retired_subject_type: str,
+) -> None:
+    record = valid_fingerprint_record(dimension=dimension)
+    record["source_authority_id"] = "G4_FREEZE"
+    record["source_stage"] = "G4_FREEZE"
+    record["subject_type"] = retired_subject_type
+    record = _relineage_fingerprint_record(record)
+
+    validate_fingerprint_record(record, _projection_for_record(record))
+
+
+def test_retired_fingerprint_record_rejects_new_case_subject_vocabulary() -> None:
+    record = valid_fingerprint_record(dimension="case_content_sha256")
+    record["source_authority_id"] = "G4_FREEZE"
+    record["source_stage"] = "G4_FREEZE"
+    record = _relineage_fingerprint_record(record)
 
     with pytest.raises(SchemaContractError, match="subject_type_mismatch"):
         validate_fingerprint_record(record, _projection_for_record(record))
@@ -6268,14 +7798,14 @@ def test_construction_v3_keeps_retired_reuse_only_in_overlap_schemas() -> None:
     assert (
         schema["refusal_code_vocabulary_version"] == "ims-deadlock/g6b-refusal-codes/v2"
     )
-    for added_code in {
+    for added_code in (
         "ledger_append_interrupted",
         "partial_bundle_terminal",
         "post_seal_ledger_mutation",
         "projection_file_missing",
         "source_identity_phase_violation",
         "unexpected_transient_path",
-    }:
+    ):
         assert added_code in schema["refusal_reason_codes"]
 
 

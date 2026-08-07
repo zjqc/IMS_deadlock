@@ -1,8 +1,97 @@
 # IMS Deadlock 当前项目交接
 
-## 2026-08-05 Repository-Publication Closeout
+## 2026-08-07 PR #11/#12 Main Integration
 
-Current precedence: the stacked repository-publication workflow is complete.
+Current precedence once this integration reaches `main`: PR #12 is the single
+carrier for all valuable content from PRs #11 and #12. PR #11 head
+`e0cd157a2bc7096ba7f65b5e5b36fb13511e46c9` is an ancestor of PR #12 head
+`b01034a062119648b74b69f5b40486c15101392c`, so merging it separately would
+duplicate the lower stack rather than add scientific value. PR #11 is therefore
+closed as superseded after PR #12 is integrated.
+
+The integration with the already-published `main` history conflicts only in
+this handoff and `docs/ROADMAP.md`. Source, tests, schemas, frozen evidence,
+article evidence, and paper artifacts have no merge conflict. The resolution
+keeps both the #3-#10 repository-publication history and the later normalization
+and minimal-article results. Older statements that PR #11 or PR #12 is open,
+Draft, stacked, or unmerged are historical after the integration completes.
+
+Scientific status is unchanged by repository integration: minimal article-core
+v1 remains `TIER A COMPLETE`, the original full G6-B programme remains
+`OPEN_PENDING`, and the project does not claim held-out confirmation, universal
+IMS coverage, method superiority, production validation, or current direct
+top-journal readiness. Resolve the exact final `main` commit from live Git
+history rather than embedding a self-referential merge hash here.
+
+## 2026-08-05 Retired-Authority Normalization Publication
+
+Scientific record: this section is the authoritative retired-normalization
+checkpoint for the G6-B main line. The exact-decimal C1 source/test subject is
+`90214d4ecbb7ac62492966c7ede3ca68da259cd7`, tree
+`66e951ebb34e95912a4f496fcf6c783fdd1144da`. The artifact-only C2 successor is
+`73916f2d5a1a5ae644f3fa0be42b17fcada097d9`, tree
+`d8cd83e473292b1c8f83d701abb830c395a3184c`, and contains exactly the 213
+files under
+`cases/discovery/g6b/row_families/structural_discovery_v1/governance/g6b_retired_authority_normalization_v1/`.
+The documentation-only C3 changes only
+`docs/verification/G6_B_RETIRED_AUTHORITY_NORMALIZATION_REVIEW.md`, this file,
+and `docs/ROADMAP.md`; resolve its exact identity from live Git history.
+
+The normalizer ran exactly once successfully under the approved replacement
+authorization. Authorization raw/self SHA-256 values are
+`fc04ffe450dee355ac89b7b201be287eff4caa6d892dc698f462300721b10c6c` and
+`646787f1888e3254d63da0a37af0287e1bb66b14ab78f09b54b7eeab0162f0eb`;
+the approved independent authorization-review raw SHA-256 is
+`bfcfa4a9b378f2602a30679f561e068d92d5c7c949fcbda186ae28bb99bc7146`.
+The successful exit/progress raw SHA-256 values are
+`9fc91afad6160d8485302a2c90923e55b06e76be85e5c185457370558de9a759`
+and `89b6aed777ae5c04962978638b2a391cef18a4f5d74551862577a96a21c54366`.
+
+Independent artifact-only verification returned PASS. The normalization
+manifest raw/self SHA-256 values are
+`d1391920c97c254fe8874175d502853354b9859322ac624a94b2f2573f371d23`
+and `3fcb863d8f7f19820c8ea5f5edbaf213dec587fb4497265b5ec005f525c587ad`;
+the verifier report raw SHA-256 is
+`4b75575b6bf2cb42b4196c77d687c3e0338f7edd5b27121d916d2c9ce5298fe6`.
+Exact closure is three authority locks, 27 source records, 181 fingerprints,
+and 165 unique lineages. The manifest preserves 119 later-audit-eligible
+records and 62 typed `unreconstructable_refuse` records, with zero missing
+sources and zero forbidden outcome/result/score/stdout/stderr fields or
+downstream roots.
+
+The theory-to-case chain is now closed through retired-corpus normalization:
+R7 sealed 13 case units / 26 method observations / 13 exact-DES companion
+groups, and C2 supplies the retired comparison corpus. It is not closed through
+actual overlap, target certification, or quantitative evidence. G5 remains
+FAIL evidence (`4/3/2`, transparent `6/1/2`, both minimality failures); R1/R2
+remain failures and R3 remains historical-only.
+
+The three bounded R10 publication lanes returned PASS with P0/P1/P2 `0/0/0`:
+ontology/estimand, selector/leakage/nonreuse, and artifact/hash/lineage closure.
+They were run once in parallel over the exact pre-publication documentation
+candidate and did not expand into another generic code-review cycle.
+
+Current terminal status:
+
+```text
+RETIRED_AUTHORITY_NORMALIZATION_COMPLETE / G6-B OPEN-PENDING
+actual overlap = NOT RUN
+Barrier A = NOT AUTHORIZED / NOT RUN
+Barrier B = NOT AUTHORIZED / NOT RUN
+G6-C/D/E = NOT STARTED / NOT PASSED
+paper gate = CLOSED
+```
+
+The first unchecked scientific boundary is a separately bounded input-level
+actual-overlap audit across the eight applicable fingerprint dimensions. No
+current authorization opens that audit, Barrier A/B, CTMC/DES, G6-C/D/E, or a
+scientific PASS claim. Full counts, ontology locks, case obligations, and
+negative-evidence retention are in
+`docs/verification/G6_B_RETIRED_AUTHORITY_NORMALIZATION_REVIEW.md`.
+
+## 2026-08-05 Historical Repository-Publication Closeout
+
+Historical baseline: the stacked repository-publication workflow was complete.
 PRs #3 through #9 were each retargeted to `main` when required, marked ready,
 and merged in dependency order with merge commits rather than squash/rebase.
 Older statements that those PRs are draft, unmerged, or lack repository-merge
@@ -75,11 +164,12 @@ normalization or any downstream execution; G6-B remains `OPEN/PENDING`.
 
 ## 2026-08-05 Historical / Pre-Closeout R7 Case-Construction Publication
 
-Historical snapshot: this section recorded R7 before repository closeout. The
-repository-publication closeout section above now has precedence for live
-Git/PR state. The bounded R7 evidence and mandatory scientific post-R7 stop
-remain current; older `PLAN-ONLY`, `EXACT APPROVAL PENDING`, Task-R1, Task-R2,
-and pre-repair continuation wording remains historical.
+Historical snapshot: this section records the bounded R7 construction result.
+The historical repository closeout above governs the #3-#10 merge record, while
+the later normalization and minimal-article sections govern current scientific
+status. The R7 evidence remains valid, but older `PLAN-ONLY`, `EXACT APPROVAL
+PENDING`, Task-R1, Task-R2, pre-repair, Draft, and unmerged wording is
+historical.
 
 The repaired artifact subject C3 is
 `0fa08e66c249fb19d8c014127cca8441efa90505`, tree
@@ -235,7 +325,7 @@ live next boundary is now the mandatory post-R7 stop before any separately
 authorized data-only normalization, not v2 plan approval.
 
 
-更新时间：2026-08-05（Asia/Shanghai）
+更新时间：2026-08-07（Asia/Shanghai）
 
 本文件是下一 Codex 进程接管 `IMS_deadlock` 的单一入口。它汇总当前权威
 版本、已经成立的受限结论、失败与负证据、可复现实验状态、尚未通过的硬门、
@@ -245,14 +335,15 @@ authorized data-only normalization, not v2 plan approval.
 为准；不得用聊天记录、旧 worktree 或本地快照替代实时锁定。
 
 ## 1. 一句话状态
-Current status override: the approved v2 case-construction tranche completed
-R1-R7 publication on repaired C3 `0fa08e66c249fb19d8c014127cca8441efa90505`
-and documentation-only C4. PR #8 was later merged as
-`3ef2a14e0396c21f825740728df7a08544964b81`; the complete #3-#9 stack is on
-`main@1f87f9d34d3b6f29812d9b904e2ba5ec58d8643e`, tree
-`05844c0e72f18b6de7ebb984a6397a0896e0580b`. G6-B remains `OPEN/PENDING`;
-the mandatory post-R7 stop is active. All older Task2-entry, plan-only,
-approval-pending, draft/unmerged, and pre-repair wording is historical.
+Current status override: approved v2 case construction completed R1-R7 on C3
+`0fa08e66c249fb19d8c014127cca8441efa90505`; PRs #3-#10 were subsequently
+published to `main`. The separately approved retired-authority normalization is
+complete on artifact-only C2
+`73916f2d5a1a5ae644f3fa0be42b17fcada097d9`, and minimal article-core v1 is
+`TIER A COMPLETE` with 18/18 compatible exact-DES cells. The original full G6-B
+programme remains `OPEN/PENDING`. Older Task2-entry, plan-only,
+approval-pending, pre-repair, pre-normalization, Draft, stacked, and unmerged
+wording is historical.
 
 
 项目已完成理论优先基础、受限结构—概率—控制主链、范围受限文献门、小有限
@@ -264,20 +355,19 @@ approval-pending, draft/unmerged, and pre-repair wording is historical.
 - `G5 = FAIL（evidence closed）`；
 - `G6-A = PASS`；
 - `G6-R = PASS（historical replay only）`；
-- `G6-B = R7 CASE-CONSTRUCTION PUBLICATION REVIEWED; OPEN/PENDING`；
+- `G6-B = RETIRED-AUTHORITY NORMALIZATION COMPLETE; OPEN/PENDING`；
 - `G6-C/D/E = 均未开始，均未通过`；
-- 尚无完整论文主文件，也不能声称达到投稿或顶刊就绪状态。
+- 已形成完整论文链路稿件、图表和创新/投稿评估，可作为自洽的 working
+  paper/preprint；仍不能声称当前已达到直接顶刊投稿就绪状态。
 
-G6-B schema-only governance v2 的历史 Section 18 基线仍保留，但当前主体已
-推进到 repaired case-construction C3 `0fa08e66...` 和 R7 publication。C3 是
-exact-394 sealed construction bundle；单独的 construction authorization 为
-`authorized=true`。这一事实不打开 retired-normalization、target-preflight 或
-quantitative capability，也不形成 scientific execution。当前文档后继仍须用
-`git log -1 --format=%H -- PROJECT_HANDOFF.md` 实时定位；不得把早期 Section 18
-subject、plan-only successor 或 frozen typed-reference false 值误写成当前 C3/C4
-身份或声称未发生 construction。later scientific roots 仍 absent；没有运行
-normalization、actual overlap、Barrier-A preflight、CTMC、DES、output inspection
-或 scientific verdict。三路 R7 review 均 PASS，G6-B 继续 `OPEN/PENDING`。
+G6-B schema-only governance v2 的历史 Section 18 基线仍保留；当前主体已完成
+repaired case-construction C3 `0fa08e66...`、R7 publication，以及单独批准的
+retired-authority artifact-only C2 `73916f2d...`。R7 的 exact-394 sealed bundle 与
+C2 的 213-file retired corpus 均已闭合，但二者尚未进行 actual input-level
+comparison。不得把 normalization 写成 overlap PASS、科学独立性或 G6-B PASS。
+later scientific roots 仍 absent；没有运行 actual overlap、Barrier-A preflight、
+CTMC、DES、output inspection 或 scientific verdict。G6-B 继续
+`OPEN/PENDING`。
 
 2026-08-02 的 PR 独立审查随后发现两个工程/治理授权缺口：缺少显式 fail-closed
 Barrier-A preflight authorization validator，以及 retired-normalization
@@ -335,13 +425,13 @@ paths。PR #5 后来 retarget 并 merge 为
 | 工作面 | 当前状态 | 下一动作 |
 | --- | --- | --- |
 | Section 18 schema/governance v2 | `COMPLETE / PASS_SCHEMA_ONLY`；代码审查对象固定为 `948ff5746adcb66b68fb9c47e519f070dd2c96ba` | 不再重跑 Task 1-7；仅在代码/schema/冻结协议/证据对象变化时重跑完整验证 |
-| G6-B case construction | `R7 CASE-CONSTRUCTION PUBLICATION REVIEWED / OPEN-PENDING`；C3 `0fa08e66...` is exactly 394 artifacts；three R7 lanes PASS 0/0/0；PR #8 later merged as `3ef2a14e...` | Mandatory stop. The next possible tranche is separately authorized data-only retired-authority fingerprint normalization; do not start overlap/preflight/CTMC/DES/science from C3/C4/R7 or from repository merge state |
-| retired-authority normalization | `NOT AUTHORIZED / NOT RUN` | case sealing 后另开 data-only authorization；不得读取历史 outcome 反推案例 |
-| overlap audit | `NOT RUN` | 仅在 sealed inputs 完成后运行；hash 不等同于语义独立性证明 |
+| G6-B case construction | `R7 CASE-CONSTRUCTION PUBLICATION REVIEWED / OPEN-PENDING`；C3 `0fa08e66...` is exactly 394 artifacts；three R7 lanes PASS 0/0/0；PR #8 merged as `3ef2a14e...` | construction evidence remains sealed/no-execution；repository merge does not open downstream science |
+| retired-authority normalization | `COMPLETE / ARTIFACT-ONLY`；C2 `73916f2d...` is exactly 213 files；3 locks / 27 sources / 181 fingerprints / 165 lineages；119 eligible / 62 refusal；independent verifier PASS | preserve all refusals；normalization is not actual overlap |
+| overlap audit | `NOT AUTHORIZED / NOT RUN` | possible separately scoped future tranche；hash 不等同于语义独立性证明 |
 | Barrier A target preflight | `NOT AUTHORIZED / NOT RUN` | overlap PASS 后另行授权，只能产出 certificate/refusal/preflight evidence |
 | Barrier B quantitative science | `NOT AUTHORIZED / NOT RUN` | exact/DES same-target locks 与单独定量授权完成后，才可运行 CTMC/DES |
 | G6-C/D/E | 全部 `NOT STARTED / NOT PASSED` | 只有 G6-B 全条件通过后才能进入 confirmation preregistration、freeze、一次性执行 |
-| 论文 | 无统一主稿，paper gate 未通过 | 保留 G5 FAIL、R1/R2 failure、R3 historical-only 与 minimality failures；G6-E 后重建 paper gate |
+| 论文 | 完整科研链路稿件、四组图表及创新/投稿评估已形成；minimal article-core v1 为 `TIER A COMPLETE` | 当前适合作为自洽 working paper/preprint；直接顶刊投稿仍需近期文献、基线、扩展性、真实制造案例与工程 KPI；不得把 article-core 升格为原 G6-B PASS |
 | Git 集成 | PRs #3-#9 were retargeted as required and merged to `main` in dependency order；closeout baseline is `main@1f87f9d...` / tree `05844c0e...`；no open PR remained at that baseline | Re-lock live `main`, upstream, clean state, and open-PR state on each takeover；repository publication does not grant scientific authorization |
 | 非阻塞工程卫生 | 批准门 `ruff format --check src tests` 为 47 files green；更宽的 `ruff format --check .` 仍会对 3 个历史 plan 文档代码块提出格式建议 | 作为历史文档格式债保留；若清理，必须单独审查且不得改动批准规格 digest、冻结协议或证据 bytes |
 
@@ -1079,15 +1169,18 @@ git log -1 --format=%H -- PROJECT_HANDOFF.md
 本地材料化快照上用 `g4_freeze check` 作为远程当前性证明；第 2.1 节已经
 记录该快照的 file-byte mismatch。
 
-## 13. 下一硬门：G6-B
+## 13. 下一硬门：G6-B actual input-level overlap
 
-下一进程不要继续重放 G4/G5，也不要先写成投稿稿件。原 case-construction
-plan、v2 corrigendum/plan、post-seal repair 和 R1-R7 现已完成。repaired C3
-`0fa08e66...` 与 documentation-only C4 曾发布到 PR #8，并已随 #3-#9 stack
-merge 到 `main`，但 G6-B 仍为
-`OPEN/PENDING`。当前 first unchecked boundary 是 mandatory post-R7 stop；只有
-新的、单独批准的 data-only retired-authority fingerprint-normalization plan 才能
-开启下一 tranche。C3/C4/R7 不授权 overlap、preflight、CTMC、DES 或科学执行。
+下一进程不要继续重放 G4/G5。原 case-construction plan、v2
+corrigendum/plan、post-seal repair、R1-R7、#3-#10 repository publication 和
+单独批准的 retired-authority normalization 均已完成。repaired C3
+`0fa08e66...`、R7 文档后继与 normalization artifact-only C2 `73916f2d...`
+均已闭合；minimal article-core v1 也已形成范围化闭环，但原完整 G6-B 仍为
+`OPEN/PENDING`。完整论文链路稿件可以继续做非破坏性的写作完善；若进入原
+G6-B 科学主线，first unchecked boundary 仍是 mandatory post-normalization
+stop，只有新的、单独批准的 actual input-level overlap audit 才能开启下一
+tranche。C2/C3、repository merge 和 article-core 结果均不授权 overlap、
+preflight、CTMC、DES 或原 G6-B 科学执行。
 Final Section 18 evidence subject 是
 `948ff5746adcb66b68fb9c47e519f070dd2c96ba`。Historical/pre-repair Task-5
 schema-code subject 是 `9ef6fcec9e410b2ab7afc4144df8b948a238d95f`，仅作为已保留
@@ -1100,13 +1193,12 @@ validator 为
 源 schema-only bundle 仍保留 frozen reference
 `case_construction_authorized=false` 与 `adversarial_review_status=PENDING`；
 单独生成并提交的 construction authorization 则为 `authorized=true`，且已产出
-exact-394 sealed C3。不得混淆这两个对象。当前 downstream capabilities 仍为
-`retired_authority_fingerprint_normalization_authorized=false`、
-`target_certification_preflight_authorized=false`、
-`quantitative_execution_authorized=false`，later scientific roots 均 absent。
-本 tranche 创建了 sealed construction inputs，但没有运行
-normalization/actual-overlap/preflight/CTMC/DES、检查科学输出或形成 scientific
-verdict。三路 R7 review 已通过；G6-B 保持 `OPEN/PENDING`，G6-C/D/E 仍未开始。
+exact-394 sealed C3。不得混淆 frozen typed reference 与后继 authorization。
+单独的 normalization authorization 已被一次性消费并产出 exact-213 C2；它不
+回写或升级早期 typed reference。当前未打开的是 actual-overlap、
+target-certification 与 quantitative capability，later scientific roots 均 absent。
+本 tranche 没有运行 actual-overlap/preflight/CTMC/DES、检查科学输出或形成
+scientific verdict。G6-B 保持 `OPEN/PENDING`，G6-C/D/E 仍未开始。
 
 ### 13.1 G6-B 必须冻结前定义的内容
 
@@ -1125,9 +1217,9 @@ verdict。三路 R7 review 已通过；G6-B 保持 `OPEN/PENDING`，G6-C/D/E 仍
 ### 13.2 独立性要求
 
 退役证据范围包括 retired G4、retired G5 和 G6-R historical replay。G6-B
-未来经单独授权构造的 G6-B discovery subjects 相对这些退役证据，必须按各
-subject 所有权在以下八个 fingerprint dimensions 上完成适用的 overlap 审计；
-当前 schema-only tranche 没有 subjects，也没有 actual overlap result：
+已封存的 G6-B discovery subjects 相对这些退役证据，必须按各 subject 所有权
+在以下八个 fingerprint dimensions 上完成适用的 overlap 审计；当前已有 13 个
+sealed subjects 与 181-record retired corpus，但仍没有 actual overlap result：
 
 - `case_content_sha256`
 - `state_snapshot_sha256`
@@ -1282,30 +1374,30 @@ CTMC/DES, quantitative, or scientific-output authority.
 
 ## 16. 下一进程的第一个可执行批次
 
-v2 implementation 与 R1-R7 publication 已完成。当前没有任何 post-R7
-downstream authority。下一进程的第一个可执行批次只能是只读重锁：
+v2 implementation、R1-R7 publication 与 retired-authority normalization 已完成。
+当前没有 actual-overlap 或更下游 authority。下一进程的第一个可执行批次只能是
+只读重锁：
 
-1. 重锁 `D:\py_pro\IMS_deadlock`、branch `main`、HEAD
-   `1f87f9d34d3b6f29812d9b904e2ba5ec58d8643e`、tree
-   `05844c0e72f18b6de7ebb984a6397a0896e0580b`、upstream `0/0` 和 clean
-   state；这些是 closeout baseline，若实时状态已前进，必须记录新锁而非回退。
-2. 核验 #3-#9 first-parent merge chain、PR #8 merge
-   `3ef2a14e0396c21f825740728df7a08544964b81`，以及 live open-PR state。
-3. 读取 `G6_B_CASE_CONSTRUCTION_REVIEW_V2.md`，确认 C3 exact-394、三路 R7
-   PASS、construction-only authorization 和所有 downstream/scientific 边界。
+1. 重锁 `D:\py_pro\IMS_deadlock` 的 live `main`、HEAD/tree、upstream `0/0`
+   和 clean state；不得回退到本文记录的历史 baseline。
+2. 核验 PR #12 已把 #11 的完整祖先内容与 article-core 内容整合到 `main`，
+   PR #11 已按 superseded 关闭，并确认 live open-PR state。
+3. 读取 `G6_B_RETIRED_AUTHORITY_NORMALIZATION_REVIEW.md` 与
+   `G6_B_MINIMAL_ARTICLE_CLOSURE_REPORT.md`，分别确认 normalization-not-overlap
+   和 article-core 的范围化 claim boundary。
 4. 不得 clean、stash、commit、transfer 或以其他方式接触旧 dirty/quarantined
    worktree；它们只保留负证据。
-5. 在用户另行批准 data-only retired-authority fingerprint-normalization 精确计划
-   前停止。PR #8 或整个 repository stack 的 merge、普通“继续推进”或
-   construction authorization 均不等同于 downstream/scientific authorization。
+5. 论文写作可在冻结证据只读边界内继续；在用户另行批准 actual input-level
+   overlap 精确计划前，不得把 repository merge、construction authorization、
+   normalization authorization 或 article-core Tier A 当作原 G6-B 下游授权。
 
 后续依赖顺序不得并行越门：
 
 1. approved case-construction plan — `COMPLETE`；
 2. materialize and review sealed case inputs/predictions/controls/metric schemas —
    `COMPLETE / NO SCIENTIFIC EXECUTION`；
-3. 单独授权并完成 retired-authority data-only normalization；
-4. sealing 后做 input-level overlap audit；
+3. 单独授权并完成 retired-authority data-only normalization — `COMPLETE`；
+4. sealing 后做 input-level overlap audit — `NEXT / NOT AUTHORIZED`；
 5. overlap PASS 后另行授权 Barrier A target-certification preflight；
 6. review target certificate/refusal evidence，并建立 exact/DES same-target locks；
 7. 另行授权 Barrier B 后才可运行 CTMC、DES、metric observation 和定量输出；
@@ -1481,3 +1573,142 @@ original Task2 stopped on the materialization-contract gap. Exact v2 approval
 then occurred and repaired R1-R7 completed. The current transition is no
 execution: the mandatory post-R7 stop remains active until separate data-only
 normalization authorization; this is not a partial-domain production solve.
+
+## 2026-08-06 Minimal Article Closure — Current Continuation Entry
+
+This section supersedes older “stop before overlap” continuation language only
+for the separately versioned minimal article scope authorized by the user. It
+does not convert the original 13-case G6-B overlap programme into PASS and does
+not authorize G6-C/D/E.
+
+### Authoritative target
+
+- path: `D:\worktree\IMS_deadlock-g6b-retired-normalization`;
+- branch: `codex/g6b-minimal-article-closure`;
+- pre-outcome scope commit:
+  `4e385b6bca685454082ced7465b254c5b95017b8`;
+- RED contract commit: `635b1f82c06bf2eb728a56e3a88cad4fd8cc18a3`;
+- implementation commit: `7aefab705865a57efdaa143d2e2daa8c295a3dfc`;
+- write-once evidence commit: `7d0603a`;
+- historical Task6 guard repair commit: `a82ccfb`;
+- manuscript/claim-matrix commit: `6d7bbd5`;
+- article-test typing repair commit: `965c73e`;
+- deferred-module historical guard repair commit: `98f429b`;
+- validated integration subject:
+  `98f429b5e0b1d377a9d4297d48a00532f1c8cbed`;
+- validated integration tree:
+  `9e204cbdc55e94ffcd5a362c1d4057112561c53b`;
+- runtime:
+  `D:\worktree\IMS_deadlock-final-integration\.venv\Scripts\python.exe`;
+- Python: `3.13.9`.
+
+Re-lock branch, full HEAD/tree, upstream, status, and PR state before later
+work. The short commit identities above are historical anchors, not standing
+claims about the live HEAD after documentation commits.
+
+### Scope decision
+
+The article does not require one method to cover every case. It uses a frozen
+matched panel:
+
+1. time-zero `D_global` positive;
+2. request-closed A2b `D_local` positive;
+3. complete-LTS multi-kernel `D_local` positive;
+4. reachable-completion bypass negative control;
+5. `D_global` precedence/no-double-count control;
+6. a predeclared competing local/completion bridge with rates `1` and `2`.
+
+The first five bind exact case-input bytes from the sealed discovery bundle.
+The sixth was frozen before execution. Failed-case substitution is prohibited.
+The scope-lock self SHA-256 is
+`86ec7b80c888c7758d326a9de7793b0f0f65f4740ecf0303e1b17d2d14344660`.
+
+### Scientific result
+
+The unique write-once run completed in `0.702 s` with 4096 replications per
+case and master seed `2026080601`:
+
+- all `18/18` exact/DES cells compatible;
+- frozen simultaneous tolerance: `0.028340`;
+- maximum absolute error: `0.0030924479166667`;
+- bridge exact selected-bad probability: `1/3`;
+- bridge DES selected-bad probability: `0.33642578125` from `1378/4096`
+  local hits;
+- mechanically selected tier: `tier_a_dual_route_closure`;
+- original G6-B gate: `OPEN_PENDING`.
+
+Interpret Tier A narrowly: both method routes have matched constructive
+witnesses, both boundary controls pass, and exact/DES share the declared target.
+It is not held-out confirmation, a universal IMS result, a method-superiority
+result, or a production-performance result.
+
+### Immutable article evidence
+
+Write-once root:
+`evidence/article_core/minimal_closure_v1/`.
+
+Manifest self SHA-256:
+`1693342ac470b72f9b813edccb772f85751045940a243f7abc9241877cab0c77`.
+
+Do not rerun into or modify this root. Any future protocol change requires a new
+scope id, new pre-outcome commit, and new versioned evidence root. The current
+evidence binds all six cases, 18 comparison cells, exact results, DES results,
+case certificates, forbidden claims, and the unchanged original G6-B state.
+
+### Article and verification entry points
+
+- `docs/superpowers/specs/2026-08-06-g6b-minimal-article-closure-scope.md`;
+- `docs/superpowers/plans/2026-08-06-g6b-minimal-article-closure.md`;
+- `docs/verification/G6_B_MINIMAL_ARTICLE_CLOSURE_REPORT.md`;
+- `docs/paper/IMS_LOCAL_FIRST_HIT_THEORY_AND_CASES.md`;
+- `docs/paper/ARTICLE_CLAIM_EVIDENCE_MATRIX.md`;
+- `src/ims_deadlock/article_core.py`;
+- `tests/test_article_core.py`.
+
+### Final validation
+
+The initial broad baseline completed with `1884 passed, 2 skipped, 1 failed in
+2561.74s`. The sole failure was the historical Task6 Git-diff guard comparing a
+fixed 2026-08-01 base to the moving current worktree. It therefore treated all
+later, separately authorized normalization and article work as an old Task6
+scope leak. Commit `a82ccfb` pins both ends of the historical reviewed range;
+the focused guard slice then passed `18 passed, 1120 deselected in 0.43s`.
+This repair changes no model, classifier, solver, case, rate, or evidence.
+
+The first disjoint remainder run exposed one second guard with the same temporal
+error: it required deferred Task6 modules to remain absent from the moving
+worktree. Commit `98f429b` now inspects the historical Task6 subject tree at
+`42856b991059d6f800eb0244fa7847187da3bccd`; its focused test passed
+`1 passed, 195 deselected in 0.23s`. This repair is also test/governance-only.
+
+Fresh final validation on the repaired branch:
+
+- four-file G6-B long group, four xdist workers:
+  `1885 passed, 2 skipped in 2229.49s`;
+- disjoint repository remainder, eight xdist workers:
+  `808 passed in 88.95s`;
+- exact union: `2693 passed, 2 skipped, 0 failed`;
+- article-core focused tests: `9 passed in 0.74s`;
+- `ruff check .`: passed;
+- `ruff format --check src tests`: 53 files formatted;
+- strict mypy on `src tests`: 53 source files, no issues;
+- `git diff --check`: passed; validated worktree clean.
+
+The four historical Markdown plan files that a repo-root Ruff format invocation
+would rewrite remain intentionally untouched. All executable source and test
+files are format-clean.
+
+### Repository integration disposition
+
+PR [#12](https://github.com/zjqc/IMS_deadlock/pull/12) is the sole
+main-integration carrier. It contains PR #11 head as an ancestor, preserves the
+complete normalization and article histories, and incorporates the #3-#10
+repository closeout without changing scientific bytes. PR #11 is closed as
+superseded rather than merged a second time. GitHub had no registered commit
+status, pull-request Actions run, review submission, or unresolved review
+thread on either PR before integration.
+
+After PR #12 reaches `main`, the remaining work is scientific or manuscript
+expansion rather than PR-stack maintenance. Keep original full-overlap G6-B and
+G6-C/D/E as separate optional future scopes rather than prerequisites for this
+article.

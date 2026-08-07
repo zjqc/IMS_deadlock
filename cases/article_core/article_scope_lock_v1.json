@@ -1,0 +1,77 @@
+{
+  "article_core_case_ids": [
+    "g6b_article_bridge_competing_local_completion_v1",
+    "g6b_cu_nc_dglobal_only_with_dlocal_v1",
+    "g6b_cu_nc_local_bypass_completes_v1",
+    "g6b_cu_pc_dglobal_only_v1",
+    "g6b_cu_pc_dlocal_a2b_single_kernel_v1",
+    "g6b_cu_pc_dlocal_lts_multi_kernel_v1"
+  ],
+  "bridge_case_contract": {
+    "completion_rate": "2",
+    "exact_selected_bad_probability": "0.3333333333333333333333333333",
+    "initial_state": "s0",
+    "local_hit_rate": "1",
+    "target_semantics": "first_hit_D_global_or_D_local_or_F_v1"
+  },
+  "claim_ladder": [
+    "tier_a_dual_route_closure",
+    "tier_b_a2b_only_closure",
+    "tier_b_lts_only_closure",
+    "tier_c_no_local_method_article_closure"
+  ],
+  "des_contract": {
+    "absolute_error_tolerance": "0.028340",
+    "comparison_cell_count": 18,
+    "familywise_delta": "0.05",
+    "master_seed": 2026080601,
+    "planned_replicates_per_case": 4096,
+    "seed_derivation_rule": "sha256(master_seed:replication_index)"
+  },
+  "forbidden_claim_codes": [
+    "full_tranche_support_from_survivors",
+    "g6b_pass",
+    "general_ims_claim",
+    "held_out_confirmation_claim",
+    "method_superiority_claim",
+    "publication_ready_claim",
+    "universal_dlocal_completeness_claim"
+  ],
+  "no_failed_case_substitution": true,
+  "original_sealed_denominator": {
+    "case_unit_count": 13,
+    "case_unit_ids": [
+      "g6b_cu_bc_crp_zero_kernel_v1",
+      "g6b_cu_bc_multi_capacity_residual_v1",
+      "g6b_cu_nc_agv_reservation_boundary_v1",
+      "g6b_cu_nc_calendar_empty_terminal_v1",
+      "g6b_cu_nc_dglobal_only_with_dlocal_v1",
+      "g6b_cu_nc_local_bypass_completes_v1",
+      "g6b_cu_nc_or_of_and_feasible_branch_v1",
+      "g6b_cu_nc_policy_only_stall_v1",
+      "g6b_cu_nc_unselected_livelock_v1",
+      "g6b_cu_pc_dglobal_only_v1",
+      "g6b_cu_pc_dlocal_a2b_single_kernel_v1",
+      "g6b_cu_pc_dlocal_lts_multi_kernel_v1",
+      "g6b_cu_pc_medium_independent_island_v1"
+    ],
+    "method_companion_group_count": 13,
+    "method_observation_count": 26
+  },
+  "retired_normalization_identity": {
+    "eligible_record_count": 119,
+    "manifest_raw_sha256": "d1391920c97c254fe8874175d502853354b9859322ac624a94b2f2573f371d23",
+    "manifest_self_sha256": "3fcb863d8f7f19820c8ea5f5edbaf213dec587fb4497265b5ec005f525c587ad",
+    "typed_refusal_count": 62
+  },
+  "schema_version": "ims-deadlock/article-core-scope-lock/v1",
+  "scope_id": "g6b_minimal_article_closure_v1",
+    "scope_lock_sha256": "86ec7b80c888c7758d326a9de7793b0f0f65f4740ecf0303e1b17d2d14344660",
+  "sealed_bundle_identity": {
+    "bundle_id": "g6b_discovery_case_construction_v1",
+    "manifest_raw_sha256": "95fc411a02d8085b84c1a4f2025d2c7806e1d8c632b645f556c61aefe1b6406b",
+    "manifest_self_sha256": "36622495237f2c22677190b3858d275ea8285d0ee8fc1ed004f8c03e8543a68c"
+  },
+  "selection_basis": "pre_outcome_theorem_role_coverage_and_boundary_controls",
+  "study_role": "scoped_constructive_theory_article_not_confirmation"
+}

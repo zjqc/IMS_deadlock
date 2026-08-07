@@ -37,6 +37,7 @@ class _SpecRequirementEntry(TypedDict, total=False):
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 BUNDLE = Path("cases/discovery/g6b/row_families/structural_discovery_v1")
 _TASK5_SCHEMA_CODE_SUBJECT_COMMIT = "9ef6fcec9e410b2ab7afc4144df8b948a238d95f"
+_TASK6_SCOPE_SUBJECT_COMMIT = "42856b991059d6f800eb0244fa7847187da3bccd"
 _TASK6_DECLARED_CHANGED_PATHS = {
     "PROJECT_HANDOFF.md",
     "docs/ROADMAP.md",
@@ -3841,6 +3842,9 @@ def _task6_is_benign_ignored_path(path: str) -> bool:
 
 
 def _task6_changed_and_untracked_paths() -> list[str]:
+    # This is a historical Task6/R1-R7 scope certificate. Pin both ends of
+    # the reviewed range so later, separately authorized work does not change
+    # the old guard's meaning or make the repository-wide suite fail.
     diff = subprocess.run(
         [
             "git",
@@ -3848,6 +3852,7 @@ def _task6_changed_and_untracked_paths() -> list[str]:
             "--name-status",
             "--no-renames",
             _TASK5_SCHEMA_CODE_SUBJECT_COMMIT,
+            _TASK6_SCOPE_SUBJECT_COMMIT,
             "--",
         ],
         cwd=_REPO_ROOT,
@@ -3861,30 +3866,6 @@ def _task6_changed_and_untracked_paths() -> list[str]:
         parts = line.split("\t")
         assert len(parts) == 2, f"unexpected git diff --name-status row: {line!r}"
         changed.append(parts[1])
-
-    untracked = subprocess.run(
-        ["git", "ls-files", "--others", "--exclude-standard"],
-        cwd=_REPO_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    assert untracked.returncode == 0, untracked.stdout + untracked.stderr
-    changed.extend(line for line in untracked.stdout.splitlines() if line)
-
-    ignored = subprocess.run(
-        ["git", "ls-files", "--others", "--ignored", "--exclude-standard"],
-        cwd=_REPO_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    assert ignored.returncode == 0, ignored.stdout + ignored.stderr
-    for line in ignored.stdout.splitlines():
-        if not line:
-            continue
-        if not _task6_is_benign_ignored_path(line):
-            changed.append(line)
     return sorted(set(changed))
 
 
