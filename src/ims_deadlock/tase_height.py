@@ -353,6 +353,85 @@ def _enabled_names(plant: HeightPlant, state: IMSState) -> set[str]:
     }
 
 
+_SOURCE_PRE = {
+    "A-start-r1": ("pA0", "pr1"),
+    "A-to-r2": ("pA1", "pr2"),
+    "A-complete": ("pA2",),
+    "B-start-r2": ("pB0", "pr2"),
+    "B-to-r1": ("pB1", "pr1"),
+    "B-complete": ("pB2",),
+}
+
+
+def _chi_marking(state: IMSState) -> dict[str, int] | None:
+    """Source 1-safe marking, or None if the IMS state is outside χ."""
+
+    extra_hold = any(item.resource_id not in {"r1", "r2"} for item in state.holds)
+    if extra_hold or state.complete or state.completed_jobs:
+        return None
+    holds = {(item.job_id, item.resource_id) for item in state.holds}
+    marking = {
+        "pA0": int(state.mode_by_job.get("A") == "idle"),
+        "pA1": int(("A", "r1") in holds),
+        "pA2": int(("A", "r2") in holds),
+        "pB0": int(state.mode_by_job.get("B") == "idle"),
+        "pB1": int(("B", "r2") in holds),
+        "pB2": int(("B", "r1") in holds),
+        "pr1": int(("A", "r1") not in holds and ("B", "r1") not in holds),
+        "pr2": int(("A", "r2") not in holds and ("B", "r2") not in holds),
+    }
+    return marking
+
+
+def _source_enabled(marking: dict[str, int]) -> set[str]:
+    return {
+        name
+        for name, pre in _SOURCE_PRE.items()
+        if all(marking.get(place, 0) >= 1 for place in pre)
+    }
+
+
+def _e4_on_lts(plant: HeightPlant, lts: StableLTS) -> bool:
+    """Enabled-set bijection on every IMS state that χ represents."""
+
+    iota_events = set(_SOURCE_PRE)
+    for record in lts.states:
+        marking = _chi_marking(record.state)
+        if marking is None:
+            continue
+        ims = _enabled_names(plant, record.state) & iota_events
+        if ims != _source_enabled(marking):
+            return False
+        for name in ims:
+            nxt = apply_enabled_transition(
+                plant.model, record.state, _by_name(plant.transitions)[name]
+            )
+            if nxt is None:
+                return False
+            nxt_marking = _chi_marking(nxt)
+            if nxt_marking is None:
+                continue
+            fired = dict(marking)
+            for place in _SOURCE_PRE[name]:
+                fired[place] -= 1
+            # post as in the incidence matrix of the hashed spec
+            posts = {
+                "A-start-r1": ("pA1",),
+                "A-to-r2": ("pA2", "pr1"),
+                "A-complete": ("pA0", "pr2"),
+                "B-start-r2": ("pB1",),
+                "B-to-r1": ("pB2", "pr2"),
+                "B-complete": ("pB0", "pr1"),
+            }[name]
+            for place in posts:
+                fired[place] = fired.get(place, 0) + 1
+            if {k: v for k, v in fired.items() if v} != {
+                k: v for k, v in nxt_marking.items() if v
+            }:
+                return False
+    return True
+
+
 def verify_embedding_certificate(
     plant: HeightPlant, *, claimed_prefix: tuple[str, ...] | None = None
 ) -> dict[str, Any]:
@@ -374,21 +453,13 @@ def verify_embedding_certificate(
     )
     enabled = _enabled_names(plant, idle)
     clauses["E3"] = enabled == {"A-start-r1", "B-start-r2"}
-    after_a = apply_enabled_transition(
-        plant.model, idle, _by_name(plant.transitions)["A-start-r1"]
-    )
-    after_b = apply_enabled_transition(
-        plant.model, idle, _by_name(plant.transitions)["B-start-r2"]
-    )
-    clauses["E4"] = (
-        after_a is not None
-        and after_b is not None
-        and _hold_signature(after_a) == (("A", "r1", 1),)
-        and _hold_signature(after_b) == (("B", "r2", 1),)
-    )
     extra = sorted(resources - source_resources)
     clauses["E5"] = extra == []
     clauses["E6"] = tuple(plant.model.jobs) == ("A", "B")
+    lts_for_e4 = enumerate_stable_lts(
+        plant.model, plant.initial_state, plant.transitions, max_states=4096
+    )
+    clauses["E4"] = (not lts_for_e4.truncated) and _e4_on_lts(plant, lts_for_e4)
     verified = all(clauses.values())
     reason = None
     if not verified:
@@ -398,9 +469,7 @@ def verify_embedding_certificate(
             reason = "embedding_clause_failed:" + ",".join(
                 name for name, ok in clauses.items() if not ok
             )
-    lts = enumerate_stable_lts(
-        plant.model, plant.initial_state, plant.transitions, max_states=4096
-    )
+    lts = lts_for_e4
     target = _find_target_record(lts)
     identity = _ims_identity_payload(plant)
     reachability = {
@@ -749,6 +818,12 @@ def eval_h7_barrier(role: str) -> dict[str, Any]:
             "d_local": list(partition.d_local_state_ids),
             "completion": list(partition.f_state_ids),
             "local_with_outgoing": local_with_outgoing,
+            "admission_route": "lts_fallback",
+            "admission_method": (
+                partition.local_bad_soundness_audit.get("method")
+                if isinstance(partition.local_bad_soundness_audit, dict)
+                else "complete_lts_completion_nonreachability_v1"
+            ),
             "plant_identity": _ims_identity_payload(h7_as_height_plant(island)),
             "transitions": [
                 {

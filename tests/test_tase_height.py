@@ -43,6 +43,7 @@ def test_h6_a_certificate_verifies() -> None:
     assert cert["verified"] is True
     assert all(cert["clauses"].values())
     assert cert["field4_reason"] is None
+    assert cert["clauses"]["E4"] is True
 
 
 def test_h6_a_four_fields_and_agreement() -> None:
@@ -103,6 +104,8 @@ def test_h7_barrier_certified_not_absorbing_has_local_outgoing() -> None:
     assert barrier["initial_class"] == "transient"
     assert len(barrier["d_local"]) >= 1
     assert barrier["local_with_outgoing"] >= 1
+    assert barrier["admission_route"] == "lts_fallback"
+    assert "complete_lts" in str(barrier["admission_method"])
 
 
 def test_h7_exact_positive_time_and_intervention_delta() -> None:
