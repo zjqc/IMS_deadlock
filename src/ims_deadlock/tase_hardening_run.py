@@ -152,7 +152,7 @@ def eval_h4_barrier(role: str) -> dict[str, Any]:
         max_states=H3_STATE_CAP,
     )
     payload: dict[str, Any] = {
-        "id": f"H4_{role}",
+        "id": f"H4_v2_{role}",
         "role": role,
         "label": island.label,
         "intervention": island.intervention,
@@ -408,6 +408,102 @@ def _merge_des(
     }
 
 
+def run_h4_v2_waves(repo_root: Path) -> dict[str, Any]:
+    """Re-run only repaired H4 into a new evidence root. v1 stays immutable."""
+
+    auth = require_quantitative_authorization(repo_root)
+    probe = live_probe()
+    workers = plan_workers(probe, family="H4")
+    validate_wave(
+        wave="P0",
+        workers=workers,
+        probe=probe,
+        primary_repro_overlap=False,
+        reducer_count=1,
+    )
+    pin_blas_thread_env(workers=workers)
+    evidence = repo_root / "evidence" / "tase_hardening" / "v2"
+    evidence.mkdir(parents=True, exist_ok=True)
+    if (evidence / "tase_hardening_h4_v2_report.json").exists():
+        raise WorkerProtocolError("v2 H4 evidence already exists; will not overwrite")
+
+    barriers = run_process_pool(("base", "intervention"), eval_h4_barrier, workers=2)
+    exact = [solve_h4_exact(barrier) for barrier in barriers]
+    certified = [barrier for barrier in barriers if barrier["barrier_a"] == "certified"]
+    des_primary: list[dict[str, Any]] = []
+    des_repro: list[dict[str, Any]] = []
+    if certified:
+        des_primary = _run_des_wave(
+            certified, wave="primary", master_seed=PRIMARY_SEED, workers=workers
+        )
+        validate_wave(
+            wave="R0",
+            workers=workers,
+            probe=probe,
+            primary_repro_overlap=False,
+            reducer_count=1,
+        )
+        des_repro = _run_des_wave(
+            certified, wave="repro", master_seed=REPRO_SEED, workers=workers
+        )
+    merged_primary = [
+        _merge_des(des_primary, plant_id=item["id"], wave="primary", n=H4_REPLICATIONS)
+        for item in certified
+    ]
+    merged_repro = [
+        _merge_des(des_repro, plant_id=item["id"], wave="repro", n=H4_REPLICATIONS)
+        for item in certified
+    ]
+    tolerance = hoeffding_tolerance()
+    cells = []
+    for exact_row in exact:
+        if exact_row["status"] != "exact":
+            continue
+        primary = next(
+            item for item in merged_primary if item["plant_id"] == exact_row["id"]
+        )
+        for name in ("theta_g", "theta_l", "theta_b"):
+            error = abs(
+                float(exact_row["probabilities"][name]) - primary["probabilities"][name]
+            )
+            cells.append(
+                {
+                    "plant_id": exact_row["id"],
+                    "estimand": name,
+                    "exact": exact_row["probabilities"][name],
+                    "des": primary["probabilities"][name],
+                    "abs_error": error,
+                    "tolerance": tolerance,
+                    "compatible": error <= tolerance,
+                }
+            )
+    report = {
+        "scope_id": SCOPE_ID,
+        "panel": "h4_v2",
+        "authorization_id": auth["authorization_id"],
+        "authorization_sha256": APPROVED_QUANT_AUTH_SHA256,
+        "v1_evidence_untouched": True,
+        "probe": {
+            "logical_cpus": probe.logical_cpus,
+            "free_ram_gib": probe.free_ram_gib,
+            "workers": workers,
+        },
+        "h4_barrier": [
+            {key: barrier[key] for key in barrier if key != "transitions"}
+            for barrier in barriers
+        ],
+        "h4_exact": exact,
+        "h4_des_primary": merged_primary,
+        "h4_des_repro": merged_repro,
+        "compatibility": cells,
+        "hoeffding_tolerance": tolerance,
+        "original_g6b_gate": "OPEN_PENDING",
+    }
+    path = evidence / "tase_hardening_h4_v2_report.json"
+    path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    return report
+
+
 def run_authorized_waves(repo_root: Path) -> dict[str, Any]:
     """Execute P1–P4 and the repro DES wave, then reduce."""
 
@@ -567,7 +663,25 @@ def _contiguous_starts(n: int, workers: int) -> list[tuple[int, int]]:
 
 
 def main() -> int:
+    import sys
+
     repo = Path(__file__).resolve().parents[2]
+    if "--h4-v2" in sys.argv:
+        report = run_h4_v2_waves(repo)
+        print(
+            json.dumps(
+                {
+                    "workers": report["probe"],
+                    "barrier": [
+                        (row["id"], row.get("barrier_a"), row.get("refusal_code"))
+                        for row in report["h4_barrier"]
+                    ],
+                    "compatibility": report["compatibility"],
+                },
+                indent=2,
+            )
+        )
+        return 0
     report = run_authorized_waves(repo)
     print(
         json.dumps({"workers": report["probe"], "h3": report["h3_summary"]}, indent=2)

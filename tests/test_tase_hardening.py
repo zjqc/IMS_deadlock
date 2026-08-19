@@ -195,6 +195,26 @@ def test_h4_islands_are_synthetic_digital_twins() -> None:
         assert any("blocked_unload" in mode for mode in modes)
 
 
+def test_h4_lts_never_completes_while_holding() -> None:
+    from ims_deadlock.analysis import enumerate_stable_lts
+    from ims_deadlock.model import validate_model_state
+
+    for island in build_h4_islands():
+        lts = enumerate_stable_lts(
+            island.model,
+            island.initial_state,
+            island.transitions,
+            max_states=4096,
+        )
+        assert lts.truncated is False
+        assert lts.states
+        for record in lts.states:
+            report = validate_model_state(island.model, record.state)
+            assert report.valid, (island.role, record.state_id, report.issues)
+            if record.state.complete:
+                assert record.state.holds == ()
+
+
 def test_shard_plan_and_reducer_are_disjoint() -> None:
     units = tuple(f"u{i}" for i in range(10))
     plan = build_shard_plan(units, workers=4)

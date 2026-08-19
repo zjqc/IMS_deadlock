@@ -1053,7 +1053,7 @@ def build_h4_islands() -> tuple[H4Island, ...]:
 
 def _h4_island(role: Literal["base", "intervention"]) -> H4Island:
     model = IMSModel(
-        id=f"h4-island-{role}",
+        id=f"h4-island-v2-{role}",
         resources={
             "I1": Resource("I1", 1, "buffer"),
             "M1": Resource("M1", 1, "machine"),
@@ -1178,11 +1178,21 @@ def _cell_chain(
                 kind=EventKind.DISPATCH,
                 job_id=job,
                 source_mode=f"{prefix}_on_agv",
-                target_mode="completed",
+                target_mode=f"{prefix}_on_{next_input}",
                 controllable=True,
                 zero_time=False,
                 acquire=(ResourceDemand(next_input),),
                 release=(ResourceDemand(agv),),
+            ),
+            TransitionSpec(
+                name=f"{job}-complete-release-{next_input}",
+                kind=EventKind.RELEASE,
+                job_id=job,
+                source_mode=f"{prefix}_on_{next_input}",
+                target_mode="completed",
+                controllable=False,
+                zero_time=False,
+                release=(ResourceDemand(next_input),),
                 mark_complete=True,
             ),
         )
@@ -1262,17 +1272,17 @@ def materialize_discovery_bundle(root: Path) -> list[Path]:
         encoding="utf-8",
     )
     written.append(h3_path)
-    h4_dir = root / "h4"
+    h4_dir = root / "h4_v2"
     h4_dir.mkdir(exist_ok=True)
     for island in build_h4_islands():
         spec = _spec(
-            f"H4_{island.role}",
-            f"H4 {island.role} {island.label}",
+            f"H4_v2_{island.role}",
+            f"H4 v2 {island.role} {island.label}",
             island.model,
             island.initial_state,
             island.transitions,
         )
-        path = h4_dir / f"H4_{island.role}.json"
+        path = h4_dir / f"H4_v2_{island.role}.json"
         path.write_text(
             json.dumps(spec.to_json_dict(), indent=2) + "\n", encoding="utf-8"
         )
