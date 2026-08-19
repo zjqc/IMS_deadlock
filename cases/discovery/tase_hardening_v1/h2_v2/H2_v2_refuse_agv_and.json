@@ -1,0 +1,142 @@
+{
+  "schema_version": "ims-deadlock/case/v1",
+  "case_id": "H2_v2_refuse_agv_and",
+  "title": "H2-v2 refuse_agv_and",
+  "status": "DISCOVERY",
+  "model": {
+    "id": "h2-agv_required-tight",
+    "resources": [
+      {
+        "id": "agv",
+        "capacity": 1,
+        "kind": "agv"
+      },
+      {
+        "id": "buf",
+        "capacity": 1,
+        "kind": "buffer"
+      },
+      {
+        "id": "m1",
+        "capacity": 1,
+        "kind": "machine"
+      }
+    ],
+    "jobs": [
+      "pA",
+      "pB"
+    ]
+  },
+  "initial_state": {
+    "id": "h2-agv_required-tight-s0",
+    "holds": [
+      {
+        "job_id": "pA",
+        "resource_id": "m1",
+        "units": 1
+      },
+      {
+        "job_id": "pB",
+        "resource_id": "agv",
+        "units": 1
+      }
+    ],
+    "requests": {
+      "pA": [
+        [
+          {
+            "resource_id": "agv",
+            "units": 1
+          },
+          {
+            "resource_id": "buf",
+            "units": 1
+          }
+        ]
+      ],
+      "pB": [
+        [
+          {
+            "resource_id": "m1",
+            "units": 1
+          }
+        ]
+      ]
+    },
+    "completed_jobs": [],
+    "stable": true,
+    "complete": false,
+    "event_calendar_empty": true,
+    "stage_by_job": {
+      "pA": "blocked_unload",
+      "pB": "wait"
+    },
+    "mode_by_job": {
+      "pA": "blocked_unload",
+      "pB": "wait"
+    },
+    "zero_time_trace": []
+  },
+  "transitions": [
+    {
+      "name": "pA-handoff",
+      "kind": "unload",
+      "job_id": "pA",
+      "source_mode": "blocked_unload",
+      "target_mode": "done",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "agv",
+          "units": 1
+        },
+        {
+          "resource_id": "buf",
+          "units": 1
+        }
+      ],
+      "release": [
+        {
+          "resource_id": "m1",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true,
+      "next_requests": []
+    },
+    {
+      "name": "pB-enter",
+      "kind": "dispatch",
+      "job_id": "pB",
+      "source_mode": "wait",
+      "target_mode": "done",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "m1",
+          "units": 1
+        }
+      ],
+      "release": [
+        {
+          "resource_id": "agv",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true,
+      "next_requests": []
+    }
+  ],
+  "calendar": [],
+  "notes": [
+    "tase_hardening_v1"
+  ]
+}

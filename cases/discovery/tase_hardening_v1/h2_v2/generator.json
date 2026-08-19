@@ -1,0 +1,16 @@
+{
+  "types": [
+    "sip1_unit_pair",
+    "sip1_unit_triple",
+    "sip1_reachable_pair",
+    "sip1_machine_agv_unit",
+    "refuse_or",
+    "refuse_and",
+    "refuse_multi_capacity",
+    "refuse_agv_and",
+    "residual_cycle",
+    "local_with_bypass"
+  ],
+  "n_plants": 10,
+  "prior_h2_root_untouched": true
+}

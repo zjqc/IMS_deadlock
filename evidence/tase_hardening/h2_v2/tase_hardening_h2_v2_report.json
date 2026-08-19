@@ -1,0 +1,240 @@
+{
+  "scope_id": "tase_hardening_v1",
+  "panel": "h2_v2",
+  "authorization_id": "tase_hardening_v1_quantitative_t6",
+  "authorization_sha256": "090c75516fbbde24dcc4cde03b0d24aa633955f1ce9b97cc4c49b229f7b193c9",
+  "prior_h2_root_untouched": true,
+  "probe": {
+    "logical_cpus": 56,
+    "free_ram_gib": 102.79234313964844,
+    "workers": 48
+  },
+  "n_plants": 10,
+  "sip1_agree_count": 4,
+  "typed_refusal_count": 4,
+  "false_positive_sum": 0,
+  "false_negative_sum": 0,
+  "rows": [
+    {
+      "methods": {
+        "machine_cycle_scc": true,
+        "closed_core": true,
+        "sip1_or_refuse": true,
+        "lts_truth": true
+      },
+      "false_positive": 0,
+      "false_negative": 0,
+      "refusal_count": 0,
+      "certificate_size": 2,
+      "runtime_s": 0.0005152999656274915,
+      "peak_state_count": 1,
+      "type_id": "sip1_unit_pair",
+      "cell": "canonical",
+      "role": "sip1_agree",
+      "sip1_applicable": true,
+      "sip1_exact": true,
+      "sip1_reason": "ims_sip1_assumptions_satisfied",
+      "prefix_len": 0,
+      "id": "sip1_unit_pair"
+    },
+    {
+      "methods": {
+        "machine_cycle_scc": true,
+        "closed_core": true,
+        "sip1_or_refuse": true,
+        "lts_truth": true
+      },
+      "false_positive": 0,
+      "false_negative": 0,
+      "refusal_count": 0,
+      "certificate_size": 3,
+      "runtime_s": 0.0005336999893188477,
+      "peak_state_count": 1,
+      "type_id": "sip1_unit_triple",
+      "cell": "canonical",
+      "role": "sip1_agree",
+      "sip1_applicable": true,
+      "sip1_exact": true,
+      "sip1_reason": "ims_sip1_assumptions_satisfied",
+      "prefix_len": 0,
+      "id": "sip1_unit_triple"
+    },
+    {
+      "methods": {
+        "machine_cycle_scc": false,
+        "closed_core": true,
+        "sip1_or_refuse": true,
+        "lts_truth": true
+      },
+      "false_positive": 0,
+      "false_negative": 0,
+      "refusal_count": 0,
+      "certificate_size": 2,
+      "runtime_s": 0.0007106000557541847,
+      "peak_state_count": 6,
+      "type_id": "sip1_reachable_pair",
+      "cell": "canonical",
+      "role": "sip1_agree",
+      "sip1_applicable": true,
+      "sip1_exact": true,
+      "sip1_reason": "ims_sip1_assumptions_satisfied",
+      "prefix_len": 2,
+      "id": "sip1_reachable_pair"
+    },
+    {
+      "methods": {
+        "machine_cycle_scc": true,
+        "closed_core": true,
+        "sip1_or_refuse": true,
+        "lts_truth": true
+      },
+      "false_positive": 0,
+      "false_negative": 0,
+      "refusal_count": 0,
+      "certificate_size": 2,
+      "runtime_s": 0.0002946000313386321,
+      "peak_state_count": 1,
+      "type_id": "sip1_machine_agv_unit",
+      "cell": "canonical",
+      "role": "sip1_agree",
+      "sip1_applicable": true,
+      "sip1_exact": true,
+      "sip1_reason": "ims_sip1_assumptions_satisfied",
+      "prefix_len": 0,
+      "id": "sip1_machine_agv_unit"
+    },
+    {
+      "methods": {
+        "machine_cycle_scc": true,
+        "closed_core": true,
+        "sip1_or_refuse": false,
+        "lts_truth": true
+      },
+      "false_positive": 0,
+      "false_negative": 0,
+      "refusal_count": 1,
+      "certificate_size": 3,
+      "runtime_s": 0.0006954000564292073,
+      "peak_state_count": 1,
+      "type_id": "refuse_or",
+      "cell": "canonical",
+      "role": "typed_refusal",
+      "sip1_applicable": false,
+      "sip1_exact": false,
+      "sip1_reason": "job j1 has OR alternatives",
+      "prefix_len": 0,
+      "id": "refuse_or"
+    },
+    {
+      "methods": {
+        "machine_cycle_scc": true,
+        "closed_core": true,
+        "sip1_or_refuse": false,
+        "lts_truth": true
+      },
+      "false_positive": 0,
+      "false_negative": 0,
+      "refusal_count": 1,
+      "certificate_size": 3,
+      "runtime_s": 0.0003629999700933695,
+      "peak_state_count": 1,
+      "type_id": "refuse_and",
+      "cell": "canonical",
+      "role": "typed_refusal",
+      "sip1_applicable": false,
+      "sip1_exact": false,
+      "sip1_reason": "certificate is not inclusion-minimal",
+      "prefix_len": 0,
+      "id": "refuse_and"
+    },
+    {
+      "methods": {
+        "machine_cycle_scc": true,
+        "closed_core": true,
+        "sip1_or_refuse": false,
+        "lts_truth": true
+      },
+      "false_positive": 0,
+      "false_negative": 0,
+      "refusal_count": 1,
+      "certificate_size": 4,
+      "runtime_s": 0.00041560002136975527,
+      "peak_state_count": 1,
+      "type_id": "refuse_multi_capacity",
+      "cell": "canonical",
+      "role": "typed_refusal",
+      "sip1_applicable": false,
+      "sip1_exact": false,
+      "sip1_reason": "resource r1 capacity 2 is not unit capacity",
+      "prefix_len": 0,
+      "id": "refuse_multi_capacity"
+    },
+    {
+      "methods": {
+        "machine_cycle_scc": true,
+        "closed_core": true,
+        "sip1_or_refuse": false,
+        "lts_truth": true
+      },
+      "false_positive": 0,
+      "false_negative": 0,
+      "refusal_count": 1,
+      "certificate_size": 2,
+      "runtime_s": 0.0002652000403031707,
+      "peak_state_count": 1,
+      "type_id": "refuse_agv_and",
+      "cell": "canonical",
+      "role": "typed_refusal",
+      "sip1_applicable": false,
+      "sip1_exact": false,
+      "sip1_reason": "job pA alternative 0 has conjunctive demand",
+      "prefix_len": 0,
+      "id": "refuse_agv_and"
+    },
+    {
+      "methods": {
+        "machine_cycle_scc": false,
+        "closed_core": false,
+        "sip1_or_refuse": false,
+        "lts_truth": false
+      },
+      "false_positive": 0,
+      "false_negative": 0,
+      "refusal_count": 1,
+      "certificate_size": 0,
+      "runtime_s": 0.0002859999658539891,
+      "peak_state_count": 3,
+      "type_id": "residual_cycle",
+      "cell": "canonical",
+      "role": "cycle_boundary",
+      "sip1_applicable": false,
+      "sip1_exact": false,
+      "sip1_reason": "no_closed_core",
+      "prefix_len": 0,
+      "id": "residual_cycle"
+    },
+    {
+      "methods": {
+        "machine_cycle_scc": true,
+        "closed_core": false,
+        "sip1_or_refuse": false,
+        "lts_truth": false
+      },
+      "false_positive": 0,
+      "false_negative": 0,
+      "refusal_count": 1,
+      "certificate_size": 0,
+      "runtime_s": 0.00044139998499304056,
+      "peak_state_count": 4,
+      "type_id": "local_with_bypass",
+      "cell": "canonical",
+      "role": "bypass_boundary",
+      "sip1_applicable": false,
+      "sip1_exact": false,
+      "sip1_reason": "no_closed_core",
+      "prefix_len": 0,
+      "id": "local_with_bypass"
+    }
+  ],
+  "original_g6b_gate": "OPEN_PENDING"
+}

@@ -1,0 +1,231 @@
+{
+  "scope_id": "tase_hardening_v1",
+  "panel": "h3_v2",
+  "authorization_id": "tase_hardening_v1_quantitative_t6",
+  "authorization_sha256": "090c75516fbbde24dcc4cde03b0d24aa633955f1ce9b97cc4c49b229f7b193c9",
+  "prior_h3_root_untouched": true,
+  "probe": {
+    "logical_cpus": 56,
+    "free_ram_gib": 102.77277755737305,
+    "workers": 48
+  },
+  "n_rows": 19,
+  "enumerated": 16,
+  "refused": 3,
+  "n_ge_1e3": 12,
+  "n_ge_1e4": 4,
+  "max_state_count": 100000,
+  "max_elapsed_s": 4188.773179700016,
+  "rows": [
+    {
+      "n_jobs": 4,
+      "n_stages": 3,
+      "capacity": 1,
+      "id": "h3v2-4-3-1",
+      "state_count": 304,
+      "elapsed_s": 0.07460139994509518,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "enumerated"
+    },
+    {
+      "n_jobs": 4,
+      "n_stages": 4,
+      "capacity": 1,
+      "id": "h3v2-4-4-1",
+      "state_count": 648,
+      "elapsed_s": 0.20580220001284033,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "enumerated"
+    },
+    {
+      "n_jobs": 4,
+      "n_stages": 5,
+      "capacity": 1,
+      "id": "h3v2-4-5-1",
+      "state_count": 1256,
+      "elapsed_s": 0.6929449000163004,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "enumerated"
+    },
+    {
+      "n_jobs": 5,
+      "n_stages": 3,
+      "capacity": 1,
+      "id": "h3v2-5-3-1",
+      "state_count": 992,
+      "elapsed_s": 0.37327870004810393,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "enumerated"
+    },
+    {
+      "n_jobs": 5,
+      "n_stages": 4,
+      "capacity": 1,
+      "id": "h3v2-5-4-1",
+      "state_count": 2512,
+      "elapsed_s": 1.9173714999342337,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "enumerated"
+    },
+    {
+      "n_jobs": 5,
+      "n_stages": 5,
+      "capacity": 1,
+      "id": "h3v2-5-5-1",
+      "state_count": 5752,
+      "elapsed_s": 11.436760199954733,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "enumerated"
+    },
+    {
+      "n_jobs": 6,
+      "n_stages": 3,
+      "capacity": 1,
+      "id": "h3v2-6-3-1",
+      "state_count": 3040,
+      "elapsed_s": 2.299444100004621,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "enumerated"
+    },
+    {
+      "n_jobs": 6,
+      "n_stages": 4,
+      "capacity": 1,
+      "id": "h3v2-6-4-1",
+      "state_count": 8992,
+      "elapsed_s": 23.23013769998215,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "enumerated"
+    },
+    {
+      "n_jobs": 6,
+      "n_stages": 5,
+      "capacity": 1,
+      "id": "h3v2-6-5-1",
+      "state_count": 24064,
+      "elapsed_s": 189.11941010004375,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "enumerated"
+    },
+    {
+      "n_jobs": 7,
+      "n_stages": 3,
+      "capacity": 1,
+      "id": "h3v2-7-3-1",
+      "state_count": 8864,
+      "elapsed_s": 20.040817100089043,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "enumerated"
+    },
+    {
+      "n_jobs": 7,
+      "n_stages": 4,
+      "capacity": 1,
+      "id": "h3v2-7-4-1",
+      "state_count": 30144,
+      "elapsed_s": 256.2391462000087,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "enumerated"
+    },
+    {
+      "n_jobs": 7,
+      "n_stages": 5,
+      "capacity": 1,
+      "id": "h3v2-7-5-1",
+      "state_count": 93088,
+      "elapsed_s": 2994.0155633999966,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "refused"
+    },
+    {
+      "n_jobs": 8,
+      "n_stages": 3,
+      "capacity": 1,
+      "id": "h3v2-8-3-1",
+      "state_count": 24832,
+      "elapsed_s": 183.9299878999591,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "enumerated"
+    },
+    {
+      "n_jobs": 8,
+      "n_stages": 4,
+      "capacity": 1,
+      "id": "h3v2-8-4-1",
+      "state_count": 95744,
+      "elapsed_s": 3931.8369038000237,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "refused"
+    },
+    {
+      "n_jobs": 8,
+      "n_stages": 5,
+      "capacity": 1,
+      "id": "h3v2-8-5-1",
+      "state_count": 100000,
+      "elapsed_s": 4188.773179700016,
+      "truncated": true,
+      "kernel_family_size": 0,
+      "classification": "refused"
+    },
+    {
+      "n_jobs": 4,
+      "n_stages": 3,
+      "capacity": 2,
+      "id": "h3v2-4-3-2",
+      "state_count": 574,
+      "elapsed_s": 0.34685659990645945,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "enumerated"
+    },
+    {
+      "n_jobs": 5,
+      "n_stages": 3,
+      "capacity": 2,
+      "id": "h3v2-5-3-2",
+      "state_count": 2582,
+      "elapsed_s": 5.355618800036609,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "enumerated"
+    },
+    {
+      "n_jobs": 5,
+      "n_stages": 4,
+      "capacity": 2,
+      "id": "h3v2-5-4-2",
+      "state_count": 6672,
+      "elapsed_s": 37.66746879997663,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "enumerated"
+    },
+    {
+      "n_jobs": 6,
+      "n_stages": 3,
+      "capacity": 2,
+      "id": "h3v2-6-3-2",
+      "state_count": 11050,
+      "elapsed_s": 101.89022669999395,
+      "truncated": false,
+      "kernel_family_size": 0,
+      "classification": "enumerated"
+    }
+  ],
+  "original_g6b_gate": "OPEN_PENDING"
+}

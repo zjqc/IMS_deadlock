@@ -1,0 +1,129 @@
+{
+  "schema_version": "ims-deadlock/case/v1",
+  "case_id": "H2_v2_sip1_machine_agv_unit",
+  "title": "H2-v2 sip1_machine_agv_unit",
+  "status": "DISCOVERY",
+  "model": {
+    "id": "h2v2-cycle-A-B",
+    "resources": [
+      {
+        "id": "AGV",
+        "capacity": 1,
+        "kind": "agv"
+      },
+      {
+        "id": "M1",
+        "capacity": 1,
+        "kind": "machine"
+      }
+    ],
+    "jobs": [
+      "A",
+      "B"
+    ]
+  },
+  "initial_state": {
+    "id": "h2v2-cycle-A-B-s0",
+    "holds": [
+      {
+        "job_id": "A",
+        "resource_id": "M1",
+        "units": 1
+      },
+      {
+        "job_id": "B",
+        "resource_id": "AGV",
+        "units": 1
+      }
+    ],
+    "requests": {
+      "A": [
+        [
+          {
+            "resource_id": "AGV",
+            "units": 1
+          }
+        ]
+      ],
+      "B": [
+        [
+          {
+            "resource_id": "M1",
+            "units": 1
+          }
+        ]
+      ]
+    },
+    "completed_jobs": [],
+    "stable": true,
+    "complete": false,
+    "event_calendar_empty": true,
+    "stage_by_job": {
+      "A": "wait",
+      "B": "wait"
+    },
+    "mode_by_job": {
+      "A": "wait",
+      "B": "wait"
+    },
+    "zero_time_trace": []
+  },
+  "transitions": [
+    {
+      "name": "A-get-AGV",
+      "kind": "dispatch",
+      "job_id": "A",
+      "source_mode": "wait",
+      "target_mode": "done",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "AGV",
+          "units": 1
+        }
+      ],
+      "release": [
+        {
+          "resource_id": "M1",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true,
+      "next_requests": []
+    },
+    {
+      "name": "B-get-M1",
+      "kind": "dispatch",
+      "job_id": "B",
+      "source_mode": "wait",
+      "target_mode": "done",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "M1",
+          "units": 1
+        }
+      ],
+      "release": [
+        {
+          "resource_id": "AGV",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true,
+      "next_requests": []
+    }
+  ],
+  "calendar": [],
+  "notes": [
+    "tase_hardening_v1"
+  ]
+}

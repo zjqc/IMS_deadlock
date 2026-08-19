@@ -1,0 +1,174 @@
+{
+  "schema_version": "ims-deadlock/case/v1",
+  "case_id": "H2_v2_sip1_reachable_pair",
+  "title": "H2-v2 sip1_reachable_pair",
+  "status": "DISCOVERY",
+  "model": {
+    "id": "h2v2-sip1-reachable-pair",
+    "resources": [
+      {
+        "id": "r1",
+        "capacity": 1,
+        "kind": "machine"
+      },
+      {
+        "id": "r2",
+        "capacity": 1,
+        "kind": "machine"
+      }
+    ],
+    "jobs": [
+      "j1",
+      "j2"
+    ]
+  },
+  "initial_state": {
+    "id": "h2v2-sip1-reachable-pair-s0",
+    "holds": [],
+    "requests": {
+      "j1": [
+        [
+          {
+            "resource_id": "r1",
+            "units": 1
+          }
+        ]
+      ],
+      "j2": [
+        [
+          {
+            "resource_id": "r2",
+            "units": 1
+          }
+        ]
+      ]
+    },
+    "completed_jobs": [],
+    "stable": true,
+    "complete": false,
+    "event_calendar_empty": true,
+    "stage_by_job": {
+      "j1": "idle",
+      "j2": "idle"
+    },
+    "mode_by_job": {
+      "j1": "idle",
+      "j2": "idle"
+    },
+    "zero_time_trace": []
+  },
+  "transitions": [
+    {
+      "name": "j1-start-r1",
+      "kind": "start",
+      "job_id": "j1",
+      "source_mode": "idle",
+      "target_mode": "wait",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": false,
+      "acquire": [
+        {
+          "resource_id": "r1",
+          "units": 1
+        }
+      ],
+      "release": [],
+      "requires": [],
+      "mark_complete": false,
+      "next_requests": [
+        [
+          {
+            "resource_id": "r2",
+            "units": 1
+          }
+        ]
+      ]
+    },
+    {
+      "name": "j2-start-r2",
+      "kind": "start",
+      "job_id": "j2",
+      "source_mode": "idle",
+      "target_mode": "wait",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": false,
+      "acquire": [
+        {
+          "resource_id": "r2",
+          "units": 1
+        }
+      ],
+      "release": [],
+      "requires": [],
+      "mark_complete": false,
+      "next_requests": [
+        [
+          {
+            "resource_id": "r1",
+            "units": 1
+          }
+        ]
+      ]
+    },
+    {
+      "name": "j1-get-r2",
+      "kind": "dispatch",
+      "job_id": "j1",
+      "source_mode": "wait",
+      "target_mode": "done",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "r2",
+          "units": 1
+        }
+      ],
+      "release": [
+        {
+          "resource_id": "r1",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true,
+      "next_requests": []
+    },
+    {
+      "name": "j2-get-r1",
+      "kind": "dispatch",
+      "job_id": "j2",
+      "source_mode": "wait",
+      "target_mode": "done",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "r1",
+          "units": 1
+        }
+      ],
+      "release": [
+        {
+          "resource_id": "r2",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true,
+      "next_requests": []
+    }
+  ],
+  "calendar": [],
+  "notes": [
+    "tase_hardening_v1"
+  ]
+}
