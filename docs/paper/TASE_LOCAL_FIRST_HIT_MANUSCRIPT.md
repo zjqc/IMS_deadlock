@@ -10,15 +10,15 @@ Primary application (suggested): Intelligent / flexible manufacturing systems
 
 ## Abstract
 
-Wait-for cycles and unmarked plant-net siphons do not, by themselves, stop an operational manufacturing cell: residual capacity or a completion bypass can still finish the batch, while a local interlock can already make some jobs incomplete. This paper treats local blocking as a first hit of a certified bad set in a stopped process. A local closed kernel is admitted by a request-closed argument or by a complete finite labelled-transition-system audit that batch completion is unreachable, and is refused if a shortest bypass exists. Diagnostic siphons apply only on a unit-capacity, residual-zero, one-hold-one-request wait-snapshot; otherwise the method returns a typed refusal. After a certified absorption partition, exact continuous-time first-hit probabilities and discrete-event replications share one stopping hash. On a three-job machine–AGV island the initial state is already a local hit (\(\theta^{\mathrm{L}}=1\)); an optional AGV drain yields \(\theta^{\mathrm{B}}=0\), with six exact/simulation cells inside a Hoeffding band of \(7.35\times 10^{-3}\) at \(n_{\mathrm{s}}=65536\). A ten-plant table gives four siphon agreements and four typed refusals (false positives and false negatives zero). A tandem family reaches \(10^3\)–\(10^4\) states and refuses three rows at a declared cap. The increment is this checkable first-hit object, not a plant-net liveness theorem or a shop-floor controller.
+Wait-for cycles and unmarked plant-net siphons do not, by themselves, stop an operational manufacturing cell: residual capacity or a completion bypass can still finish the batch, while a local interlock can already make some jobs incomplete. This paper treats local blocking as a first hit of a certified bad set in a stopped process. A local closed kernel is admitted by a request-closed argument or by a complete finite labelled-transition-system audit that batch completion is unreachable, and is refused if a shortest bypass exists. Diagnostic siphons apply only on a unit-capacity, residual-zero, one-hold-one-request wait-snapshot; otherwise the method returns a typed refusal. After a certified absorption partition, exact continuous-time first-hit probabilities and discrete-event replications share one stopping hash. On a three-job machine–AGV island that starts transient, the first local hit occurs at positive time (\(\theta^{\mathrm{L}}=0.537\), \(m=3.60\)); one extra AGV slot yields \(\theta^{\mathrm{B}}=0\). An independently hashed two-process S3PR embedding decides the fourth field of a four-field diagnostic; a declared AGV distortion refuses it. A finite-state supervisor on the same graph retains 56 of 64 states and also yields \(\theta^{\mathrm{B}}=0\). The increment is this checkable first-hit object, not a plant-net liveness theorem or a shop-floor controller.
 
-*Abstract word count: 197.*
+*Abstract word count: 193.*
 
 ## Note to Practitioners
 
-This work was motivated by a cell-control question: when two jobs hold a machine and an automated guided vehicle (AGV) and wait for each other, has the batch already failed, or can it still finish if a buffer slot or another unload remains? A cycle on the wait graph is not a reliable stop. Leftover capacity or a later bypass can still complete every job, and cutting the “obvious” edge can create a new interlock. The quantity computed here is the first time the cell enters a certified blocked set, not the event that the plant graph has no outgoing arc. If every move of a waiting job must use its current request, a local closed kernel is enough to conclude those jobs will never finish; otherwise the kernel is kept only after a complete finite state graph shows that batch completion is unreachable, and it is dropped if a bypass appears. Siphon language is used only when every core resource is unit capacity, fully occupied, and requested one-for-one; otherwise the method returns “not applicable” instead of installing a monitor. On a synthetic three-job island, allowing the AGV holder to leave without entering the contested machine changes the cell from already locally stopped to all jobs finishing. Exact probabilities and simulations are compared only after they share the same stopping rule. The island is not factory data, the method is not a shop policy, and it does not replace a published Petri-net supervisor on a vendor cell. It is a pre-release audit of a finite digital twin.
+This work was motivated by a cell-control question: when two jobs hold a machine and an automated guided vehicle (AGV) and wait for each other, has the batch already failed, or can it still finish if a buffer slot or another unload remains? A cycle on the wait graph is not a reliable stop. Leftover capacity or a later bypass can still complete every job, and cutting the “obvious” edge can create a new interlock. The quantity computed here is the first time the cell enters a certified blocked set, not the event that the plant graph has no outgoing arc. If every move of a waiting job must use its current request, a local closed kernel is enough to conclude those jobs will never finish; otherwise the kernel is kept only after a complete finite state graph shows that batch completion is unreachable, and it is dropped if a bypass appears. Siphon language is used only when every core resource is unit capacity, fully occupied, and requested one-for-one; otherwise the method returns “not applicable” instead of installing a monitor. On a synthetic three-job island the cell runs and then locally stops; adding one AGV slot prevents that stop. Exact probabilities and simulations are compared only after they share the same stopping rule. The island is not factory data, the method is not a shop policy, and it does not replace a published Petri-net supervisor on a vendor cell. It is a pre-release audit of a finite digital twin.
 
-*Note to Practitioners word count: 257.*
+*Note to Practitioners word count: 249.*
 
 ## Index Terms
 
@@ -113,16 +113,17 @@ This paper therefore changes the *object* that is computed. Local blocking is tr
 
 After the absorption domain is certified—no unselected closed class, no truncated LTS—exact first-hit probabilities on the stopped continuous-time Markov chain (CTMC) and independent discrete-event (DES) replications share one stopping hash. Agreement inside a predeclared simultaneous Hoeffding band is a numerical check, not a proof of the theorem and not a claim of plant fidelity [11].
 
-The experimental clothing is a new discovery panel with a distinct scope identifier. It is not a relabelling of a six-case constructive manuscript and not a historical replay of a failed CRP encoding. Four families are reported.
+The experimental clothing is a new discovery panel with a distinct scope identifier. It is not a relabelling of a six-case constructive manuscript and not a historical replay of a failed CRP encoding. Six families are reported.
 
-- *Island.* A three-job machine–AGV cell starts already locally stopped (\(\theta^{\mathrm{L}}=1\), mean stopped time \(0\)). An optional one-slot AGV drain sends every sample path to completion (\(\theta^{\mathrm{B}}=0\), mean time \(3.23\)). Six probability cells agree with DES at \(n_{\mathrm{s}}=65536\) inside tolerance \(7.35\times 10^{-3}\).
+- *Island.* A three-job machine–AGV cell starts transient. The first local hit occurs at positive time (\(\theta^{\mathrm{L}}=0.537\), \(m=3.60\), \(\theta^{\mathrm{B}}=7/12\)). One extra AGV slot sends every sample path to completion (\(\theta^{\mathrm{B}}=0\), \(m=6.30\)). Six probability cells agree with DES at \(n_{\mathrm{s}}=65536\) inside tolerance \(7.35\times 10^{-3}\). A time-zero local-hit clothing of the same island (\(\theta^{\mathrm{L}}=1\), \(m=0\)) is retained as a boundary.
 - *Baselines.* Ten plants are scored by a wait-for/SCC screen, a closed-core certificate, a siphon-or-refuse predicate, and LTS truth. Four plants agree with the diagnostic siphon; four refuse it for OR, AND, multi-capacity, or conjunctive AGV demand; false positives and false negatives are both zero.
 - *Scale.* A tandem family enumerates twelve rows with at least \(10^3\) stable states and four with at least \(10^4\), and refuses three rows at \(10^5\) states or \(300\,\mathrm{s}\).
-- *CRP diagnostic.* Proposition 4’s four fields are scored on six new subjects. Fields 1–3 (reachability, local family, resource match) can hold; field 4 (independent S4PR embedding) is refused on every row. Bridge agreement is therefore zero. A prior implementation-level CRP encoding remains a negative witness; it is not a refutation of the source theorem [10].
+- *CRP diagnostic.* Proposition 4’s four fields are scored on six subjects without an embedding (field 4 refused; agreement zero) and on two new subjects with an independently hashed two-process S3PR embedding. The faithful embedding decides field 4; a declared AGV distortion refuses it. Neither row is a CRP theorem or a replay of [10].
+- *Supervisor baseline.* On the same 64-state island LTS, a finite-state nonblocking supervisor [5], [15] retains 56 states, disables 14 controllable state-events, and yields supervised \(\theta^{\mathrm{B}}=0\).
 
 The publishable increment is the checkable first-hit object and its typed admission/refusal rules. The paper does not claim a new siphon-control policy, a general IMS–S3PR isomorphism, a bit-polynomial reachability procedure, a shop-floor throughput gain, or priority over PDDP/CRP/monitor synthesis [3], [8]–[10].
 
-Section II places the increment against Petri, RAS, knot, and probability baselines. Sections III–IX give the complete formal development: the capacity-aware closed-wait subclass, the finite LTS representation, the covering-core characterization of global operational deadlock, the wait-snapshot siphon dual, the two typed local-admission routes with full proofs, a chain-decomposable sufficient condition, and the stopped-process first-hit equations including invertibility and first-jump derivations. Section X reports the four experimental families. Section XI records limitations. Section XII concludes. Family-specific exact thresholds (BIX1/BIX2) are proved in Appendix C so that the original derivation is not abbreviated out of the archival draft.
+Section II places the increment against Petri, RAS, knot, and probability baselines. Sections III–IX give the complete formal development: the capacity-aware closed-wait subclass, the finite LTS representation, the covering-core characterization of global operational deadlock, the wait-snapshot siphon dual, the two typed local-admission routes with full proofs, a chain-decomposable sufficient condition, and the stopped-process first-hit equations including invertibility and first-jump derivations. Section X reports the experimental families. Section XI records limitations. Section XII concludes. Family-specific exact thresholds (BIX1/BIX2) are proved in Appendix C so that the original derivation is not abbreviated out of the archival draft.
 
 ---
 
@@ -142,13 +143,13 @@ Ezpeleta, Colom, and Martínez gave the S3PR liveness and siphon-control policy 
 
 ### C. Partial Deadlock, MR2G/PDDP, and CRP
 
-Lu, Chen, Hadjicostis, and Li characterized partial deadlock of bounded FMS Petri nets by a modified resource-requirement graph (MR2G) and a PDDP predicate, and synthesized control places iteratively [8, Def. 3, Th. 1]. Su *et al.*, in this Transactions, characterized partial deadlock of S4PR at a marking by a critical resource place (CRP) and delegated reachability of candidates to a structural backward algorithm (SBA) [10, Defs. 5–8, Ths. 1–4]. Those papers are the closest 2025–2026 comparators. They do not supply an IMS operational certificate, a typed bypass refusal, or a first-hit probability on a certified stopped process. CRP equations alone are not a reachable-prefix proof [10]. A four-field partial-bridge *rule* (reachability, local family, resource equality, declared S4PR overlap) is stated as Proposition 4; without an independent S4PR embedding the fourth field is refused and agreement is not claimed. A historical implementation that used a global extractor in the presence of an unrelated job remains a negative witness; it does not refute [10].
+Lu, Chen, Hadjicostis, and Li characterized partial deadlock of bounded FMS Petri nets by a modified resource-requirement graph (MR2G) and a PDDP predicate, and synthesized control places iteratively [8, Def. 3, Th. 1]. Su *et al.*, in this Transactions, characterized partial deadlock of S4PR at a marking by a critical resource place (CRP) and delegated reachability of candidates to a structural backward algorithm (SBA) [10, Defs. 5–8, Ths. 1–4]. Those papers are the closest 2025–2026 comparators. They do not supply an IMS operational certificate, a typed bypass refusal, or a first-hit probability on a certified stopped process. CRP equations alone are not a reachable-prefix proof [10]. A four-field partial-bridge *rule* (reachability, local family, resource equality, declared S4PR/S3PR overlap) is stated as Proposition 4. Field 4 is true only with an independently hashed embedding. Section X-E reports that field 4 is decided on the definitional two-process unit S3PR of [1] and refused on a declared AGV distortion of the same net and on six subjects without an embedding. This is not a replay of a figure in [10], not SBA, and not a CRP iff. A historical implementation that used a global extractor in the presence of an unrelated job remains a negative witness; it does not refute [10].
 
 Recorder-place and transformed-net reachability procedures [13], [14] decide legal firing sequences after a model transform. They are not used here as an IMS reachability engine; the operational LTS is enumerated directly and refused when truncated.
 
 ### D. Supervisory Control and Finite-State LES
 
-Ramadge and Wonham formulated nonblocking supervisory control of discrete-event processes [15]. Nazeem and Reveliotis gave a practical maximally permissive liveness-enforcing supervisor for complex RAS via a boundary-unsafe-state representation [5]. Those constructions remain the right *finite-state supervisor* baselines. They are not the centre of this paper: the centre is a typed first-hit set, not a supremal controllable sublanguage and not a compact monitor.
+Ramadge and Wonham formulated nonblocking supervisory control of discrete-event processes [15]. Nazeem and Reveliotis gave a practical maximally permissive liveness-enforcing supervisor for complex RAS via a boundary-unsafe-state representation [5]. Those constructions remain the right *finite-state supervisor* baselines. Section X-F reports an explicit-graph Ramadge–Wonham supervisor on the same island LTS as a baseline: synthesis is polynomial in \(\lvert X\rvert\); the compact input remains at least NP-hard; the construction is not a risk-budget supervisor and not maximally permissive in the MCPP sense [3]. The centre of this paper remains a typed first-hit set, not a supremal controllable sublanguage and not a compact monitor.
 
 ### E. Absorbing Markov Models
 
@@ -167,7 +168,8 @@ Difference of computed objects (not a priority ranking)
 | S3PR siphon / MCPP [1], [3] | empty siphon; monitor cover | plant S3PR; compact monitor | wait-snapshot dual on IMS-SIP\(^1\); typed refusal |
 | Finite-capacity S3PR [9] | sufficient marking inequalities | exact reachable iff threshold | none as a main theorem |
 | PDDP / MR2G [8] | local marking deadlock | local cycle \(\Rightarrow\) irreversible failure | A2b or complete-LTS; bypass refusal |
-| S4PR CRP [10] | CRP iff partial deadlock, then SBA | S4PR embedding; CRP set \(=\) local kernel | four-field rule; no SBA in this paper |
+| S4PR CRP [10] | CRP iff partial deadlock, then SBA | S4PR embedding of [10]’s running example; CRP set \(=\) local kernel | four-field rule; field 4 decided on the S3PR core of [1]; no SBA; not CRP iff |
+| Finite-state LES / RW [5], [15] | supremal nonblocking; boundary-unsafe LES | compact input; MCPP existence | explicit-graph baseline on the island LTS |
 | Absorbing CTMC [11] | \(\theta\), mean time | almost-sure hit of a declared \(D^{\dagger}/F\) | certified \(S^{\circ}\); same-target DES hash |
 
 ---
@@ -378,7 +380,7 @@ If \(s\) contains an inclusion-minimal local closed kernel, the same enumeration
 Truth values do not depend on first-hit enumeration order. Output order may be canonicalized; a bridge judgment must quantify the entire minimal-kernel family.
 
 **Proposition 4 (CRP partial bridge).**  
-Given a frozen target and a declared resource set \(R^{\star}\), partial-bridge *agreement* is true only if all four hold independently: (i) the target is reachable in the frozen stable LTS; (ii) the local family at that target is nonempty; (iii) \(\lvert\{K:R_K=R^{\star}\}\rvert\ge 1\); (iv) the source profile is a declared S4PR overlap with an independent embedding hash. A global covering certificate must not replace (ii)–(iii). Multiplicity is reported when several kernels match; a zero match is reported as zero, not as a first-certificate artefact. In this paper field (iv) is refused on every subject (Section X-E).
+Given a frozen target and a declared resource set \(R^{\star}\), partial-bridge *agreement* is true only if all four hold independently: (i) the target is reachable in the frozen stable LTS; (ii) the local family at that target is nonempty; (iii) \(\lvert\{K:R_K=R^{\star}\}\rvert\ge 1\); (iv) the source profile is a declared S4PR/S3PR overlap with an independent embedding hash. A global covering certificate must not replace (ii)–(iii). Multiplicity is reported when several kernels match; a zero match is reported as zero, not as a first-certificate artefact. Field (i) is decided by this paper’s BFS, not by a firing sequence copied from the source paper. Field (iv) is decided on one embedded subject and refused on the remaining subjects (Section X-E).
 
 ---
 
@@ -524,21 +526,23 @@ These four rows are cited as boundaries, not as main theorems.
 
 ### B. Family IV: Machine–AGV Island
 
-The manufacturing clothing is a three-job island (Fig. 1, Table II). Job \(\mathsf{A}\) holds machine \(\mathsf{M}_1\) and requests the vehicle \(\mathsf{V}\); job \(\mathsf{B}\) holds \(\mathsf{V}\) and requests \(\mathsf{M}_1\); job \(\mathsf{C}\) is in service on \(\mathsf{M}_2\). The only structural interlock is \(\{\mathsf{A},\mathsf{B}\}\) on \(\{\mathsf{M}_1,\mathsf{V}\}\). Job \(\mathsf{C}\) still has an outgoing plant arc, so a terminal-SCC diagnosis would miss the local stop. The predeclared intervention is an optional drain that lets \(\mathsf{B}\) release \(\mathsf{V}\) without entering \(\mathsf{M}_1\).
+The *lead* manufacturing clothing is a three-job island that starts *transient* (Table II). Jobs \(\mathsf{A}\) and \(\mathsf{B}\) are idle; job \(\mathsf{C}\) already holds \(\mathsf{M}_2\) and has two remaining uncontrollable service stages. From that initial state the word \(\mathsf{A}\)-start-\(\mathsf{M}_1\), \(\mathsf{A}\)-service-complete, \(\mathsf{B}\)-start-\(\mathsf{V}\) reaches an admitted local-hit state: \(\mathsf{A}\) holds \(\mathsf{M}_1\) and requests \(\mathsf{V}\), \(\mathsf{B}\) holds \(\mathsf{V}\) and requests \(\mathsf{M}_1\), and \(\mathsf{C}\) still has a plant outgoing arc. The only structural interlock is \(\{\mathsf{A},\mathsf{B}\}\) on \(\{\mathsf{M}_1,\mathsf{V}\}\). A terminal-SCC diagnosis would miss that local stop. Admission of \(D^{\mathrm{L}}\) on this clothing is the complete-LTS fallback of Theorem 4 (recorded route `lts_fallback`); A2b / Theorem 3 is not the recorded route. The predeclared intervention is one extra AGV slot (\(\mathsf{V}\) of capacity 2). Rates are synthetic: starts unit rate 1, \(\mathsf{A}\)-service-complete rate 2, \(\mathsf{C}\)’s remaining services rate \(1/2\), other events rate 1.
 
 **Table II**  
-Island first-hit values (exact). DES agrees on all six cells at \(n_{\mathrm{s}}=65536\), \(\varepsilon=7.35\times 10^{-3}\)
+Positive-time island first-hit values (exact). DES agrees on all six cells at \(n_{\mathrm{s}}=65536\), \(\varepsilon=7.35\times 10^{-3}\)
 
-| Plant | \(\mathbf{B}\) | \(\theta^{\mathrm{G}}\) | \(\theta^{\mathrm{L}}\) | \(\theta^{\mathrm{B}}\) | \(m\) |
-| --- | --- | --- | --- | --- | --- |
-| Base | certified | \(0\) | \(1\) | \(1\) | \(0\) |
-| Optional AGV drain | certified | \(0\) | \(0\) | \(0\) | \(3.23\) |
+| Plant | \(\lvert X\rvert\) | \(\mathbf{B}\) | \(\theta^{\mathrm{G}}\) | \(\theta^{\mathrm{L}}\) | \(\theta^{\mathrm{B}}\) | \(m\) |
+| --- | --- | --- | --- | --- | --- | --- |
+| Positive-time base | 64 | certified | \(0.0460\) | \(0.5373\) | \(0.5833\) | \(3.596\) |
+| Extra AGV slot | 72 | certified | \(0\) | \(0\) | \(0\) | \(6.296\) |
 
-The core island conclusion is therefore this. At the base initial state the pair \(\{\mathsf{A},\mathsf{B}\}\) is already an admitted local core, so the stopped process has already first-hit \(D^{\mathrm{L}}\): \(\theta^{\mathrm{L}}=1\) and \(m=0\). The plant is *not* a terminal SCC, because \(\mathsf{C}\) can still finish service on \(\mathsf{M}_2\). A distinct \(D^{\mathrm{G}}\) state exists in the partition but is not the first hit from the initial state. Allowing \(\mathsf{B}\) to drain \(\mathsf{V}\) destroys that local core; the only remaining absorbing class is \(F\), so \(\theta^{\mathrm{B}}=0\) and the mean time to completion is \(3.23\). For this island, deadlock of the manufacturing cell is a *local first-hit already present at time zero*, not a later global standstill and not a plant-graph death; a one-slot AGV drain changes the *absorbing class*, not a long transient risk path.
+The core island conclusion is therefore this. The initial state is not in \(D^{\mathrm{G}}\cup D^{\mathrm{L}}\cup F\). Three admitted local-hit states exist, all with a plant outgoing arc, and one global-deadlock state exists after \(\mathsf{C}\) has completed. From the initial state the first local hit is a stopping *event*: \(\theta^{\mathrm{L}}=0.537\), \(\theta^{\mathrm{B}}=7/12\), and \(m=3.596\ge 0.25\). The plant is *not* a terminal SCC at those local-hit states, because \(\mathsf{C}\) can still move. One extra AGV slot destroys the \(\{\mathsf{M}_1,\mathsf{V}\}\) kernel: \(D^{\mathrm{G}}=D^{\mathrm{L}}=\emptyset\), \(\theta^{\mathrm{B}}=0\), and the mean time to completion rises to \(6.296\). For this island, deadlock of the manufacturing cell is a *positive-time local first-hit*, and a one-slot vehicle change prevents that stop.
+
+A *time-zero boundary* clothing of the same island is retained (Fig. 2). There \(\mathsf{A}\) already holds \(\mathsf{M}_1\) requesting \(\mathsf{V}\), \(\mathsf{B}\) already holds \(\mathsf{V}\) requesting \(\mathsf{M}_1\), and \(\mathsf{C}\) is in service on \(\mathsf{M}_2\): \(\theta^{\mathrm{L}}=1\), \(m=0\). An optional drain that lets \(\mathsf{B}\) release \(\mathsf{V}\) without entering \(\mathsf{M}_1\) sends every trajectory to \(F\) (\(\theta^{\mathrm{B}}=0\), \(m=3.23\)). That clothing is scientifically correct and is not overwritten; it is no longer the lead figure, because the first hit is the initial condition rather than an event.
 
 An earlier all-completion clothing of the same island (release-then-complete, no local hit) produced \(\theta^{\mathrm{B}}=0\) on both the base and the intervention and is retained as a certified negative: a digital-twin that always finishes cannot demonstrate local-first-hit. A still earlier clothing that marked completion while holding a buffer was refused as an invalid LTS state and is retained.
 
-Fig. 2 plots the four exact KPIs. Every DES cell matches the exact value to machine zero on this island (the initial state is already absorbing, or the drain graph is small); the Hoeffding band is therefore slack, and it is not sold as a rare-event study.
+Fig. 2 plots the time-zero boundary KPIs. On the positive-time island the six DES cells lie inside the Hoeffding band; that check is a same-target numerical agreement, not a rare-event study and not a shop-floor rate.
 
 ### C. Family II: Same-Semantics Baselines
 
@@ -595,7 +599,7 @@ Twelve enumerated rows have \(\lvert X\rvert\ge 10^3\) and four have \(\lvert X\
 
 ### E. Family V: Four-Field CRP Diagnostic
 
-Six new subjects reuse no historical case hash and do not run SBA or CRP equations. Table V reports Proposition 4.
+Six subjects without an embedding reuse no historical case hash and do not run SBA or CRP equations. Table V reports Proposition 4 on those six; two further subjects (H6-A, H6-B) decide field 4.
 
 **Table V**  
 Four-field diagnostic. Agreement requires all four fields
@@ -609,7 +613,35 @@ Four-field diagnostic. Agreement requires all four fields
 | AGV \(\wedge\) buffer | yes | yes | 1 | no embedding | no |
 | Residual cycle | yes | no | 0 | no embedding | no |
 
-Fields 1–3 hold on four subjects. Field 4 is `no_independent_s4pr_embedding` on all six, so agreement is identically zero. That is the intended reading of Proposition 4 and of [10]: without an audited S4PR embedding, a CRP overlap claim is not licensed.
+Fields 1–3 hold on four of these six subjects. Field 4 is `no_independent_s4pr_embedding` on all six, so agreement is identically zero on this table. That remains the intended reading of Proposition 4 and of [10] *in the absence of an embedding*.
+
+Two further subjects supply the missing field-4 decision. H6-A is an independently hashed embedding of the *definitional* two-process unit-capacity S3PR admitted by [1] (two sequential processes sharing two unit resource places). It is not a reconstruction of [1, Fig. 1] and not a replay of a running example in [10]. The embedding name map \(\iota\) and its marking correspondence (neither is Table 0’s calendar indicator \(\chi_s\)) preserve capacities, the initial marking, enabled events at the initial state, and one-step commutation on every IMS state the correspondence represents; they do not preserve BAS modes, AGV occupancy, OR/AND acquisition, or the cyclic return to idle. Field 1 is this paper’s BFS (\(A\textrm{-start-}r_1\), \(B\textrm{-start-}r_2\)), not a prefix copied from [1]. All four fields hold, so agreement is true. H6-B is the same net after a declared IMS-only AGV token on the second step of process \(\mathsf{A}\). Field 4 is false with typed reason `declared_distortion_agv_token`; field 1 against the *source* target is also false, because \(\mathsf{A}\) then requests \(\{r_2,\mathrm{V}\}\) rather than \(\{r_2\}\). Neither row runs SBA or CRP equations.
+
+**Table V (continued)**  
+Embedded subjects. Agreement still requires all four fields
+
+| Subject | Reachable | Local family | Match \(\lvert K\rvert\) | S4PR/S3PR overlap | Agreement |
+| --- | --- | --- | --- | --- | --- |
+| H6-A definitional S3PR of [1] | yes | yes | 1 | verified embedding | yes |
+| H6-B declared AGV distortion | no | no | 0 | distortion (E5 fails) | no |
+
+### F. Family VI: Finite-State Supervisor Baseline
+
+On the positive-time island of Table II, a Ramadge–Wonham nonblocking supervisor is computed on the explicit 64-state LTS [15], treating \(D^{\dagger}=D^{\mathrm{G}}\cup D^{\mathrm{L}}\) as forbidden and \(F\) as marked. Controllability is the registry flag of each event. This is a *baseline*, not a new theorem: the implementation is the greatest fixed point of “remove states that can uncontrollably leave the remaining set or cannot reach a marked state.” Compact-input synthesis remains at least NP-hard; the construction is not maximally permissive in the MCPP sense [3] and is not a risk-budget supervisor.
+
+**Table VI**  
+Supervisor baseline on the Table II base plant (same stopping family)
+
+| Quantity | Value |
+| --- | --- |
+| \(\lvert X\rvert\) | 64 |
+| \(\lvert X_{\mathrm{safe}}\rvert\) | 56 |
+| disabled controllable state-events | 14 |
+| initial feasible | yes |
+| supervised \(\theta^{\mathrm{B}}\) | \(0\) |
+| supervised \(m\) | \(7.048\) |
+
+The 14 cuts are \(\mathsf{A}\)-start-\(\mathsf{M}_1\) or \(\mathsf{B}\)-start-\(\mathsf{V}\) at states from which the interlock would close, plus two controllable \(\mathsf{C}\)-release-\(\mathsf{M}_2\) cuts required for consistency of the remaining set. Supervised \(\theta^{\mathrm{B}}=0\le 0.583=\theta^{\mathrm{B}}\) of the unsupervised plant. Mean stopped time rises from \(3.596\) to \(7.048\): the supervisor trades a positive first-hit probability for a longer completing run.
 
 ---
 
@@ -619,15 +651,15 @@ T-ASE evaluates automation methods by quality, completeness, complexity, verific
 
 Several limitations are essential to the contribution rather than residual bugs.
 
-1. *Already-hit island.* Family IV begins in \(D^{\mathrm{L}}\). The intervention changes the absorbing class; it does not illustrate a long transient that wanders into a local hit. A larger cell with a positive-time first hit is future work, not a silent reinterpretation of Table II.
-2. *Synthetic plants.* Every subject is a digital twin. No vendor trace, no throughput number, and no claim that an optional drain “improves productivity” on a factory is licensed.
-3. *No published PN benchmark replay.* The paper does not rerun a classical S3PR/S4PR example from [1], [8], or [10] inside the IMS operational semantics. Doing so would require an independently hashed embedding and is exactly field 4 of Proposition 4.
+1. *Synthetic island, modest \(\lvert X\rvert\).* Family IV’s lead clothing is a 64-state (72-state after the extra slot) synthetic island. It demonstrates a positive-time local hit; it is not a shop-floor log and not a large FMS. The time-zero clothing remains as a boundary example.
+2. *Synthetic plants.* Every subject is a digital twin. No vendor trace, no throughput number, and no claim that an extra AGV slot “improves productivity” on a factory is licensed.
+3. *Published-net scope.* Field 4 is decided on the definitional two-process unit S3PR of [1], not on [1, Fig. 1] and not on a running example of [10]. No general IMS \(\equiv\) S3PR isomorphism and no CRP iff is claimed.
 4. *SIP\(^1\) is small.* Four agreements demonstrate the dual; they do not make siphon control the method.
 5. *Exponential LTS.* Family III hits a \(10^5\)/300 s wall. All-minimal local enumeration is exponential in blocked jobs. No bit-polynomial IMS reachability is claimed [13], [14].
 6. *Historical negatives retained.* A CRP implementation-level encoding that used a global extractor in the presence of an unrelated job remains failed. An eight-dimension overlap gate used in earlier internal work remains open. Neither is a confirmation set for this paper.
 7. *What is not proved.* A2b is not necessary. Complete-LTS admission is not a general structural theorem. A local core is not automatically \(D^{\mathrm{L}}\). \(D^{\mathrm{L}}\) is not a plant terminal SCC. Exact/DES agreement does not prove the theorem. The method is not a risk-budget supervisor.
 
-The natural extensions are an independently embedded S4PR overlap row, a larger island whose first local hit occurs at positive time, and a finite-state supervisor baseline in the sense of [5], [15]. Those are later papers.
+Natural extensions that remain open are a replay of [10]’s own running example, a shop-floor log, a compact (unexpanded) supervisor, and a CRP theorem. Those are later papers.
 
 ---
 
@@ -637,8 +669,8 @@ The paper’s key conclusions, in the order a first reader needs them, are as fo
 
 1. *Object.* Capacity-mediated blocking of a finite manufacturing cell is a first hit of a certified set \(D^{\mathrm{G}}\) or \(D^{\mathrm{L}}\) in a stopped process, not a wait-for cycle, not an unmarked plant-net siphon, and not a terminal SCC of the plant graph.
 2. *Admission.* A local closed core enters \(D^{\mathrm{L}}\) only by A2b (Theorem 3) or by \(F\)-nonreachability on the complete finite LTS (Theorem 4), and is refused if a completion bypass exists (Theorem 5). Covering cores characterise global operational deadlock (Theorem 1). Diagnostic siphons are exact only on IMS-SIP\(^1\) (Theorem 2).
-3. *Island (the manufacturing-cell conclusion).* On the three-job machine–AGV island the initial state is already in \(D^{\mathrm{L}}\) while \(\mathsf{C}\) still moves: \(\theta^{\mathrm{L}}=1\), \(m=0\). The cell has locally failed without the plant graph dying. A one-slot AGV drain removes that local core and sends every trajectory to \(F\) (\(\theta^{\mathrm{B}}=0\), \(m=3.23\)). Exact and DES values agree on all six cells. Deadlock of this island is therefore a *time-zero local first-hit*, and the relevant intervention changes the absorbing class rather than a long risk transient.
-4. *Baselines and scale.* Four siphon agreements and four typed refusals sit on one semantics (false positives and false negatives zero). A tandem family reaches \(10^3\)–\(10^4\) states and refuses three rows at a declared cap. A four-field CRP diagnostic never claims agreement without an S4PR embedding.
+3. *Island (the manufacturing-cell conclusion).* On the three-job machine–AGV island the initial state is transient. The first local hit occurs at positive time while \(\mathsf{C}\) still moves: \(\theta^{\mathrm{L}}=0.537\), \(\theta^{\mathrm{B}}=7/12\), \(m=3.596\). The cell can locally fail without the plant graph dying. One extra AGV slot removes that local core and sends every trajectory to \(F\) (\(\theta^{\mathrm{B}}=0\), \(m=6.296\)). Exact and DES values agree on all six cells. A time-zero clothing of the same island (\(\theta^{\mathrm{L}}=1\), \(m=0\)) is retained as a boundary. Deadlock of this island is therefore a *positive-time local first-hit*; a one-slot vehicle change prevents that stop.
+4. *Baselines, embedding, and scale.* Four siphon agreements and four typed refusals sit on one semantics (false positives and false negatives zero). A tandem family reaches \(10^3\)–\(10^4\) states and refuses three rows at a declared cap. A four-field diagnostic agrees on an independently hashed definitional S3PR of [1] and refuses a declared AGV distortion. A finite-state supervisor on the same 64-state graph retains 56 states and also yields \(\theta^{\mathrm{B}}=0\).
 
 Controllers, monitors, shop-floor policies, and general plant-net isomorphisms remain outside the claim.
 
@@ -761,7 +793,7 @@ Omitted for double-anonymous review.
 
 **Fig. 1.** Object of the paper versus three classical pictures. A wait-for cycle, a plant-net siphon, and a plant terminal SCC are not identified with the computed object. A closed core \(K\) is only a candidate. Typed admission (Theorems 3–4) and bypass refusal (Theorem 5) produce the stopped first-hit of \(D^{\mathrm{G}}\), \(D^{\mathrm{L}}\), or \(F\). File: `docs/paper/figures/fig_research_object.pdf`.
 
-**Fig. 2.** Exact first-hit KPIs on the three-job machine–AGV island (Family IV). Base: already a local hit. Optional AGV drain: every trajectory completes. Files: `docs/paper/figures/fig_h4_island_kpis.pdf`, `.png`.
+**Fig. 2.** Exact first-hit KPIs on the *time-zero boundary* clothing of the three-job machine–AGV island. Base: already a local hit (\(\theta^{\mathrm{L}}=1\), \(m=0\)). Optional AGV drain: every trajectory completes. The *lead* island of Table II starts transient and hits \(D^{\mathrm{L}}\) at positive time. Files: `docs/paper/figures/fig_h4_island_kpis.pdf`, `.png`.
 
 **Fig. 3.** Tandem scale (Family III, unit capacity). Left: \(\lvert X\rvert\) versus jobs (log). Right: runtime versus jobs (log). Horizontal guides mark \(10^3\), \(10^4\) states and the \(300\,\mathrm{s}\) cap. Files: `docs/paper/figures/fig_h3_scale.pdf`, `.png`.
 
