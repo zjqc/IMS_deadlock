@@ -1,0 +1,103 @@
+{
+  "schema_version": "ims-deadlock/case/v1",
+  "case_id": "H1_CE_CL1_nonconfluent_closure",
+  "title": "CE-CL1 nonconfluent closure",
+  "status": "DISCOVERY",
+  "model": {
+    "id": "h1-cl1-nonconfluent",
+    "resources": [
+      {
+        "id": "slot",
+        "capacity": 1,
+        "kind": "buffer"
+      }
+    ],
+    "jobs": [
+      "j1",
+      "j2"
+    ]
+  },
+  "initial_state": {
+    "id": "h1-cl1-race",
+    "holds": [],
+    "requests": {
+      "j1": [
+        [
+          {
+            "resource_id": "slot",
+            "units": 1
+          }
+        ]
+      ],
+      "j2": [
+        [
+          {
+            "resource_id": "slot",
+            "units": 1
+          }
+        ]
+      ]
+    },
+    "completed_jobs": [],
+    "stable": true,
+    "complete": false,
+    "event_calendar_empty": true,
+    "stage_by_job": {
+      "j1": "idle",
+      "j2": "idle"
+    },
+    "mode_by_job": {
+      "j1": "idle",
+      "j2": "idle"
+    },
+    "zero_time_trace": []
+  },
+  "transitions": [
+    {
+      "name": "claim-slot-j1",
+      "kind": "dispatch",
+      "job_id": "j1",
+      "source_mode": "idle",
+      "target_mode": "holding",
+      "controllable": false,
+      "zero_time": true,
+      "urgent": true,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "slot",
+          "units": 1
+        }
+      ],
+      "release": [],
+      "requires": [],
+      "mark_complete": false,
+      "next_requests": []
+    },
+    {
+      "name": "claim-slot-j2",
+      "kind": "dispatch",
+      "job_id": "j2",
+      "source_mode": "idle",
+      "target_mode": "holding",
+      "controllable": false,
+      "zero_time": true,
+      "urgent": true,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "slot",
+          "units": 1
+        }
+      ],
+      "release": [],
+      "requires": [],
+      "mark_complete": false,
+      "next_requests": []
+    }
+  ],
+  "calendar": [],
+  "notes": [
+    "tase_hardening_v1"
+  ]
+}

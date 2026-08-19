@@ -1,0 +1,373 @@
+{
+  "schema_version": "ims-deadlock/case/v1",
+  "case_id": "H1_CE_BIXD2_optional_drain",
+  "title": "CE-BIXD2 optional drain is not structural repair",
+  "status": "DISCOVERY",
+  "model": {
+    "id": "BIX2-PERSIST-ring-cM1-cD1-cQ1-nA1-nB1-nC1",
+    "resources": [
+      {
+        "id": "D",
+        "capacity": 1,
+        "kind": "buffer"
+      },
+      {
+        "id": "M",
+        "capacity": 1,
+        "kind": "machine"
+      },
+      {
+        "id": "Q",
+        "capacity": 1,
+        "kind": "machine"
+      }
+    ],
+    "jobs": [
+      "A1",
+      "B1",
+      "C1"
+    ]
+  },
+  "initial_state": {
+    "id": "BIX2-PERSIST-ring-cM1-cD1-cQ1-nA1-nB1-nC1-initial",
+    "holds": [],
+    "requests": {
+      "A1": [
+        [
+          {
+            "resource_id": "M",
+            "units": 1
+          }
+        ]
+      ],
+      "B1": [
+        [
+          {
+            "resource_id": "D",
+            "units": 1
+          }
+        ]
+      ],
+      "C1": [
+        [
+          {
+            "resource_id": "Q",
+            "units": 1
+          }
+        ]
+      ]
+    },
+    "completed_jobs": [],
+    "stable": true,
+    "complete": false,
+    "event_calendar_empty": true,
+    "stage_by_job": {
+      "A1": "a_idle",
+      "B1": "b_idle",
+      "C1": "c_idle"
+    },
+    "mode_by_job": {
+      "A1": "a_idle",
+      "B1": "b_idle",
+      "C1": "c_idle"
+    },
+    "zero_time_trace": []
+  },
+  "transitions": [
+    {
+      "name": "A1-start-M",
+      "kind": "start",
+      "job_id": "A1",
+      "source_mode": "a_idle",
+      "target_mode": "a_in_service_M",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "M",
+          "units": 1
+        }
+      ],
+      "release": [],
+      "requires": [],
+      "mark_complete": false,
+      "next_requests": []
+    },
+    {
+      "name": "A1-complete-request-D",
+      "kind": "service_complete",
+      "job_id": "A1",
+      "source_mode": "a_in_service_M",
+      "target_mode": "a_blocked_for_D",
+      "controllable": false,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": false,
+      "acquire": [],
+      "release": [],
+      "requires": [],
+      "mark_complete": false,
+      "next_requests": [
+        [
+          {
+            "resource_id": "D",
+            "units": 1
+          }
+        ]
+      ]
+    },
+    {
+      "name": "A1-handoff-D-release-M",
+      "kind": "dispatch",
+      "job_id": "A1",
+      "source_mode": "a_blocked_for_D",
+      "target_mode": "a_on_D",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "D",
+          "units": 1
+        }
+      ],
+      "release": [
+        {
+          "resource_id": "M",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": false,
+      "next_requests": []
+    },
+    {
+      "name": "A1-release-D",
+      "kind": "release",
+      "job_id": "A1",
+      "source_mode": "a_on_D",
+      "target_mode": "completed",
+      "controllable": false,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": false,
+      "acquire": [],
+      "release": [
+        {
+          "resource_id": "D",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true
+    },
+    {
+      "name": "B1-start-D",
+      "kind": "start",
+      "job_id": "B1",
+      "source_mode": "b_idle",
+      "target_mode": "b_in_service_D",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "D",
+          "units": 1
+        }
+      ],
+      "release": [],
+      "requires": [],
+      "mark_complete": false,
+      "next_requests": []
+    },
+    {
+      "name": "B1-complete-request-Q",
+      "kind": "service_complete",
+      "job_id": "B1",
+      "source_mode": "b_in_service_D",
+      "target_mode": "b_blocked_for_Q",
+      "controllable": false,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": false,
+      "acquire": [],
+      "release": [],
+      "requires": [],
+      "mark_complete": false,
+      "next_requests": [
+        [
+          {
+            "resource_id": "Q",
+            "units": 1
+          }
+        ]
+      ]
+    },
+    {
+      "name": "B1-handoff-Q-release-D",
+      "kind": "dispatch",
+      "job_id": "B1",
+      "source_mode": "b_blocked_for_Q",
+      "target_mode": "b_on_Q",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "Q",
+          "units": 1
+        }
+      ],
+      "release": [
+        {
+          "resource_id": "D",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": false,
+      "next_requests": []
+    },
+    {
+      "name": "B1-release-Q",
+      "kind": "release",
+      "job_id": "B1",
+      "source_mode": "b_on_Q",
+      "target_mode": "completed",
+      "controllable": false,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": false,
+      "acquire": [],
+      "release": [
+        {
+          "resource_id": "Q",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true
+    },
+    {
+      "name": "C1-start-Q",
+      "kind": "start",
+      "job_id": "C1",
+      "source_mode": "c_idle",
+      "target_mode": "c_in_service_Q",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "Q",
+          "units": 1
+        }
+      ],
+      "release": [],
+      "requires": [],
+      "mark_complete": false,
+      "next_requests": []
+    },
+    {
+      "name": "C1-complete-request-M",
+      "kind": "service_complete",
+      "job_id": "C1",
+      "source_mode": "c_in_service_Q",
+      "target_mode": "c_blocked_for_M",
+      "controllable": false,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": false,
+      "acquire": [],
+      "release": [],
+      "requires": [],
+      "mark_complete": false,
+      "next_requests": [
+        [
+          {
+            "resource_id": "M",
+            "units": 1
+          }
+        ]
+      ]
+    },
+    {
+      "name": "C1-handoff-M-release-Q",
+      "kind": "dispatch",
+      "job_id": "C1",
+      "source_mode": "c_blocked_for_M",
+      "target_mode": "c_on_M",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "M",
+          "units": 1
+        }
+      ],
+      "release": [
+        {
+          "resource_id": "Q",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": false,
+      "next_requests": []
+    },
+    {
+      "name": "C1-release-M",
+      "kind": "release",
+      "job_id": "C1",
+      "source_mode": "c_on_M",
+      "target_mode": "completed",
+      "controllable": false,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": false,
+      "acquire": [],
+      "release": [
+        {
+          "resource_id": "M",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true
+    },
+    {
+      "name": "C1-optional-drain",
+      "kind": "release",
+      "job_id": "C1",
+      "source_mode": "c_blocked_for_M",
+      "target_mode": "completed",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [],
+      "release": [
+        {
+          "resource_id": "Q",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true,
+      "next_requests": []
+    }
+  ],
+  "calendar": [],
+  "notes": [
+    "tase_hardening_v1"
+  ]
+}

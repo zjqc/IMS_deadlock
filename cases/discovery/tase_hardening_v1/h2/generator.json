@@ -1,0 +1,19 @@
+{
+  "types": [
+    "residual_cycle",
+    "unit_deadlock",
+    "multi_capacity_residual",
+    "agv_required",
+    "sip1_positive",
+    "siphon_refusal_outside_sip1",
+    "local_with_bypass",
+    "global_with_local_looking_core"
+  ],
+  "cells": [
+    "tight",
+    "one-below",
+    "balanced",
+    "loose"
+  ],
+  "n_plants": 32
+}

@@ -1,0 +1,176 @@
+{
+  "schema_version": "ims-deadlock/case/v1",
+  "case_id": "H1_CE_INT1_intervened",
+  "title": "CE-INT1 new kernel after cut",
+  "status": "DISCOVERY",
+  "model": {
+    "id": "h1-int1-original",
+    "resources": [
+      {
+        "id": "a",
+        "capacity": 1,
+        "kind": "machine"
+      },
+      {
+        "id": "b",
+        "capacity": 1,
+        "kind": "machine"
+      },
+      {
+        "id": "c",
+        "capacity": 1,
+        "kind": "machine"
+      }
+    ],
+    "jobs": [
+      "j1",
+      "j2",
+      "j3"
+    ]
+  },
+  "initial_state": {
+    "id": "h1-int1-k2",
+    "holds": [
+      {
+        "job_id": "j1",
+        "resource_id": "a",
+        "units": 1
+      },
+      {
+        "job_id": "j2",
+        "resource_id": "b",
+        "units": 1
+      },
+      {
+        "job_id": "j3",
+        "resource_id": "c",
+        "units": 1
+      }
+    ],
+    "requests": {
+      "j1": [
+        [
+          {
+            "resource_id": "b",
+            "units": 1
+          }
+        ]
+      ],
+      "j2": [
+        [
+          {
+            "resource_id": "c",
+            "units": 1
+          }
+        ]
+      ],
+      "j3": [
+        [
+          {
+            "resource_id": "b",
+            "units": 1
+          }
+        ]
+      ]
+    },
+    "completed_jobs": [],
+    "stable": true,
+    "complete": false,
+    "event_calendar_empty": true,
+    "stage_by_job": {
+      "j1": "wait",
+      "j2": "wait",
+      "j3": "wait"
+    },
+    "mode_by_job": {
+      "j1": "wait",
+      "j2": "wait",
+      "j3": "wait"
+    },
+    "zero_time_trace": []
+  },
+  "transitions": [
+    {
+      "name": "j2-acquire-c",
+      "kind": "dispatch",
+      "job_id": "j2",
+      "source_mode": "wait",
+      "target_mode": "done",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "c",
+          "units": 1
+        }
+      ],
+      "release": [
+        {
+          "resource_id": "b",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true,
+      "next_requests": []
+    },
+    {
+      "name": "j3-acquire-b",
+      "kind": "dispatch",
+      "job_id": "j3",
+      "source_mode": "wait",
+      "target_mode": "done",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "b",
+          "units": 1
+        }
+      ],
+      "release": [
+        {
+          "resource_id": "c",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true,
+      "next_requests": []
+    },
+    {
+      "name": "j1-acquire-b",
+      "kind": "dispatch",
+      "job_id": "j1",
+      "source_mode": "wait",
+      "target_mode": "done",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "b",
+          "units": 1
+        }
+      ],
+      "release": [
+        {
+          "resource_id": "a",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true,
+      "next_requests": []
+    }
+  ],
+  "calendar": [],
+  "notes": [
+    "tase_hardening_v1"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "scope_id": "tase_hardening_v1",
+  "case_construction_authorized": false,
+  "overlap_audit_authorized": false,
+  "target_certification_preflight_authorized": false,
+  "quantitative_execution_authorized": false,
+  "theory_revision_authorized": false
+}
