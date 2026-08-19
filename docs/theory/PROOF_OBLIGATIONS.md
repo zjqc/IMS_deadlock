@@ -2,6 +2,15 @@
 
 本文件把定理梯拆成可审计义务。每条义务在完成前不得在论文中写成已证结论。
 
+2026-08-19 journal-hardening annotation: see
+`docs/verification/JOURNAL_THEORY_AUDIT_V1.md`. No closed obligation is
+reopened. Still-open items that block T-ASE hardening rather than Paper A
+soundness are PO-T2-7 (non-resource-guard P2 exterior), PO-T4-6e (richer
+island thresholds), PO-T6-4/5/6 (hitting-set and risk-budget control), and
+the CRP/recorder comparator obligations PO-T2-8 / PO-T3-7a / PO-T3-8a.
+P1 representation remains closed; PO-T1-5/6 stay open and must not be sold
+as Paper A novelty.
+
 ## T1 语义等价
 
 状态：P1 项目内已证明（严格受限子类）；Petri 结构桥仍拟证明。

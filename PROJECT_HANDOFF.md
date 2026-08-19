@@ -1,3 +1,22 @@
+## 2026-08-19 Journal-Hardening Continuation
+
+Current edit target is the linked worktree
+`D:\worktree\IMS_deadlock-journal-hardening-v1` on
+`codex/journal-hardening-v1`, branched from `main` at
+`5f852e06650e29b71f79bc344246aca79524bfba`. Do not edit `main` or historical
+evidence worktrees.
+
+This tranche is documentation-first: theory audit, theorem-case loop map,
+novelty matrix, then a separately approved T-ASE hardening spec. Article-core
+v1 remains `TIER A COMPLETE`. Original G6-B remains `OPEN_PENDING`. No
+scientific upgrade is claimed by these documents.
+
+Entry points:
+
+- `docs/verification/JOURNAL_THEORY_AUDIT_V1.md`
+- `docs/theory/THEOREM_CASE_LOOP_MAP.md`
+- `docs/literature/NOVELTY_DIFFERENCE_MATRIX.md`
+
 # IMS Deadlock 当前项目交接
 
 ## 2026-08-07 PR #11/#12 Main Integration

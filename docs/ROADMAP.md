@@ -1,3 +1,12 @@
+## 2026-08-19 Journal-Hardening Continuation
+
+Isolated worktree `D:\worktree\IMS_deadlock-journal-hardening-v1` /
+`codex/journal-hardening-v1` is the only write target. Paper A scoped loop
+stays closed; T-ASE hardening is the next designed panel, not G6-B overlap
+and not a rewrite of article-core v1. See
+`docs/verification/JOURNAL_THEORY_AUDIT_V1.md` and
+`docs/theory/THEOREM_CASE_LOOP_MAP.md`.
+
 # IMS Deadlock Gate Roadmap
 
 ## 2026-08-07 PR #11/#12 Main Integration

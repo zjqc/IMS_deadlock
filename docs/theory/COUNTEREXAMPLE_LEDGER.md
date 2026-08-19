@@ -2,43 +2,54 @@
 
 本账本记录会击穿过强命题的最小案例设计。只有已经给出 concrete model、reachable prefix 和 certificate/failure witness 的条目才能标为“反例”；发现阶段尚未实例化的条目标为“反例候选/待实例化”。
 
+2026-08-19 ledger binding (journal-hardening worktree, documentation only):
+CE-C1, CE-C3 and CE-C4 are bound to the existing discovery case files on
+`5f852e06650e29b71f79bc344246aca79524bfba`. This does not create cases, does
+not rerun science, and does not upgrade them to confirmation.
+
 ## CE-C1 多容量有环但不死锁
 
-状态：反例候选/待实例化。
+状态：已实例化发现见证；绑定 `cases/C1.json`（`C1-cycle-but-insufficient-wip`）。
 
 目标击穿命题：资源请求图存在有向环即充分死锁。
 
-构造要点：
+已绑定构造：
 
-- 两个资源 `r1,r2`，至少一个资源容量大于 1。
-- 两个工件形成 `r1 -> r2 -> r1` 请求环。
-- 残余容量仍足以满足至少一个请求，因此存在可继续事件。
+- 资源 `r1` 容量 1、`r2` 容量 2。
+- `j1` 持有 `r1` 请求 `r2`，`j2` 持有一单位 `r2` 请求 `r1`，请求图有环。
+- 残余 `r2` 仍允许 `finish-j1-via-free-r2`，因此不是容量介导死锁。
 
 预期结论：简单环只能提示风险，不能作为多容量 IMS 的充分证书。
+该条仍是 `DISCOVERY`，不是 held-out confirmation。
 
 ## CE-C3 WCC/simple-cycle failure
 
-状态：反例候选/待实例化。
+状态：已实例化 IMS 多容量筛选见证；绑定 `cases/C3.json`
+（`C3-multi-instance-counterexample`）。Palmer 2/3-server WCC 快捷失败仍是
+文献基线，不是本条的独立 IMS 复制。
 
 目标击穿命题：无汇弱连通分量或普通 SCC 总能等价于死锁。
 
-基线边界：Palmer 的有限队列网络 knot 判据是文献基线；无汇 WCC 快捷只在单节点、两节点每节点不超过 2 服务器、或全有限单服务器条件下成立。2/3 服务器构造保留为 WCC 快捷失败边界。
+已绑定构造：两资源容量均为 2；`j1` 持有一单位 `r1` 请求 `r2`，`j2` 请求
+`r1`。案例目录将其标为 simple-cycle / WCC 快捷与多容量核的分离筛选。
 
 IMS 迁移要求：必须使用容量敏感封闭阻塞核，而不是 WCC 快捷。
+该条仍是 `DISCOVERY`。
 
 ## CE-C4 机器投影漏掉 AGV/预约
 
-状态：反例候选/待实例化。
+状态：已实例化发现见证；绑定 `cases/C4.json`（`C4-agv-required`）。
 
 目标击穿命题：只看机器资源即可判断制造岛死锁。
 
-构造要点：
+已绑定构造：
 
-- 机器投影无环或可继续。
-- 加入 AGV、站台或预约 token 后，一个工件占有机器等待 AGV，另一个占有 AGV 等待目标机器或交接位。
-- `blocked_unload` 持续占有机器或 AGV。
+- 机器 `m1`、缓冲 `buf`、AGV `agv` 均为单位容量。
+- `pA` 持有 `m1` 并 AND-请求 `{agv,buf}`；`pB` 持有 `agv` 并请求 `m1`。
+- 机器投影丢掉 AGV 后不能恢复该核。
 
 预期结论：运输资源不可省略；Petri 或 RAS 映射必须保留 AGV/预约 place。
+该条仍是 `DISCOVERY`，不是 journal-scale 运输研究。
 
 ## CE-CL1 闭包不合流
 
