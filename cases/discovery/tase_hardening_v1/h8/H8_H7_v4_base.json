@@ -1,0 +1,81 @@
+{
+  "id": "H8_H7_v4_base",
+  "status": "computed",
+  "plant_id": "H7_v4_base",
+  "model_id": "h7-island-v4-base",
+  "n_states": 64,
+  "n_safe": 56,
+  "n_disabled_state_events": 14,
+  "initial_state_feasible": true,
+  "supervisor_initial_infeasible": false,
+  "disabled_state_events": [
+    [
+      "s1",
+      "B-start-v"
+    ],
+    [
+      "s13",
+      "B-start-v"
+    ],
+    [
+      "s14",
+      "B-start-v"
+    ],
+    [
+      "s17",
+      "A-start-m1"
+    ],
+    [
+      "s2",
+      "A-start-m1"
+    ],
+    [
+      "s20",
+      "C-release-m2"
+    ],
+    [
+      "s23",
+      "B-start-v"
+    ],
+    [
+      "s24",
+      "B-start-v"
+    ],
+    [
+      "s28",
+      "A-start-m1"
+    ],
+    [
+      "s29",
+      "C-release-m2"
+    ],
+    [
+      "s34",
+      "B-start-v"
+    ],
+    [
+      "s5",
+      "B-start-v"
+    ],
+    [
+      "s6",
+      "B-start-v"
+    ],
+    [
+      "s8",
+      "A-start-m1"
+    ]
+  ],
+  "supervised_exact": {
+    "id": "H7_v4_base__supervised",
+    "status": "exact",
+    "probabilities": {
+      "theta_g": -0.0,
+      "theta_l": -0.0,
+      "theta_b": -0.0
+    },
+    "mean_stopped_time": 7.047721536351168
+  },
+  "h8_spec_sha256": "afec89477308551e55021dc98f048835bd6d1d0a400a5919aa9c4a8cce4366d8",
+  "h8_plant": "H7_v4_base"
+}

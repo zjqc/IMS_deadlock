@@ -1,0 +1,12 @@
+{
+  "id": "H6_B_agv_distortion",
+  "fields": {
+    "reachable": false,
+    "local_family_available": false,
+    "matching_kernel_count": 0,
+    "s4pr_overlap": false
+  },
+  "field4_reason": "declared_distortion_agv_token",
+  "bridge_agreement": false,
+  "embedding_certificate_sha256": "e1d5f8f931924a9345283f8eff3d2a48645cc3477c79a0c75305fa88e98d6de4"
+}

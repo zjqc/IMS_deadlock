@@ -1,0 +1,567 @@
+{
+  "scope_id": "tase_hardening_v1",
+  "panel": "h7_island_v4",
+  "h7_spec_sha256": "57b236a24ee59ca91b8e1633954d5270a1776063fb4f0a3902b349b1e5173950",
+  "authorization_id": "tase_hardening_v1_quantitative_t6",
+  "authorization_sha256": "090c75516fbbde24dcc4cde03b0d24aa633955f1ce9b97cc4c49b229f7b193c9",
+  "prior_h4_roots_untouched": true,
+  "probe": {
+    "logical_cpus": 56,
+    "free_ram_gib": 102.8843994140625,
+    "workers": 48
+  },
+  "h7_barrier": [
+    {
+      "id": "H7_v4_base",
+      "role": "base",
+      "label": "synthetic digital-twin v4",
+      "intervention": "none",
+      "model_id": "h7-island-v4-base",
+      "state_count": 64,
+      "truncated": false,
+      "barrier_a": "certified",
+      "refusal_code": null,
+      "states": [
+        "s0",
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6",
+        "s7",
+        "s8",
+        "s9",
+        "s10",
+        "s11",
+        "s12",
+        "s13",
+        "s14",
+        "s15",
+        "s16",
+        "s17",
+        "s18",
+        "s19",
+        "s20",
+        "s21",
+        "s22",
+        "s23",
+        "s24",
+        "s25",
+        "s26",
+        "s27",
+        "s28",
+        "s29",
+        "s30",
+        "s31",
+        "s32",
+        "s33",
+        "s34",
+        "s35",
+        "s36",
+        "s37",
+        "s38",
+        "s39",
+        "s40",
+        "s41",
+        "s42",
+        "s43",
+        "s44",
+        "s45",
+        "s46",
+        "s47",
+        "s48",
+        "s49",
+        "s50",
+        "s51",
+        "s52",
+        "s53",
+        "s54",
+        "s55",
+        "s56",
+        "s57",
+        "s58",
+        "s59",
+        "s60",
+        "s61",
+        "s62",
+        "s63"
+      ],
+      "d_global": [
+        "s39"
+      ],
+      "d_local": [
+        "s10",
+        "s19",
+        "s29"
+      ],
+      "completion": [
+        "s63"
+      ],
+      "initial_state": "s0",
+      "initial_class": "transient",
+      "local_with_outgoing": 3,
+      "h7_spec_sha256": "57b236a24ee59ca91b8e1633954d5270a1776063fb4f0a3902b349b1e5173950",
+      "plant_identity": {
+        "model_id": "h7-island-v4-base",
+        "state_id": "h7-v4-base-s0",
+        "resources": [
+          "M1",
+          "M2",
+          "V"
+        ],
+        "jobs": [
+          "A",
+          "B",
+          "C"
+        ],
+        "transitions": [
+          {
+            "name": "A-start-m1",
+            "kind": "start",
+            "job_id": "A",
+            "acquire": [
+              "M1"
+            ],
+            "release": []
+          },
+          {
+            "name": "A-service-complete",
+            "kind": "service_complete",
+            "job_id": "A",
+            "acquire": [],
+            "release": []
+          },
+          {
+            "name": "A-unload-v",
+            "kind": "unload",
+            "job_id": "A",
+            "acquire": [
+              "V"
+            ],
+            "release": [
+              "M1"
+            ]
+          },
+          {
+            "name": "A-complete-release-v",
+            "kind": "release",
+            "job_id": "A",
+            "acquire": [],
+            "release": [
+              "V"
+            ]
+          },
+          {
+            "name": "B-start-v",
+            "kind": "start",
+            "job_id": "B",
+            "acquire": [
+              "V"
+            ],
+            "release": []
+          },
+          {
+            "name": "B-enter-m1",
+            "kind": "dispatch",
+            "job_id": "B",
+            "acquire": [
+              "M1"
+            ],
+            "release": [
+              "V"
+            ]
+          },
+          {
+            "name": "B-complete-release-m1",
+            "kind": "release",
+            "job_id": "B",
+            "acquire": [],
+            "release": [
+              "M1"
+            ]
+          },
+          {
+            "name": "C-service-1",
+            "kind": "service_complete",
+            "job_id": "C",
+            "acquire": [],
+            "release": []
+          },
+          {
+            "name": "C-service-2",
+            "kind": "service_complete",
+            "job_id": "C",
+            "acquire": [],
+            "release": []
+          },
+          {
+            "name": "C-release-m2",
+            "kind": "release",
+            "job_id": "C",
+            "acquire": [],
+            "release": [
+              "M2"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "H7_v4_intervention",
+      "role": "intervention",
+      "label": "synthetic digital-twin v4",
+      "intervention": "extra_agv_slot",
+      "model_id": "h7-island-v4-intervention",
+      "state_count": 72,
+      "truncated": false,
+      "barrier_a": "certified",
+      "refusal_code": null,
+      "states": [
+        "s0",
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6",
+        "s7",
+        "s8",
+        "s9",
+        "s10",
+        "s11",
+        "s12",
+        "s13",
+        "s14",
+        "s15",
+        "s16",
+        "s17",
+        "s18",
+        "s19",
+        "s20",
+        "s21",
+        "s22",
+        "s23",
+        "s24",
+        "s25",
+        "s26",
+        "s27",
+        "s28",
+        "s29",
+        "s30",
+        "s31",
+        "s32",
+        "s33",
+        "s34",
+        "s35",
+        "s36",
+        "s37",
+        "s38",
+        "s39",
+        "s40",
+        "s41",
+        "s42",
+        "s43",
+        "s44",
+        "s45",
+        "s46",
+        "s47",
+        "s48",
+        "s49",
+        "s50",
+        "s51",
+        "s52",
+        "s53",
+        "s54",
+        "s55",
+        "s56",
+        "s57",
+        "s58",
+        "s59",
+        "s60",
+        "s61",
+        "s62",
+        "s63",
+        "s64",
+        "s65",
+        "s66",
+        "s67",
+        "s68",
+        "s69",
+        "s70",
+        "s71"
+      ],
+      "d_global": [],
+      "d_local": [],
+      "completion": [
+        "s71"
+      ],
+      "initial_state": "s0",
+      "initial_class": "transient",
+      "local_with_outgoing": 0,
+      "h7_spec_sha256": "57b236a24ee59ca91b8e1633954d5270a1776063fb4f0a3902b349b1e5173950",
+      "plant_identity": {
+        "model_id": "h7-island-v4-intervention",
+        "state_id": "h7-v4-intervention-s0",
+        "resources": [
+          "M1",
+          "M2",
+          "V"
+        ],
+        "jobs": [
+          "A",
+          "B",
+          "C"
+        ],
+        "transitions": [
+          {
+            "name": "A-start-m1",
+            "kind": "start",
+            "job_id": "A",
+            "acquire": [
+              "M1"
+            ],
+            "release": []
+          },
+          {
+            "name": "A-service-complete",
+            "kind": "service_complete",
+            "job_id": "A",
+            "acquire": [],
+            "release": []
+          },
+          {
+            "name": "A-unload-v",
+            "kind": "unload",
+            "job_id": "A",
+            "acquire": [
+              "V"
+            ],
+            "release": [
+              "M1"
+            ]
+          },
+          {
+            "name": "A-complete-release-v",
+            "kind": "release",
+            "job_id": "A",
+            "acquire": [],
+            "release": [
+              "V"
+            ]
+          },
+          {
+            "name": "B-start-v",
+            "kind": "start",
+            "job_id": "B",
+            "acquire": [
+              "V"
+            ],
+            "release": []
+          },
+          {
+            "name": "B-enter-m1",
+            "kind": "dispatch",
+            "job_id": "B",
+            "acquire": [
+              "M1"
+            ],
+            "release": [
+              "V"
+            ]
+          },
+          {
+            "name": "B-complete-release-m1",
+            "kind": "release",
+            "job_id": "B",
+            "acquire": [],
+            "release": [
+              "M1"
+            ]
+          },
+          {
+            "name": "C-service-1",
+            "kind": "service_complete",
+            "job_id": "C",
+            "acquire": [],
+            "release": []
+          },
+          {
+            "name": "C-service-2",
+            "kind": "service_complete",
+            "job_id": "C",
+            "acquire": [],
+            "release": []
+          },
+          {
+            "name": "C-release-m2",
+            "kind": "release",
+            "job_id": "C",
+            "acquire": [],
+            "release": [
+              "M2"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "h7_exact": [
+    {
+      "id": "H7_v4_base",
+      "status": "exact",
+      "probabilities": {
+        "theta_g": 0.046017535903250195,
+        "theta_l": 0.5373157974300832,
+        "theta_b": 0.5833333333333334
+      },
+      "mean_stopped_time": 3.5958757999496096
+    },
+    {
+      "id": "H7_v4_intervention",
+      "status": "exact",
+      "probabilities": {
+        "theta_g": -0.0,
+        "theta_l": -0.0,
+        "theta_b": -0.0
+      },
+      "mean_stopped_time": 6.295892075249854
+    }
+  ],
+  "h7_des_primary": [
+    {
+      "id": "H7_v4_base__primary",
+      "plant_id": "H7_v4_base",
+      "wave": "primary",
+      "sample_count": 65536,
+      "counts": {
+        "D_global": 3009,
+        "D_local": 35323,
+        "F": 27204
+      },
+      "probabilities": {
+        "theta_g": 0.0459136962890625,
+        "theta_l": 0.5389862060546875,
+        "theta_b": 0.58489990234375
+      },
+      "mean_stopped_time": 3.5916278847149194
+    },
+    {
+      "id": "H7_v4_intervention__primary",
+      "plant_id": "H7_v4_intervention",
+      "wave": "primary",
+      "sample_count": 65536,
+      "counts": {
+        "D_global": 0,
+        "D_local": 0,
+        "F": 65536
+      },
+      "probabilities": {
+        "theta_g": 0.0,
+        "theta_l": 0.0,
+        "theta_b": 0.0
+      },
+      "mean_stopped_time": 6.297982385622027
+    }
+  ],
+  "h7_des_repro": [
+    {
+      "id": "H7_v4_base__repro",
+      "plant_id": "H7_v4_base",
+      "wave": "repro",
+      "sample_count": 65536,
+      "counts": {
+        "D_global": 3062,
+        "D_local": 35109,
+        "F": 27365
+      },
+      "probabilities": {
+        "theta_g": 0.046722412109375,
+        "theta_l": 0.5357208251953125,
+        "theta_b": 0.5824432373046875
+      },
+      "mean_stopped_time": 3.599615291491528
+    },
+    {
+      "id": "H7_v4_intervention__repro",
+      "plant_id": "H7_v4_intervention",
+      "wave": "repro",
+      "sample_count": 65536,
+      "counts": {
+        "D_global": 0,
+        "D_local": 0,
+        "F": 65536
+      },
+      "probabilities": {
+        "theta_g": 0.0,
+        "theta_l": 0.0,
+        "theta_b": 0.0
+      },
+      "mean_stopped_time": 6.284698134428608
+    }
+  ],
+  "compatibility": [
+    {
+      "plant_id": "H7_v4_base",
+      "estimand": "theta_g",
+      "exact": 0.046017535903250195,
+      "des": 0.0459136962890625,
+      "abs_error": 0.00010383961418769516,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H7_v4_base",
+      "estimand": "theta_l",
+      "exact": 0.5373157974300832,
+      "des": 0.5389862060546875,
+      "abs_error": 0.0016704086246043248,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H7_v4_base",
+      "estimand": "theta_b",
+      "exact": 0.5833333333333334,
+      "des": 0.58489990234375,
+      "abs_error": 0.0015665690104166297,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H7_v4_intervention",
+      "estimand": "theta_g",
+      "exact": -0.0,
+      "des": 0.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H7_v4_intervention",
+      "estimand": "theta_l",
+      "exact": -0.0,
+      "des": 0.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H7_v4_intervention",
+      "estimand": "theta_b",
+      "exact": -0.0,
+      "des": 0.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    }
+  ],
+  "hoeffding_tolerance": 0.007354793908534244,
+  "plant_identity": {
+    "h7_base_plant_sha256": "ba95855d1e4feea5d700b25f69b18b9e4c43576b77c1b1e9bc0d39913abe50d1",
+    "h7_intervention_plant_sha256": "4c318b61967cd89f4f13bedb5c29f5c653a1e0016e91401b8797f179bfa9f0fe",
+    "h7_stopping_hash": "e921ba1dd729c2a53aef09d248768698fb4d7c63740fae905d1fbf28035b22d7",
+    "h7_spec_sha256": "57b236a24ee59ca91b8e1633954d5270a1776063fb4f0a3902b349b1e5173950"
+  },
+  "original_g6b_gate": "OPEN_PENDING"
+}

@@ -1,0 +1,72 @@
+{
+  "scope_id": "tase_hardening_v1",
+  "panel": "h6_embed",
+  "h6_spec_sha256": "31dca21694069c35f61a7e9f4a8360313ba900d2a2b3666bf95a94d4fb8d7e6c",
+  "sba_ran": false,
+  "crp_equations_ran": false,
+  "g4_g5_identity_reused": false,
+  "probe": {
+    "logical_cpus": 56,
+    "free_ram_gib": 102.8836669921875
+  },
+  "n_subjects": 2,
+  "bridge_agreement_count": 1,
+  "rows": [
+    {
+      "id": "H6_A_ezpeleta_unit_s3pr",
+      "role": "faithful",
+      "r_crp": [
+        "r1",
+        "r2"
+      ],
+      "fields": {
+        "reachable": true,
+        "local_family_available": true,
+        "matching_kernel_count": 1,
+        "s4pr_overlap": true
+      },
+      "field4_reason": null,
+      "bridge_agreement": true,
+      "family_size": 1,
+      "kernel_resource_sets": [
+        [
+          "r1",
+          "r2"
+        ]
+      ],
+      "truncated": false,
+      "state_count": 13,
+      "g4_g5_identity_reused": false,
+      "sba_ran": false,
+      "crp_equations_ran": false,
+      "embedding_certificate_sha256": "d5c4071208544bea1058d85bf3b52249c80273443145d8db0754de9867c86278",
+      "h6_spec_sha256": "31dca21694069c35f61a7e9f4a8360313ba900d2a2b3666bf95a94d4fb8d7e6c"
+    },
+    {
+      "id": "H6_B_agv_distortion",
+      "role": "distortion",
+      "r_crp": [
+        "r1",
+        "r2"
+      ],
+      "fields": {
+        "reachable": false,
+        "local_family_available": false,
+        "matching_kernel_count": 0,
+        "s4pr_overlap": false
+      },
+      "field4_reason": "declared_distortion_agv_token",
+      "bridge_agreement": false,
+      "family_size": 0,
+      "kernel_resource_sets": [],
+      "truncated": false,
+      "state_count": 13,
+      "g4_g5_identity_reused": false,
+      "sba_ran": false,
+      "crp_equations_ran": false,
+      "embedding_certificate_sha256": "e1d5f8f931924a9345283f8eff3d2a48645cc3477c79a0c75305fa88e98d6de4",
+      "h6_spec_sha256": "31dca21694069c35f61a7e9f4a8360313ba900d2a2b3666bf95a94d4fb8d7e6c"
+    }
+  ],
+  "original_g6b_gate": "OPEN_PENDING"
+}

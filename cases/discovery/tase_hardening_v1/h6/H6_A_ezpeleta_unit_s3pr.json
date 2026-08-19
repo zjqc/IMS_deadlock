@@ -1,0 +1,12 @@
+{
+  "id": "H6_A_ezpeleta_unit_s3pr",
+  "fields": {
+    "reachable": true,
+    "local_family_available": true,
+    "matching_kernel_count": 1,
+    "s4pr_overlap": true
+  },
+  "field4_reason": null,
+  "bridge_agreement": true,
+  "embedding_certificate_sha256": "d5c4071208544bea1058d85bf3b52249c80273443145d8db0754de9867c86278"
+}

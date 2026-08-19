@@ -899,10 +899,317 @@ def _contiguous_starts(n: int, workers: int) -> list[tuple[int, int]]:
     return starts
 
 
+def run_h6_waves(repo_root: Path) -> dict[str, Any]:
+    """H6 published-net embedding. No SBA, no G4/G5 replay."""
+
+    from ims_deadlock.tase_height import (
+        H6_SPEC_SHA256,
+        evaluate_h6_subjects,
+    )
+
+    probe = live_probe()
+    evidence = repo_root / "evidence" / "tase_hardening" / "h6_embed"
+    evidence.mkdir(parents=True, exist_ok=True)
+    report_path = evidence / "tase_hardening_h6_report.json"
+    if report_path.exists():
+        raise WorkerProtocolError("h6 report already exists; will not overwrite")
+    rows = list(evaluate_h6_subjects())
+    cases = repo_root / "cases" / "discovery" / "tase_hardening_v1" / "h6"
+    cases.mkdir(parents=True, exist_ok=True)
+    embeddings = cases / "embeddings"
+    embeddings.mkdir(parents=True, exist_ok=True)
+    for row in rows:
+        (cases / f"{row['id']}.json").write_text(
+            json.dumps(
+                {
+                    "id": row["id"],
+                    "fields": row["fields"],
+                    "field4_reason": row["field4_reason"],
+                    "bridge_agreement": row["bridge_agreement"],
+                    "embedding_certificate_sha256": row["embedding_certificate_sha256"],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (embeddings / f"{row['id']}_certificate.json").write_text(
+            json.dumps(row["certificate"], indent=2) + "\n", encoding="utf-8"
+        )
+    report = {
+        "scope_id": SCOPE_ID,
+        "panel": "h6_embed",
+        "h6_spec_sha256": H6_SPEC_SHA256,
+        "sba_ran": False,
+        "crp_equations_ran": False,
+        "g4_g5_identity_reused": False,
+        "probe": {
+            "logical_cpus": probe.logical_cpus,
+            "free_ram_gib": probe.free_ram_gib,
+        },
+        "n_subjects": len(rows),
+        "bridge_agreement_count": sum(1 for row in rows if row["bridge_agreement"]),
+        "rows": [
+            {key: value for key, value in row.items() if key != "certificate"}
+            for row in rows
+        ],
+        "original_g6b_gate": "OPEN_PENDING",
+    }
+    report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    return report
+
+
+def run_h7_waves(repo_root: Path) -> dict[str, Any]:
+    """H7 positive-time island. Does not overwrite H4-v3."""
+
+    from ims_deadlock.tase_height import H7_SPEC_SHA256, eval_h7_barrier
+
+    auth = require_quantitative_authorization(repo_root)
+    probe = live_probe()
+    workers = plan_workers(probe, family="H7")
+    validate_wave(
+        wave="H7",
+        workers=workers,
+        probe=probe,
+        primary_repro_overlap=False,
+        reducer_count=1,
+    )
+    pin_blas_thread_env(workers=workers)
+    evidence = repo_root / "evidence" / "tase_hardening" / "h7_island_v4"
+    evidence.mkdir(parents=True, exist_ok=True)
+    report_path = evidence / "tase_hardening_h7_report.json"
+    if report_path.exists():
+        raise WorkerProtocolError("h7 report already exists; will not overwrite")
+    cases = repo_root / "cases" / "discovery" / "tase_hardening_v1" / "h7"
+    cases.mkdir(parents=True, exist_ok=True)
+    barriers = run_process_pool(("base", "intervention"), eval_h7_barrier, workers=2)
+    exact = [solve_h4_exact(barrier) for barrier in barriers]
+    certified = [barrier for barrier in barriers if barrier["barrier_a"] == "certified"]
+    des_primary: list[dict[str, Any]] = []
+    des_repro: list[dict[str, Any]] = []
+    if certified:
+        des_primary = _run_des_wave(
+            certified, wave="primary", master_seed=PRIMARY_SEED, workers=workers
+        )
+        des_repro = _run_des_wave(
+            certified, wave="repro", master_seed=REPRO_SEED, workers=workers
+        )
+    merged_primary = [
+        _merge_des(des_primary, plant_id=item["id"], wave="primary", n=H4_REPLICATIONS)
+        for item in certified
+    ]
+    merged_repro = [
+        _merge_des(des_repro, plant_id=item["id"], wave="repro", n=H4_REPLICATIONS)
+        for item in certified
+    ]
+    tolerance = hoeffding_tolerance()
+    cells = []
+    for exact_row in exact:
+        if exact_row["status"] != "exact":
+            continue
+        primary = next(
+            item for item in merged_primary if item["plant_id"] == exact_row["id"]
+        )
+        for name in ("theta_g", "theta_l", "theta_b"):
+            error = abs(
+                float(exact_row["probabilities"][name]) - primary["probabilities"][name]
+            )
+            cells.append(
+                {
+                    "plant_id": exact_row["id"],
+                    "estimand": name,
+                    "exact": exact_row["probabilities"][name],
+                    "des": primary["probabilities"][name],
+                    "abs_error": error,
+                    "tolerance": tolerance,
+                    "compatible": error <= tolerance,
+                }
+            )
+    for barrier in barriers:
+        slim = {key: barrier[key] for key in barrier if key != "transitions"}
+        (cases / f"{barrier['id']}.json").write_text(
+            json.dumps(slim, indent=2) + "\n", encoding="utf-8"
+        )
+    plant_identity = {
+        "h7_base_plant_sha256": next(
+            (
+                hashlib.sha256(
+                    json.dumps(item.get("plant_identity"), sort_keys=True).encode()
+                ).hexdigest()
+                for item in barriers
+                if item["role"] == "base"
+            ),
+            None,
+        ),
+        "h7_intervention_plant_sha256": next(
+            (
+                hashlib.sha256(
+                    json.dumps(item.get("plant_identity"), sort_keys=True).encode()
+                ).hexdigest()
+                for item in barriers
+                if item["role"] == "intervention"
+            ),
+            None,
+        ),
+        "h7_stopping_hash": hashlib.sha256(
+            json.dumps(
+                [
+                    {
+                        "id": item["id"],
+                        "d_global": item.get("d_global"),
+                        "d_local": item.get("d_local"),
+                        "completion": item.get("completion"),
+                    }
+                    for item in barriers
+                ],
+                sort_keys=True,
+            ).encode()
+        ).hexdigest(),
+        "h7_spec_sha256": H7_SPEC_SHA256,
+    }
+    (evidence / "plant_identity.json").write_text(
+        json.dumps(plant_identity, indent=2) + "\n", encoding="utf-8"
+    )
+    report = {
+        "scope_id": SCOPE_ID,
+        "panel": "h7_island_v4",
+        "h7_spec_sha256": H7_SPEC_SHA256,
+        "authorization_id": auth["authorization_id"],
+        "authorization_sha256": APPROVED_QUANT_AUTH_SHA256,
+        "prior_h4_roots_untouched": True,
+        "probe": {
+            "logical_cpus": probe.logical_cpus,
+            "free_ram_gib": probe.free_ram_gib,
+            "workers": workers,
+        },
+        "h7_barrier": [
+            {key: barrier[key] for key in barrier if key != "transitions"}
+            for barrier in barriers
+        ],
+        "h7_exact": exact,
+        "h7_des_primary": merged_primary,
+        "h7_des_repro": merged_repro,
+        "compatibility": cells,
+        "hoeffding_tolerance": tolerance,
+        "plant_identity": plant_identity,
+        "original_g6b_gate": "OPEN_PENDING",
+    }
+    report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    return report
+
+
+def run_h8_waves(repo_root: Path) -> dict[str, Any]:
+    """H8 finite supervisor baseline on the bound H7 plant."""
+
+    from ims_deadlock.tase_height import (
+        H8_SPEC_SHA256,
+        build_h7_island,
+        eval_h7_barrier,
+        evaluate_h8_supervisor,
+    )
+
+    probe = live_probe()
+    evidence = repo_root / "evidence" / "tase_hardening" / "h8_supervisor"
+    evidence.mkdir(parents=True, exist_ok=True)
+    report_path = evidence / "tase_hardening_h8_report.json"
+    if report_path.exists():
+        raise WorkerProtocolError("h8 report already exists; will not overwrite")
+    identity_path = (
+        repo_root
+        / "evidence"
+        / "tase_hardening"
+        / "h7_island_v4"
+        / "plant_identity.json"
+    )
+    h8_plant = "H7_v4_base"
+    fallback = False
+    if identity_path.exists():
+        identity = json.loads(identity_path.read_text(encoding="utf-8"))
+    else:
+        identity = {"h8_plant": "h4_v3_fallback"}
+        fallback = True
+    island = build_h7_island("base")
+    barrier = eval_h7_barrier("base")
+    row = evaluate_h8_supervisor(barrier, island)
+    cases = repo_root / "cases" / "discovery" / "tase_hardening_v1" / "h8"
+    cases.mkdir(parents=True, exist_ok=True)
+    (cases / "H8_H7_v4_base.json").write_text(
+        json.dumps(row, indent=2) + "\n", encoding="utf-8"
+    )
+    report = {
+        "scope_id": SCOPE_ID,
+        "panel": "h8_supervisor",
+        "h8_spec_sha256": H8_SPEC_SHA256,
+        "h8_plant": h8_plant,
+        "h8_fallback": fallback,
+        "h7_identity": identity,
+        "probe": {
+            "logical_cpus": probe.logical_cpus,
+            "free_ram_gib": probe.free_ram_gib,
+        },
+        "row": row,
+        "original_g6b_gate": "OPEN_PENDING",
+    }
+    report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    return report
+
+
 def main() -> int:
     import sys
 
     repo = Path(__file__).resolve().parents[2]
+    if "--h6" in sys.argv:
+        report = run_h6_waves(repo)
+        print(
+            json.dumps(
+                {
+                    "n_subjects": report["n_subjects"],
+                    "bridge_agreement_count": report["bridge_agreement_count"],
+                    "rows": [
+                        (
+                            row["id"],
+                            row["fields"],
+                            row["field4_reason"],
+                            row["bridge_agreement"],
+                        )
+                        for row in report["rows"]
+                    ],
+                },
+                indent=2,
+            )
+        )
+        return 0
+    if "--h7" in sys.argv:
+        report = run_h7_waves(repo)
+        print(
+            json.dumps(
+                {
+                    "workers": report["probe"],
+                    "barrier": [
+                        (
+                            row["id"],
+                            row.get("barrier_a"),
+                            row.get("initial_class"),
+                            row.get("refusal_code"),
+                        )
+                        for row in report["h7_barrier"]
+                    ],
+                    "exact": report["h7_exact"],
+                    "compatibility": report["compatibility"],
+                },
+                indent=2,
+            )
+        )
+        return 0
+    if "--h8" in sys.argv:
+        report = run_h8_waves(repo)
+        print(
+            json.dumps(
+                {"row": report["row"], "h8_plant": report["h8_plant"]},
+                indent=2,
+            )
+        )
+        return 0
     if "--h5" in sys.argv:
         report = run_h5_waves(repo)
         print(

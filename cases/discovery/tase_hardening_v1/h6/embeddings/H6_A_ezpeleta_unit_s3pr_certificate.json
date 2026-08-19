@@ -1,0 +1,267 @@
+{
+  "plant_id": "H6_A_ezpeleta_unit_s3pr",
+  "source_locator": {
+    "citation": "J. Ezpeleta, J. M. Colom, and J. Martinez, \"A Petri net based deadlock prevention policy for flexible manufacturing systems,\" IEEE Trans. Robot. Autom., vol. 11, no. 2, pp. 173-184, Apr. 1995.",
+    "doi": "10.1109/70.370500",
+    "object": "Smallest deadlock-prone S3PR admitted by the S3PR definition: two sequential processes sharing two unit-capacity resource places. Not a reconstruction of Ezpeleta Figure 1.",
+    "incidence": [
+      {
+        "t": "tA1",
+        "pre": [
+          "pA0",
+          "pr1"
+        ],
+        "post": [
+          "pA1"
+        ]
+      },
+      {
+        "t": "tA2",
+        "pre": [
+          "pA1",
+          "pr2"
+        ],
+        "post": [
+          "pA2",
+          "pr1"
+        ]
+      },
+      {
+        "t": "tA3",
+        "pre": [
+          "pA2"
+        ],
+        "post": [
+          "pA0",
+          "pr2"
+        ]
+      },
+      {
+        "t": "tB1",
+        "pre": [
+          "pB0",
+          "pr2"
+        ],
+        "post": [
+          "pB1"
+        ]
+      },
+      {
+        "t": "tB2",
+        "pre": [
+          "pB1",
+          "pr1"
+        ],
+        "post": [
+          "pB2",
+          "pr2"
+        ]
+      },
+      {
+        "t": "tB3",
+        "pre": [
+          "pB2"
+        ],
+        "post": [
+          "pB0",
+          "pr1"
+        ]
+      }
+    ]
+  },
+  "iota": [
+    {
+      "source": "pr1",
+      "image": "r1",
+      "clause": "resource"
+    },
+    {
+      "source": "pr2",
+      "image": "r2",
+      "clause": "resource"
+    },
+    {
+      "source": "pA0",
+      "image": "A:idle",
+      "clause": "idle"
+    },
+    {
+      "source": "pA1",
+      "image": "A:hold:r1",
+      "clause": "operation"
+    },
+    {
+      "source": "pA2",
+      "image": "A:hold:r2",
+      "clause": "operation"
+    },
+    {
+      "source": "pB0",
+      "image": "B:idle",
+      "clause": "idle"
+    },
+    {
+      "source": "pB1",
+      "image": "B:hold:r2",
+      "clause": "operation"
+    },
+    {
+      "source": "pB2",
+      "image": "B:hold:r1",
+      "clause": "operation"
+    },
+    {
+      "source": "tA1",
+      "image": "A-start-r1",
+      "clause": "event"
+    },
+    {
+      "source": "tA2",
+      "image": "A-to-r2",
+      "clause": "event"
+    },
+    {
+      "source": "tA3",
+      "image": "A-complete",
+      "clause": "event"
+    },
+    {
+      "source": "tB1",
+      "image": "B-start-r2",
+      "clause": "event"
+    },
+    {
+      "source": "tB2",
+      "image": "B-to-r1",
+      "clause": "event"
+    },
+    {
+      "source": "tB3",
+      "image": "B-complete",
+      "clause": "event"
+    }
+  ],
+  "clauses": {
+    "E1": true,
+    "E2": true,
+    "E3": true,
+    "E4": true,
+    "E5": true,
+    "E6": true
+  },
+  "verified": true,
+  "field4_reason": null,
+  "source_locator_sha256": "d2bb69f6efeca128f1546931e4a04c83b653eafb45df008c79097795ef96ed4a",
+  "iota_map_sha256": "b7a1986fdbaf937de3a99c20143844f1b9763931897e9c93c4b3bf6b48e8ad82",
+  "ims_identity_sha256": "123c2249f938bcf318e7ae51f1b3af760a9580847420c4b094e058c17ee5d1e4",
+  "lts_reachability_sha256": "eed63d3e21b8039b1403c48c39ebaad987c6710b82d24d8ee6890cce7bcd4538",
+  "reachability": {
+    "state_count": 13,
+    "truncated": false,
+    "target_signature": {
+      "holds": [
+        [
+          "A",
+          "r1",
+          1
+        ],
+        [
+          "B",
+          "r2",
+          1
+        ]
+      ],
+      "requests": [
+        [
+          "A",
+          [
+            "r2"
+          ]
+        ],
+        [
+          "B",
+          [
+            "r1"
+          ]
+        ]
+      ]
+    },
+    "bfs_witness": [
+      "A-start-r1",
+      "B-start-r2"
+    ]
+  },
+  "ims_identity": {
+    "model_id": "h6-a-ezpeleta-unit-s3pr",
+    "state_id": "h6-a-s0",
+    "resources": [
+      "r1",
+      "r2"
+    ],
+    "jobs": [
+      "A",
+      "B"
+    ],
+    "transitions": [
+      {
+        "name": "A-start-r1",
+        "kind": "start",
+        "job_id": "A",
+        "acquire": [
+          "r1"
+        ],
+        "release": []
+      },
+      {
+        "name": "A-to-r2",
+        "kind": "dispatch",
+        "job_id": "A",
+        "acquire": [
+          "r2"
+        ],
+        "release": [
+          "r1"
+        ]
+      },
+      {
+        "name": "A-complete",
+        "kind": "release",
+        "job_id": "A",
+        "acquire": [],
+        "release": [
+          "r2"
+        ]
+      },
+      {
+        "name": "B-start-r2",
+        "kind": "start",
+        "job_id": "B",
+        "acquire": [
+          "r2"
+        ],
+        "release": []
+      },
+      {
+        "name": "B-to-r1",
+        "kind": "dispatch",
+        "job_id": "B",
+        "acquire": [
+          "r1"
+        ],
+        "release": [
+          "r2"
+        ]
+      },
+      {
+        "name": "B-complete",
+        "kind": "release",
+        "job_id": "B",
+        "acquire": [],
+        "release": [
+          "r1"
+        ]
+      }
+    ]
+  },
+  "embedding_certificate_sha256": "d5c4071208544bea1058d85bf3b52249c80273443145d8db0754de9867c86278"
+}

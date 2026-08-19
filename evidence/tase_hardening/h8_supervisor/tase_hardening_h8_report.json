@@ -1,0 +1,99 @@
+{
+  "scope_id": "tase_hardening_v1",
+  "panel": "h8_supervisor",
+  "h8_spec_sha256": "afec89477308551e55021dc98f048835bd6d1d0a400a5919aa9c4a8cce4366d8",
+  "h8_plant": "H7_v4_base",
+  "h8_fallback": false,
+  "h7_identity": {
+    "h7_base_plant_sha256": "ba95855d1e4feea5d700b25f69b18b9e4c43576b77c1b1e9bc0d39913abe50d1",
+    "h7_intervention_plant_sha256": "4c318b61967cd89f4f13bedb5c29f5c653a1e0016e91401b8797f179bfa9f0fe",
+    "h7_stopping_hash": "e921ba1dd729c2a53aef09d248768698fb4d7c63740fae905d1fbf28035b22d7",
+    "h7_spec_sha256": "57b236a24ee59ca91b8e1633954d5270a1776063fb4f0a3902b349b1e5173950"
+  },
+  "probe": {
+    "logical_cpus": 56,
+    "free_ram_gib": 102.86988830566406
+  },
+  "row": {
+    "id": "H8_H7_v4_base",
+    "status": "computed",
+    "plant_id": "H7_v4_base",
+    "model_id": "h7-island-v4-base",
+    "n_states": 64,
+    "n_safe": 56,
+    "n_disabled_state_events": 14,
+    "initial_state_feasible": true,
+    "supervisor_initial_infeasible": false,
+    "disabled_state_events": [
+      [
+        "s1",
+        "B-start-v"
+      ],
+      [
+        "s13",
+        "B-start-v"
+      ],
+      [
+        "s14",
+        "B-start-v"
+      ],
+      [
+        "s17",
+        "A-start-m1"
+      ],
+      [
+        "s2",
+        "A-start-m1"
+      ],
+      [
+        "s20",
+        "C-release-m2"
+      ],
+      [
+        "s23",
+        "B-start-v"
+      ],
+      [
+        "s24",
+        "B-start-v"
+      ],
+      [
+        "s28",
+        "A-start-m1"
+      ],
+      [
+        "s29",
+        "C-release-m2"
+      ],
+      [
+        "s34",
+        "B-start-v"
+      ],
+      [
+        "s5",
+        "B-start-v"
+      ],
+      [
+        "s6",
+        "B-start-v"
+      ],
+      [
+        "s8",
+        "A-start-m1"
+      ]
+    ],
+    "supervised_exact": {
+      "id": "H7_v4_base__supervised",
+      "status": "exact",
+      "probabilities": {
+        "theta_g": -0.0,
+        "theta_l": -0.0,
+        "theta_b": -0.0
+      },
+      "mean_stopped_time": 7.047721536351168
+    },
+    "h8_spec_sha256": "afec89477308551e55021dc98f048835bd6d1d0a400a5919aa9c4a8cce4366d8",
+    "h8_plant": "H7_v4_base"
+  },
+  "original_g6b_gate": "OPEN_PENDING"
+}

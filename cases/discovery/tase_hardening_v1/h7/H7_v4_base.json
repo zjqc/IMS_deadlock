@@ -1,0 +1,196 @@
+{
+  "id": "H7_v4_base",
+  "role": "base",
+  "label": "synthetic digital-twin v4",
+  "intervention": "none",
+  "model_id": "h7-island-v4-base",
+  "state_count": 64,
+  "truncated": false,
+  "barrier_a": "certified",
+  "refusal_code": null,
+  "states": [
+    "s0",
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16",
+    "s17",
+    "s18",
+    "s19",
+    "s20",
+    "s21",
+    "s22",
+    "s23",
+    "s24",
+    "s25",
+    "s26",
+    "s27",
+    "s28",
+    "s29",
+    "s30",
+    "s31",
+    "s32",
+    "s33",
+    "s34",
+    "s35",
+    "s36",
+    "s37",
+    "s38",
+    "s39",
+    "s40",
+    "s41",
+    "s42",
+    "s43",
+    "s44",
+    "s45",
+    "s46",
+    "s47",
+    "s48",
+    "s49",
+    "s50",
+    "s51",
+    "s52",
+    "s53",
+    "s54",
+    "s55",
+    "s56",
+    "s57",
+    "s58",
+    "s59",
+    "s60",
+    "s61",
+    "s62",
+    "s63"
+  ],
+  "d_global": [
+    "s39"
+  ],
+  "d_local": [
+    "s10",
+    "s19",
+    "s29"
+  ],
+  "completion": [
+    "s63"
+  ],
+  "initial_state": "s0",
+  "initial_class": "transient",
+  "local_with_outgoing": 3,
+  "h7_spec_sha256": "57b236a24ee59ca91b8e1633954d5270a1776063fb4f0a3902b349b1e5173950",
+  "plant_identity": {
+    "model_id": "h7-island-v4-base",
+    "state_id": "h7-v4-base-s0",
+    "resources": [
+      "M1",
+      "M2",
+      "V"
+    ],
+    "jobs": [
+      "A",
+      "B",
+      "C"
+    ],
+    "transitions": [
+      {
+        "name": "A-start-m1",
+        "kind": "start",
+        "job_id": "A",
+        "acquire": [
+          "M1"
+        ],
+        "release": []
+      },
+      {
+        "name": "A-service-complete",
+        "kind": "service_complete",
+        "job_id": "A",
+        "acquire": [],
+        "release": []
+      },
+      {
+        "name": "A-unload-v",
+        "kind": "unload",
+        "job_id": "A",
+        "acquire": [
+          "V"
+        ],
+        "release": [
+          "M1"
+        ]
+      },
+      {
+        "name": "A-complete-release-v",
+        "kind": "release",
+        "job_id": "A",
+        "acquire": [],
+        "release": [
+          "V"
+        ]
+      },
+      {
+        "name": "B-start-v",
+        "kind": "start",
+        "job_id": "B",
+        "acquire": [
+          "V"
+        ],
+        "release": []
+      },
+      {
+        "name": "B-enter-m1",
+        "kind": "dispatch",
+        "job_id": "B",
+        "acquire": [
+          "M1"
+        ],
+        "release": [
+          "V"
+        ]
+      },
+      {
+        "name": "B-complete-release-m1",
+        "kind": "release",
+        "job_id": "B",
+        "acquire": [],
+        "release": [
+          "M1"
+        ]
+      },
+      {
+        "name": "C-service-1",
+        "kind": "service_complete",
+        "job_id": "C",
+        "acquire": [],
+        "release": []
+      },
+      {
+        "name": "C-service-2",
+        "kind": "service_complete",
+        "job_id": "C",
+        "acquire": [],
+        "release": []
+      },
+      {
+        "name": "C-release-m2",
+        "kind": "release",
+        "job_id": "C",
+        "acquire": [],
+        "release": [
+          "M2"
+        ]
+      }
+    ]
+  }
+}
