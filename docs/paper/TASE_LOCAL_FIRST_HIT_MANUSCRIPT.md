@@ -483,7 +483,9 @@ Multiplication by \(\lambda_i\) and rearrangement yield \(\sum_{j\in S^{\circ}}q
 
 If a reachable unselected closed class remains, \(Q_{S^{\circ},S^{\circ}}\) as declared is incomplete, \(\tau^{\dagger}=\infty\) on those paths, and the unconditional mean is \(+\infty\). The correct output is a structured refusal (non-almost-sure absorption domain), not an invented finite mean. Sensitivity holds only on pieces of parameter space where the partition is constant.
 
-### D. Barrier A and Partition Soundness
+### D. Admission Barrier \(\mathbf{B}\) and Partition Soundness
+
+A quantitative row is emitted only after admission barrier \(\mathbf{B}\) returns certified: the stable LTS is complete, every reachable state is classified, no unselected closed class remains, and no completed job still holds a resource. Otherwise the row is refused and the reason is kept.
 
 **Algorithm (terminal/stopping partition).**  
 (i) Enumerate the complete untruncated stable LTS and re-enumerate from the same registry for provenance. (ii) Mark \(F\). (iii) Mark \(D^{\mathrm{G}}\) and store global certificates. (iv) Enumerate all-minimal local kernels on the remainder; mark \(X^{\ell}\). (v) If A2b is proved, apply Theorem 3; otherwise apply Theorem 4–Theorem 5 on each candidate. (vi) Compute SCCs on the leftover plant graph; classify terminal SCCs as \(\Lambda^{0}\) or \(\Lambda^{\infty}\). (vii) Form \(A^{\dagger}\) and \(S^{\circ}\); refuse if \(B^{\circ}\neq\emptyset\) on a global claim. (viii) Freeze the state-space, partition, rate-manifest, and stopping-rule hashes.
@@ -491,11 +493,11 @@ If a reachable unselected closed class remains, \(Q_{S^{\circ},S^{\circ}}\) as d
 **Theorem 8 (Partition soundness).**  
 Under CW1–CW10 and CW11, if the algorithm returns successfully, then: (i) \(D^{\mathrm{G}}\), \(D^{\mathrm{L}}\), \(F\), \(\Lambda^{\infty}\), and \(\Lambda^{0}\) are pairwise disjoint under the stated precedence; (ii) \(\Lambda^{\infty}\) and \(\Lambda^{0}\) are terminal-SCC classes of the leftover plant graph; (iii) \(D^{\mathrm{L}}\) is used only as a stopped-process bad hit set admitted by Theorem 3 or Theorem 4; (iv) \(S^{\mathrm{p}}\) is an existential support diagnostic and \(S^{\circ}\) is the certified probability-one domain; (v) the exact CTMC and DES may share the same selected labels.
 
-The algorithm *must* refuse a binary CTMC when any of the following holds: truncated or unavailable LTS; an invalid model/state (including completion while holding); LTS provenance mismatch; missing source/target or missing frozen rate; overlapping completion and bad labels; a transient state with no positive outgoing rate; a transient state that cannot reach selected absorption; a reachable unselected \(R_*\) that cannot reach selected absorption; a \(D^{\mathrm{G}}\)-only estimand in the presence of \(D^{\mathrm{L}}\) unless that estimand is separately declared; a policy-only stall not entered in a policy schema; a local candidate with a path to \(F\).
+The algorithm *must* refuse a binary CTMC when any of the following holds: truncated or unavailable LTS; an invalid model/state (including completion while holding); LTS provenance mismatch; missing source/target or missing frozen rate; overlapping completion and bad labels; a transient state with no positive outgoing rate; a transient state that cannot reach selected absorption; a reachable unselected \(\Lambda^{\infty}\) or \(\Lambda^{0}\) that cannot reach selected absorption; a \(D^{\mathrm{G}}\)-only estimand in the presence of \(D^{\mathrm{L}}\) unless that estimand is separately declared; a policy-only stall not entered in a policy schema; a local candidate with a path to \(F\).
 
 ### E. Exact/DES Protocol Used in Section X
 
-On a Barrier-A-certified graph the implementation solves the three binary reductions of Theorem 7 (global, local, selected-bad) and checks \(\theta^{\mathrm{G}}+\theta^{\mathrm{L}}=\theta^{\mathrm{B}}\) numerically. DES uses Gillespie sampling of the same rates and the same three classes, \(n_{\mathrm{s}}=65536\) replications, a primary seed and a subsequent reproduction seed, contiguous shards, and one reducer. The simultaneous Hoeffding band for six probability cells at \(\alpha=0.01\) is
+On a \(\mathbf{B}\)-certified graph the implementation solves the three binary reductions of Theorem 7 (global, local, selected-bad) and checks \(\theta^{\mathrm{G}}+\theta^{\mathrm{L}}=\theta^{\mathrm{B}}\) numerically. DES uses Gillespie sampling of the same rates and the same three classes, \(n_{\mathrm{s}}=65536\) replications, a primary seed and a subsequent reproduction seed, contiguous shards, and one reducer. The simultaneous Hoeffding band for six probability cells at \(\alpha=0.01\) is
 \[
 \varepsilon=\sqrt{\frac{\log(2\cdot 6/0.01)}{2n_{\mathrm{s}}}}=7.35\times 10^{-3}.
 \]
@@ -522,17 +524,17 @@ These four rows are cited as boundaries, not as main theorems.
 
 ### B. Family IV: Machine–AGV Island
 
-The manufacturing clothing is a three-job island (Fig. 1, Table II). Job \(A\) holds machine \(\mathsf{M}_1\) and requests the vehicle \(\mathsf{V}\); job \(B\) holds \(\mathsf{V}\) and requests \(\mathsf{M}_1\); job \(C\) is in service on \(\mathsf{M}_2\). The only structural interlock is \(\{A,B\}\) on \(\{\mathsf{M}_1,\mathsf{V}\}\). Job \(C\) still has an outgoing plant arc, so a terminal-SCC diagnosis would miss the local stop. The predeclared intervention is an optional drain that lets \(B\) release the AGV without entering \(\mathsf{M}_1\).
+The manufacturing clothing is a three-job island (Fig. 1, Table II). Job \(\mathsf{A}\) holds machine \(\mathsf{M}_1\) and requests the vehicle \(\mathsf{V}\); job \(\mathsf{B}\) holds \(\mathsf{V}\) and requests \(\mathsf{M}_1\); job \(\mathsf{C}\) is in service on \(\mathsf{M}_2\). The only structural interlock is \(\{\mathsf{A},\mathsf{B}\}\) on \(\{\mathsf{M}_1,\mathsf{V}\}\). Job \(\mathsf{C}\) still has an outgoing plant arc, so a terminal-SCC diagnosis would miss the local stop. The predeclared intervention is an optional drain that lets \(\mathsf{B}\) release \(\mathsf{V}\) without entering \(\mathsf{M}_1\).
 
 **Table II**  
 Island first-hit values (exact). DES agrees on all six cells at \(n_{\mathrm{s}}=65536\), \(\varepsilon=7.35\times 10^{-3}\)
 
-| Plant | Barrier A | \(\theta^{\mathrm{G}}\) | \(\theta^{\mathrm{L}}\) | \(\theta^{\mathrm{B}}\) | Mean time |
+| Plant | \(\mathbf{B}\) | \(\theta^{\mathrm{G}}\) | \(\theta^{\mathrm{L}}\) | \(\theta^{\mathrm{B}}\) | \(m\) |
 | --- | --- | --- | --- | --- | --- |
 | Base | certified | \(0\) | \(1\) | \(1\) | \(0\) |
 | Optional AGV drain | certified | \(0\) | \(0\) | \(0\) | \(3.23\) |
 
-The base initial state *is* a local hit, so \(\theta^{\mathrm{L}}=1\) and the mean stopped time is zero. The partition still contains a distinct \(D^{\mathrm{G}}\) state that is not the first hit from the initial state, which is exactly the distinction Theorem 3 forces: first-hit is not “the plant has no outgoing arc,” and it is not “every bad state is equally the start.” After the drain, the only absorbing class is \(F\). The intervention therefore changes the *class* of the initial state, not a long transient risk path. That sentence is part of the result, not a defect to be edited out.
+The core island conclusion is therefore this. At the base initial state the pair \(\{\mathsf{A},\mathsf{B}\}\) is already an admitted local core, so the stopped process has already first-hit \(D^{\mathrm{L}}\): \(\theta^{\mathrm{L}}=1\) and \(m=0\). The plant is *not* a terminal SCC, because \(\mathsf{C}\) can still finish service on \(\mathsf{M}_2\). A distinct \(D^{\mathrm{G}}\) state exists in the partition but is not the first hit from the initial state. Allowing \(\mathsf{B}\) to drain \(\mathsf{V}\) destroys that local core; the only remaining absorbing class is \(F\), so \(\theta^{\mathrm{B}}=0\) and the mean time to completion is \(3.23\). For this island, deadlock of the manufacturing cell is a *local first-hit already present at time zero*, not a later global standstill and not a plant-graph death; a one-slot AGV drain changes the *absorbing class*, not a long transient risk path.
 
 An earlier all-completion clothing of the same island (release-then-complete, no local hit) produced \(\theta^{\mathrm{B}}=0\) on both the base and the intervention and is retained as a certified negative: a digital-twin that always finishes cannot demonstrate local-first-hit. A still earlier clothing that marked completion while holding a buffer was refused as an invalid LTS state and is retained.
 
@@ -631,21 +633,26 @@ The natural extensions are an independently embedded S4PR overlap row, a larger 
 
 ## XII. Conclusion
 
-Local blocking in a finite manufacturing resource-allocation system is a first hit of a certified stopped-process set, not a wait-for cycle and not a plant terminal SCC. The set is admitted by a request-closed structural argument or by a complete-LTS nonreachability audit, and it is refused when a completion bypass exists. Diagnostic siphons apply only on a wait-snapshot of the unit-capacity one-hold-one-request subclass. Exact and simulated first-hit values share a stopping hash only after the absorption domain is certified. A three-job machine–AGV island, a ten-plant baseline table, a tandem scale family, and a four-field CRP diagnostic support those sentences and no stronger ones.
+The paper’s key conclusions, in the order a first reader needs them, are as follows.
 
-The checkable object is the typed first-hit set. Controllers, monitors, shop-floor policies, and general plant-net isomorphisms are outside the claim.
+1. *Object.* Capacity-mediated blocking of a finite manufacturing cell is a first hit of a certified set \(D^{\mathrm{G}}\) or \(D^{\mathrm{L}}\) in a stopped process, not a wait-for cycle, not an unmarked plant-net siphon, and not a terminal SCC of the plant graph.
+2. *Admission.* A local closed core enters \(D^{\mathrm{L}}\) only by A2b (Theorem 3) or by \(F\)-nonreachability on the complete finite LTS (Theorem 4), and is refused if a completion bypass exists (Theorem 5). Covering cores characterise global operational deadlock (Theorem 1). Diagnostic siphons are exact only on IMS-SIP\(^1\) (Theorem 2).
+3. *Island (the manufacturing-cell conclusion).* On the three-job machine–AGV island the initial state is already in \(D^{\mathrm{L}}\) while \(\mathsf{C}\) still moves: \(\theta^{\mathrm{L}}=1\), \(m=0\). The cell has locally failed without the plant graph dying. A one-slot AGV drain removes that local core and sends every trajectory to \(F\) (\(\theta^{\mathrm{B}}=0\), \(m=3.23\)). Exact and DES values agree on all six cells. Deadlock of this island is therefore a *time-zero local first-hit*, and the relevant intervention changes the absorbing class rather than a long risk transient.
+4. *Baselines and scale.* Four siphon agreements and four typed refusals sit on one semantics (false positives and false negatives zero). A tandem family reaches \(10^3\)–\(10^4\) states and refuses three rows at a declared cap. A four-field CRP diagnostic never claims agreement without an S4PR embedding.
+
+Controllers, monitors, shop-floor policies, and general plant-net isomorphisms remain outside the claim.
 
 ---
 
 ## Appendix A  
 Retained Negative Clothings
 
-An island that marked a job complete while it still held the next buffer was refused as `completed_job_holds_resource` (invalid LTS state) and is not replaced in place. A repaired all-completion island with the same topology produced Barrier A certified and \(\theta^{\mathrm{B}}=0\) on both the base and the intervention; it is a certified demonstration that an always-finishing twin cannot clothe Theorem 3. Both clothings remain in the evidence record.
+An island that marked a job complete while it still held the next buffer was refused as `completed_job_holds_resource` (invalid LTS state) and is not replaced in place. A repaired all-completion island with the same topology produced \(\mathbf{B}\) certified and \(\theta^{\mathrm{B}}=0\) on both the base and the intervention; it is a certified demonstration that an always-finishing twin cannot clothe Theorem 3. Both clothings remain in the evidence record.
 
 ## Appendix B  
 Implementation Notes
 
-Certificates, LTS enumeration, the wait-snapshot bridge, Barrier A, the absorbing CTMC, and the DES shards are generated from one registry. Independent plants and DES shards run in a process pool; BLAS threads equal one. Primary DES finishes before reproduction. Evidence roots are write-once. The quantitative protocol, including the Hoeffding band and the seeds, is fixed before the island wave.
+Certificates, LTS enumeration, the wait-snapshot bridge, barrier \(\mathbf{B}\), the absorbing CTMC, and the DES shards are generated from one registry. Independent plants and DES shards run in a process pool; BLAS threads equal one. Primary DES finishes before reproduction. Evidence roots are write-once. The quantitative protocol, including the Hoeffding band and the seeds, is fixed before the island wave.
 
 ## Appendix C  
 Exact Reachable Thresholds (BIX1-SAT and BIX2-PERSIST)
@@ -752,7 +759,7 @@ Omitted for double-anonymous review.
 
 ## Figure Captions
 
-**Fig. 1.** Operational distinction used throughout the paper. A wait-for cycle or an empty plant-net siphon is a structural candidate. A local closed kernel becomes \(D^{\mathrm{L}}\) only after typed admission (Theorem 3 or Theorem 4) and bypass refusal (Theorem 5). The stopped process first-hits \(D^{\mathrm{G}}\), \(D^{\mathrm{L}}\), or \(F\). The plant LTS may still have outgoing arcs at a \(D^{\mathrm{L}}\) state.
+**Fig. 1.** Object of the paper versus three classical pictures. A wait-for cycle, a plant-net siphon, and a plant terminal SCC are not identified with the computed object. A closed core \(K\) is only a candidate. Typed admission (Theorems 3–4) and bypass refusal (Theorem 5) produce the stopped first-hit of \(D^{\mathrm{G}}\), \(D^{\mathrm{L}}\), or \(F\). File: `docs/paper/figures/fig_research_object.pdf`.
 
 **Fig. 2.** Exact first-hit KPIs on the three-job machine–AGV island (Family IV). Base: already a local hit. Optional AGV drain: every trajectory completes. Files: `docs/paper/figures/fig_h4_island_kpis.pdf`, `.png`.
 
