@@ -12,6 +12,7 @@ from ims_deadlock.tase_hardening import (
     H2_V2_TYPES,
     H3_STATE_CAP,
     H3_TIME_CAP_S,
+    H5_SUBJECTS,
     SCOPE_ID,
     ComputeProbe,
     IdentityCollision,
@@ -23,10 +24,12 @@ from ims_deadlock.tase_hardening import (
     build_h3_rows,
     build_h3_v2_rows,
     build_h4_islands,
+    build_h5_subjects,
     build_shard_plan,
     evaluate_h1,
     evaluate_h2_plant,
     evaluate_h2_v2_plant,
+    evaluate_h5_subject,
     materialize_discovery_bundle,
     pin_blas_thread_env,
     plan_workers,
@@ -201,6 +204,56 @@ def test_h2_v2_has_sip1_agrees_and_typed_refusals() -> None:
     assert reachable["prefix_len"] >= 2
     assert roles["residual_cycle"]["role"] == "cycle_boundary"
     assert roles["residual_cycle"]["methods"]["lts_truth"] is False
+
+
+def test_h5_four_fields_never_fake_s4pr_agreement() -> None:
+    subjects = build_h5_subjects()
+    assert len(subjects) == 6
+    assert len(H5_SUBJECTS) == 6
+    reports = [evaluate_h5_subject(subject) for subject in subjects]
+    assert all(row["g4_g5_identity_reused"] is False for row in reports)
+    assert all(row["sba_ran"] is False for row in reports)
+    assert all(row["crp_equations_ran"] is False for row in reports)
+    assert all(row["bridge_agreement"] is False for row in reports)
+    assert all(
+        row["field4_reason"] == "no_independent_s4pr_embedding" for row in reports
+    )
+    by_id = {row["id"]: row for row in reports}
+    pair = by_id["H5_unit_pair_fields123"]
+    assert pair["fields"]["reachable"] is True
+    assert pair["fields"]["local_family_available"] is True
+    assert pair["fields"]["matching_kernel_count"] >= 1
+    assert pair["fields"]["s4pr_overlap"] is False
+    assert by_id["H5_wrong_r_crp_zero_match"]["fields"]["matching_kernel_count"] == 0
+    assert (
+        by_id["H5_residual_no_local_family"]["fields"]["local_family_available"]
+        is False
+    )
+
+
+def test_refuse_and_local_certificate_fails_conjunctive() -> None:
+    from ims_deadlock.analysis import enumerate_stable_lts
+    from ims_deadlock.certificates import enumerate_local_blocking_certificates
+    from ims_deadlock.petri import build_wait_snapshot_bridge
+    from ims_deadlock.tase_hardening import build_h2_v2_plant
+
+    plant = build_h2_v2_plant("refuse_and")
+    lts = enumerate_stable_lts(
+        plant.model, plant.initial_state, plant.transitions, max_states=4096
+    )
+    record = next(item for item in lts.states if item.state_id == lts.initial_state_id)
+    family = enumerate_local_blocking_certificates(
+        plant.model,
+        record.state,
+        plant.transitions,
+        reachable_prefix=record.witness,
+    )
+    assert family
+    reasons = {
+        build_wait_snapshot_bridge(plant.model, record.state, cert).reason
+        for cert in family
+    }
+    assert any("conjunctive" in reason for reason in reasons)
 
 
 def test_h3_v2_family_is_multi_stage_not_h3_product() -> None:

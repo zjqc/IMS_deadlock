@@ -21,6 +21,7 @@ from ims_deadlock.tase_hardening import (
     H2_TYPES,
     H2_V2_TYPES,
     H3_STATE_CAP,
+    H5_SUBJECTS,
     SCOPE_ID,
     ComputeProbe,
     WorkerProtocolError,
@@ -32,11 +33,13 @@ from ims_deadlock.tase_hardening import (
     build_h3_v2_rows,
     build_h4_islands,
     build_h4_v3_islands,
+    build_h5_subject,
     build_shard_plan,
     classify_h3_row,
     evaluate_h1,
     evaluate_h2_plant,
     evaluate_h2_v2_plant,
+    evaluate_h5_subject,
     pin_blas_thread_env,
     plan_workers,
     run_process_pool,
@@ -124,6 +127,12 @@ def eval_h2_key(key: tuple[str, str]) -> dict[str, Any]:
     report = evaluate_h2_plant(plant)
     report["id"] = f"{key[0]}__{key[1]}"
     return report
+
+
+def eval_h5_id(subject_id: str) -> dict[str, Any]:
+    """Picklable H5 worker."""
+
+    return evaluate_h5_subject(build_h5_subject(subject_id))
 
 
 def eval_h2_v2_key(type_id: str) -> dict[str, Any]:
@@ -584,6 +593,58 @@ def _run_h4_named_waves(
     return report
 
 
+def run_h5_waves(repo_root: Path) -> dict[str, Any]:
+    """P2 leftover: Prop 6.4 four-field diagnostic. No G4/G5 replay."""
+
+    auth = require_quantitative_authorization(repo_root)
+    probe = live_probe()
+    workers = plan_workers(probe, family="H2")
+    validate_wave(
+        wave="H5",
+        workers=workers,
+        probe=probe,
+        primary_repro_overlap=False,
+        reducer_count=1,
+    )
+    pin_blas_thread_env(workers=workers)
+    evidence = repo_root / "evidence" / "tase_hardening" / "h5"
+    evidence.mkdir(parents=True, exist_ok=True)
+    report_path = evidence / "tase_hardening_h5_report.json"
+    if report_path.exists():
+        raise WorkerProtocolError("h5 report already exists; will not overwrite")
+    ids = tuple(str(item["subject_id"]) for item in H5_SUBJECTS)
+    rows = run_process_pool(ids, eval_h5_id, workers=min(workers, len(ids)))
+    fields123 = [
+        row
+        for row in rows
+        if row["fields"]["reachable"]
+        and row["fields"]["local_family_available"]
+        and row["fields"]["matching_kernel_count"] >= 1
+    ]
+    report = {
+        "scope_id": SCOPE_ID,
+        "panel": "h5",
+        "authorization_id": auth["authorization_id"],
+        "authorization_sha256": APPROVED_QUANT_AUTH_SHA256,
+        "prop": "6.4",
+        "prior_g4_g5_untouched": True,
+        "sba_ran": False,
+        "crp_equations_ran": False,
+        "probe": {
+            "logical_cpus": probe.logical_cpus,
+            "free_ram_gib": probe.free_ram_gib,
+            "workers": workers,
+        },
+        "n_subjects": len(rows),
+        "fields123_true_count": len(fields123),
+        "bridge_agreement_count": sum(1 for row in rows if row["bridge_agreement"]),
+        "rows": rows,
+        "original_g6b_gate": "OPEN_PENDING",
+    }
+    report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    return report
+
+
 def run_h2_v2_waves(repo_root: Path) -> dict[str, Any]:
     """P2 in-domain siphon table. Frozen H2 v1 stays untouched."""
 
@@ -842,6 +903,29 @@ def main() -> int:
     import sys
 
     repo = Path(__file__).resolve().parents[2]
+    if "--h5" in sys.argv:
+        report = run_h5_waves(repo)
+        print(
+            json.dumps(
+                {
+                    "workers": report["probe"],
+                    "n_subjects": report["n_subjects"],
+                    "fields123_true_count": report["fields123_true_count"],
+                    "bridge_agreement_count": report["bridge_agreement_count"],
+                    "rows": [
+                        (
+                            row["id"],
+                            row["fields"],
+                            row["field4_reason"],
+                            row["bridge_agreement"],
+                        )
+                        for row in report["rows"]
+                    ],
+                },
+                indent=2,
+            )
+        )
+        return 0
     if "--h2-v2" in sys.argv:
         report = run_h2_v2_waves(repo)
         print(

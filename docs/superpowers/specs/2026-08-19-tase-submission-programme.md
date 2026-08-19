@@ -183,7 +183,7 @@ unused. Serial H3/H4 sweeps are protocol misses.
 
 ## 5. Immediate next step
 
-P0–P4 are closed on this worktree. P5 has an NtP *outline* and page
-budget only. Do **not** start the IEEE body until the user asks for
-manuscript packaging. Optional leftover: H5 CRP four-field row
-(explicitly omitted). G5 FAIL and G6-B `OPEN_PENDING` stay retained.
+P0–P4 are closed. P2 leftover H5 is a four-field diagnostic with field 4
+refused (no independent S4PR embedding). P5 has NtP draft prose in a
+process file. Do **not** start the IEEE body until the user asks for
+manuscript packaging. G5 FAIL and G6-B `OPEN_PENDING` stay retained.

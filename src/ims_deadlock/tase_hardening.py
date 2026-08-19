@@ -16,6 +16,7 @@ from ims_deadlock.analysis import enumerate_stable_lts
 from ims_deadlock.baselines import state_dependent_knot_screen
 from ims_deadlock.cases import CASE_SCHEMA_VERSION, CaseSpec
 from ims_deadlock.certificates import (
+    enumerate_local_blocking_certificates,
     find_deadlock_certificate,
     find_local_blocking_certificate,
 )
@@ -69,6 +70,44 @@ H3_V2_CAP2_ROWS = (
     (5, 3, 2),
     (5, 4, 2),
     (6, 3, 2),
+)
+H5_SUBJECTS = (
+    {
+        "subject_id": "H5_unit_pair_fields123",
+        "plant_type": "sip1_unit_pair",
+        "r_crp": ("r1", "r2"),
+        "target": "shortest_deadlock",
+    },
+    {
+        "subject_id": "H5_unit_triple_fields123",
+        "plant_type": "sip1_unit_triple",
+        "r_crp": ("r1", "r2", "r3"),
+        "target": "shortest_deadlock",
+    },
+    {
+        "subject_id": "H5_reachable_pair_fields123",
+        "plant_type": "sip1_reachable_pair",
+        "r_crp": ("r1", "r2"),
+        "target": "shortest_deadlock",
+    },
+    {
+        "subject_id": "H5_wrong_r_crp_zero_match",
+        "plant_type": "sip1_unit_pair",
+        "r_crp": ("r9",),
+        "target": "shortest_deadlock",
+    },
+    {
+        "subject_id": "H5_outside_agv_and",
+        "plant_type": "refuse_agv_and",
+        "r_crp": ("m1", "agv"),
+        "target": "shortest_deadlock",
+    },
+    {
+        "subject_id": "H5_residual_no_local_family",
+        "plant_type": "residual_cycle",
+        "r_crp": ("r1", "r2"),
+        "target": "initial",
+    },
 )
 H1_IDS = (
     "H1_CE_CL1_nonconfluent_closure",
@@ -1254,6 +1293,96 @@ def build_h3_v2_plant(
     return model, state, tuple(transitions)
 
 
+def build_h5_subject(subject_id: str) -> dict[str, Any]:
+    """Return one H5 diagnostic subject. No G4/G5 identity is reused."""
+
+    spec = next(item for item in H5_SUBJECTS if item["subject_id"] == subject_id)
+    plant = build_h2_v2_plant(str(spec["plant_type"]))
+    return {
+        "subject_id": subject_id,
+        "plant": plant,
+        "r_crp": tuple(spec["r_crp"]),
+        "target": str(spec["target"]),
+        "declared_s4pr_embedding_hash": None,
+    }
+
+
+def build_h5_subjects() -> tuple[dict[str, Any], ...]:
+    """Six new Prop 6.4 diagnostic rows."""
+
+    return tuple(build_h5_subject(str(item["subject_id"])) for item in H5_SUBJECTS)
+
+
+def evaluate_h5_subject(subject: dict[str, Any]) -> dict[str, Any]:
+    """Score Prop 6.4's four fields independently. Never run SBA/CRP."""
+
+    plant: H2Plant = subject["plant"]
+    r_crp = frozenset(str(item) for item in subject["r_crp"])
+    lts = enumerate_stable_lts(
+        plant.model,
+        plant.initial_state,
+        plant.transitions,
+        max_states=4096,
+    )
+    target_record = None
+    if subject["target"] == "initial":
+        target_record = next(
+            (
+                record
+                for record in lts.states
+                if record.state_id == lts.initial_state_id
+            ),
+            None,
+        )
+    else:
+        shortest = _shortest_deadlock_on_lts(plant, lts)
+        if shortest is not None:
+            target_record = shortest[0]
+    reachable = target_record is not None and not lts.truncated
+    prefix = () if target_record is None else target_record.witness
+    eval_state = plant.initial_state if target_record is None else target_record.state
+    family = (
+        ()
+        if target_record is None
+        else enumerate_local_blocking_certificates(
+            plant.model,
+            eval_state,
+            plant.transitions,
+            reachable_prefix=prefix,
+        )
+    )
+    matching = [cert for cert in family if frozenset(cert.kernel_resources) == r_crp]
+    field4_reason = "no_independent_s4pr_embedding"
+    fields = {
+        "reachable": reachable,
+        "local_family_available": len(family) > 0,
+        "matching_kernel_count": len(matching),
+        "s4pr_overlap": False,
+    }
+    agreement = (
+        fields["reachable"]
+        and fields["local_family_available"]
+        and fields["matching_kernel_count"] >= 1
+        and fields["s4pr_overlap"]
+    )
+    return {
+        "id": subject["subject_id"],
+        "plant_type": plant.type_id,
+        "r_crp": sorted(r_crp),
+        "target": subject["target"],
+        "fields": fields,
+        "field4_reason": field4_reason,
+        "bridge_agreement": agreement,
+        "family_size": len(family),
+        "kernel_resource_sets": [sorted(cert.kernel_resources) for cert in family],
+        "truncated": lts.truncated,
+        "state_count": len(lts.states),
+        "g4_g5_identity_reused": False,
+        "sba_ran": False,
+        "crp_equations_ran": False,
+    }
+
+
 def _cell_capacity(cell: str, tight: int) -> int:
     return {
         "tight": tight,
@@ -2026,6 +2155,46 @@ def materialize_discovery_bundle(root: Path) -> list[Path]:
         encoding="utf-8",
     )
     written.append(h3v2_path)
+    h5_dir = root / "h5"
+    h5_dir.mkdir(exist_ok=True)
+    h5_path = h5_dir / "subjects.json"
+    h5_path.write_text(
+        json.dumps(
+            {
+                "n_subjects": len(H5_SUBJECTS),
+                "subjects": [
+                    {
+                        "subject_id": item["subject_id"],
+                        "plant_type": item["plant_type"],
+                        "r_crp": list(item["r_crp"]),
+                        "target": item["target"],
+                    }
+                    for item in H5_SUBJECTS
+                ],
+                "prop": "6.4",
+                "sba_forbidden": True,
+                "g4_g5_replay_forbidden": True,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    written.append(h5_path)
+    for subject in build_h5_subjects():
+        plant = subject["plant"]
+        spec = _spec(
+            str(subject["subject_id"]),
+            f"H5 {subject['subject_id']}",
+            plant.model,
+            plant.initial_state,
+            plant.transitions,
+        )
+        path = h5_dir / f"{subject['subject_id']}.json"
+        path.write_text(
+            json.dumps(spec.to_json_dict(), indent=2) + "\n", encoding="utf-8"
+        )
+        written.append(path)
     for version, builder, stem in (
         ("h4_v2", build_h4_islands, "H4_v2"),
         ("h4_v3", build_h4_v3_islands, "H4_v3"),
