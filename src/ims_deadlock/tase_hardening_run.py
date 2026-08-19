@@ -26,6 +26,7 @@ from ims_deadlock.tase_hardening import (
     build_h3_plant,
     build_h3_rows,
     build_h4_islands,
+    build_h4_v3_islands,
     build_shard_plan,
     classify_h3_row,
     evaluate_h1,
@@ -141,10 +142,22 @@ def eval_h3_row(row: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
-def eval_h4_barrier(role: str) -> dict[str, Any]:
-    """Enumerate one H4 island and attempt a terminal/stopping partition."""
+def eval_h4_v3_barrier(role: str) -> dict[str, Any]:
+    """Barrier A for the P1 deadlock island."""
 
-    island = next(item for item in build_h4_islands() if item.role == role)
+    return _eval_h4_barrier(role, version="v3")
+
+
+def eval_h4_barrier(role: str) -> dict[str, Any]:
+    """Enumerate one H4 v2 island and attempt a terminal/stopping partition."""
+
+    return _eval_h4_barrier(role, version="v2")
+
+
+def _eval_h4_barrier(role: str, *, version: str) -> dict[str, Any]:
+    islands = build_h4_v3_islands() if version == "v3" else build_h4_islands()
+    island = next(item for item in islands if item.role == role)
+    prefix = "H4_v3" if version == "v3" else "H4_v2"
     lts = enumerate_stable_lts(
         island.model,
         island.initial_state,
@@ -152,7 +165,7 @@ def eval_h4_barrier(role: str) -> dict[str, Any]:
         max_states=H3_STATE_CAP,
     )
     payload: dict[str, Any] = {
-        "id": f"H4_v2_{role}",
+        "id": f"{prefix}_{role}",
         "role": role,
         "label": island.label,
         "intervention": island.intervention,
@@ -408,9 +421,38 @@ def _merge_des(
     }
 
 
+def run_h4_v3_waves(repo_root: Path) -> dict[str, Any]:
+    """P1 quantitative wave for the deadlock island. v1/v2 stay immutable."""
+
+    return _run_h4_named_waves(
+        repo_root,
+        version="v3",
+        evidence_name="v3",
+        report_name="tase_hardening_h4_v3_report.json",
+        barrier_fn=eval_h4_v3_barrier,
+    )
+
+
 def run_h4_v2_waves(repo_root: Path) -> dict[str, Any]:
     """Re-run only repaired H4 into a new evidence root. v1 stays immutable."""
 
+    return _run_h4_named_waves(
+        repo_root,
+        version="v2",
+        evidence_name="v2",
+        report_name="tase_hardening_h4_v2_report.json",
+        barrier_fn=eval_h4_barrier,
+    )
+
+
+def _run_h4_named_waves(
+    repo_root: Path,
+    *,
+    version: str,
+    evidence_name: str,
+    report_name: str,
+    barrier_fn: Any,
+) -> dict[str, Any]:
     auth = require_quantitative_authorization(repo_root)
     probe = live_probe()
     workers = plan_workers(probe, family="H4")
@@ -422,12 +464,13 @@ def run_h4_v2_waves(repo_root: Path) -> dict[str, Any]:
         reducer_count=1,
     )
     pin_blas_thread_env(workers=workers)
-    evidence = repo_root / "evidence" / "tase_hardening" / "v2"
+    evidence = repo_root / "evidence" / "tase_hardening" / evidence_name
     evidence.mkdir(parents=True, exist_ok=True)
-    if (evidence / "tase_hardening_h4_v2_report.json").exists():
-        raise WorkerProtocolError("v2 H4 evidence already exists; will not overwrite")
+    report_path = evidence / report_name
+    if report_path.exists():
+        raise WorkerProtocolError(f"{report_name} already exists; will not overwrite")
 
-    barriers = run_process_pool(("base", "intervention"), eval_h4_barrier, workers=2)
+    barriers = run_process_pool(("base", "intervention"), barrier_fn, workers=2)
     exact = [solve_h4_exact(barrier) for barrier in barriers]
     certified = [barrier for barrier in barriers if barrier["barrier_a"] == "certified"]
     des_primary: list[dict[str, Any]] = []
@@ -479,10 +522,10 @@ def run_h4_v2_waves(repo_root: Path) -> dict[str, Any]:
             )
     report = {
         "scope_id": SCOPE_ID,
-        "panel": "h4_v2",
+        "panel": f"h4_{version}",
         "authorization_id": auth["authorization_id"],
         "authorization_sha256": APPROVED_QUANT_AUTH_SHA256,
-        "v1_evidence_untouched": True,
+        "prior_h4_roots_untouched": True,
         "probe": {
             "logical_cpus": probe.logical_cpus,
             "free_ram_gib": probe.free_ram_gib,
@@ -499,8 +542,7 @@ def run_h4_v2_waves(repo_root: Path) -> dict[str, Any]:
         "hoeffding_tolerance": tolerance,
         "original_g6b_gate": "OPEN_PENDING",
     }
-    path = evidence / "tase_hardening_h4_v2_report.json"
-    path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return report
 
 
@@ -666,6 +708,23 @@ def main() -> int:
     import sys
 
     repo = Path(__file__).resolve().parents[2]
+    if "--h4-v3" in sys.argv:
+        report = run_h4_v3_waves(repo)
+        print(
+            json.dumps(
+                {
+                    "workers": report["probe"],
+                    "barrier": [
+                        (row["id"], row.get("barrier_a"), row.get("refusal_code"))
+                        for row in report["h4_barrier"]
+                    ],
+                    "exact": report["h4_exact"],
+                    "compatibility": report["compatibility"],
+                },
+                indent=2,
+            )
+        )
+        return 0
     if "--h4-v2" in sys.argv:
         report = run_h4_v2_waves(repo)
         print(

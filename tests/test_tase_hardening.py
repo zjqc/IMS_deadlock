@@ -195,6 +195,42 @@ def test_h4_islands_are_synthetic_digital_twins() -> None:
         assert any("blocked_unload" in mode for mode in modes)
 
 
+def test_h4_v3_base_is_local_hit_and_intervention_is_not() -> None:
+    from ims_deadlock.analysis import enumerate_stable_lts
+    from ims_deadlock.certificates import (
+        find_deadlock_certificate,
+        find_local_blocking_certificate,
+    )
+    from ims_deadlock.model import validate_model_state
+    from ims_deadlock.tase_hardening import build_h4_v3_islands
+
+    islands = {island.role: island for island in build_h4_v3_islands()}
+    base = islands["base"]
+    intervened = islands["intervention"]
+    assert (
+        find_deadlock_certificate(base.model, base.initial_state, base.transitions)
+        is None
+    )
+    local = find_local_blocking_certificate(
+        base.model, base.initial_state, base.transitions
+    )
+    assert local is not None
+    assert set(local.kernel_jobs) == {"A", "B"}
+    assert (
+        find_local_blocking_certificate(
+            intervened.model, intervened.initial_state, intervened.transitions
+        )
+        is None
+    )
+    for island in islands.values():
+        lts = enumerate_stable_lts(
+            island.model, island.initial_state, island.transitions, max_states=4096
+        )
+        assert lts.truncated is False
+        for record in lts.states:
+            assert validate_model_state(island.model, record.state).valid
+
+
 def test_h4_lts_never_completes_while_holding() -> None:
     from ims_deadlock.analysis import enumerate_stable_lts
     from ims_deadlock.model import validate_model_state

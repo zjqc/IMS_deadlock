@@ -1,0 +1,219 @@
+{
+  "schema_version": "ims-deadlock/case/v1",
+  "case_id": "H4_v3_base",
+  "title": "H4_v3 base synthetic digital-twin",
+  "status": "DISCOVERY",
+  "model": {
+    "id": "h4-island-v3-base",
+    "resources": [
+      {
+        "id": "AGV",
+        "capacity": 1,
+        "kind": "agv"
+      },
+      {
+        "id": "M1",
+        "capacity": 1,
+        "kind": "machine"
+      },
+      {
+        "id": "M2",
+        "capacity": 1,
+        "kind": "machine"
+      }
+    ],
+    "jobs": [
+      "A",
+      "B",
+      "C"
+    ]
+  },
+  "initial_state": {
+    "id": "h4-v3-base-s0",
+    "holds": [
+      {
+        "job_id": "A",
+        "resource_id": "M1",
+        "units": 1
+      },
+      {
+        "job_id": "B",
+        "resource_id": "AGV",
+        "units": 1
+      },
+      {
+        "job_id": "C",
+        "resource_id": "M2",
+        "units": 1
+      }
+    ],
+    "requests": {
+      "A": [
+        [
+          {
+            "resource_id": "AGV",
+            "units": 1
+          }
+        ]
+      ],
+      "B": [
+        [
+          {
+            "resource_id": "M1",
+            "units": 1
+          }
+        ]
+      ],
+      "C": []
+    },
+    "completed_jobs": [],
+    "stable": true,
+    "complete": false,
+    "event_calendar_empty": true,
+    "stage_by_job": {
+      "A": "blocked_unload",
+      "B": "wait",
+      "C": "in_service"
+    },
+    "mode_by_job": {
+      "A": "blocked_unload",
+      "B": "wait",
+      "C": "in_service"
+    },
+    "zero_time_trace": []
+  },
+  "transitions": [
+    {
+      "name": "A-unload-agv",
+      "kind": "unload",
+      "job_id": "A",
+      "source_mode": "blocked_unload",
+      "target_mode": "on_agv",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "AGV",
+          "units": 1
+        }
+      ],
+      "release": [
+        {
+          "resource_id": "M1",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": false,
+      "next_requests": []
+    },
+    {
+      "name": "A-complete-release-agv",
+      "kind": "release",
+      "job_id": "A",
+      "source_mode": "on_agv",
+      "target_mode": "completed",
+      "controllable": false,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": false,
+      "acquire": [],
+      "release": [
+        {
+          "resource_id": "AGV",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true
+    },
+    {
+      "name": "B-enter-m1",
+      "kind": "dispatch",
+      "job_id": "B",
+      "source_mode": "wait",
+      "target_mode": "on_m1",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "M1",
+          "units": 1
+        }
+      ],
+      "release": [
+        {
+          "resource_id": "AGV",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": false,
+      "next_requests": []
+    },
+    {
+      "name": "B-complete-release-m1",
+      "kind": "release",
+      "job_id": "B",
+      "source_mode": "on_m1",
+      "target_mode": "completed",
+      "controllable": false,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": false,
+      "acquire": [],
+      "release": [
+        {
+          "resource_id": "M1",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true
+    },
+    {
+      "name": "C-service-complete",
+      "kind": "service_complete",
+      "job_id": "C",
+      "source_mode": "in_service",
+      "target_mode": "blocked_unload",
+      "controllable": false,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": false,
+      "acquire": [],
+      "release": [],
+      "requires": [],
+      "mark_complete": false
+    },
+    {
+      "name": "C-release-m2",
+      "kind": "release",
+      "job_id": "C",
+      "source_mode": "blocked_unload",
+      "target_mode": "completed",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [],
+      "release": [
+        {
+          "resource_id": "M2",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true,
+      "next_requests": []
+    }
+  ],
+  "calendar": [],
+  "notes": [
+    "tase_hardening_v1"
+  ]
+}

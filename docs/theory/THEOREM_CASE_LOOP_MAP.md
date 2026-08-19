@@ -13,7 +13,7 @@ Four columns only. A later hardening spec may not contradict a `closed` or
 | P2 covering-core iff capacity-mediated global deadlock | covering kernel + no admissible successor | C0; article global positive | closed on small declared-registry models; tighten “relative to registry” |
 | cycle ≠ deadlock | residual-feasible cycle | C1 / CE-C1 | scientifically closed; ledger rebound in this tranche |
 | P3 chain-decomposable strict-precedence sufficient | DAG + no covering kernel | C2 | closed as sufficient condition |
-| P3 not vacuous | covering kernel that is not chain-decomposable, P3 refuses | none | **open; Family H1** |
+| P3 not vacuous | covering kernel that is not chain-decomposable, P3 refuses | H1 P3 `not_applicable` | **closed in tase v1** |
 | multi-capacity ≠ simple cycle / WCC shortcut | residual or incomplete coverage | C3 / CE-C3 | IMS screening closed; Palmer 2/3-server replica not required for Paper A |
 | AGV projection false negative | machine projection live, full model deadlocked | C4 / CE-C4 | discovery closed; not a journal-scale transport study |
 | island bidirectional / DAG repair | paired ring vs deleted backflow | C5 + C5_DAG; BIX2-PERSIST | discovery closed; P3e remains a 3-resource subclass |
@@ -31,10 +31,10 @@ Four columns only. A later hardening spec may not contradict a `closed` or
 | risk-budget supervisor / Pareto | recursive feasibility theorem | none | correctly open |
 | same-semantics baselines | cycle / closed-core / siphon-or-refuse / LTS truth | none unified | **T-ASE blocker; Family H2** |
 | scale / diversity | parameterized enumerable or typed refusal | none as a panel | **T-ASE blocker; Family H3** |
-| realistic manufacturing KPI | documented island + intervention + predeclared KPI | none | **T-ASE blocker; Family H4** |
-| non-confluent closure | two zero-time sequences, two stable successors | CE-CL1 only | **open; Family H1** |
-| optional drain ≠ structural repair | controllable alternate drain, ring prefix still reachable | CE-BIXD2 only | **open; Family H1** |
-| intervention creates new core | delete backflow, new kernel appears | CE-INT1 only | **open; Family H1** |
+| realistic manufacturing KPI | documented island + intervention + predeclared KPI | H4 v2 certified but \(\theta_b=0\) | **T-ASE blocker; H4-v3 must deadlock** |
+| non-confluent closure | two zero-time sequences, two stable successors | H1 CL1 | **closed in tase v1** |
+| optional drain ≠ structural repair | controllable alternate drain, ring prefix still reachable | H1 BIXD2 | **closed in tase v1** |
+| intervention creates new core | delete backflow, new kernel appears | H1 INT1 | **closed in tase v1** |
 | soft reservation ≠ capacity | two soft claims, one physical slot | CE-RSV1 only | open; not required for Paper A centre |
 
 ## Journal split frozen by this map

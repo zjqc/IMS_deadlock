@@ -1046,9 +1046,140 @@ def classify_h3_row(row: dict[str, Any]) -> str:
 
 
 def build_h4_islands() -> tuple[H4Island, ...]:
-    """Base island plus one predeclared backflow deletion."""
+    """H4 v2 all-completion islands (historical, θ_b=0)."""
 
     return (_h4_island("base"), _h4_island("intervention"))
+
+
+def build_h4_v3_islands() -> tuple[H4Island, ...]:
+    """H4 v3: local AGV–machine interlock plus a still-moving third job."""
+
+    return (_h4_v3_island("base"), _h4_v3_island("intervention"))
+
+
+def _h4_v3_island(role: Literal["base", "intervention"]) -> H4Island:
+    model = IMSModel(
+        id=f"h4-island-v3-{role}",
+        resources={
+            "M1": Resource("M1", 1, "machine"),
+            "M2": Resource("M2", 1, "machine"),
+            "AGV": Resource("AGV", 1, "agv"),
+        },
+        jobs=("A", "B", "C"),
+    )
+    state = IMSState(
+        id=f"h4-v3-{role}-s0",
+        holds=(_hold("A", "M1"), _hold("B", "AGV"), _hold("C", "M2")),
+        requests={"A": (_alt("AGV"),), "B": (_alt("M1"),), "C": ()},
+        stable=True,
+        complete=False,
+        event_calendar_empty=True,
+        mode_by_job={
+            "A": "blocked_unload",
+            "B": "wait",
+            "C": "in_service",
+        },
+        stage_by_job={
+            "A": "blocked_unload",
+            "B": "wait",
+            "C": "in_service",
+        },
+    )
+    transitions = [
+        TransitionSpec(
+            name="A-unload-agv",
+            kind=EventKind.UNLOAD,
+            job_id="A",
+            source_mode="blocked_unload",
+            target_mode="on_agv",
+            controllable=True,
+            zero_time=False,
+            acquire=(ResourceDemand("AGV"),),
+            release=(ResourceDemand("M1"),),
+            clears_requests=True,
+        ),
+        TransitionSpec(
+            name="A-complete-release-agv",
+            kind=EventKind.RELEASE,
+            job_id="A",
+            source_mode="on_agv",
+            target_mode="completed",
+            controllable=False,
+            zero_time=False,
+            release=(ResourceDemand("AGV"),),
+            mark_complete=True,
+        ),
+        TransitionSpec(
+            name="B-enter-m1",
+            kind=EventKind.DISPATCH,
+            job_id="B",
+            source_mode="wait",
+            target_mode="on_m1",
+            controllable=True,
+            zero_time=False,
+            acquire=(ResourceDemand("M1"),),
+            release=(ResourceDemand("AGV"),),
+            clears_requests=True,
+        ),
+        TransitionSpec(
+            name="B-complete-release-m1",
+            kind=EventKind.RELEASE,
+            job_id="B",
+            source_mode="on_m1",
+            target_mode="completed",
+            controllable=False,
+            zero_time=False,
+            release=(ResourceDemand("M1"),),
+            mark_complete=True,
+        ),
+        TransitionSpec(
+            name="C-service-complete",
+            kind=EventKind.SERVICE_COMPLETE,
+            job_id="C",
+            source_mode="in_service",
+            target_mode="blocked_unload",
+            controllable=False,
+            zero_time=False,
+        ),
+        TransitionSpec(
+            name="C-release-m2",
+            kind=EventKind.RELEASE,
+            job_id="C",
+            source_mode="blocked_unload",
+            target_mode="completed",
+            controllable=True,
+            zero_time=False,
+            clears_requests=True,
+            release=(ResourceDemand("M2"),),
+            mark_complete=True,
+        ),
+    ]
+    if role == "intervention":
+        transitions.append(
+            TransitionSpec(
+                name="B-optional-drain",
+                kind=EventKind.RELEASE,
+                job_id="B",
+                source_mode="wait",
+                target_mode="completed",
+                controllable=True,
+                zero_time=False,
+                clears_requests=True,
+                release=(ResourceDemand("AGV"),),
+                mark_complete=True,
+            )
+        )
+        intervention = "B_optional_agv_drain"
+    else:
+        intervention = "none"
+    return H4Island(
+        role=role,
+        label="synthetic digital-twin",
+        model=model,
+        initial_state=state,
+        transitions=tuple(transitions),
+        intervention=intervention,
+    )
 
 
 def _h4_island(role: Literal["base", "intervention"]) -> H4Island:
@@ -1272,19 +1403,23 @@ def materialize_discovery_bundle(root: Path) -> list[Path]:
         encoding="utf-8",
     )
     written.append(h3_path)
-    h4_dir = root / "h4_v2"
-    h4_dir.mkdir(exist_ok=True)
-    for island in build_h4_islands():
-        spec = _spec(
-            f"H4_v2_{island.role}",
-            f"H4 v2 {island.role} {island.label}",
-            island.model,
-            island.initial_state,
-            island.transitions,
-        )
-        path = h4_dir / f"H4_v2_{island.role}.json"
-        path.write_text(
-            json.dumps(spec.to_json_dict(), indent=2) + "\n", encoding="utf-8"
-        )
-        written.append(path)
+    for version, builder, stem in (
+        ("h4_v2", build_h4_islands, "H4_v2"),
+        ("h4_v3", build_h4_v3_islands, "H4_v3"),
+    ):
+        h4_dir = root / version
+        h4_dir.mkdir(exist_ok=True)
+        for island in builder():
+            spec = _spec(
+                f"{stem}_{island.role}",
+                f"{stem} {island.role} {island.label}",
+                island.model,
+                island.initial_state,
+                island.transitions,
+            )
+            path = h4_dir / f"{stem}_{island.role}.json"
+            path.write_text(
+                json.dumps(spec.to_json_dict(), indent=2) + "\n", encoding="utf-8"
+            )
+            written.append(path)
     return written
