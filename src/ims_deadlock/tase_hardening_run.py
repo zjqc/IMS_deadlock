@@ -176,8 +176,16 @@ def eval_h4_barrier(role: str) -> dict[str, Any]:
             lts,
             island.transitions,
             verify_generated_lts=True,
-            require_selected_absorption=True,
         )
+        unselected = (
+            list(partition.r_livelock_state_ids)
+            + list(partition.r_terminal_state_ids)
+            + list(partition.unreachable_nonabsorbing_state_ids)
+        )
+        if unselected:
+            payload["refusal_code"] = "unselected_closed_or_unreachable"
+            payload["refusal_details"] = {"state_ids": unselected}
+            return payload
     except TerminalPartitionError as error:
         payload["refusal_code"] = error.code
         payload["refusal_details"] = error.details
