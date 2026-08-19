@@ -1,0 +1,62 @@
+{
+  "n_subjects": 6,
+  "subjects": [
+    {
+      "subject_id": "H5_unit_pair_fields123",
+      "plant_type": "sip1_unit_pair",
+      "r_crp": [
+        "r1",
+        "r2"
+      ],
+      "target": "shortest_deadlock"
+    },
+    {
+      "subject_id": "H5_unit_triple_fields123",
+      "plant_type": "sip1_unit_triple",
+      "r_crp": [
+        "r1",
+        "r2",
+        "r3"
+      ],
+      "target": "shortest_deadlock"
+    },
+    {
+      "subject_id": "H5_reachable_pair_fields123",
+      "plant_type": "sip1_reachable_pair",
+      "r_crp": [
+        "r1",
+        "r2"
+      ],
+      "target": "shortest_deadlock"
+    },
+    {
+      "subject_id": "H5_wrong_r_crp_zero_match",
+      "plant_type": "sip1_unit_pair",
+      "r_crp": [
+        "r9"
+      ],
+      "target": "shortest_deadlock"
+    },
+    {
+      "subject_id": "H5_outside_agv_and",
+      "plant_type": "refuse_agv_and",
+      "r_crp": [
+        "m1",
+        "agv"
+      ],
+      "target": "shortest_deadlock"
+    },
+    {
+      "subject_id": "H5_residual_no_local_family",
+      "plant_type": "residual_cycle",
+      "r_crp": [
+        "r1",
+        "r2"
+      ],
+      "target": "initial"
+    }
+  ],
+  "prop": "6.4",
+  "sba_forbidden": true,
+  "g4_g5_replay_forbidden": true
+}

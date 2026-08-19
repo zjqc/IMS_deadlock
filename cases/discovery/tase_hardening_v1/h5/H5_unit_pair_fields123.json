@@ -1,0 +1,129 @@
+{
+  "schema_version": "ims-deadlock/case/v1",
+  "case_id": "H5_unit_pair_fields123",
+  "title": "H5 H5_unit_pair_fields123",
+  "status": "DISCOVERY",
+  "model": {
+    "id": "h2v2-cycle-j1-j2",
+    "resources": [
+      {
+        "id": "r1",
+        "capacity": 1,
+        "kind": "machine"
+      },
+      {
+        "id": "r2",
+        "capacity": 1,
+        "kind": "machine"
+      }
+    ],
+    "jobs": [
+      "j1",
+      "j2"
+    ]
+  },
+  "initial_state": {
+    "id": "h2v2-cycle-j1-j2-s0",
+    "holds": [
+      {
+        "job_id": "j1",
+        "resource_id": "r1",
+        "units": 1
+      },
+      {
+        "job_id": "j2",
+        "resource_id": "r2",
+        "units": 1
+      }
+    ],
+    "requests": {
+      "j1": [
+        [
+          {
+            "resource_id": "r2",
+            "units": 1
+          }
+        ]
+      ],
+      "j2": [
+        [
+          {
+            "resource_id": "r1",
+            "units": 1
+          }
+        ]
+      ]
+    },
+    "completed_jobs": [],
+    "stable": true,
+    "complete": false,
+    "event_calendar_empty": true,
+    "stage_by_job": {
+      "j1": "wait",
+      "j2": "wait"
+    },
+    "mode_by_job": {
+      "j1": "wait",
+      "j2": "wait"
+    },
+    "zero_time_trace": []
+  },
+  "transitions": [
+    {
+      "name": "j1-get-r2",
+      "kind": "dispatch",
+      "job_id": "j1",
+      "source_mode": "wait",
+      "target_mode": "done",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "r2",
+          "units": 1
+        }
+      ],
+      "release": [
+        {
+          "resource_id": "r1",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true,
+      "next_requests": []
+    },
+    {
+      "name": "j2-get-r1",
+      "kind": "dispatch",
+      "job_id": "j2",
+      "source_mode": "wait",
+      "target_mode": "done",
+      "controllable": true,
+      "zero_time": false,
+      "urgent": false,
+      "clears_requests": true,
+      "acquire": [
+        {
+          "resource_id": "r1",
+          "units": 1
+        }
+      ],
+      "release": [
+        {
+          "resource_id": "r2",
+          "units": 1
+        }
+      ],
+      "requires": [],
+      "mark_complete": true,
+      "next_requests": []
+    }
+  ],
+  "calendar": [],
+  "notes": [
+    "tase_hardening_v1"
+  ]
+}

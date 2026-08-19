@@ -1,0 +1,191 @@
+{
+  "scope_id": "tase_hardening_v1",
+  "panel": "h5",
+  "authorization_id": "tase_hardening_v1_quantitative_t6",
+  "authorization_sha256": "090c75516fbbde24dcc4cde03b0d24aa633955f1ce9b97cc4c49b229f7b193c9",
+  "prop": "6.4",
+  "prior_g4_g5_untouched": true,
+  "sba_ran": false,
+  "crp_equations_ran": false,
+  "probe": {
+    "logical_cpus": 56,
+    "free_ram_gib": 102.93648147583008,
+    "workers": 48
+  },
+  "n_subjects": 6,
+  "fields123_true_count": 4,
+  "bridge_agreement_count": 0,
+  "rows": [
+    {
+      "id": "H5_unit_pair_fields123",
+      "plant_type": "sip1_unit_pair",
+      "r_crp": [
+        "r1",
+        "r2"
+      ],
+      "target": "shortest_deadlock",
+      "fields": {
+        "reachable": true,
+        "local_family_available": true,
+        "matching_kernel_count": 1,
+        "s4pr_overlap": false
+      },
+      "field4_reason": "no_independent_s4pr_embedding",
+      "bridge_agreement": false,
+      "family_size": 1,
+      "kernel_resource_sets": [
+        [
+          "r1",
+          "r2"
+        ]
+      ],
+      "truncated": false,
+      "state_count": 1,
+      "g4_g5_identity_reused": false,
+      "sba_ran": false,
+      "crp_equations_ran": false
+    },
+    {
+      "id": "H5_unit_triple_fields123",
+      "plant_type": "sip1_unit_triple",
+      "r_crp": [
+        "r1",
+        "r2",
+        "r3"
+      ],
+      "target": "shortest_deadlock",
+      "fields": {
+        "reachable": true,
+        "local_family_available": true,
+        "matching_kernel_count": 1,
+        "s4pr_overlap": false
+      },
+      "field4_reason": "no_independent_s4pr_embedding",
+      "bridge_agreement": false,
+      "family_size": 1,
+      "kernel_resource_sets": [
+        [
+          "r1",
+          "r2",
+          "r3"
+        ]
+      ],
+      "truncated": false,
+      "state_count": 1,
+      "g4_g5_identity_reused": false,
+      "sba_ran": false,
+      "crp_equations_ran": false
+    },
+    {
+      "id": "H5_reachable_pair_fields123",
+      "plant_type": "sip1_reachable_pair",
+      "r_crp": [
+        "r1",
+        "r2"
+      ],
+      "target": "shortest_deadlock",
+      "fields": {
+        "reachable": true,
+        "local_family_available": true,
+        "matching_kernel_count": 1,
+        "s4pr_overlap": false
+      },
+      "field4_reason": "no_independent_s4pr_embedding",
+      "bridge_agreement": false,
+      "family_size": 1,
+      "kernel_resource_sets": [
+        [
+          "r1",
+          "r2"
+        ]
+      ],
+      "truncated": false,
+      "state_count": 6,
+      "g4_g5_identity_reused": false,
+      "sba_ran": false,
+      "crp_equations_ran": false
+    },
+    {
+      "id": "H5_wrong_r_crp_zero_match",
+      "plant_type": "sip1_unit_pair",
+      "r_crp": [
+        "r9"
+      ],
+      "target": "shortest_deadlock",
+      "fields": {
+        "reachable": true,
+        "local_family_available": true,
+        "matching_kernel_count": 0,
+        "s4pr_overlap": false
+      },
+      "field4_reason": "no_independent_s4pr_embedding",
+      "bridge_agreement": false,
+      "family_size": 1,
+      "kernel_resource_sets": [
+        [
+          "r1",
+          "r2"
+        ]
+      ],
+      "truncated": false,
+      "state_count": 1,
+      "g4_g5_identity_reused": false,
+      "sba_ran": false,
+      "crp_equations_ran": false
+    },
+    {
+      "id": "H5_outside_agv_and",
+      "plant_type": "refuse_agv_and",
+      "r_crp": [
+        "agv",
+        "m1"
+      ],
+      "target": "shortest_deadlock",
+      "fields": {
+        "reachable": true,
+        "local_family_available": true,
+        "matching_kernel_count": 1,
+        "s4pr_overlap": false
+      },
+      "field4_reason": "no_independent_s4pr_embedding",
+      "bridge_agreement": false,
+      "family_size": 1,
+      "kernel_resource_sets": [
+        [
+          "agv",
+          "m1"
+        ]
+      ],
+      "truncated": false,
+      "state_count": 1,
+      "g4_g5_identity_reused": false,
+      "sba_ran": false,
+      "crp_equations_ran": false
+    },
+    {
+      "id": "H5_residual_no_local_family",
+      "plant_type": "residual_cycle",
+      "r_crp": [
+        "r1",
+        "r2"
+      ],
+      "target": "initial",
+      "fields": {
+        "reachable": true,
+        "local_family_available": false,
+        "matching_kernel_count": 0,
+        "s4pr_overlap": false
+      },
+      "field4_reason": "no_independent_s4pr_embedding",
+      "bridge_agreement": false,
+      "family_size": 0,
+      "kernel_resource_sets": [],
+      "truncated": false,
+      "state_count": 3,
+      "g4_g5_identity_reused": false,
+      "sba_ran": false,
+      "crp_equations_ran": false
+    }
+  ],
+  "original_g6b_gate": "OPEN_PENDING"
+}
