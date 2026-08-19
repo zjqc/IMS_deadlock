@@ -1,12 +1,13 @@
 # T-ASE Submission Programme
 
-Status: `PROCESS MASTER / NO MANUSCRIPT BODY / WORKTREE ONLY`
+Status: `PROCESS MASTER / P0–P4 CLOSED / P5 OUTLINE ONLY / NO IEEE BODY`
 Date: 2026-08-19
 Venue: IEEE Transactions on Automation Science and Engineering
 Worktree: `D:\worktree\IMS_deadlock-journal-hardening-v1`
 Branch: `codex/journal-hardening-v1`
 Base scientific facts: article-core v1 `TIER A`; tase_hardening v1 H1–H3
-  executed; H4 v1 refused; H4 v2 certified with \(\theta_b=0\).
+  executed; H4 v1 refused; H4 v2 certified with \(\theta_b=0\); H4-v3
+  island closed; H2-v2 in-domain table closed; H3-v2 scale closed.
 
 This file is the operating plan for making Paper A *submittable to T-ASE*.
 It is not the paper. Do not write the IEEE body, title-page metadata, or
@@ -182,6 +183,7 @@ unused. Serial H3/H4 sweeps are protocol misses.
 
 ## 5. Immediate next step
 
-P0 documents in this commit, then P1 design
-`docs/superpowers/specs/2026-08-19-tase-h4-v3-island-design.md` and
-implementation on the same worktree.
+P0–P4 are closed on this worktree. P5 has an NtP *outline* and page
+budget only. Do **not** start the IEEE body until the user asks for
+manuscript packaging. Optional leftover: H5 CRP four-field row
+(explicitly omitted). G5 FAIL and G6-B `OPEN_PENDING` stay retained.

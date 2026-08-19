@@ -11,16 +11,16 @@ placed is either a limitation or a different paper.
 
 | ID | Claim | Current evidence | Still missing for T-ASE |
 | --- | --- | --- | --- |
-| TA1 | `D_local` is a verified stopped-process bad hit set, not a plant terminal SCC | article C1; multi-kernel 6 vs 4 arcs | island-scale witness (P1) |
-| TA2 | Under A0–A7+A2b, a local closed kernel makes all-batch completion unreachable | Theorem 1; article A2b case; H1 bypass retained as boundary | none for the theorem; island clothing (P1) |
+| TA1 | `D_local` is a verified stopped-process bad hit set, not a plant terminal SCC | article C1; multi-kernel 6 vs 4 arcs; H4-v3 base \(\theta_l=1\) | none for the island clothing |
+| TA2 | Under A0–A7+A2b, a local closed kernel makes all-batch completion unreachable | Theorem 1; article A2b case; H1 bypass retained as boundary | none for the theorem |
 | TA3 | Complete finite-LTS nonreachability is a sound model-specific fallback | Proposition 2; article multi-kernel | none for the proposition |
 | TA4 | A completion bypass forbids promoting a local candidate | article bypass; CE-G6-BYPASS; H1 related | none |
 | TA5 | Global-before-local is a versioned estimand convention | article overlap control | none; must stay labelled convention |
-| TA6 | Exact and DES can share one certified first-hit target | article 18 cells; H4 v2 6 cells (all-completion) | same check on a \(\theta_b>0\) island (P1) |
+| TA6 | Exact and DES can share one certified first-hit target | article 18 cells; H4-v3 6/6 cells, base \(\theta_b=1\) | none for the island |
 | TA7 | Optional drain / cutting the wrong edge is not a structural repair | H1 BIXD2, H1 INT1 | cite as boundary, not main theorem |
 | TA8 | P3 refuses non-chain-decomposable covering kernels | H1 P3 `not_applicable` | cite as anti-vacuity, not a new threshold |
-| TA9 | Closed-core vs LTS truth can be compared on one semantics | H2 32 plants, FP=0 FN=0 | in-domain siphon positives (P2) |
-| TA10 | Diagnostic siphon applies only inside `IMS-SIP^1` | P2c; 32 H2 refusals; CE-SIP1 | applicable positives (P2) |
+| TA9 | Closed-core vs LTS truth can be compared on one semantics | H2 v1 32 plants FP=0 FN=0; H2-v2 10 plants FP=0 FN=0 | none |
+| TA10 | Diagnostic siphon applies only inside `IMS-SIP^1` | H2-v2 4 agrees + 4 typed refusals; v1 32/32 refusals retained | none |
 
 ## Forbidden on the T-ASE paper
 

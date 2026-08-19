@@ -12,25 +12,31 @@ from random import Random
 from typing import Any
 
 from ims_deadlock.analysis import enumerate_stable_lts
+from ims_deadlock.certificates import enumerate_local_blocking_certificates
 from ims_deadlock.ctmc import AbsorbingCTMC
 from ims_deadlock.engine import EventKind
 from ims_deadlock.tase_hardening import (
     H1_IDS,
     H2_CELLS,
     H2_TYPES,
+    H2_V2_TYPES,
     H3_STATE_CAP,
     SCOPE_ID,
     ComputeProbe,
     WorkerProtocolError,
     build_h2_plant,
+    build_h2_v2_plant,
     build_h3_plant,
     build_h3_rows,
+    build_h3_v2_plant,
+    build_h3_v2_rows,
     build_h4_islands,
     build_h4_v3_islands,
     build_shard_plan,
     classify_h3_row,
     evaluate_h1,
     evaluate_h2_plant,
+    evaluate_h2_v2_plant,
     pin_blas_thread_env,
     plan_workers,
     run_process_pool,
@@ -118,6 +124,38 @@ def eval_h2_key(key: tuple[str, str]) -> dict[str, Any]:
     report = evaluate_h2_plant(plant)
     report["id"] = f"{key[0]}__{key[1]}"
     return report
+
+
+def eval_h2_v2_key(type_id: str) -> dict[str, Any]:
+    """Picklable H2-v2 worker."""
+
+    plant = build_h2_v2_plant(type_id)
+    report = evaluate_h2_v2_plant(plant)
+    report["id"] = type_id
+    return report
+
+
+def eval_h3_v2_row(row: dict[str, Any]) -> dict[str, Any]:
+    """Picklable H3-v2 worker: enumerate or refuse."""
+
+    started = time.perf_counter()
+    model, state, transitions = build_h3_v2_plant(row)
+    lts = enumerate_stable_lts(model, state, transitions, max_states=H3_STATE_CAP)
+    elapsed = time.perf_counter() - started
+    payload = {
+        **row,
+        "id": f"h3v2-{row['n_jobs']}-{row['n_stages']}-{row['capacity']}",
+        "state_count": len(lts.states),
+        "elapsed_s": elapsed,
+        "truncated": lts.truncated,
+        "kernel_family_size": _kernel_family_size(model, state, transitions),
+    }
+    payload["classification"] = classify_h3_row(payload)
+    return payload
+
+
+def _kernel_family_size(model: Any, state: Any, transitions: Any) -> int:
+    return len(enumerate_local_blocking_certificates(model, state, transitions))
 
 
 def eval_h3_row(row: dict[str, Any]) -> dict[str, Any]:
@@ -546,6 +584,102 @@ def _run_h4_named_waves(
     return report
 
 
+def run_h2_v2_waves(repo_root: Path) -> dict[str, Any]:
+    """P2 in-domain siphon table. Frozen H2 v1 stays untouched."""
+
+    auth = require_quantitative_authorization(repo_root)
+    probe = live_probe()
+    workers = plan_workers(probe, family="H2")
+    validate_wave(
+        wave="P2",
+        workers=workers,
+        probe=probe,
+        primary_repro_overlap=False,
+        reducer_count=1,
+    )
+    pin_blas_thread_env(workers=workers)
+    evidence = repo_root / "evidence" / "tase_hardening" / "h2_v2"
+    evidence.mkdir(parents=True, exist_ok=True)
+    report_path = evidence / "tase_hardening_h2_v2_report.json"
+    if report_path.exists():
+        raise WorkerProtocolError("h2_v2 report already exists; will not overwrite")
+    rows = run_process_pool(
+        H2_V2_TYPES, eval_h2_v2_key, workers=min(workers, len(H2_V2_TYPES))
+    )
+    agree = [row for row in rows if row["role"] == "sip1_agree"]
+    refusals = [row for row in rows if row["role"] == "typed_refusal"]
+    report = {
+        "scope_id": SCOPE_ID,
+        "panel": "h2_v2",
+        "authorization_id": auth["authorization_id"],
+        "authorization_sha256": APPROVED_QUANT_AUTH_SHA256,
+        "prior_h2_root_untouched": True,
+        "probe": {
+            "logical_cpus": probe.logical_cpus,
+            "free_ram_gib": probe.free_ram_gib,
+            "workers": workers,
+        },
+        "n_plants": len(rows),
+        "sip1_agree_count": len(agree),
+        "typed_refusal_count": len(refusals),
+        "false_positive_sum": sum(int(row["false_positive"]) for row in rows),
+        "false_negative_sum": sum(int(row["false_negative"]) for row in rows),
+        "rows": rows,
+        "original_g6b_gate": "OPEN_PENDING",
+    }
+    report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    return report
+
+
+def run_h3_v2_waves(repo_root: Path) -> dict[str, Any]:
+    """P3 multi-stage scale family. Frozen H3 v1 stays untouched."""
+
+    auth = require_quantitative_authorization(repo_root)
+    probe = live_probe()
+    workers = plan_workers(probe, family="H3")
+    validate_wave(
+        wave="P3",
+        workers=workers,
+        probe=probe,
+        primary_repro_overlap=False,
+        reducer_count=1,
+    )
+    pin_blas_thread_env(workers=workers)
+    evidence = repo_root / "evidence" / "tase_hardening" / "h3_v2"
+    evidence.mkdir(parents=True, exist_ok=True)
+    report_path = evidence / "tase_hardening_h3_v2_report.json"
+    if report_path.exists():
+        raise WorkerProtocolError("h3_v2 report already exists; will not overwrite")
+    rows = run_process_pool(list(build_h3_v2_rows()), eval_h3_v2_row, workers=workers)
+    (evidence / "h3_v2_rows.json").write_text(
+        json.dumps(rows, indent=2) + "\n", encoding="utf-8"
+    )
+    enumerated = [row for row in rows if row["classification"] == "enumerated"]
+    report = {
+        "scope_id": SCOPE_ID,
+        "panel": "h3_v2",
+        "authorization_id": auth["authorization_id"],
+        "authorization_sha256": APPROVED_QUANT_AUTH_SHA256,
+        "prior_h3_root_untouched": True,
+        "probe": {
+            "logical_cpus": probe.logical_cpus,
+            "free_ram_gib": probe.free_ram_gib,
+            "workers": workers,
+        },
+        "n_rows": len(rows),
+        "enumerated": len(enumerated),
+        "refused": len(rows) - len(enumerated),
+        "n_ge_1e3": sum(int(row["state_count"]) >= 1000 for row in enumerated),
+        "n_ge_1e4": sum(int(row["state_count"]) >= 10000 for row in enumerated),
+        "max_state_count": max((int(row["state_count"]) for row in rows), default=0),
+        "max_elapsed_s": max((float(row["elapsed_s"]) for row in rows), default=0.0),
+        "rows": rows,
+        "original_g6b_gate": "OPEN_PENDING",
+    }
+    report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    return report
+
+
 def run_authorized_waves(repo_root: Path) -> dict[str, Any]:
     """Execute P1–P4 and the repro DES wave, then reduce."""
 
@@ -708,6 +842,39 @@ def main() -> int:
     import sys
 
     repo = Path(__file__).resolve().parents[2]
+    if "--h2-v2" in sys.argv:
+        report = run_h2_v2_waves(repo)
+        print(
+            json.dumps(
+                {
+                    "workers": report["probe"],
+                    "n_plants": report["n_plants"],
+                    "sip1_agree_count": report["sip1_agree_count"],
+                    "typed_refusal_count": report["typed_refusal_count"],
+                    "roles": [(row["id"], row["role"]) for row in report["rows"]],
+                },
+                indent=2,
+            )
+        )
+        return 0
+    if "--h3-v2" in sys.argv:
+        report = run_h3_v2_waves(repo)
+        print(
+            json.dumps(
+                {
+                    "workers": report["probe"],
+                    "n_rows": report["n_rows"],
+                    "enumerated": report["enumerated"],
+                    "refused": report["refused"],
+                    "n_ge_1e3": report["n_ge_1e3"],
+                    "n_ge_1e4": report["n_ge_1e4"],
+                    "max_state_count": report["max_state_count"],
+                    "max_elapsed_s": report["max_elapsed_s"],
+                },
+                indent=2,
+            )
+        )
+        return 0
     if "--h4-v3" in sys.argv:
         report = run_h4_v3_waves(repo)
         print(

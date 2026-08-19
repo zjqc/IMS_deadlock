@@ -6,15 +6,16 @@ Programme: `docs/superpowers/specs/2026-08-19-tase-submission-programme.md`
 
 | Gap | Phase | State | Evidence | Next action |
 | --- | --- | --- | --- | --- |
-| G-CLAIM | P0 | closing in this commit | `TASE_CLAIM_LADDER.md` | keep frozen unless a phase forces a new id |
+| G-CLAIM | P0 | **closed** | `TASE_CLAIM_LADDER.md` | keep frozen unless a phase forces a new id |
 | G-H1 | P0 | **closed** | H1 four witnesses in tase v1 report | do not rerun |
 | G-H4-HOLD | P1 precursor | **closed as v2** | v1 refusal retained; v2 certified \(\theta_b=0\) | do not overwrite |
 | G-H4-DEADLOCK | P1 | **closed in v3** | base \(\theta_b=1\) (`D_local`), intervention \(\theta_b=0\), 6/6 compatible | keep v3; do not overwrite |
-| G-H2-SIPHON+ | P2 | open | 32/32 siphon refusals | H2-v2 applicable positives |
-| G-H2-CRP | P2 | open / optional | G5 CRP row is negative only | new Prop 6.4 row or omit |
-| G-H3-SCALE | P3 | open | max 496 states | H3-v2 |
-| G-NOVELTY-LOC | P4 | open | positioning matrix only | add G1 locators |
-| G-NTP | P5 | open | none | outline after P1 |
-| G-IEEE-BODY | P5 | **blocked** | markdown draft only | after P1–P4 |
+| G-H2-SIPHON+ | P2 | **closed in h2_v2** | 4 SIP1 agrees, 4 typed refusals, FP=0 FN=0; v1 32/32 refusals retained | do not overwrite |
+| G-H2-CRP | P2 | **omitted** | G5 CRP row remains the negative witness; no G4/G5 replay | optional later H5 |
+| G-H3-SCALE | P3 | **closed in h3_v2** | 16/19 enumerated; 12 rows \(\ge 10^3\), 4 rows \(\ge 10^4\); 3 typed cap/time refusals; max 100000 | do not cite 496-state H3 v1 as large |
+| G-NOVELTY-LOC | P4 | **closed as locators** | `NOVELTY_DIFFERENCE_MATRIX.md` G1 locator table | cite only those rows |
+| G-NTP | P5 | **outline only** | `docs/paper/TASE_NOTE_TO_PRACTITIONERS_OUTLINE.md` | 100–300 word prose later |
+| G-IEEE-BODY | P5 | **blocked** | markdown draft only | after explicit manuscript start |
 
 Closed gaps stay closed. Reopening requires a new version id.
+G5 FAIL and G6-B `OPEN_PENDING` are retained.

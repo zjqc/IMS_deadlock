@@ -9,6 +9,7 @@ from ims_deadlock.tase_hardening import (
     ARTICLE_CORE_SCOPE_LOCK_SHA256,
     H2_CELLS,
     H2_TYPES,
+    H2_V2_TYPES,
     H3_STATE_CAP,
     H3_TIME_CAP_S,
     SCOPE_ID,
@@ -18,11 +19,14 @@ from ims_deadlock.tase_hardening import (
     WorkerProtocolError,
     authorization_flags,
     build_h2_plants,
+    build_h2_v2_plants,
     build_h3_rows,
+    build_h3_v2_rows,
     build_h4_islands,
     build_shard_plan,
     evaluate_h1,
     evaluate_h2_plant,
+    evaluate_h2_v2_plant,
     materialize_discovery_bundle,
     pin_blas_thread_env,
     plan_workers,
@@ -170,6 +174,42 @@ def test_h2_has_thirty_two_plants_and_four_methods() -> None:
         "peak_state_count",
     ):
         assert key in report
+
+
+def test_h2_v2_has_sip1_agrees_and_typed_refusals() -> None:
+    plants = build_h2_v2_plants()
+    assert len(plants) == 10
+    assert len(H2_V2_TYPES) == 10
+    roles = {}
+    for plant in plants:
+        report = evaluate_h2_v2_plant(plant)
+        roles[plant.type_id] = report
+        assert report["false_positive"] == 0
+        assert report["false_negative"] == 0
+    agrees = [name for name, row in roles.items() if row["role"] == "sip1_agree"]
+    refusals = [name for name, row in roles.items() if row["role"] == "typed_refusal"]
+    assert len(agrees) >= 4
+    assert len(refusals) >= 4
+    for name in agrees:
+        assert roles[name]["sip1_exact"] is True
+        assert roles[name]["methods"]["lts_truth"] is True
+        assert roles[name]["methods"]["closed_core"] is True
+    for name in refusals:
+        assert roles[name]["sip1_applicable"] is False
+        assert roles[name]["methods"]["closed_core"] is True
+    reachable = roles["sip1_reachable_pair"]
+    assert reachable["prefix_len"] >= 2
+    assert roles["residual_cycle"]["role"] == "cycle_boundary"
+    assert roles["residual_cycle"]["methods"]["lts_truth"] is False
+
+
+def test_h3_v2_family_is_multi_stage_not_h3_product() -> None:
+    rows = build_h3_v2_rows()
+    assert len(rows) == 19
+    assert all("n_stages" in row for row in rows)
+    assert max(int(row["n_jobs"]) for row in rows) >= 8
+    assert max(int(row["n_stages"]) for row in rows) >= 5
+    assert any(int(row["capacity"]) == 2 for row in rows)
 
 
 def test_h3_product_and_caps() -> None:

@@ -29,6 +29,7 @@ from ims_deadlock.model import (
     RequestAlternative,
     Resource,
     ResourceDemand,
+    ResourceKind,
 )
 from ims_deadlock.petri import build_wait_snapshot_bridge
 
@@ -47,8 +48,28 @@ H2_TYPES = (
     "global_with_local_looking_core",
 )
 H2_CELLS = ("tight", "one-below", "balanced", "loose")
+H2_V2_TYPES = (
+    "sip1_unit_pair",
+    "sip1_unit_triple",
+    "sip1_reachable_pair",
+    "sip1_machine_agv_unit",
+    "refuse_or",
+    "refuse_and",
+    "refuse_multi_capacity",
+    "refuse_agv_and",
+    "residual_cycle",
+    "local_with_bypass",
+)
 H3_STATE_CAP = 100_000
 H3_TIME_CAP_S = 300
+H3_V2_UNIT_JOBS = (4, 5, 6, 7, 8)
+H3_V2_STAGES = (3, 4, 5)
+H3_V2_CAP2_ROWS = (
+    (4, 3, 2),
+    (5, 3, 2),
+    (5, 4, 2),
+    (6, 3, 2),
+)
 H1_IDS = (
     "H1_CE_CL1_nonconfluent_closure",
     "H1_CE_BIXD2_optional_drain",
@@ -678,6 +699,559 @@ def evaluate_h2_plant(plant: H2Plant) -> dict[str, Any]:
         "type_id": plant.type_id,
         "cell": plant.cell,
     }
+
+
+def build_h2_v2_plant(type_id: str) -> H2Plant:
+    """Build one curated H2-v2 plant. Capacity cells are not a product."""
+
+    model, state, transitions = _h2_v2_payload(type_id)
+    return H2Plant(
+        type_id=type_id,
+        cell="canonical",
+        model=model,
+        initial_state=state,
+        transitions=transitions,
+    )
+
+
+def build_h2_v2_plants() -> tuple[H2Plant, ...]:
+    """Ten same-semantics plants: four SIP1 agrees, four refusals, two bounds."""
+
+    return tuple(build_h2_v2_plant(type_id) for type_id in H2_V2_TYPES)
+
+
+def evaluate_h2_v2_plant(plant: H2Plant) -> dict[str, Any]:
+    """Score H2-v2 against LTS truth with a reachability witness on SIP1."""
+
+    started = time.perf_counter()
+    lts = enumerate_stable_lts(
+        plant.model,
+        plant.initial_state,
+        plant.transitions,
+        max_states=4096,
+    )
+    knot = state_dependent_knot_screen(plant.model, plant.initial_state)
+    cycle_pos = bool(
+        knot.get("has_terminal_cyclic_scc") or knot.get("has_capacity_closed_knot")
+    )
+    shortest = _shortest_deadlock_on_lts(plant, lts)
+    core = None if shortest is None else shortest[1]
+    core_state = plant.initial_state if shortest is None else shortest[0].state
+    siphon_refusal = 0
+    sip1_applicable = False
+    sip1_exact = False
+    sip1_reason = "no_closed_core"
+    if core is None:
+        siphon_refusal = 1
+        siphon_pos = False
+    else:
+        bridge = build_wait_snapshot_bridge(plant.model, core_state, core)
+        sip1_applicable = bridge.applicable
+        sip1_exact = bridge.exact
+        sip1_reason = bridge.reason
+        siphon_pos = bridge.exact
+        if not bridge.applicable:
+            siphon_refusal = 1
+    truth_deadlock = shortest is not None and not lts.truncated
+    methods = {
+        "machine_cycle_scc": cycle_pos,
+        "closed_core": core is not None,
+        "sip1_or_refuse": siphon_pos,
+        "lts_truth": truth_deadlock,
+    }
+    false_positive = int(
+        methods["closed_core"] and not methods["lts_truth"] and not lts.truncated
+    )
+    false_negative = int(methods["lts_truth"] and not methods["closed_core"])
+    role = _h2_v2_role(plant.type_id, sip1_exact, siphon_refusal)
+    return {
+        "methods": methods,
+        "false_positive": false_positive,
+        "false_negative": false_negative,
+        "refusal_count": siphon_refusal + int(lts.truncated),
+        "certificate_size": 0 if core is None else len(core.kernel_jobs),
+        "runtime_s": time.perf_counter() - started,
+        "peak_state_count": len(lts.states),
+        "type_id": plant.type_id,
+        "cell": plant.cell,
+        "role": role,
+        "sip1_applicable": sip1_applicable,
+        "sip1_exact": sip1_exact,
+        "sip1_reason": sip1_reason,
+        "prefix_len": 0 if shortest is None else len(shortest[0].witness),
+    }
+
+
+def _shortest_deadlock_on_lts(
+    plant: H2Plant, lts: Any
+) -> tuple[Any, DeadlockCertificate] | None:
+    best: tuple[tuple[int, tuple[str, ...]], Any, DeadlockCertificate] | None = None
+    for record in lts.states:
+        certificate = find_deadlock_certificate(
+            plant.model,
+            record.state,
+            plant.transitions,
+            reachable_prefix=record.witness,
+        )
+        if certificate is None:
+            continue
+        key = (len(record.witness), record.witness)
+        if best is None or key < best[0]:
+            best = (key, record, certificate)
+    if best is None:
+        return None
+    return best[1], best[2]
+
+
+def _h2_v2_role(type_id: str, sip1_exact: bool, siphon_refusal: int) -> str:
+    if type_id.startswith("sip1_"):
+        return "sip1_agree" if sip1_exact else "sip1_miss"
+    if type_id.startswith("refuse_"):
+        return "typed_refusal" if siphon_refusal else "refusal_miss"
+    if type_id == "residual_cycle":
+        return "cycle_boundary"
+    return "bypass_boundary"
+
+
+def _h2_v2_payload(
+    type_id: str,
+) -> tuple[IMSModel, IMSState, tuple[TransitionSpec, ...]]:
+    if type_id == "sip1_unit_pair":
+        return _sip1_cycle_payload(("r1", "r2"), ("j1", "j2"))
+    if type_id == "sip1_unit_triple":
+        return _sip1_cycle_payload(("r1", "r2", "r3"), ("j1", "j2", "j3"))
+    if type_id == "sip1_machine_agv_unit":
+        return _sip1_cycle_payload(
+            ("M1", "AGV"),
+            ("A", "B"),
+            kinds={"M1": "machine", "AGV": "agv"},
+        )
+    if type_id == "sip1_reachable_pair":
+        return _sip1_reachable_pair_payload()
+    if type_id == "refuse_or":
+        return _refuse_or_payload()
+    if type_id == "refuse_and":
+        return _refuse_and_payload()
+    if type_id == "refuse_multi_capacity":
+        return _refuse_multi_capacity_payload()
+    if type_id == "refuse_agv_and":
+        return _h2_payload("agv_required", "tight")
+    if type_id == "residual_cycle":
+        return _h2_payload("residual_cycle", "loose")
+    return _bypass_payload("tight")
+
+
+def _sip1_cycle_payload(
+    resources: tuple[str, ...],
+    jobs: tuple[str, ...],
+    *,
+    kinds: dict[str, ResourceKind] | None = None,
+) -> tuple[IMSModel, IMSState, tuple[TransitionSpec, ...]]:
+    kind_map = kinds or {}
+    model = IMSModel(
+        id=f"h2v2-cycle-{'-'.join(jobs)}",
+        resources={
+            name: Resource(name, 1, kind_map.get(name, "machine")) for name in resources
+        },
+        jobs=jobs,
+    )
+    holds = tuple(_hold(job, resources[index]) for index, job in enumerate(jobs))
+    requests = {
+        job: (_alt(resources[(index + 1) % len(resources)]),)
+        for index, job in enumerate(jobs)
+    }
+    state = IMSState(
+        id=f"{model.id}-s0",
+        holds=holds,
+        requests=requests,
+        stable=True,
+        complete=False,
+        event_calendar_empty=True,
+        mode_by_job={job: "wait" for job in jobs},
+        stage_by_job={job: "wait" for job in jobs},
+    )
+    transitions = []
+    for index, job in enumerate(jobs):
+        held = resources[index]
+        wanted = resources[(index + 1) % len(resources)]
+        transitions.append(
+            TransitionSpec(
+                name=f"{job}-get-{wanted}",
+                kind=EventKind.DISPATCH,
+                job_id=job,
+                source_mode="wait",
+                target_mode="done",
+                controllable=True,
+                zero_time=False,
+                acquire=(ResourceDemand(wanted),),
+                release=(ResourceDemand(held),),
+                clears_requests=True,
+                mark_complete=True,
+            )
+        )
+    return model, state, tuple(transitions)
+
+
+def _sip1_reachable_pair_payload() -> tuple[
+    IMSModel, IMSState, tuple[TransitionSpec, ...]
+]:
+    model = IMSModel(
+        id="h2v2-sip1-reachable-pair",
+        resources={"r1": Resource("r1", 1), "r2": Resource("r2", 1)},
+        jobs=("j1", "j2"),
+    )
+    state = IMSState(
+        id="h2v2-sip1-reachable-pair-s0",
+        holds=(),
+        requests={"j1": (_alt("r1"),), "j2": (_alt("r2"),)},
+        stable=True,
+        complete=False,
+        event_calendar_empty=True,
+        mode_by_job={"j1": "idle", "j2": "idle"},
+        stage_by_job={"j1": "idle", "j2": "idle"},
+    )
+    transitions = (
+        TransitionSpec(
+            name="j1-start-r1",
+            kind=EventKind.START,
+            job_id="j1",
+            source_mode="idle",
+            target_mode="wait",
+            controllable=True,
+            zero_time=False,
+            acquire=(ResourceDemand("r1"),),
+            next_requests=(_alt("r2"),),
+        ),
+        TransitionSpec(
+            name="j2-start-r2",
+            kind=EventKind.START,
+            job_id="j2",
+            source_mode="idle",
+            target_mode="wait",
+            controllable=True,
+            zero_time=False,
+            acquire=(ResourceDemand("r2"),),
+            next_requests=(_alt("r1"),),
+        ),
+        TransitionSpec(
+            name="j1-get-r2",
+            kind=EventKind.DISPATCH,
+            job_id="j1",
+            source_mode="wait",
+            target_mode="done",
+            controllable=True,
+            zero_time=False,
+            acquire=(ResourceDemand("r2"),),
+            release=(ResourceDemand("r1"),),
+            clears_requests=True,
+            mark_complete=True,
+        ),
+        TransitionSpec(
+            name="j2-get-r1",
+            kind=EventKind.DISPATCH,
+            job_id="j2",
+            source_mode="wait",
+            target_mode="done",
+            controllable=True,
+            zero_time=False,
+            acquire=(ResourceDemand("r1"),),
+            release=(ResourceDemand("r2"),),
+            clears_requests=True,
+            mark_complete=True,
+        ),
+    )
+    return model, state, transitions
+
+
+def _refuse_or_payload() -> tuple[IMSModel, IMSState, tuple[TransitionSpec, ...]]:
+    model = IMSModel(
+        id="h2v2-refuse-or",
+        resources={
+            "r1": Resource("r1", 1),
+            "r2": Resource("r2", 1),
+            "r3": Resource("r3", 1),
+        },
+        jobs=("j1", "j2", "j3"),
+    )
+    state = IMSState(
+        id="h2v2-refuse-or-s0",
+        holds=(_hold("j1", "r1"), _hold("j2", "r2"), _hold("j3", "r3")),
+        requests={
+            "j1": (_alt("r2"), _alt("r3")),
+            "j2": (_alt("r1"),),
+            "j3": (_alt("r1"),),
+        },
+        stable=True,
+        complete=False,
+        event_calendar_empty=True,
+        mode_by_job={"j1": "wait", "j2": "wait", "j3": "wait"},
+        stage_by_job={"j1": "wait", "j2": "wait", "j3": "wait"},
+    )
+    transitions = (
+        TransitionSpec(
+            name="j1-get-r2",
+            kind=EventKind.DISPATCH,
+            job_id="j1",
+            source_mode="wait",
+            target_mode="done",
+            controllable=True,
+            zero_time=False,
+            acquire=(ResourceDemand("r2"),),
+            release=(ResourceDemand("r1"),),
+            clears_requests=True,
+            mark_complete=True,
+        ),
+        TransitionSpec(
+            name="j1-get-r3",
+            kind=EventKind.DISPATCH,
+            job_id="j1",
+            source_mode="wait",
+            target_mode="done",
+            controllable=True,
+            zero_time=False,
+            acquire=(ResourceDemand("r3"),),
+            release=(ResourceDemand("r1"),),
+            clears_requests=True,
+            mark_complete=True,
+        ),
+        TransitionSpec(
+            name="j2-get-r1",
+            kind=EventKind.DISPATCH,
+            job_id="j2",
+            source_mode="wait",
+            target_mode="done",
+            controllable=True,
+            zero_time=False,
+            acquire=(ResourceDemand("r1"),),
+            release=(ResourceDemand("r2"),),
+            clears_requests=True,
+            mark_complete=True,
+        ),
+        TransitionSpec(
+            name="j3-get-r1",
+            kind=EventKind.DISPATCH,
+            job_id="j3",
+            source_mode="wait",
+            target_mode="done",
+            controllable=True,
+            zero_time=False,
+            acquire=(ResourceDemand("r1"),),
+            release=(ResourceDemand("r3"),),
+            clears_requests=True,
+            mark_complete=True,
+        ),
+    )
+    return model, state, transitions
+
+
+def _refuse_and_payload() -> tuple[IMSModel, IMSState, tuple[TransitionSpec, ...]]:
+    model = IMSModel(
+        id="h2v2-refuse-and",
+        resources={
+            "r1": Resource("r1", 1),
+            "r2": Resource("r2", 1),
+            "r3": Resource("r3", 1),
+        },
+        jobs=("j1", "j2", "j3"),
+    )
+    state = IMSState(
+        id="h2v2-refuse-and-s0",
+        holds=(_hold("j1", "r1"), _hold("j2", "r2"), _hold("j3", "r3")),
+        requests={
+            "j1": (_alt("r2", "r3"),),
+            "j2": (_alt("r1"),),
+            "j3": (_alt("r1"),),
+        },
+        stable=True,
+        complete=False,
+        event_calendar_empty=True,
+        mode_by_job={"j1": "wait", "j2": "wait", "j3": "wait"},
+        stage_by_job={"j1": "wait", "j2": "wait", "j3": "wait"},
+    )
+    transitions = (
+        TransitionSpec(
+            name="j1-get-r2-r3",
+            kind=EventKind.DISPATCH,
+            job_id="j1",
+            source_mode="wait",
+            target_mode="done",
+            controllable=True,
+            zero_time=False,
+            acquire=(ResourceDemand("r2"), ResourceDemand("r3")),
+            release=(ResourceDemand("r1"),),
+            clears_requests=True,
+            mark_complete=True,
+        ),
+        TransitionSpec(
+            name="j2-get-r1",
+            kind=EventKind.DISPATCH,
+            job_id="j2",
+            source_mode="wait",
+            target_mode="done",
+            controllable=True,
+            zero_time=False,
+            acquire=(ResourceDemand("r1"),),
+            release=(ResourceDemand("r2"),),
+            clears_requests=True,
+            mark_complete=True,
+        ),
+        TransitionSpec(
+            name="j3-get-r1",
+            kind=EventKind.DISPATCH,
+            job_id="j3",
+            source_mode="wait",
+            target_mode="done",
+            controllable=True,
+            zero_time=False,
+            acquire=(ResourceDemand("r1"),),
+            release=(ResourceDemand("r3"),),
+            clears_requests=True,
+            mark_complete=True,
+        ),
+    )
+    return model, state, transitions
+
+
+def _refuse_multi_capacity_payload() -> tuple[
+    IMSModel, IMSState, tuple[TransitionSpec, ...]
+]:
+    model = IMSModel(
+        id="h2v2-refuse-multi-capacity",
+        resources={"r1": Resource("r1", 2), "r2": Resource("r2", 2)},
+        jobs=("j1", "j2", "j3", "j4"),
+    )
+    state = IMSState(
+        id="h2v2-refuse-multi-capacity-s0",
+        holds=(
+            _hold("j1", "r1"),
+            _hold("j3", "r1"),
+            _hold("j2", "r2"),
+            _hold("j4", "r2"),
+        ),
+        requests={
+            "j1": (_alt("r2"),),
+            "j3": (_alt("r2"),),
+            "j2": (_alt("r1"),),
+            "j4": (_alt("r1"),),
+        },
+        stable=True,
+        complete=False,
+        event_calendar_empty=True,
+        mode_by_job={job: "wait" for job in model.jobs},
+        stage_by_job={job: "wait" for job in model.jobs},
+    )
+    transitions = []
+    for job, held, wanted in (
+        ("j1", "r1", "r2"),
+        ("j3", "r1", "r2"),
+        ("j2", "r2", "r1"),
+        ("j4", "r2", "r1"),
+    ):
+        transitions.append(
+            TransitionSpec(
+                name=f"{job}-get-{wanted}",
+                kind=EventKind.DISPATCH,
+                job_id=job,
+                source_mode="wait",
+                target_mode="done",
+                controllable=True,
+                zero_time=False,
+                acquire=(ResourceDemand(wanted),),
+                release=(ResourceDemand(held),),
+                clears_requests=True,
+                mark_complete=True,
+            )
+        )
+    return model, state, tuple(transitions)
+
+
+def build_h3_v2_rows() -> tuple[dict[str, int], ...]:
+    """Curated multi-stage family aimed at 1e3-1e5 states or a typed cap."""
+
+    rows: list[dict[str, int]] = []
+    for n_jobs in H3_V2_UNIT_JOBS:
+        for n_stages in H3_V2_STAGES:
+            rows.append({"n_jobs": n_jobs, "n_stages": n_stages, "capacity": 1})
+    for n_jobs, n_stages, capacity in H3_V2_CAP2_ROWS:
+        rows.append({"n_jobs": n_jobs, "n_stages": n_stages, "capacity": capacity})
+    return tuple(rows)
+
+
+def build_h3_v2_plant(
+    row: dict[str, Any],
+) -> tuple[IMSModel, IMSState, tuple[TransitionSpec, ...]]:
+    """Multi-stage tandem line. Jobs start idle and visit r0..r_{k-1}."""
+
+    n_jobs = int(row["n_jobs"])
+    n_stages = int(row["n_stages"])
+    capacity = int(row["capacity"])
+    resources = {
+        f"r{index}": Resource(f"r{index}", capacity) for index in range(n_stages)
+    }
+    jobs = tuple(f"j{index}" for index in range(n_jobs))
+    model = IMSModel(
+        id=f"h3v2-{n_jobs}-{n_stages}-{capacity}",
+        resources=resources,
+        jobs=jobs,
+    )
+    state = IMSState(
+        id=f"{model.id}-s0",
+        holds=(),
+        requests={job: (_alt("r0"),) for job in jobs},
+        stable=True,
+        complete=False,
+        event_calendar_empty=True,
+        mode_by_job={job: "idle" for job in jobs},
+        stage_by_job={job: "idle" for job in jobs},
+    )
+    transitions: list[TransitionSpec] = []
+    for job in jobs:
+        transitions.append(
+            TransitionSpec(
+                name=f"{job}-start-r0",
+                kind=EventKind.START,
+                job_id=job,
+                source_mode="idle",
+                target_mode="hold0",
+                controllable=True,
+                zero_time=False,
+                acquire=(ResourceDemand("r0"),),
+                next_requests=(_alt("r1"),) if n_stages > 1 else (),
+                clears_requests=n_stages == 1,
+            )
+        )
+        for stage in range(1, n_stages):
+            last = stage == n_stages - 1
+            nxt = stage + 1
+            transitions.append(
+                TransitionSpec(
+                    name=f"{job}-to-r{stage}",
+                    kind=EventKind.DISPATCH,
+                    job_id=job,
+                    source_mode=f"hold{stage - 1}",
+                    target_mode=f"hold{stage}",
+                    controllable=True,
+                    zero_time=False,
+                    acquire=(ResourceDemand(f"r{stage}"),),
+                    release=(ResourceDemand(f"r{stage - 1}"),),
+                    next_requests=() if last else (_alt(f"r{nxt}"),),
+                    clears_requests=last,
+                )
+            )
+        transitions.append(
+            TransitionSpec(
+                name=f"{job}-complete",
+                kind=EventKind.RELEASE,
+                job_id=job,
+                source_mode=f"hold{n_stages - 1}",
+                target_mode="completed",
+                controllable=False,
+                zero_time=False,
+                release=(ResourceDemand(f"r{n_stages - 1}"),),
+                mark_complete=True,
+            )
+        )
+    return model, state, tuple(transitions)
 
 
 def _cell_capacity(cell: str, tight: int) -> int:
@@ -1403,6 +1977,55 @@ def materialize_discovery_bundle(root: Path) -> list[Path]:
         encoding="utf-8",
     )
     written.append(h3_path)
+    h2v2_dir = root / "h2_v2"
+    h2v2_dir.mkdir(exist_ok=True)
+    h2v2_gen = h2v2_dir / "generator.json"
+    h2v2_gen.write_text(
+        json.dumps(
+            {
+                "types": list(H2_V2_TYPES),
+                "n_plants": len(H2_V2_TYPES),
+                "prior_h2_root_untouched": True,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    written.append(h2v2_gen)
+    for plant in build_h2_v2_plants():
+        spec = _spec(
+            f"H2_v2_{plant.type_id}",
+            f"H2-v2 {plant.type_id}",
+            plant.model,
+            plant.initial_state,
+            plant.transitions,
+        )
+        path = h2v2_dir / f"H2_v2_{plant.type_id}.json"
+        path.write_text(
+            json.dumps(spec.to_json_dict(), indent=2) + "\n", encoding="utf-8"
+        )
+        written.append(path)
+    h3v2_dir = root / "h3_v2"
+    h3v2_dir.mkdir(exist_ok=True)
+    h3v2_path = h3v2_dir / "family.json"
+    h3v2_path.write_text(
+        json.dumps(
+            {
+                "n_rows": len(build_h3_v2_rows()),
+                "state_cap": H3_STATE_CAP,
+                "time_cap_s": H3_TIME_CAP_S,
+                "unit_jobs": list(H3_V2_UNIT_JOBS),
+                "stages": list(H3_V2_STAGES),
+                "cap2_rows": [list(item) for item in H3_V2_CAP2_ROWS],
+                "prior_h3_root_untouched": True,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    written.append(h3v2_path)
     for version, builder, stem in (
         ("h4_v2", build_h4_islands, "H4_v2"),
         ("h4_v3", build_h4_v3_islands, "H4_v3"),
