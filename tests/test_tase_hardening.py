@@ -33,6 +33,11 @@ from ims_deadlock.tase_hardening import (
     run_process_pool,
     validate_wave,
 )
+from ims_deadlock.tase_hardening_run import (
+    APPROVED_QUANT_AUTH_SHA256,
+    hoeffding_tolerance,
+    require_quantitative_authorization,
+)
 
 APPROVED_SPEC = "5f4e0a3d58bdf4a090322d1537dd8b4a3125e75845e146a15a02760aab5be8b2"
 APPROVED_PLAN = "ee99c64ad56fcabaa74f5dc1c87c3cdb4b3ebe4e200a271b4498c8681d6b6cb4"
@@ -210,6 +215,22 @@ def test_reduce_shards_requires_complete_set(tmp_path: Path) -> None:
     (shard_dir / "u1__w0.json").write_text(json.dumps({"id": "u1"}), encoding="utf-8")
     with pytest.raises(WorkerProtocolError):
         reduce_shards(shard_dir, expected_ids=("u1", "u2"))
+
+
+def test_hoeffding_tolerance_is_tighter_than_article_core() -> None:
+    assert hoeffding_tolerance() < 0.01
+    assert hoeffding_tolerance() > 0.005
+
+
+def test_quantitative_auth_rejects_wrong_bytes(tmp_path: Path) -> None:
+    auth = tmp_path / (
+        "cases/discovery/tase_hardening_v1/quantitative_authorization.json"
+    )
+    auth.parent.mkdir(parents=True)
+    auth.write_text("{}", encoding="utf-8")
+    with pytest.raises(WorkerProtocolError):
+        require_quantitative_authorization(tmp_path)
+    assert APPROVED_QUANT_AUTH_SHA256.startswith("090c7551")
 
 
 def test_materialize_writes_h1_and_h4_without_science(tmp_path: Path) -> None:

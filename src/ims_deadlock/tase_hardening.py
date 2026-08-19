@@ -602,22 +602,25 @@ def _is_chain_decomposable(
     return True
 
 
+def build_h2_plant(type_id: str, cell: str) -> H2Plant:
+    """Build one H2 plant from its type and capacity cell."""
+
+    model, state, transitions = _h2_payload(type_id, cell)
+    return H2Plant(
+        type_id=type_id,
+        cell=cell,
+        model=model,
+        initial_state=state,
+        transitions=transitions,
+    )
+
+
 def build_h2_plants() -> tuple[H2Plant, ...]:
     """Eight semantic types times four capacity cells."""
 
-    plants: list[H2Plant] = []
-    for type_id, cell in product(H2_TYPES, H2_CELLS):
-        model, state, transitions = _h2_payload(type_id, cell)
-        plants.append(
-            H2Plant(
-                type_id=type_id,
-                cell=cell,
-                model=model,
-                initial_state=state,
-                transitions=transitions,
-            )
-        )
-    return tuple(plants)
+    return tuple(
+        build_h2_plant(type_id, cell) for type_id, cell in product(H2_TYPES, H2_CELLS)
+    )
 
 
 def evaluate_h2_plant(plant: H2Plant) -> dict[str, Any]:
@@ -949,6 +952,87 @@ def build_h3_rows() -> tuple[dict[str, int | bool], ...]:
             }
         )
     return tuple(rows)
+
+
+def build_h3_plant(
+    row: dict[str, Any],
+) -> tuple[IMSModel, IMSState, tuple[TransitionSpec, ...]]:
+    """Build a finite parameterized plant for one H3 row."""
+
+    n_jobs = int(row["n_jobs"])
+    n_resources = int(row["n_resources"])
+    capacity = int(row["capacity"])
+    kernel_count = int(row["kernel_count"])
+    transport = bool(row["transport"])
+    resources = {
+        f"r{index}": Resource(f"r{index}", capacity) for index in range(n_resources)
+    }
+    if transport:
+        resources["agv"] = Resource("agv", 1, "agv")
+    jobs = tuple(f"j{index}" for index in range(n_jobs))
+    model = IMSModel(
+        id=f"h3-{n_jobs}-{n_resources}-{capacity}",
+        resources=resources,
+        jobs=jobs,
+    )
+    first = "r0"
+    state = IMSState(
+        id=f"h3-{n_jobs}-{n_resources}-{capacity}-s0",
+        holds=(),
+        requests={job: (_alt(first),) for job in jobs},
+        stable=True,
+        complete=False,
+        event_calendar_empty=True,
+        mode_by_job={job: "idle" for job in jobs},
+        stage_by_job={job: "idle" for job in jobs},
+    )
+    transitions: list[TransitionSpec] = []
+    for job in jobs:
+        transitions.append(
+            TransitionSpec(
+                name=f"{job}-start-{first}",
+                kind=EventKind.START,
+                job_id=job,
+                source_mode="idle",
+                target_mode="hold0",
+                controllable=True,
+                zero_time=False,
+                acquire=(ResourceDemand(first),),
+                clears_requests=True,
+            )
+        )
+        if kernel_count > 0 and n_resources >= 2:
+            nxt = "r1"
+            transitions.append(
+                TransitionSpec(
+                    name=f"{job}-need-{nxt}",
+                    kind=EventKind.DISPATCH,
+                    job_id=job,
+                    source_mode="hold0",
+                    target_mode="done",
+                    controllable=True,
+                    zero_time=False,
+                    acquire=(ResourceDemand(nxt),),
+                    release=(ResourceDemand(first),),
+                    clears_requests=True,
+                    mark_complete=True,
+                )
+            )
+        else:
+            transitions.append(
+                TransitionSpec(
+                    name=f"{job}-complete",
+                    kind=EventKind.RELEASE,
+                    job_id=job,
+                    source_mode="hold0",
+                    target_mode="completed",
+                    controllable=False,
+                    zero_time=False,
+                    release=(ResourceDemand(first),),
+                    mark_complete=True,
+                )
+            )
+    return model, state, tuple(transitions)
 
 
 def classify_h3_row(row: dict[str, Any]) -> str:
