@@ -1,0 +1,75 @@
+{
+  "workers": {
+    "logical_cpus": 56,
+    "free_ram_gib": 102.99100875854492,
+    "workers": 48
+  },
+  "barrier": [
+    [
+      "H4_v2_base",
+      "certified",
+      null
+    ],
+    [
+      "H4_v2_intervention",
+      "certified",
+      null
+    ]
+  ],
+  "compatibility": [
+    {
+      "plant_id": "H4_v2_base",
+      "estimand": "theta_g",
+      "exact": -0.0,
+      "des": 0.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H4_v2_base",
+      "estimand": "theta_l",
+      "exact": -0.0,
+      "des": 0.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H4_v2_base",
+      "estimand": "theta_b",
+      "exact": -0.0,
+      "des": 0.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H4_v2_intervention",
+      "estimand": "theta_g",
+      "exact": -0.0,
+      "des": 0.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H4_v2_intervention",
+      "estimand": "theta_l",
+      "exact": -0.0,
+      "des": 0.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H4_v2_intervention",
+      "estimand": "theta_b",
+      "exact": -0.0,
+      "des": 0.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    }
+  ]
+}
