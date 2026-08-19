@@ -1,6 +1,7 @@
 # T-ASE Hardening Preregistration
 
 Status: `PREREGISTRATION DRAFT / NO RESULTS`
+Revision: `compute-parallel-v2`
 Scope id: `tase_hardening_v1`
 Spec: `docs/superpowers/specs/2026-08-19-tase-hardening-panel-design.md`
 
@@ -22,22 +23,35 @@ mean_stopped_time = E[min(T_G, T_L, T_F)] on the certified domain
 Classification precedence: `F` exclusion, then `D_global`, then `D_local`.
 Unselected reachable closed classes refuse the row.
 
-H1–H3 do not emit these probabilities.
+H1–H3 do not emit these probabilities. Mean stopped time is reported with
+its own interval and is **not** in the simultaneous Hoeffding gate.
 
 ## Sample size and tolerance (H4 only)
 
-To be computed at authorization time from:
+Frozen design budget (authorization object must repeat these numbers):
 
-- number of H4 quantitative cells `k` (expected 3 component probabilities
-  plus mean time, or a declared subset)
-- replications `n`
-- simultaneous failure probability `alpha`
+```text
+plants            = 2   (base, intervention)
+n                 = 65536 replications / plant
+k                 = 3   (theta_g, theta_l, theta_b) per plant
+alpha             = 0.01 over the 6 probability cells
+t_hoeffding       = sqrt( ln(2*6/alpha) / (2*n) )
+                  = sqrt( ln(1200) / 131072 )
+                  ≈ 0.00724
+master_seed       = 2026081901
+shard_size        = n / scientific_workers  (contiguous blocks)
+```
 
-The bound must be written into the authorization object. Copying
-article-core `n=4096` or `tol=0.028340` is not allowed without recomputing
-the budget.
+Copying article-core `n=4096` or `tol=0.028340` is forbidden.
 
 Master seed must not be `2026080601`.
+
+## Parallel execution
+
+H2: 32 plants (8 types × `{tight, one-below, balanced, loose}`).
+H3: 576 rows, cap 100_000 states / 300 s.
+Default scientific workers: 32 (max 48) after a live CPU/RAM probe.
+Primary wave fully completes before any repro shard starts.
 
 ## Baselines (H2)
 

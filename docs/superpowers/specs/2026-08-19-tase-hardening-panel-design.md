@@ -2,7 +2,9 @@
 
 Status: `SPEC / AWAITING EXACT USER APPROVAL / NO CASE BYTES`
 Date: 2026-08-19
-Base: `codex/journal-hardening-v1` at documentation HEAD after the audit commits
+Revision: `compute-parallel-v2` — supersedes the unapproved first draft
+  hashes `3f9ca4db…6a0d` / `7cc80339…8eec` / `52bf822d…e3a0`.
+Base: `codex/journal-hardening-v1` after the audit commits
 Scope id: `tase_hardening_v1`
 Evidence root: `evidence/tase_hardening/v1/`
 Companion audit: `docs/verification/JOURNAL_THEORY_AUDIT_V1.md`
@@ -112,9 +114,23 @@ Predeclared metrics, all computed on the same plant:
 A semantic mismatch (for example treating service-complete as release) is a
 protocol violation, not a baseline win.
 
-Minimum rows: 8 plants covering residual cycle, unit-capacity deadlock,
-multi-capacity residual, AGV-required, `IMS-SIP^1` positive, siphon-refusal
-outside SIP1, local-with-bypass, global-with-local-looking-core.
+Eight semantic types, each crossed with four predeclared capacity/WIP
+cells, giving **32 independent plants**:
+
+- residual cycle
+- unit-capacity deadlock
+- multi-capacity residual
+- AGV-required
+- `IMS-SIP^1` positive
+- siphon-refusal outside SIP1
+- local-with-bypass
+- global-with-local-looking-core
+
+The four cells are frozen in the preregistration (`tight`, `one-below`,
+`balanced`, `loose`). Plants are embarrassingly parallel: one worker
+enumerates that plant’s LTS once, then runs the four methods in-process
+against the same LTS. Do not spawn one process per method on the same
+plant; that would re-enumerate and waste RAM.
 
 ### Family H3 — scale and diversity
 
@@ -134,8 +150,12 @@ H3 may not support a new theorem by itself. It reports state count, kernel
 family size, runtime, and refusal rate. Any truncated row is `refused`, not
 a numeric success.
 
-Cap any single H3 row at 20_000 stable states or 120 seconds. Exceeding the
-cap is a typed refusal.
+Cap any single H3 row at **100_000** stable states or **300** seconds.
+Exceeding the cap is a typed refusal, not a numeric success.
+
+The axis product is 576 independent rows. They must be scheduled as a
+process pool (Section 12). A serial H3 sweep on this machine is a
+protocol miss, not a scientific choice.
 
 ### Family H4 — one synthetic manufacturing island
 
@@ -156,6 +176,13 @@ Required fields:
 
 Label: `synthetic digital-twin`. Forbidden label: shop-floor validation.
 
+H4 is two plants (base and the one predeclared intervention). After both
+Barrier A certificates exist, their exact solves and DES shards run in
+parallel. DES uses **65536** replications per plant, sharded across
+scientific workers (Section 12). The simultaneous probability tolerance
+is the Hoeffding bound written in the preregistration, not article-core
+`0.028340`.
+
 ### Family H5 — optional CRP overlap
 
 Include only if the later implementation plan keeps Paper A’s reviewer
@@ -173,12 +200,16 @@ When later authorized, and only then:
 - unselected reachable `R_livelock` / `R_terminal` refuse the quantitative
   row
 - DES uses a new master seed, not `2026080601`
-- sample size and simultaneous tolerance are derived in the preregistration
-  from the number of quantitative cells and a stated Hoeffding or
-  Bernstein budget
-- one primary and one repro; repro starts only after every primary cell
-  finishes
+- H4 sample size is 65536 replications per plant; the simultaneous
+  Hoeffding tolerance is computed in the preregistration
+- one primary wave and one repro wave; repro starts only after **every**
+  primary cell in **every** family finishes
+- independent plants, H3 rows, and DES shards **must** run in parallel
+  inside a wave (Section 12)
+- the same case’s primary and repro must never overlap
 - no retry, no third run, no failed-case substitution
+- each worker writes only its shard file; one reducer process writes the
+  manifest and hashes
 
 H1 logical witnesses do not require DES. H2 uses structure plus LTS truth;
 DES is optional. H3 is structural/runtime. H4 is the only family that must
@@ -240,6 +271,10 @@ Stop and re-plan if:
 - H4 is labelled as real plant data without a source locator
 - H3 numeric rows include truncated enumerations
 - the implementation plan starts CTMC in the same commit as case JSON
+- a scientific run is launched with `workers=1` while the live probe
+  reports at least 16 free logical CPUs and 32 GiB free RAM
+- BLAS/OpenMP threads per worker times worker count exceeds
+  `1.5 * logical_cpus`
 
 ## 11. Approval object
 
@@ -252,3 +287,100 @@ approved_review_sha256=
 ```
 
 A general “continue” is not approval of these bytes.
+
+## 12. Compute and parallelism contract
+
+Live Dell facts recorded 2026-08-19 (must be re-probed before every long
+run, not treated as standing capacity):
+
+- CPU: Intel Xeon w7-3465X, 28 cores / 56 logical processors
+- RAM: 136633843712 bytes (~127 GiB); that session had ~98 GiB free
+- GPU: NVIDIA RTX PRO 2000 Blackwell is present
+- Qualified runtime already imports `pytest` and `xdist`
+
+The current solvers are CPU process-level (LTS enumeration, sparse linear
+CTMC, Gillespie). The GPU is recorded and **unused**. Do not add a CUDA
+path in this tranche and do not claim GPU acceleration.
+
+### 12.1 Worker count
+
+Before a long scientific or full-suite command:
+
+1. record logical CPUs, free RAM, and other Python/pytest processes;
+2. compute
+
+```text
+reserve_cpus = 8
+max_workers  = clamp(logical_cpus - reserve_cpus, 4, 48)
+if free_ram_giB < 16: max_workers = min(max_workers, 4)
+elif free_ram_giB < 32: max_workers = min(max_workers, 16)
+per_worker_giB = 2 for H1/H2, 4 for H3/H4
+max_workers = min(max_workers, floor(free_ram_giB / per_worker_giB))
+```
+
+3. default scientific workers on this box: **32**, raised to **48** only
+   if free RAM ≥ 64 GiB and no other heavy Python job is live;
+4. default pytest-xdist workers for verification: **16** with
+   `--dist worksteal`, or 8 if free RAM < 32 GiB.
+
+On this machine the default 32 scientific workers leave 24 logical CPUs
+and tens of GiB for the OS and the reducer.
+
+### 12.2 Oversubscription ban
+
+When `scientific_workers >= 8`, every worker process must start with
+
+```text
+OMP_NUM_THREADS=1
+MKL_NUM_THREADS=1
+OPENBLAS_NUM_THREADS=1
+NUMEXPR_NUM_THREADS=1
+```
+
+Do not combine a 32-process pool with default multi-threaded BLAS.
+
+### 12.3 What may run in parallel
+
+| Unit | Parallel? | Grain |
+| --- | --- | --- |
+| H1 four witnesses | yes | one case / process |
+| H2 32 plants | yes | one plant / process; four methods stay in-process |
+| H3 576 rows | yes | one row / process |
+| H4 base and intervention Barrier A | yes | one plant / process |
+| H4 exact CTMC | yes | one plant / process |
+| H4 DES replications | yes | contiguous seed shards, then reduce |
+| pytest verification | yes | xdist worksteal |
+| same case primary vs repro | **no** | repro wave after all primaries |
+| two reducers writing one manifest | **no** | single reducer |
+
+### 12.4 Wave order
+
+```text
+wave P0: live probe + worker lock file
+wave P1: H1 + H2 + H3 structural (fully parallel)
+wave P2: H4 Barrier A for both plants (parallel)
+wave P3: H4 exact for both plants (parallel)
+wave P4: H4 DES primary shards for both plants (parallel)
+wave R0: only after P1–P4 are all terminal
+wave R1: H4 DES repro shards (parallel)
+wave Z:  single reducer, hashes, refuse partial manifests
+```
+
+A missing shard is a failed wave, not an invitation to retry that shard
+in isolation after seeing other numbers.
+
+### 12.5 Output isolation
+
+Worker `i` writes only
+`evidence/tase_hardening/v1/shards/<wave>/<unit_id>__w<i>.json`.
+The reducer reads the shard directory once, writes
+`article`-style exact/DES/report/manifest files, and then the shard
+directory is immutable. Workers never append to a shared JSON.
+
+### 12.6 Shared environment
+
+Reuse
+`D:\worktree\IMS_deadlock-final-integration\.venv\Scripts\python.exe`
+with `PYTHONPATH` pointing at this worktree. `xdist` is already in that
+environment; do not install or upgrade packages for parallelism. Do not
+point workers at another project’s interpreter.
