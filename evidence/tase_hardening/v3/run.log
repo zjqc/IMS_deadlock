@@ -1,0 +1,97 @@
+{
+  "workers": {
+    "logical_cpus": 56,
+    "free_ram_gib": 102.88564682006836,
+    "workers": 48
+  },
+  "barrier": [
+    [
+      "H4_v3_base",
+      "certified",
+      null
+    ],
+    [
+      "H4_v3_intervention",
+      "certified",
+      null
+    ]
+  ],
+  "exact": [
+    {
+      "id": "H4_v3_base",
+      "status": "exact",
+      "probabilities": {
+        "theta_g": 0.0,
+        "theta_l": 1.0,
+        "theta_b": 1.0
+      },
+      "mean_stopped_time": 0.0
+    },
+    {
+      "id": "H4_v3_intervention",
+      "status": "exact",
+      "probabilities": {
+        "theta_g": -0.0,
+        "theta_l": -0.0,
+        "theta_b": -0.0
+      },
+      "mean_stopped_time": 3.2314814814814814
+    }
+  ],
+  "compatibility": [
+    {
+      "plant_id": "H4_v3_base",
+      "estimand": "theta_g",
+      "exact": 0.0,
+      "des": 0.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H4_v3_base",
+      "estimand": "theta_l",
+      "exact": 1.0,
+      "des": 1.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H4_v3_base",
+      "estimand": "theta_b",
+      "exact": 1.0,
+      "des": 1.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H4_v3_intervention",
+      "estimand": "theta_g",
+      "exact": -0.0,
+      "des": 0.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H4_v3_intervention",
+      "estimand": "theta_l",
+      "exact": -0.0,
+      "des": 0.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H4_v3_intervention",
+      "estimand": "theta_b",
+      "exact": -0.0,
+      "des": 0.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    }
+  ]
+}

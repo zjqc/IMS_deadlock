@@ -9,7 +9,7 @@ Programme: `docs/superpowers/specs/2026-08-19-tase-submission-programme.md`
 | G-CLAIM | P0 | closing in this commit | `TASE_CLAIM_LADDER.md` | keep frozen unless a phase forces a new id |
 | G-H1 | P0 | **closed** | H1 four witnesses in tase v1 report | do not rerun |
 | G-H4-HOLD | P1 precursor | **closed as v2** | v1 refusal retained; v2 certified \(\theta_b=0\) | do not overwrite |
-| G-H4-DEADLOCK | P1 | **open / critical** | v2 all-completion | H4-v3 island |
+| G-H4-DEADLOCK | P1 | **closed in v3** | base \(\theta_b=1\) (`D_local`), intervention \(\theta_b=0\), 6/6 compatible | keep v3; do not overwrite |
 | G-H2-SIPHON+ | P2 | open | 32/32 siphon refusals | H2-v2 applicable positives |
 | G-H2-CRP | P2 | open / optional | G5 CRP row is negative only | new Prop 6.4 row or omit |
 | G-H3-SCALE | P3 | open | max 496 states | H3-v2 |

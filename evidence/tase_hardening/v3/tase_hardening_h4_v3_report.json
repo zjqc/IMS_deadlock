@@ -1,0 +1,220 @@
+{
+  "scope_id": "tase_hardening_v1",
+  "panel": "h4_v3",
+  "authorization_id": "tase_hardening_v1_quantitative_t6",
+  "authorization_sha256": "090c75516fbbde24dcc4cde03b0d24aa633955f1ce9b97cc4c49b229f7b193c9",
+  "prior_h4_roots_untouched": true,
+  "probe": {
+    "logical_cpus": 56,
+    "free_ram_gib": 102.88564682006836,
+    "workers": 48
+  },
+  "h4_barrier": [
+    {
+      "id": "H4_v3_base",
+      "role": "base",
+      "label": "synthetic digital-twin",
+      "intervention": "none",
+      "state_count": 3,
+      "truncated": false,
+      "barrier_a": "certified",
+      "refusal_code": null,
+      "states": [
+        "s0",
+        "s1",
+        "s2"
+      ],
+      "d_global": [
+        "s2"
+      ],
+      "d_local": [
+        "s0",
+        "s1"
+      ],
+      "completion": [],
+      "initial_state": "s0"
+    },
+    {
+      "id": "H4_v3_intervention",
+      "role": "intervention",
+      "label": "synthetic digital-twin",
+      "intervention": "B_optional_agv_drain",
+      "state_count": 12,
+      "truncated": false,
+      "barrier_a": "certified",
+      "refusal_code": null,
+      "states": [
+        "s0",
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6",
+        "s7",
+        "s8",
+        "s9",
+        "s10",
+        "s11"
+      ],
+      "d_global": [],
+      "d_local": [],
+      "completion": [
+        "s11"
+      ],
+      "initial_state": "s0"
+    }
+  ],
+  "h4_exact": [
+    {
+      "id": "H4_v3_base",
+      "status": "exact",
+      "probabilities": {
+        "theta_g": 0.0,
+        "theta_l": 1.0,
+        "theta_b": 1.0
+      },
+      "mean_stopped_time": 0.0
+    },
+    {
+      "id": "H4_v3_intervention",
+      "status": "exact",
+      "probabilities": {
+        "theta_g": -0.0,
+        "theta_l": -0.0,
+        "theta_b": -0.0
+      },
+      "mean_stopped_time": 3.2314814814814814
+    }
+  ],
+  "h4_des_primary": [
+    {
+      "id": "H4_v3_base__primary",
+      "plant_id": "H4_v3_base",
+      "wave": "primary",
+      "sample_count": 65536,
+      "counts": {
+        "D_global": 0,
+        "D_local": 65536,
+        "F": 0
+      },
+      "probabilities": {
+        "theta_g": 0.0,
+        "theta_l": 1.0,
+        "theta_b": 1.0
+      },
+      "mean_stopped_time": 0.0
+    },
+    {
+      "id": "H4_v3_intervention__primary",
+      "plant_id": "H4_v3_intervention",
+      "wave": "primary",
+      "sample_count": 65536,
+      "counts": {
+        "D_global": 0,
+        "D_local": 0,
+        "F": 65536
+      },
+      "probabilities": {
+        "theta_g": 0.0,
+        "theta_l": 0.0,
+        "theta_b": 0.0
+      },
+      "mean_stopped_time": 3.23897168724802
+    }
+  ],
+  "h4_des_repro": [
+    {
+      "id": "H4_v3_base__repro",
+      "plant_id": "H4_v3_base",
+      "wave": "repro",
+      "sample_count": 65536,
+      "counts": {
+        "D_global": 0,
+        "D_local": 65536,
+        "F": 0
+      },
+      "probabilities": {
+        "theta_g": 0.0,
+        "theta_l": 1.0,
+        "theta_b": 1.0
+      },
+      "mean_stopped_time": 0.0
+    },
+    {
+      "id": "H4_v3_intervention__repro",
+      "plant_id": "H4_v3_intervention",
+      "wave": "repro",
+      "sample_count": 65536,
+      "counts": {
+        "D_global": 0,
+        "D_local": 0,
+        "F": 65536
+      },
+      "probabilities": {
+        "theta_g": 0.0,
+        "theta_l": 0.0,
+        "theta_b": 0.0
+      },
+      "mean_stopped_time": 3.232669224587508
+    }
+  ],
+  "compatibility": [
+    {
+      "plant_id": "H4_v3_base",
+      "estimand": "theta_g",
+      "exact": 0.0,
+      "des": 0.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H4_v3_base",
+      "estimand": "theta_l",
+      "exact": 1.0,
+      "des": 1.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H4_v3_base",
+      "estimand": "theta_b",
+      "exact": 1.0,
+      "des": 1.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H4_v3_intervention",
+      "estimand": "theta_g",
+      "exact": -0.0,
+      "des": 0.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H4_v3_intervention",
+      "estimand": "theta_l",
+      "exact": -0.0,
+      "des": 0.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    },
+    {
+      "plant_id": "H4_v3_intervention",
+      "estimand": "theta_b",
+      "exact": -0.0,
+      "des": 0.0,
+      "abs_error": 0.0,
+      "tolerance": 0.007354793908534244,
+      "compatible": true
+    }
+  ],
+  "hoeffding_tolerance": 0.007354793908534244,
+  "original_g6b_gate": "OPEN_PENDING"
+}
