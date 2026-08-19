@@ -183,7 +183,7 @@ unused. Serial H3/H4 sweeps are protocol misses.
 
 ## 5. Immediate next step
 
-P0–P4 are closed. P2 leftover H5 is a four-field diagnostic with field 4
-refused (no independent S4PR embedding). P5 has NtP draft prose in a
-process file. Do **not** start the IEEE body until the user asks for
-manuscript packaging. G5 FAIL and G6-B `OPEN_PENDING` stay retained.
+P0–P4 and H5 are closed. A double-anonymous Regular Paper draft lives at
+`docs/paper/TASE_LOCAL_FIRST_HIT_MANUSCRIPT.md`. IEEE two-column
+production is a later conversion and must not change claims. G5 FAIL
+and G6-B `OPEN_PENDING` stay retained.

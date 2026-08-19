@@ -15,7 +15,7 @@ Programme: `docs/superpowers/specs/2026-08-19-tase-submission-programme.md`
 | G-H3-SCALE | P3 | **closed in h3_v2** | 16/19 enumerated; 12 rows \(\ge 10^3\), 4 rows \(\ge 10^4\); 3 typed cap/time refusals; max 100000 | do not cite 496-state H3 v1 as large |
 | G-NOVELTY-LOC | P4 | **closed as locators** | `NOVELTY_DIFFERENCE_MATRIX.md` G1 locator table | cite only those rows |
 | G-NTP | P5 | **draft prose in process file** | `TASE_NOTE_TO_PRACTITIONERS_OUTLINE.md` ≈220 words | IEEE paste only when body starts |
-| G-IEEE-BODY | P5 | **blocked** | markdown draft only | after explicit manuscript start |
+| G-IEEE-BODY | P5 | **draft on worktree** | `docs/paper/TASE_LOCAL_FIRST_HIT_MANUSCRIPT.md` | IEEE two-column conversion later; claims frozen to this file |
 
 Closed gaps stay closed. Reopening requires a new version id.
 G5 FAIL and G6-B `OPEN_PENDING` are retained.
