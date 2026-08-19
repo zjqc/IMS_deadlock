@@ -1,0 +1,14 @@
+{
+  "workers": {
+    "logical_cpus": 56,
+    "free_ram_gib": 102.3099594116211,
+    "workers": 48
+  },
+  "h3": {
+    "n_rows": 576,
+    "enumerated": 576,
+    "refused": 0,
+    "max_state_count": 496,
+    "max_elapsed_s": 0.32857819995842874
+  }
+}
