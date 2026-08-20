@@ -95,6 +95,9 @@ Symbols used once
 
 The generator \(Q\) is never a plant resource. The completion set \(F\) is never a buffer. Job names in examples are \(\mathsf{A},\mathsf{B},\mathsf{C}\) in roman sans-serif, distinct from sets \(A^{\dagger}\) and SCCs \(\mathcal{C}\).
 
+![Fig. 1. Object of the paper versus three classical pictures.](figures/fig_research_object.png)
+
+**Fig. 1.** Object of the paper versus three classical pictures. A wait-for cycle, a plant-net siphon, and a plant terminal SCC are not identified with the computed object. A closed core \(K\) is only a candidate. Typed admission (Theorems 3–4) and bypass refusal (Theorem 5) produce the stopped first-hit of \(D^{\mathrm{G}}\), \(D^{\mathrm{L}}\), or \(F\).
 
 ---
 
@@ -536,13 +539,25 @@ Positive-time island first-hit values (exact). DES agrees on all six cells at \(
 | Positive-time base | 64 | certified | \(0.0460\) | \(0.5373\) | \(0.5833\) | \(3.596\) |
 | Extra AGV slot | 72 | certified | \(0\) | \(0\) | \(0\) | \(6.296\) |
 
+![Fig. 2. Positive-time local hit on the machine–AGV island.](figures/fig_h7_island_story.png)
+
+**Fig. 2.** Mechanism of the lead island. The initial state is transient. The word \(A\)-start, \(A\)-service-complete, \(B\)-start reaches \(D^{\mathrm{L}}\) while \(\mathsf{C}\) still moves. One extra AGV slot destroys the kernel.
+
+![Fig. 3. Exact first-hit KPIs on the positive-time island.](figures/fig_h7_island_kpis.png)
+
+**Fig. 3.** Exact first-hit KPIs on the lead island (Table II). Base: \(\theta^{\mathrm{B}}=7/12\), \(m=3.596\). Extra AGV slot: \(\theta^{\mathrm{B}}=0\), \(m=6.296\). DES agrees on all six cells at \(n_{\mathrm{s}}=65536\).
+
 The core island conclusion is therefore this. The initial state is not in \(D^{\mathrm{G}}\cup D^{\mathrm{L}}\cup F\). Three admitted local-hit states exist, all with a plant outgoing arc, and one global-deadlock state exists after \(\mathsf{C}\) has completed. From the initial state the first local hit is a stopping *event*: \(\theta^{\mathrm{L}}=0.537\), \(\theta^{\mathrm{B}}=7/12\), and \(m=3.596\ge 0.25\). The plant is *not* a terminal SCC at those local-hit states, because \(\mathsf{C}\) can still move. One extra AGV slot destroys the \(\{\mathsf{M}_1,\mathsf{V}\}\) kernel: \(D^{\mathrm{G}}=D^{\mathrm{L}}=\emptyset\), \(\theta^{\mathrm{B}}=0\), and the mean time to completion rises to \(6.296\). For this island, deadlock of the manufacturing cell is a *positive-time local first-hit*, and a one-slot vehicle change prevents that stop.
 
-A *time-zero boundary* clothing of the same island is retained (Fig. 2). There \(\mathsf{A}\) already holds \(\mathsf{M}_1\) requesting \(\mathsf{V}\), \(\mathsf{B}\) already holds \(\mathsf{V}\) requesting \(\mathsf{M}_1\), and \(\mathsf{C}\) is in service on \(\mathsf{M}_2\): \(\theta^{\mathrm{L}}=1\), \(m=0\). An optional drain that lets \(\mathsf{B}\) release \(\mathsf{V}\) without entering \(\mathsf{M}_1\) sends every trajectory to \(F\) (\(\theta^{\mathrm{B}}=0\), \(m=3.23\)). That clothing is scientifically correct and is not overwritten; it is no longer the lead figure, because the first hit is the initial condition rather than an event.
+A *time-zero boundary* clothing of the same island is retained (Fig. 4). There \(\mathsf{A}\) already holds \(\mathsf{M}_1\) requesting \(\mathsf{V}\), \(\mathsf{B}\) already holds \(\mathsf{V}\) requesting \(\mathsf{M}_1\), and \(\mathsf{C}\) is in service on \(\mathsf{M}_2\): \(\theta^{\mathrm{L}}=1\), \(m=0\). An optional drain that lets \(\mathsf{B}\) release \(\mathsf{V}\) without entering \(\mathsf{M}_1\) sends every trajectory to \(F\) (\(\theta^{\mathrm{B}}=0\), \(m=3.23\)). That clothing is scientifically correct and is not overwritten; it is no longer the lead figure, because the first hit is the initial condition rather than an event.
+
+![Fig. 4. Time-zero boundary island KPIs.](figures/fig_h4_island_kpis.png)
+
+**Fig. 4.** Exact first-hit KPIs on the *time-zero boundary* clothing. Base: already a local hit. Optional AGV drain: every trajectory completes.
 
 An earlier all-completion clothing of the same island (release-then-complete, no local hit) produced \(\theta^{\mathrm{B}}=0\) on both the base and the intervention and is retained as a certified negative: a digital-twin that always finishes cannot demonstrate local-first-hit. A still earlier clothing that marked completion while holding a buffer was refused as an invalid LTS state and is retained.
 
-Fig. 2 plots the time-zero boundary KPIs. On the positive-time island the six DES cells lie inside the Hoeffding band; that check is a same-target numerical agreement, not a rare-event study and not a shop-floor rate.
+On the positive-time island the six DES cells lie inside the Hoeffding band (Fig. 3); that check is a same-target numerical agreement, not a rare-event study and not a shop-floor rate.
 
 ### C. Family II: Same-Semantics Baselines
 
@@ -568,7 +583,7 @@ The residual cycle is the C1 witness: a wait-for cycle exists, residual capacity
 
 ### D. Family III: Tandem Scale
 
-Jobs visit resources \(r_0,\ldots,r_{k-1}\) of capacity \(c\) and then complete. The family is the unit-capacity product \(\{4,5,6,7,8\}\times\{3,4,5\}\) plus four capacity-2 rows. Caps are \(10^5\) states and \(300\,\mathrm{s}\). Table IV and Fig. 3 report the live wave (48 workers).
+Jobs visit resources \(r_0,\ldots,r_{k-1}\) of capacity \(c\) and then complete. The family is the unit-capacity product \(\{4,5,6,7,8\}\times\{3,4,5\}\) plus four capacity-2 rows. Caps are \(10^5\) states and \(300\,\mathrm{s}\). Table IV and Fig. 5 report the live wave (48 workers).
 
 **Table IV**  
 Tandem enumeration (capacity 1 unless noted). “Refused” means the declared cap was hit
@@ -596,6 +611,10 @@ Tandem enumeration (capacity 1 unless noted). “Refused” means the declared c
 | 6 | 3, \(c=2\) | 11050 | 102 | enumerated |
 
 Twelve enumerated rows have \(\lvert X\rvert\ge 10^3\) and four have \(\lvert X\rvert\ge 10^4\). The three refusals are typed: two exceed \(300\,\mathrm{s}\) without truncation, one hits the state cap. An earlier 576-row one-step family whose largest LTS had 496 states is not cited as “large.” Family III is computational evidence for T-ASE, not a complexity theorem and not a finite-capacity configuration result [9].
+
+![Fig. 5. Tandem scale.](figures/fig_h3_scale.png)
+
+**Fig. 5.** Tandem scale (Family III, unit capacity). Left: \(\lvert X\rvert\) versus jobs (log). Right: runtime versus jobs (log). Horizontal guides mark \(10^3\), \(10^4\) states and the \(300\,\mathrm{s}\) cap.
 
 ### E. Family V: Four-Field CRP Diagnostic
 
@@ -625,6 +644,10 @@ Embedded subjects. Agreement still requires all four fields
 | H6-A definitional S3PR of [1] | yes | yes | 1 | verified embedding | yes |
 | H6-B declared AGV distortion | no | no | 0 | distortion (E5 fails) | no |
 
+![Fig. 6. Four-field diagnostic including the H6 embedding.](figures/fig_h6_four_field.png)
+
+**Fig. 6.** Proposition 4 four-field matrix. The six H5 rows have no independent embedding, so agreement is identically no. H6-A (definitional S3PR of [1]) is the only all-yes row. H6-B is the declared AGV distortion.
+
 ### F. Family VI: Finite-State Supervisor Baseline
 
 On the positive-time island of Table II, a Ramadge–Wonham nonblocking supervisor is computed on the explicit 64-state LTS [15], treating \(D^{\dagger}=D^{\mathrm{G}}\cup D^{\mathrm{L}}\) as forbidden and \(F\) as marked. Controllability is the registry flag of each event. This is a *baseline*, not a new theorem: the implementation is the greatest fixed point of “remove states that can uncontrollably leave the remaining set or cannot reach a marked state.” Compact-input synthesis remains at least NP-hard; the construction is not maximally permissive in the MCPP sense [3] and is not a risk-budget supervisor.
@@ -642,6 +665,10 @@ Supervisor baseline on the Table II base plant (same stopping family)
 | supervised \(m\) | \(7.048\) |
 
 The 14 cuts are \(\mathsf{A}\)-start-\(\mathsf{M}_1\) or \(\mathsf{B}\)-start-\(\mathsf{V}\) at states from which the interlock would close, plus two controllable \(\mathsf{C}\)-release-\(\mathsf{M}_2\) cuts required for consistency of the remaining set. Supervised \(\theta^{\mathrm{B}}=0\le 0.583=\theta^{\mathrm{B}}\) of the unsupervised plant. Mean stopped time rises from \(3.596\) to \(7.048\): the supervisor trades a positive first-hit probability for a longer completing run.
+
+![Fig. 7. Finite-state supervisor baseline on the Table II plant.](figures/fig_h8_supervisor.png)
+
+**Fig. 7.** Ramadge–Wonham explicit-graph baseline on the 64-state island. Left: plant versus safe states. Right: unsupervised versus supervised \(\theta^{\mathrm{B}}\) (mean stopped time annotated).
 
 ---
 
@@ -791,11 +818,15 @@ Omitted for double-anonymous review.
 
 ## Figure Captions
 
-**Fig. 1.** Object of the paper versus three classical pictures. A wait-for cycle, a plant-net siphon, and a plant terminal SCC are not identified with the computed object. A closed core \(K\) is only a candidate. Typed admission (Theorems 3–4) and bypass refusal (Theorem 5) produce the stopped first-hit of \(D^{\mathrm{G}}\), \(D^{\mathrm{L}}\), or \(F\). File: `docs/paper/figures/fig_research_object.pdf`.
+Images are embedded above with relative `figures/*.png` paths so a VS Code Markdown preview of this file shows them. PDF siblings of the same stem are for IEEE production.
 
-**Fig. 2.** Exact first-hit KPIs on the *time-zero boundary* clothing of the three-job machine–AGV island. Base: already a local hit (\(\theta^{\mathrm{L}}=1\), \(m=0\)). Optional AGV drain: every trajectory completes. The *lead* island of Table II starts transient and hits \(D^{\mathrm{L}}\) at positive time. Files: `docs/paper/figures/fig_h4_island_kpis.pdf`, `.png`.
-
-**Fig. 3.** Tandem scale (Family III, unit capacity). Left: \(\lvert X\rvert\) versus jobs (log). Right: runtime versus jobs (log). Horizontal guides mark \(10^3\), \(10^4\) states and the \(300\,\mathrm{s}\) cap. Files: `docs/paper/figures/fig_h3_scale.pdf`, `.png`.
+**Fig. 1.** `figures/fig_research_object.png`  
+**Fig. 2.** `figures/fig_h7_island_story.png`  
+**Fig. 3.** `figures/fig_h7_island_kpis.png`  
+**Fig. 4.** `figures/fig_h4_island_kpis.png`  
+**Fig. 5.** `figures/fig_h3_scale.png`  
+**Fig. 6.** `figures/fig_h6_four_field.png`  
+**Fig. 7.** `figures/fig_h8_supervisor.png`
 
 ---
 
